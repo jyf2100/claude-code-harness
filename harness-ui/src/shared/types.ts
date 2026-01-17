@@ -1,693 +1,148 @@
-// Health Score Types
-export interface HealthMetrics {
-  skills: {
-    count: number
-    /** Description tokens only (loaded initially) */
-    totalTokens: number
-    unusedCount: number
-  }
-  memory: {
-    /** Storage tokens (NOT loaded initially) */
-    storageTokens: number
-    duplicateCount: number
-  }
-  rules: {
-    count: number
-    /** Active + Cursor rules tokens (loaded initially) */
-    initialLoadTokens: number
-    conflictCount: number
-  }
-  hooks: {
-    count: number
-  }
-  /** Total tokens loaded at session start */
-  totalInitialLoadTokens: number
+// PTY Session Types
+export type PTYSessionStatus = 'IDLE' | 'RUNNING' | 'WAITING';
+export type PTYSessionPhase = 'IDLE' | 'PLAN' | 'WORK' | 'REVIEW';
+
+export interface PTYSession {
+  id: string;
+  pid: number | null;
+  status: PTYSessionStatus;
+  phase: PTYSessionPhase;
+  projectId: string;
+  worktreePath: string;
+  logs: string[];
+  lastActivity: number;
+  createdAt: number;
 }
 
-export type HealthStatus = 'good' | 'warning' | 'error'
+// Plans.md Types
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'blocked';
 
-export interface HealthResponse {
-  score: number
-  status: HealthStatus
-  /** Total tokens loaded at session start (Skills + Rules) */
-  totalInitialLoadTokens: number
-  breakdown: {
-    skills: { count: number; totalTokens: number; status: HealthStatus }
-    memory: { storageTokens: number; duplicateCount: number; status: HealthStatus }
-    rules: { count: number; initialLoadTokens: number; conflictCount: number; status: HealthStatus }
-    hooks: { count: number; status: HealthStatus }
-  }
-  suggestions: string[]
+export interface PlanTask {
+  id: string;
+  content: string;
+  status: TaskStatus;
+  marker?: string;
 }
 
-// Kanban Types
-export interface TaskSource {
-  /** Line number in Plans.md (1-based) */
-  lineNumber: number
-  /** Original line content for conflict detection */
-  originalLine: string
-  /** Detected marker (e.g., 'cc:WIP', 'cc:TODO') */
-  marker?: string
-  /** File path (for multi-file support) */
-  filePath?: string
+export interface PlanSection {
+  title: string;
+  tasks: PlanTask[];
 }
 
-export interface Task {
-  id: string
-  title: string
-  description?: string
-  status: 'plan' | 'work' | 'review' | 'done'
-  priority?: 'high' | 'medium' | 'low'
-  createdAt?: string
-  /** Source information for safe updates */
-  source?: TaskSource
-}
-
-export type WorkflowMode = 'solo' | '2agent'
-
-export interface KanbanResponse {
-  plan: Task[]
-  work: Task[]
-  review: Task[]
-  done: Task[]
-  mode?: WorkflowMode
-  error?: string
-}
-
-// Skills Types
-export interface Skill {
-  name: string
-  path: string
-  description: string
-  descriptionEn?: string
-  tokenCount: number
-  lastUsed?: string
-  usageCount?: number
-}
-
-export interface SkillsResponse {
-  skills: Skill[]
-  totalTokens: number
-  unusedSkills: string[]
-  /** Whether usage tracking is available (requires claude-mem) */
-  usageTrackingAvailable: boolean
-  /** Message about usage tracking status */
-  usageTrackingMessage?: string
-}
-
-// Command Types
-export interface Command {
-  name: string
-  path: string
-  description: string
-  descriptionEn?: string
-  category: 'core' | 'optional'
-}
-
-export interface CommandsResponse {
-  commands: Command[]
-}
-
-// Memory Types
-export interface MemoryFile {
-  name: string
-  path: string
-  /** Storage size in tokens (NOT loaded initially) */
-  tokenCount: number
-  lastModified: string
-}
-
-export interface MemoryResponse {
-  files: MemoryFile[]
-  /** Total storage tokens (NOT loaded initially - memory is on-demand) */
-  totalTokens: number
-  /** Memory files are loaded on-demand, not at session start */
-  initialLoadTokens: 0
-  duplicates: string[]
-}
-
-// Rules Types
-export interface Rule {
-  name: string
-  path: string
-  content: string
-  tokenCount: number
-  category?: 'active' | 'cursor' | 'template'
-}
-
-export interface RulesResponse {
-  rules: Rule[]
-  totalTokens: number
-  /** Tokens loaded into Claude's initial context (active + cursor only) */
-  initialLoadTokens: number
-  conflicts: string[]
-}
-
-// Hooks Types
-export interface Hook {
-  name: string
-  type: 'PreToolUse' | 'PostToolUse' | 'Notification' | 'Stop' | 'SessionStart' | 'UserPromptSubmit' | 'PermissionRequest' | string
-  matcher?: string
-  command: string
-}
-
-export interface HooksResponse {
-  hooks: Hook[]
-  count: number
-}
-
-// claude-mem Types
-export interface Observation {
-  id: number
-  content: string
-  timestamp: string
-  type: string
-}
-
-export interface ClaudeMemResponse {
-  available: boolean
-  data: Observation[]
-  message?: string
-}
-
-// Usage Tracking Types
-export interface UsageEntry {
-  count: number
-  lastUsed: string | null
-}
-
-export interface HookUsageEntry {
-  triggered: number
-  blocked: number
-  lastTriggered: string | null
-}
-
-export interface UsageData {
-  version: string
-  updatedAt: string
-  skills: Record<string, UsageEntry>
-  commands: Record<string, UsageEntry>
-  agents: Record<string, UsageEntry>
-  hooks: Record<string, HookUsageEntry>
-}
-
-export interface CleanupSuggestions {
-  unusedSkills: Array<{ name: string } & UsageEntry>
-  unusedCommands: Array<{ name: string } & UsageEntry>
-  unusedAgents: Array<{ name: string } & UsageEntry>
-  inactiveHooks: Array<{ name: string } & HookUsageEntry>
+export interface PlansData {
+  projectId?: string;
+  sections: PlanSection[];
   summary: {
-    totalSkills: number
-    totalCommands: number
-    totalAgents: number
-    totalHooks: number
-    unusedSkillsCount: number
-    unusedCommandsCount: number
-    unusedAgentsCount: number
-    inactiveHooksCount: number
-  }
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    blocked: number;
+    progressPercent: number;
+  };
 }
 
-export interface UsageResponse {
-  available: boolean
-  data: UsageData | null
-  cleanup: CleanupSuggestions | null
-  topSkills: Array<[string, UsageEntry]>
-  topCommands: Array<[string, UsageEntry]>
-  topAgents: Array<[string, UsageEntry]>
-  topHooks: Array<[string, HookUsageEntry]>
-  message?: string
+// WebSocket Message Types
+export type WSMessageType =
+  | 'sessions_list'
+  | 'session_update'
+  | 'log_chunk'
+  | 'send_input'
+  | 'create_session'
+  | 'destroy_session'
+  | 'resize_terminal'
+  | 'plans_update';
+
+export interface WSMessage<T = unknown> {
+  type: WSMessageType;
+  payload: T;
 }
 
-// AI Insights Types
-export interface Insight {
-  type: 'optimization' | 'warning' | 'suggestion'
-  title: string
-  description: string
-  impact: 'high' | 'medium' | 'low'
-  effort: 'high' | 'medium' | 'low'
-  cliCommand: string
+export interface SessionsListPayload {
+  sessions: PTYSession[];
 }
 
-export interface InsightsResponse {
-  insights: Insight[]
-  generatedAt: string
+export interface SessionUpdatePayload {
+  session: PTYSession;
 }
 
-// Agent SDK Types
-export type AgentSessionStatus = 'idle' | 'running' | 'paused' | 'completed' | 'error' | 'interrupted'
-
-export interface AgentSession {
-  id: string
-  status: AgentSessionStatus
-  startedAt: string
-  completedAt?: string
-  prompt: string
-  workingDirectory?: string
-  messages: AgentMessage[]
-  error?: string
+export interface LogChunkPayload {
+  sessionId: string;
+  data: string;
 }
 
-export interface AgentMessage {
-  id: string
-  type: 'user' | 'assistant' | 'tool_use' | 'tool_result' | 'system' | 'error'
-  content: string
-  timestamp: string
-  toolName?: string
-  toolInput?: unknown
-  toolResult?: unknown
+export interface SendInputPayload {
+  sessionId: string;
+  data: string;
 }
 
-export interface AgentExecuteRequest {
-  prompt: string
-  workingDirectory?: string
-  sessionId?: string // For resuming sessions
-  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan'
+export interface CreateSessionPayload {
+  projectId: string;
+  worktreePath?: string;
 }
 
-export interface AgentExecuteResponse {
-  sessionId: string
-  status: AgentSessionStatus
-  message?: string
+export interface DestroySessionPayload {
+  sessionId: string;
 }
 
-export interface AgentInterruptRequest {
-  sessionId: string
+export interface ResizeTerminalPayload {
+  sessionId: string;
+  cols: number;
+  rows: number;
 }
 
-export interface AgentInterruptResponse {
-  success: boolean
-  message: string
+// Settings Types
+export interface ClaudeSettings {
+  path: string;
+  args: string[];
 }
 
-export interface AgentSessionResponse {
-  session: AgentSession | null
-  error?: string
+export interface TerminalSettings {
+  cols: number;
+  rows: number;
+  env: Record<string, string>;
 }
 
-export interface AgentToolApprovalRequest {
-  sessionId: string
-  toolUseId: string
-  toolName: string
-  toolInput: unknown
+export interface ProjectSettings {
+  mainPath: string;
+  worktreePaths: string[];
+  waitingPatterns: string[];
+  idleTimeout: number;
 }
 
-export interface AgentToolApprovalResponse {
-  sessionId: string
-  toolUseId: string
-  decision: 'allow' | 'deny' | 'modify'
-  modifiedInput?: unknown
-  reason?: string
+export interface CommandsSettings {
+  corePath: string;
 }
 
-// AskUserQuestion Types
-export interface AskUserQuestionOption {
-  label: string
-  description?: string
+export interface AppSettings {
+  claude: ClaudeSettings;
+  terminal: TerminalSettings;
+  project: ProjectSettings;
+  commands: CommandsSettings;
 }
 
-export interface AskUserQuestionItem {
-  question: string
-  header: string
-  options: AskUserQuestionOption[]
-  multiSelect?: boolean
+// Core Commands
+export interface CoreCommand {
+  id: string;
+  name: string;
+  description: string;
+  template: string; // e.g., "/plan-with-agent {input}"
 }
 
-export interface AskUserQuestionRequest {
-  type: 'ask_user_question'
-  sessionId: string
-  toolUseId: string
-  questions: AskUserQuestionItem[]
+// Multi-project Support
+export interface Project {
+  id: string;
+  name: string;
+  path: string;
+  plansPath: string;
+  worktreePaths: string[];
+  isActive: boolean;
 }
 
-export interface AskUserQuestionResponse {
-  sessionId: string
-  toolUseId: string
-  answers: Record<string, string>
+export interface ProjectsData {
+  projects: Project[];
+  activeProjectId: string | null;
 }
 
-// SSOT Types
-export interface SSOTFile {
-  found: boolean
-  content: string | null
-  path: string | null
-  message?: string
-}
-
-export interface SSOTResponse {
-  available: boolean
-  decisions: SSOTFile
-  patterns: SSOTFile
-  error?: string
-}
-
-// Guardrail Event Types (for visualization)
-export interface GuardrailEvent {
-  id: string
-  type: 'approval_request' | 'approved' | 'denied'
-  toolName: string
-  toolInput: unknown
-  timestamp: string
-  reason?: string
-}
-
-// 2-Agent Role Types (Task 9.1)
-export type AgentRole = 'pm' | 'impl'
-
-// Handoff State Types (Task 9.2)
-export type HandoffState = 'pm_waiting' | 'impl_waiting' | 'idle'
-
-export interface HandoffStatus {
-  state: HandoffState
-  /** Tasks waiting for PM review (cc:完了 in 2agent mode) */
-  pmWaitingCount: number
-  /** Tasks waiting for implementation (pm:依頼中) */
-  implWaitingCount: number
-  /** Tasks currently being worked on (cc:WIP) */
-  inProgressCount: number
-}
-
-// Session State Types (Task 10.1)
-/**
- * UI workflow state for enforcing Plan→Work→Review cycle
- * - idle: No task selected
- * - planned: Task selected, ready to start work
- * - working: Execution in progress
- * - needsReview: Execution completed, Review required before completion
- * - readyToComplete: Review completed, can mark as done
- * - completed: Task marked as done
- */
-export type SessionState = 'idle' | 'planned' | 'working' | 'needsReview' | 'readyToComplete' | 'completed'
-
-// Review Report Types (Task 10.3)
-export interface ReviewChecklist {
-  /** 変更概要（必須） */
-  summary: string
-  /** 確認手順（必須） */
-  verificationSteps: string
-  /** 実行したコマンド */
-  executedCommands?: string
-  /** 未解決の課題 */
-  unresolvedIssues?: string
-}
-
-export interface ReviewReport {
-  /** Task being reviewed */
-  taskId: string
-  taskTitle: string
-  /** Checklist completion status */
-  checklist: ReviewChecklist
-  /** Auto-generated execution log summary */
-  executionLogSummary: string
-  /** Tool approval history summary */
-  approvalHistory: string[]
-  /** Timestamp */
-  createdAt: string
-  /** Whether all required fields are filled */
-  isComplete: boolean
-}
-
-// Policy-Driven Guardrails Types (Phase 11)
-/**
- * Policy preset modes for approval granularity
- * - strict: Most operations require approval
- * - balanced: Sensitive operations require approval
- * - fast: Most operations auto-approved (except locked rules)
- */
-export type PolicyPreset = 'strict' | 'balanced' | 'fast'
-
-/**
- * Scope for policy application
- * - once: Single operation only
- * - task: Current task (until completion)
- * - session: Current session (until reset)
- * - project: Project-wide (persisted)
- */
-export type PolicyScope = 'once' | 'task' | 'session' | 'project'
-
-/**
- * Path category for policy evaluation
- * - protected: Always requires approval (Plans.md, .claude/memory/**)
- * - config: Configuration files (.json, .yaml, .env, etc.)
- * - code: Source code files (.ts, .tsx, .js, .jsx, etc.)
- * - test: Test files (*.test.ts, *.spec.ts, etc.)
- * - docs: Documentation files (.md, .txt, etc.)
- * - other: Other files
- */
-export type PathCategory = 'protected' | 'config' | 'code' | 'test' | 'docs' | 'other'
-
-/**
- * Operation kind for policy evaluation
- * - tool_read: Read-only tool operations (Read, Glob, Grep, etc.)
- * - tool_write: Write tool operations (Write)
- * - tool_edit: Edit tool operations (Edit)
- * - tool_bash: Bash/command execution (Bash)
- * - git_commit: Git commit operations
- * - git_push: Git push operations
- * - git_pr: Git PR creation
- * - git_release: Release operations
- */
-export type OperationKind =
-  | 'tool_read'
-  | 'tool_write'
-  | 'tool_edit'
-  | 'tool_bash'
-  | 'git_commit'
-  | 'git_push'
-  | 'git_pr'
-  | 'git_release'
-
-/**
- * Policy behavior for operations
- * - allow: Auto-approve (no UI confirmation)
- * - ask: Require UI approval
- * - deny: Block operation
- */
-export type PolicyBehavior = 'allow' | 'ask' | 'deny'
-
-/**
- * Policy rule: category × operation × behavior + locked flag
- */
-export interface PolicyRule {
-  /** Path category */
-  category: PathCategory
-  /** Operation kind */
-  operation: OperationKind
-  /** Behavior (allow/ask/deny) */
-  behavior: PolicyBehavior
-  /** Whether this rule is locked (cannot be changed by user) */
-  locked: boolean
-  /** Reason for locking (shown in UI) */
-  lockedReason?: string
-}
-
-/**
- * Policy configuration (preset + custom rules)
- */
-export interface PolicyConfig {
-  /** Active preset */
-  preset: PolicyPreset
-  /** Custom rules (override preset defaults) */
-  rules: PolicyRule[]
-  /** Last updated timestamp */
-  updatedAt: string
-}
-
-/**
- * Ledger event status
- * - pending: Waiting for user decision
- * - approved: User approved
- * - denied: User denied
- * - auto: Auto-approved by policy
- */
-export type LedgerEventStatus = 'pending' | 'approved' | 'denied' | 'auto'
-
-/**
- * Ledger event: tracks all tool and git operations for audit
- */
-export interface LedgerEvent {
-  /** Unique event ID */
-  id: string
-  /** Event status */
-  status: LedgerEventStatus
-  /** Operation kind */
-  operation: OperationKind
-  /** Path category */
-  category: PathCategory
-  /** Tool name (for tool operations) */
-  toolName?: string
-  /** File path (if applicable) */
-  filePath?: string
-  /** Git branch (for git operations) */
-  gitBranch?: string
-  /** Operation input/details */
-  input: unknown
-  /** Timestamp */
-  timestamp: string
-  /** User decision reason (if denied or modified) */
-  reason?: string
-  /** Session ID */
-  sessionId?: string
-  /** Task ID (if applicable) */
-  taskId?: string
-}
-
-/**
- * Deliver workflow preflight information
- */
-export interface DeliverPreflight {
-  /** Current branch */
-  branch: string
-  /** Whether working directory is dirty */
-  dirty: boolean
-  /** Staged files count */
-  stagedCount: number
-  /** Unstaged files count */
-  unstagedCount: number
-  /** Commits ahead of remote */
-  ahead: number
-  /** Commits behind remote */
-  behind: number
-  /** Remote branch name */
-  remoteBranch?: string
-  /** Whether force push would be required */
-  requiresForcePush: boolean
-  /** Whether this is main/master branch */
-  isMainBranch: boolean
-  /** Suggested commit message (from task/review) */
-  suggestedCommitMessage?: string
-}
-
-/**
- * Deliver commit request
- */
-export interface DeliverCommitRequest {
-  /** Commit message */
-  message: string
-  /** Whether to skip hooks */
-  skipHooks?: boolean
-}
-
-/**
- * Deliver commit response
- */
-export interface DeliverCommitResponse {
-  /** Success status */
-  success: boolean
-  /** Commit hash */
-  commitHash?: string
-  /** Error message */
-  error?: string
-}
-
-/**
- * Deliver push request
- */
-export interface DeliverPushRequest {
-  /** Branch to push */
-  branch: string
-  /** Whether to force push (requires explicit approval) */
-  force?: boolean
-  /** Remote name (default: origin) */
-  remote?: string
-}
-
-/**
- * Deliver push response
- */
-export interface DeliverPushResponse {
-  /** Success status */
-  success: boolean
-  /** Error message */
-  error?: string
-}
-
-/**
- * Deliver PR request (GitHub)
- */
-export interface DeliverPRRequest {
-  /** PR title */
-  title: string
-  /** PR body */
-  body: string
-  /** Base branch (default: main) */
-  base?: string
-  /** Head branch (default: current branch) */
-  head?: string
-  /** Draft PR */
-  draft?: boolean
-}
-
-/**
- * Deliver PR response
- */
-export interface DeliverPRResponse {
-  /** Success status */
-  success: boolean
-  /** PR URL */
-  prUrl?: string
-  /** PR number */
-  prNumber?: number
-  /** Error message */
-  error?: string
-  /** Whether gh CLI is available */
-  ghAvailable?: boolean
-}
-
-/**
- * Release template step
- */
-export interface ReleaseStep {
-  /** Step ID */
-  id: string
-  /** Step title */
-  title: string
-  /** Step description */
-  description: string
-  /** Whether step is required */
-  required: boolean
-  /** Whether step is completed */
-  completed: boolean
-  /** Step command (if applicable) */
-  command?: string
-}
-
-/**
- * Release template (project-specific)
- */
-export interface ReleaseTemplate {
-  /** Template name */
-  name: string
-  /** Template description */
-  description: string
-  /** Steps to complete */
-  steps: ReleaseStep[]
-  /** Version bump type */
-  versionBump?: 'major' | 'minor' | 'patch'
-}
-
-/**
- * Deliver release request
- */
-export interface DeliverReleaseRequest {
-  /** Release version */
-  version: string
-  /** Release notes */
-  notes: string
-  /** Template to use (if available) */
-  template?: string
-}
-
-/**
- * Deliver release response
- */
-export interface DeliverReleaseResponse {
-  /** Success status */
-  success: boolean
-  /** Release URL */
-  releaseUrl?: string
-  /** Error message */
-  error?: string
-  /** Available templates */
-  templates?: ReleaseTemplate[]
-}
+// UI State
+export type Page = 'dashboard' | 'work' | 'settings';

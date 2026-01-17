@@ -1,42 +1,25 @@
 {
   "name": "harness-ui",
-  "version": "1.0.0",
-  "module": "src/server/index.ts",
+  "version": "0.1.0",
   "type": "module",
-  "private": true,
   "scripts": {
-    "dev": "bun --hot src/server/index.ts",
-    "build": "bun build src/client/main.tsx --outdir=dist --minify",
-    "build:mcp": "bun build src/mcp/server.ts --outdir=dist/mcp --target=bun --minify",
-    "start": "bun src/server/index.ts",
-    "start:mcp": "bun src/mcp/server.ts",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
-    "test:e2e": "bunx playwright test",
-    "typecheck": "tsc --noEmit"
+    "dev": "bun run --watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@anthropic-ai/tokenizer": "^0.0.4",
-    "@modelcontextprotocol/sdk": "^1.25.1",
-    "hono": "^4.6.0",
-    "jotai": "^2.10.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zod": "^4.3.4"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/dom": "^10.0.0",
-    "happy-dom": "^15.0.0",
-    "@playwright/test": "^1.49.0",
-    "typescript": "^5.7.0",
-    "tailwindcss": "^4.0.0-beta.9"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
   }
 }

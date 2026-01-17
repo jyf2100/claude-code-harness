@@ -1,197 +1,417 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { logger } from 'hono/logger'
+import { readFile } from 'fs/promises';
+import { homedir } from 'os';
+import { join } from 'path';
+import { ptyManager } from './services/pty-manager';
+import { PlansParser } from './services/plans-parser';
+import { commandCatalog } from './services/command-catalog';
+import { discoverProjects } from './services/project-discovery';
+import type {
+  WSMessage,
+  SessionsListPayload,
+  SessionUpdatePayload,
+  LogChunkPayload,
+  SendInputPayload,
+  CreateSessionPayload,
+  DestroySessionPayload,
+  ResizeTerminalPayload,
+  PlansData,
+  Project,
+  ProjectsData,
+} from '@shared/types';
 
-// Import routes
-import healthRoutes from './routes/health.ts'
-import plansRoutes from './routes/plans.ts'
-import skillsRoutes from './routes/skills.ts'
-import commandsRoutes from './routes/commands.ts'
-import memoryRoutes from './routes/memory.ts'
-import rulesRoutes from './routes/rules.ts'
-import hooksRoutes from './routes/hooks.ts'
-import claudeMemRoutes from './routes/claude-mem.ts'
-import insightsRoutes from './routes/insights.ts'
-import usageRoutes from './routes/usage.ts'
-import projectsRoutes from './routes/projects.ts'
-import agentRoutes from './routes/agent.ts'
-import ssotRoutes from './routes/ssot.ts'
-import deliverRoutes from './routes/deliver.ts'
-import { initializeSession } from './services/projects.ts'
-import {
-  registerWsConnection,
-  unregisterWsConnection,
-  submitToolApproval,
-} from './services/agent-executor.ts'
+const PORT = parseInt(process.env.PORT || '3001', 10);
+const DEFAULT_PLANS_PATH = process.env.PLANS_PATH || join(process.cwd(), '..', 'Plans.md');
+const DEFAULT_COMMANDS_PATH = join(process.cwd(), '..', 'commands', 'core');
+const DEFAULT_DISCOVERY_ROOT = join(homedir(), 'Desktop', 'Code');
 
-// Import HTML for Bun's HTML imports feature
-import indexHtml from '../../public/index.html'
+// Initialize command catalog
+commandCatalog.setCommandsPath(DEFAULT_COMMANDS_PATH);
+commandCatalog.reload().then(() => {
+  console.log(`Loaded ${commandCatalog.getCommands().length} commands from ${DEFAULT_COMMANDS_PATH}`);
+});
 
-const app = new Hono()
+// Multi-project management (in-memory store)
+let projectsData: ProjectsData = {
+  projects: [],
+  activeProjectId: null,
+};
 
-// Middleware for API routes
-app.use('*', logger())
-app.use('*', cors({
-  origin: ['http://localhost:37778', 'http://127.0.0.1:37778'],
-  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type']
-}))
+// Plans parsers per project
+const plansParsers = new Map<string, PlansParser>();
+let discoveryPromise: Promise<void> | null = null;
 
-// API Routes - mounted at /api prefix
-app.route('/api/health', healthRoutes)
-app.route('/api/plans', plansRoutes)
-app.route('/api/skills', skillsRoutes)
-app.route('/api/commands', commandsRoutes)
-app.route('/api/memory', memoryRoutes)
-app.route('/api/rules', rulesRoutes)
-app.route('/api/hooks', hooksRoutes)
-app.route('/api/claude-mem', claudeMemRoutes)
-app.route('/api/insights', insightsRoutes)
-app.route('/api/usage', usageRoutes)
-app.route('/api/projects', projectsRoutes)
-app.route('/api/agent', agentRoutes)
-app.route('/api/ssot', ssotRoutes)
-app.route('/api/deliver', deliverRoutes)
-
-// API status endpoint
-app.get('/api/status', (c) => {
-  return c.json({
-    status: 'ok',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  })
-})
-
-// Start server
-const port = parseInt(process.env['PORT'] ?? '37778', 10)
-
-// Auto-register current project on startup (like claude-mem)
-const currentProject = initializeSession()
-if (currentProject) {
-  console.log(`[harness-ui] Auto-registered project: ${currentProject.name} (${currentProject.path})`)
+// Initialize default project
+function initDefaultProject(): void {
+  const defaultProject: Project = {
+    id: 'default',
+    name: 'Current Project',
+    path: join(process.cwd(), '..'),
+    plansPath: DEFAULT_PLANS_PATH,
+    worktreePaths: [],
+    isActive: true,
+  };
+  projectsData.projects.push(defaultProject);
+  projectsData.activeProjectId = 'default';
+  plansParsers.set('default', new PlansParser(DEFAULT_PLANS_PATH));
 }
 
-console.log(`
-╔═══════════════════════════════════════════════╗
-║         Harness UI Server v1.0.0              ║
-╠═══════════════════════════════════════════════╣
-║  Local:  http://localhost:${port}                ║
-║  API:    http://localhost:${port}/api            ║
-╚═══════════════════════════════════════════════╝
-`)
+function syncActiveProjectSettings(projectId: string | null): void {
+  if (!projectId) return;
+  const project = projectsData.projects.find((p) => p.id === projectId);
+  if (!project) return;
 
-// Track WebSocket connections by session ID
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const wsSessionMap = new Map<any, string>()
+  const current = ptyManager.getSettings();
+  ptyManager.setSettings({
+    project: {
+      ...current.project,
+      mainPath: project.path,
+      worktreePaths: project.worktreePaths ?? [],
+    },
+  });
+}
 
-// Use Bun.serve with routes for HTML (Bun handles bundling)
-// WebSocket upgrade handled via explicit route
+function mergeDiscoveredProjects(discovered: Project[]): void {
+  const existingPaths = new Set(projectsData.projects.map((p) => p.path));
+  for (const project of discovered) {
+    if (existingPaths.has(project.path)) continue;
+    projectsData.projects.push(project);
+  }
+}
+
+async function ensureDiscoveredProjects(): Promise<void> {
+  if (!discoveryPromise) {
+    discoveryPromise = (async () => {
+      const discovered = await discoverProjects({ rootPath: DEFAULT_DISCOVERY_ROOT });
+      mergeDiscoveredProjects(discovered);
+    })();
+  }
+  await discoveryPromise;
+}
+
+function ensurePlansParser(projectId: string): PlansParser | undefined {
+  const existing = plansParsers.get(projectId);
+  if (existing) return existing;
+
+  const project = projectsData.projects.find((p) => p.id === projectId);
+  if (!project) return undefined;
+
+  const parser = new PlansParser(project.plansPath);
+  plansParsers.set(projectId, parser);
+  setupPlansParserCallback(projectId, parser);
+  parser.startWatching();
+  return parser;
+}
+
+// Get active Plans parser
+function getActivePlansParser(): PlansParser | undefined {
+  if (!projectsData.activeProjectId) return undefined;
+  return ensurePlansParser(projectsData.activeProjectId);
+}
+
+initDefaultProject();
+syncActiveProjectSettings('default');
+
+syncActiveProjectSettings('default');
+
+// WebSocket clients
+const clients = new Set<WebSocket>();
+
+// Broadcast to all clients
+function broadcast<T>(message: WSMessage<T>): void {
+  const data = JSON.stringify(message);
+  for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  }
+}
+
+// Setup PlansParser callback for a project
+function setupPlansParserCallback(projectId: string, parser: PlansParser): void {
+  parser.setUpdateCallback((data) => {
+    broadcast<PlansData>({
+      type: 'plans_update',
+      payload: { ...data, projectId },
+    });
+  });
+}
+
+// Initialize default project's parser callback
+const defaultParser = plansParsers.get('default');
+if (defaultParser) {
+  setupPlansParserCallback('default', defaultParser);
+}
+
+// Set up PTY callbacks
+ptyManager.setMessageCallback((sessionId, data) => {
+  broadcast<LogChunkPayload>({
+    type: 'log_chunk',
+    payload: { sessionId, data },
+  });
+});
+
+ptyManager.setUpdateCallback((session) => {
+  broadcast<SessionUpdatePayload>({
+    type: 'session_update',
+    payload: { session },
+  });
+});
+
+
+// Handle WebSocket messages
+async function handleMessage(ws: WebSocket, message: string): Promise<void> {
+  try {
+    const msg = JSON.parse(message) as WSMessage;
+
+    switch (msg.type) {
+      case 'send_input': {
+        const { sessionId, data } = msg.payload as SendInputPayload;
+        ptyManager.sendInput(sessionId, data);
+        break;
+      }
+
+      case 'create_session': {
+        const { projectId, worktreePath } = (msg.payload as CreateSessionPayload) || {};
+        const effectiveProjectId = projectId || projectsData.activeProjectId || 'default';
+        const project = projectsData.projects.find((p) => p.id === effectiveProjectId);
+        const fallbackPath = project?.path || ptyManager.getSettings().project.mainPath;
+        const resolvedWorktreePath = worktreePath || fallbackPath;
+        const session = await ptyManager.createSession(effectiveProjectId, resolvedWorktreePath);
+        ws.send(
+          JSON.stringify({
+            type: 'session_update',
+            payload: { session },
+          } as WSMessage<SessionUpdatePayload>)
+        );
+        break;
+      }
+
+      case 'destroy_session': {
+        const { sessionId } = msg.payload as DestroySessionPayload;
+        ptyManager.destroySession(sessionId);
+        break;
+      }
+
+      case 'resize_terminal': {
+        const { sessionId, cols, rows } = msg.payload as ResizeTerminalPayload;
+        ptyManager.resizeTerminal(sessionId, cols, rows);
+        break;
+      }
+
+      default:
+        console.warn(`Unknown message type: ${msg.type}`);
+    }
+  } catch (error) {
+    console.error(`Error handling message: ${error}`);
+  }
+}
+
+// Serve static files
+async function serveStatic(path: string): Promise<Response> {
+  const distDir = join(import.meta.dir, '..', '..', 'dist', 'client');
+
+  let filePath = path === '/' ? '/index.html' : path;
+  const fullPath = join(distDir, filePath);
+
+  try {
+    const file = await readFile(fullPath);
+    const contentType = getContentType(filePath);
+    return new Response(file, {
+      headers: { 'Content-Type': contentType },
+    });
+  } catch {
+    // SPA fallback
+    try {
+      const indexPath = join(distDir, 'index.html');
+      const file = await readFile(indexPath);
+      return new Response(file, {
+        headers: { 'Content-Type': 'text/html' },
+      });
+    } catch {
+      return new Response('Not Found', { status: 404 });
+    }
+  }
+}
+
+function getContentType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  const types: Record<string, string> = {
+    html: 'text/html',
+    css: 'text/css',
+    js: 'application/javascript',
+    json: 'application/json',
+    png: 'image/png',
+    svg: 'image/svg+xml',
+    ico: 'image/x-icon',
+  };
+  return types[ext || ''] || 'application/octet-stream';
+}
+
+// Start server
 const server = Bun.serve({
-  port,
-  // Routes for static files and API
-  routes: {
-    // Frontend (Bun bundles HTML imports automatically)
-    '/': indexHtml,
+  port: PORT,
 
-    // WebSocket endpoint - upgrade to WebSocket
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    '/ws': (req: Request, server: any) => {
-      console.log('[WebSocket] Route handler - upgrade request')
-      const upgraded = server.upgrade(req)
-      if (upgraded) {
-        console.log('[WebSocket] Upgrade successful via route')
-        return undefined
-      }
-      console.log('[WebSocket] Upgrade failed via route')
-      return new Response('WebSocket upgrade failed', { status: 500 })
-    },
+  async fetch(req, server) {
+    const url = new URL(req.url);
 
-    // API Routes - delegate to Hono for middleware (logger, cors)
-    '/api/*': {
-      GET: (req: Request) => app.fetch(req),
-      POST: (req: Request) => app.fetch(req),
-      PUT: (req: Request) => app.fetch(req),
-      PATCH: (req: Request) => app.fetch(req),
-      DELETE: (req: Request) => app.fetch(req),
-      OPTIONS: (req: Request) => app.fetch(req),
-    },
-  },
-  // Fallback fetch handler for WebSocket and SPA routes
-  fetch(req, server) {
-    const url = new URL(req.url)
-    console.log(`[fetch] ${req.method} ${url.pathname}`)
-
-    // WebSocket upgrade for /ws path
+    // WebSocket upgrade
     if (url.pathname === '/ws') {
-      console.log('[WebSocket] Upgrade request received')
-      const success = server.upgrade(req)
-      if (success) {
-        console.log('[WebSocket] Upgrade successful')
-        return undefined // Upgrade successful
-      }
-      console.log('[WebSocket] Upgrade failed')
-      return new Response('WebSocket upgrade failed', { status: 500 })
+      const success = server.upgrade(req);
+      if (success) return undefined;
+      return new Response('WebSocket upgrade failed', { status: 400 });
     }
 
-    // SPA catch-all - serve the same HTML for client-side routing
-    return new Response(Bun.file('./public/index.html'), {
-      headers: { 'Content-Type': 'text/html' },
-    })
+    // API endpoints
+    if (url.pathname === '/api/sessions') {
+      const projectId = url.searchParams.get('projectId');
+      const sessions = projectId
+        ? ptyManager.getSessionsByProject(projectId)
+        : ptyManager.getAllSessions();
+      return Response.json({ sessions });
+    }
+
+    if (url.pathname === '/api/commands') {
+      return Response.json({ commands: commandCatalog.getCommands() });
+    }
+
+    if (url.pathname === '/api/commands/reload' && req.method === 'POST') {
+      const commands = await commandCatalog.reload();
+      return Response.json({ success: true, count: commands.length });
+    }
+
+    if (url.pathname === '/api/projects') {
+      if (req.method === 'GET') {
+        await ensureDiscoveredProjects();
+        return Response.json(projectsData);
+      }
+      if (req.method === 'POST') {
+        const body = await req.json() as { action: string; project?: Project; projectId?: string };
+        if (body.action === 'add' && body.project) {
+          const newProject: Project = {
+            ...body.project,
+            id: `proj_${Date.now()}`,
+            isActive: false,
+          };
+          projectsData.projects.push(newProject);
+          const newParser = new PlansParser(newProject.plansPath);
+          plansParsers.set(newProject.id, newParser);
+          setupPlansParserCallback(newProject.id, newParser);
+          // Start watching the new project's Plans.md
+          newParser.startWatching();
+          console.log(`Started watching Plans.md for project ${newProject.id}`);
+          return Response.json({ success: true, project: newProject });
+        }
+        if (body.action === 'activate' && body.projectId) {
+          projectsData.projects.forEach(p => p.isActive = p.id === body.projectId);
+          projectsData.activeProjectId = body.projectId;
+          syncActiveProjectSettings(body.projectId);
+          ensurePlansParser(body.projectId);
+          return Response.json({ success: true });
+        }
+        if (body.action === 'remove' && body.projectId) {
+          projectsData.projects = projectsData.projects.filter(p => p.id !== body.projectId);
+          plansParsers.delete(body.projectId);
+          if (projectsData.activeProjectId === body.projectId) {
+            projectsData.activeProjectId = projectsData.projects[0]?.id || null;
+          }
+          syncActiveProjectSettings(projectsData.activeProjectId);
+          return Response.json({ success: true });
+        }
+        return Response.json({ error: 'Invalid action' }, { status: 400 });
+      }
+    }
+
+    if (url.pathname === '/api/plans') {
+      const projectId = url.searchParams.get('projectId');
+      const projectPath = url.searchParams.get('projectPath');
+      let parser: PlansParser | undefined;
+
+      if (projectId) {
+        // Find project by ID (preferred)
+        parser = ensurePlansParser(projectId);
+      } else if (projectPath) {
+        // Find project by path (fallback)
+        const project = projectsData.projects.find(p => p.path === projectPath);
+        if (project) {
+          parser = ensurePlansParser(project.id);
+        }
+      } else {
+        // Use active project
+        parser = getActivePlansParser();
+      }
+
+      if (!parser) {
+        return Response.json({ sections: [], summary: { total: 0, pending: 0, inProgress: 0, completed: 0, blocked: 0, progressPercent: 0 } });
+      }
+      const data = await parser.parse();
+      return Response.json(data);
+    }
+
+    if (url.pathname === '/api/settings') {
+      if (req.method === 'GET') {
+        const settings = ptyManager.getSettings();
+        // Include current commands path
+        settings.commands = {
+          corePath: commandCatalog.getCommandsPath(),
+        };
+        return Response.json(settings);
+      }
+      if (req.method === 'POST') {
+        const body = await req.json();
+        ptyManager.setSettings(body);
+        // Apply commands path if provided
+        if (body.commands?.corePath) {
+          commandCatalog.setCommandsPath(body.commands.corePath);
+          await commandCatalog.reload();
+        }
+        return Response.json({ success: true });
+      }
+    }
+
+    // Static files
+    return serveStatic(url.pathname);
   },
-  // WebSocket support for tool approval UI
+
   websocket: {
     open(ws) {
-      console.log('[WebSocket] Client connected')
+      clients.add(ws as unknown as WebSocket);
+
+      // Send initial data
+      const sessions = ptyManager.getAllSessions();
+      ws.send(
+        JSON.stringify({
+          type: 'sessions_list',
+          payload: { sessions },
+        } as WSMessage<SessionsListPayload>)
+      );
     },
+
     message(ws, message) {
-      try {
-        const data = JSON.parse(message.toString())
-
-        // Handle session registration
-        if (data.type === 'register_session') {
-          const sessionId = data.sessionId
-          wsSessionMap.set(ws, sessionId)
-          registerWsConnection(sessionId, (msg) => {
-            ws.send(JSON.stringify(msg))
-          })
-          ws.send(JSON.stringify({ type: 'registered', sessionId }))
-          console.log(`[WebSocket] Session registered: ${sessionId}`)
-        }
-
-        // Handle tool approval response
-        if (data.type === 'tool_approval_response') {
-          const sessionId = wsSessionMap.get(ws)
-          const success = submitToolApproval({
-            sessionId: sessionId || data.sessionId,
-            toolUseId: data.toolUseId,
-            decision: data.decision,
-            reason: data.reason,
-            modifiedInput: data.modifiedInput,
-          })
-          console.log(`[WebSocket] Tool approval submitted: ${data.toolUseId} -> ${data.decision} (success: ${success})`)
-        }
-      } catch (error) {
-        console.error('[WebSocket] Message parse error:', error)
-      }
+      handleMessage(ws as unknown as WebSocket, message.toString());
     },
+
     close(ws) {
-      const sessionId = wsSessionMap.get(ws)
-      if (sessionId) {
-        unregisterWsConnection(sessionId)
-        wsSessionMap.delete(ws)
-        console.log(`[WebSocket] Session unregistered: ${sessionId}`)
-      }
-      console.log('[WebSocket] Client disconnected')
+      clients.delete(ws as unknown as WebSocket);
     },
   },
-  development: {
-    hmr: true,
-    console: true,
+});
+
+// Start watching Plans.md for all projects
+for (const [id, parser] of plansParsers) {
+  parser.startWatching();
+  console.log(`Watching Plans.md for project ${id}`);
+}
+
+console.log(`Harness UI Server running on http://localhost:${PORT}`);
+console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
+console.log(`Watching Plans.md at: ${DEFAULT_PLANS_PATH}`);
+
+// Cleanup on exit
+process.on('SIGINT', () => {
+  console.log('\nShutting down...');
+  for (const [, parser] of plansParsers) {
+    parser.stopWatching();
   }
-})
-
-console.log(`Server running at ${server.url}`)
-
-// Export for testing (don't export fetch directly to avoid Bun auto-serve)
-export { app, port }
-export const apiRouter = app
+  ptyManager.destroy();
+  process.exit(0);
+});

@@ -1,38 +1,24 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "ESNext",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
-
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "types": ["bun-types"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@server/*": ["./src/server/*"],
-      "@client/*": ["./src/client/*"],
-      "@shared/*": ["./src/shared/*"]
-    },
-    "baseUrl": "."
+      "@shared/*": ["src/shared/*"],
+      "@client/*": ["src/client/*"],
+      "@server/*": ["src/server/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

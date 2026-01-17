@@ -1,33 +1,60 @@
-import { useState, useEffect, useCallback } from 'react'
-import type { KanbanResponse, WorkflowMode } from '../../shared/types.ts'
-import { fetchPlans } from '../lib/api.ts'
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { PlansData } from '@shared/types';
 
-/**
- * Plans データを取得するフック
- * @param mode - ワークフローモード（solo または 2agent）
- * @param projectPath - オプションのプロジェクトパス（指定しない場合はアクティブプロジェクト）
- */
-export function usePlans(mode: WorkflowMode = 'solo', projectPath?: string) {
-  const [plans, setPlans] = useState<KanbanResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+const emptyPlans: PlansData = {
+  sections: [],
+  summary: {
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    blocked: 0,
+    progressPercent: 0,
+  },
+};
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+interface UsePlansOptions {
+  projectId?: string | null;
+}
+
+export function usePlans(options: UsePlansOptions = {}) {
+  const { projectId } = options;
+  const [plans, setPlans] = useState<PlansData>(emptyPlans);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const currentProjectId = useRef<string | null | undefined>(projectId);
+
+  const fetchPlans = useCallback(async (pid?: string | null) => {
     try {
-      const data = await fetchPlans(mode, projectPath)
-      setPlans(data)
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Unknown error'))
+      setLoading(true);
+      const queryParam = pid ? `?projectId=${encodeURIComponent(pid)}` : '';
+      const res = await fetch(`/api/plans${queryParam}`);
+      if (!res.ok) throw new Error('Failed to fetch plans');
+      const data = await res.json();
+      setPlans(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [mode, projectPath])
+  }, []);
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    fetchPlans(projectId);
+    currentProjectId.current = projectId;
+  }, [projectId, fetchPlans]);
 
-  return { plans, loading, error, refresh }
+  const updatePlans = useCallback((data: PlansData) => {
+    // Only update if this is for the current project or no projectId filter
+    if (!currentProjectId.current || data.projectId === currentProjectId.current) {
+      setPlans(data);
+    }
+  }, []);
+
+  const refetch = useCallback(() => {
+    return fetchPlans(currentProjectId.current);
+  }, [fetchPlans]);
+
+  return { plans, loading, error, updatePlans, refetch };
 }

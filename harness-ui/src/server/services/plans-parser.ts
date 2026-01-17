@@ -1,306 +1,159 @@
-import type { Task, KanbanResponse, TaskSource } from '../../shared/types.ts'
+import type { PlansData, PlanSection, TaskStatus } from '@shared/types';
+import { readFile, watch } from 'fs/promises';
 
-/**
- * Workflow mode configuration
- * - solo: Single agent mode (cc:完了 = done)
- * - 2agent: PM + Implementation mode (cc:完了 = review, pm:確認済 = done)
- */
-export type WorkflowMode = 'solo' | '2agent'
+export class PlansParser {
+  private plansPath: string;
+  private cached: PlansData | null = null;
+  private onUpdate: ((data: PlansData) => void) | null = null;
+  private watcher: AsyncIterable<{ eventType: string }> | null = null;
+  private watcherActive = false;
 
-interface ParsedTask {
-  title: string
-  completed: boolean
-  priority?: 'high' | 'medium' | 'low'
-  marker?: string
-  /** Line number in source file (1-based) */
-  lineNumber?: number
-  /** Original line content */
-  originalLine?: string
-}
-
-/**
- * Parse a single task line from markdown
- */
-export function parseTaskLine(line: string): ParsedTask | null {
-  // Match checkbox task pattern: - [ ] or - [x]
-  const taskMatch = line.match(/^\s*-\s*\[([ xX])\]\s*(.+)$/)
-  if (!taskMatch) return null
-
-  const completed = taskMatch[1]?.toLowerCase() === 'x'
-  let title = taskMatch[2]?.trim() ?? ''
-
-  // Check for priority markers
-  let priority: 'high' | 'medium' | 'low' | undefined
-
-  if (title.includes('🔴')) {
-    priority = 'high'
-    title = title.replace('🔴', '').trim()
-  } else if (title.includes('🟡')) {
-    priority = 'medium'
-    title = title.replace('🟡', '').trim()
-  } else if (title.includes('🟢')) {
-    priority = 'low'
-    title = title.replace('🟢', '').trim()
+  constructor(plansPath: string) {
+    this.plansPath = plansPath;
   }
 
-  // Extract marker (cc:TODO, cc:WIP, cc:完了, etc.)
-  const markerMatch = title.match(/`(cc:|pm:|cursor:)(\S+)`/)
-  const marker = markerMatch ? `${markerMatch[1]}${markerMatch[2]}` : undefined
-
-  // Clean up marker from title
-  if (marker) {
-    title = title.replace(/`(cc:|pm:|cursor:)\S+`/g, '').trim()
+  setUpdateCallback(callback: (data: PlansData) => void): void {
+    this.onUpdate = callback;
   }
 
-  return { title, completed, priority, marker }
-}
+  private parseMarkerToStatus(marker: string | undefined): TaskStatus {
+    if (!marker) return 'pending';
 
-/**
- * Extract tasks from a section's content
- */
-export function extractTasks(content: string, status: Task['status']): Task[] {
-  const lines = content.split('\n')
-  const tasks: Task[] = []
-
-  for (const line of lines) {
-    const parsed = parseTaskLine(line)
-    if (parsed) {
-      tasks.push({
-        id: generateId(),
-        title: parsed.title,
-        status,
-        priority: parsed.priority
-      })
-    }
+    const lower = marker.toLowerCase();
+    if (lower.includes('wip') || lower.includes('in_progress')) return 'in_progress';
+    if (lower.includes('done') || lower.includes('completed') || lower.includes('complete'))
+      return 'completed';
+    if (lower.includes('blocked')) return 'blocked';
+    return 'pending';
   }
 
-  return tasks
-}
+  private parseContent(content: string): PlansData {
+    const lines = content.split('\n');
+    const sections: PlanSection[] = [];
+    let currentSection: PlanSection | null = null;
+    let taskIdCounter = 0;
 
-/**
- * Extract tasks from marker-based format
- *
- * Marker mapping by mode:
- * - solo mode: cc:TODO -> plan, cc:WIP -> work, cc:完了 -> done
- * - 2agent mode: cc:TODO -> plan, cc:WIP -> work, cc:完了 -> review, pm:確認済 -> done
- */
-export function extractMarkerTasks(markdown: string, mode: WorkflowMode = 'solo', filePath?: string): KanbanResponse {
-  const result: KanbanResponse = {
-    plan: [],
-    work: [],
-    review: [],
-    done: []
-  }
-
-  const lines = markdown.split('\n')
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
-    const lineNumber = i + 1 // 1-based line number
-    const parsed = parseTaskLine(line)
-
-    if (parsed && parsed.marker) {
-      let status: Task['status']
-
-      // Map markers to status based on workflow mode
-      // Support both new format (cc:, pm:) and old format (cursor:)
-      if (parsed.marker.includes('TODO') || parsed.marker.includes('依頼中')) {
-        status = 'plan'
-      } else if (parsed.marker.includes('WIP') || parsed.marker.includes('作業中') || parsed.marker.includes('WORK') || parsed.marker.includes('IN_PROGRESS')) {
-        status = 'work'
-      } else if (parsed.marker.includes('完了') || parsed.marker.includes('DONE')) {
-        // In solo mode, cc:完了 means done (no PM review needed)
-        // In 2agent mode, cc:完了 means review (waiting for PM confirmation)
-        // Note: cursor:完了 (old format) is treated the same as pm:確認済 (PM approved)
-        if (parsed.marker.startsWith('cursor:')) {
-          // Old cursor:完了 means PM approved = done
-          status = 'done'
-        } else {
-          status = mode === 'solo' ? 'done' : 'review'
+    for (const line of lines) {
+      // Section header (## Title)
+      const sectionMatch = line.match(/^##\s+(.+)/);
+      if (sectionMatch) {
+        if (currentSection) {
+          sections.push(currentSection);
         }
-      } else if (parsed.marker.includes('確認済') || parsed.marker.includes('承認')) {
-        status = 'done'
-      } else {
-        // Default based on checkbox state
-        status = parsed.completed ? 'done' : 'plan'
+        currentSection = {
+          title: sectionMatch[1].trim(),
+          tasks: [],
+        };
+        continue;
       }
 
-      // Build source information for safe updates
-      const source: TaskSource = {
-        lineNumber,
-        originalLine: line,
-        marker: parsed.marker,
-        filePath
-      }
+      // Task line (- [ ] task or - [x] task or - task with marker)
+      const taskMatch = line.match(/^[-*]\s+\[([x\s])\]\s*(.+)/i);
+      const markerTaskMatch = line.match(
+        /^[-*]\s+(?:`([^`]+)`\s+)?(.+)/
+      );
 
-      result[status].push({
-        id: generateId(),
-        title: parsed.title,
-        status,
-        priority: parsed.priority,
-        source
-      })
-    }
-  }
+      if (taskMatch && currentSection) {
+        const isCompleted = taskMatch[1].toLowerCase() === 'x';
+        const content = taskMatch[2].trim();
+        const markerMatch = content.match(/`([^`]+)`/);
+        const marker = markerMatch?.[1];
+        const cleanContent = content.replace(/`[^`]+`\s*/g, '').trim();
 
-  return result
-}
+        currentSection.tasks.push({
+          id: `task_${++taskIdCounter}`,
+          content: cleanContent,
+          status: isCompleted ? 'completed' : this.parseMarkerToStatus(marker),
+          marker,
+        });
+      } else if (markerTaskMatch && currentSection && !line.match(/^#+/)) {
+        const marker = markerTaskMatch[1];
+        const content = markerTaskMatch[2].trim();
 
-/**
- * Parse Plans.md markdown content into KanbanResponse
- *
- * Parsing strategy (Marker-First Approach):
- * 1. First, scan ALL lines and extract tasks with markers (cc:TODO, cc:WIP, cc:完了, etc.)
- * 2. Then, for tasks WITHOUT markers inside known sections, apply section's default status
- * 3. Merge results (marker-based takes precedence)
- *
- * This approach supports both:
- * - Custom section names like "## フェーズ10: ..." with marker-based tasks
- * - Standard section names like "## 🔴 進行中のタスク" with section-based status
- *
- * @param markdown - The markdown content to parse
- * @param mode - Workflow mode: 'solo' (default) or '2agent'
- * @param filePath - Optional file path for source tracking
- */
-export function parsePlansMarkdown(markdown: string, mode: WorkflowMode = 'solo', filePath?: string): KanbanResponse {
-  const result: KanbanResponse = {
-    plan: [],
-    work: [],
-    review: [],
-    done: []
-  }
-
-  if (!markdown || markdown.trim() === '') {
-    return {
-      ...result,
-      error: 'Plans.md が空です'
-    }
-  }
-
-  // Step 1: Extract ALL marker-based tasks from the entire document
-  // This is the primary source of truth for task status
-  const markerResult = extractMarkerTasks(markdown, mode, filePath)
-  const markerTaskTitles = new Set<string>()
-
-  // Collect titles of marker-based tasks to avoid duplicates
-  for (const status of ['plan', 'work', 'review', 'done'] as const) {
-    for (const task of markerResult[status]) {
-      markerTaskTitles.add(task.title.toLowerCase().trim())
-      result[status].push(task)
-    }
-  }
-
-  // Step 2: Also extract section-based tasks WITHOUT markers
-  // These will use the section header to determine status
-  const sectionPatterns: Record<Task['status'], RegExp[]> = {
-    plan: [
-      /^##\s*Plan/i,
-      /^##\s*計画/,
-      /^##\s*未着手/,
-      /^##\s*🟡\s*未着手/,
-      /^##\s*次に着手/,
-      /^##\s*TODO/i
-    ],
-    work: [
-      /^##\s*Work/i,
-      /^##\s*作業中/,
-      /^##\s*In\s*Progress/i,
-      /^##\s*進行中/,
-      /^##\s*🔴\s*進行中/
-    ],
-    review: [
-      /^##\s*Review/i,
-      /^##\s*レビュー/,
-      /^##\s*確認待ち/
-    ],
-    done: [
-      /^##\s*Done/i,
-      /^##\s*完了/,
-      /^##\s*Completed/i,
-      /^##\s*直近完了/,
-      /^##\s*🟢\s*完了/
-    ]
-  }
-
-  const lines = markdown.split('\n')
-  let currentSection: Task['status'] | null = null
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
-    const lineNumber = i + 1 // 1-based line number
-
-    // Check if this line is a known section header
-    let matchedSection: Task['status'] | null = null
-
-    for (const [section, patterns] of Object.entries(sectionPatterns)) {
-      for (const pattern of patterns) {
-        if (pattern.test(line)) {
-          matchedSection = section as Task['status']
-          break
+        // Skip non-task lines (headers, empty markers)
+        if (content && !content.startsWith('#')) {
+          currentSection.tasks.push({
+            id: `task_${++taskIdCounter}`,
+            content,
+            status: this.parseMarkerToStatus(marker),
+            marker,
+          });
         }
       }
-      if (matchedSection) break
     }
 
-    if (matchedSection) {
-      currentSection = matchedSection
-      continue
-    }
-
-    // If we're in a known section, check for tasks WITHOUT markers
     if (currentSection) {
-      const parsed = parseTaskLine(line)
-      if (parsed && !parsed.marker) {
-        // This task has no marker, so use section's status
-        const normalizedTitle = parsed.title.toLowerCase().trim()
+      sections.push(currentSection);
+    }
 
-        // Skip if we already have this task from marker-based extraction
-        if (!markerTaskTitles.has(normalizedTitle)) {
-          // Build source information for safe updates
-          const source: TaskSource = {
-            lineNumber,
-            originalLine: line,
-            filePath
+    // Calculate summary
+    const allTasks = sections.flatMap((s) => s.tasks);
+    const summary = {
+      total: allTasks.length,
+      pending: allTasks.filter((t) => t.status === 'pending').length,
+      inProgress: allTasks.filter((t) => t.status === 'in_progress').length,
+      completed: allTasks.filter((t) => t.status === 'completed').length,
+      blocked: allTasks.filter((t) => t.status === 'blocked').length,
+      progressPercent:
+        allTasks.length > 0
+          ? Math.round(
+              (allTasks.filter((t) => t.status === 'completed').length / allTasks.length) * 100
+            )
+          : 0,
+    };
+
+    return { sections, summary };
+  }
+
+  async parse(): Promise<PlansData> {
+    try {
+      const content = await readFile(this.plansPath, 'utf-8');
+      this.cached = this.parseContent(content);
+      return this.cached;
+    } catch (error) {
+      console.error(`Failed to parse Plans.md: ${error}`);
+      return {
+        sections: [],
+        summary: {
+          total: 0,
+          pending: 0,
+          inProgress: 0,
+          completed: 0,
+          blocked: 0,
+          progressPercent: 0,
+        },
+      };
+    }
+  }
+
+  getCached(): PlansData | null {
+    return this.cached;
+  }
+
+  async startWatching(): Promise<void> {
+    if (this.watcherActive) return;
+
+    this.watcherActive = true;
+
+    try {
+      const watcher = watch(this.plansPath);
+      this.watcher = watcher;
+      for await (const event of watcher) {
+        if (!this.watcherActive) break;
+        if (event.eventType === 'change') {
+          const data = await this.parse();
+          if (this.onUpdate) {
+            this.onUpdate(data);
           }
-
-          result[currentSection].push({
-            id: generateId(),
-            title: parsed.title,
-            status: currentSection,
-            priority: parsed.priority,
-            source
-          })
-          markerTaskTitles.add(normalizedTitle)
         }
       }
+    } catch (error) {
+      console.error(`Plans.md watch error: ${error}`);
+      this.watcherActive = false;
     }
   }
 
-  // Check if we found any tasks at all
-  const totalTaskCount = result.plan.length + result.work.length + result.review.length + result.done.length
-
-  if (totalTaskCount === 0) {
-    return {
-      ...result,
-      error: 'Plans.md にタスクが見つかりません。チェックボックス形式（- [ ] タスク名）でタスクを記載してください。マーカー（`cc:TODO`等）を付けると状態が明確になります。'
-    }
+  stopWatching(): void {
+    this.watcherActive = false;
   }
-
-  return result
-}
-
-/**
- * Generate a unique ID for a task
- */
-let idCounter = 0
-function generateId(): string {
-  idCounter++
-  return `task-${Date.now()}-${idCounter}`
-}
-
-/**
- * Reset ID counter (useful for testing)
- */
-export function resetIdCounter(): void {
-  idCounter = 0
 }
