@@ -192,6 +192,61 @@
         }
       },
       "default": {}
+    },
+    "orchestration": {
+      "type": "object",
+      "description": "Deterministic orchestration settings / 決定論的オーケストレーション設定",
+      "properties": {
+        "state_machine_version": {
+          "type": "string",
+          "default": "v1",
+          "description": "Version tag for the session state machine specification"
+        },
+        "max_state_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 3,
+          "description": "Max retries per state before escalation"
+        },
+        "retry_backoff_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 600,
+          "default": 10,
+          "description": "Backoff seconds between state retries"
+        }
+      },
+      "default": {}
+    },
+    "session": {
+      "type": "object",
+      "description": "Session persistence and resume/fork settings",
+      "properties": {
+        "snapshot_path": {
+          "type": "string",
+          "default": ".claude/state/session.json",
+          "description": "Path to the session snapshot file"
+        },
+        "event_log_path": {
+          "type": "string",
+          "default": ".claude/state/session.events.jsonl",
+          "description": "Path to the session event log (JSONL)"
+        },
+        "resume_policy": {
+          "type": "string",
+          "enum": ["auto", "manual", "disabled"],
+          "default": "auto",
+          "description": "Resume behavior when a previous session is detected"
+        },
+        "fork_policy": {
+          "type": "string",
+          "enum": ["manual", "auto_on_conflict", "disabled"],
+          "default": "manual",
+          "description": "Fork behavior when conflicting state is detected"
+        }
+      },
+      "default": {}
     }
   },
   "additionalProperties": false
