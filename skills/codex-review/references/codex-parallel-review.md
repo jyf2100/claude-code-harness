@@ -71,6 +71,12 @@ mcp__codex__codex({prompt: quality-expert.md の内容})
 
 ## 実行フロー
 
+### Step 0: 残コンテキスト確認
+
+Codex 並列レビューの前に**残コンテキストが 30%以下なら /compact を実行**してください。
+
+> **注意**: /compact 後も余裕が少ない場合はそのまま Step 1 に進みます。
+
 ### Step 1: 設定確認
 
 ```yaml

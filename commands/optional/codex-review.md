@@ -70,6 +70,12 @@ claude mcp add --scope user codex -- codex mcp-server
 
 ## 実行フロー
 
+### Step 0: 残コンテキスト確認
+
+Codex レビューの前に**残コンテキストが 30%以下なら /compact を実行してから続行**してください。
+
+> **注意**: /compact 後も余裕が少ない場合はそのまま続行します。
+
 ### Step 1: Codex 環境確認 & バージョンチェック
 
 ```bash
