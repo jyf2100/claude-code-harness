@@ -78,11 +78,29 @@ skill_exists() {
     return 0
   fi
 
+  # skills/**/references/ 配下に参照スキルとして存在するか
+  if [ -f "$PROJECT_ROOT/skills/$skill_name.md" ]; then
+    return 0
+  fi
+  if [ -f "$PROJECT_ROOT/skills/$skill_name/references/$skill_name.md" ]; then
+    return 0
+  fi
+  for parent_dir in "$PROJECT_ROOT/skills"/*; do
+    if [ -f "$parent_dir/references/$skill_name.md" ]; then
+      return 0
+    fi
+  done
+
   # スキル名がハイフン区切りの場合、親スキルの存在を確認
   # 例: "ask-project-type" → "setup" 親スキルの下に存在
   local parent_skill
   parent_skill=$(echo "$skill_name" | cut -d'-' -f1)
   if [ -d "$PROJECT_ROOT/skills/$parent_skill/$skill_name" ]; then
+    return 0
+  fi
+
+  # frontmatter の name: で定義されているか（参照スキル含む）
+  if grep -R --include="*.md" -n "name: $skill_name" "$PROJECT_ROOT/skills" "$PROJECT_ROOT/agents" >/dev/null 2>&1; then
     return 0
   fi
 
