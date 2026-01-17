@@ -55,6 +55,16 @@ Plans.md の計画を実行し、実際のコードを生成します。
 
 ### セッション再開/分岐
 
+**セッション一覧の確認**:
+```bash
+# CLI: アーカイブディレクトリを確認
+ls -la .claude/state/sessions/
+
+# UI: harness-ui のWorkページでセッション一覧を確認
+# → Session Archives テーブルから resume/fork コマンドをコピー可能
+```
+
+**再開/分岐コマンド**:
 ```bash
 # 最新の停止セッションを再開
 /work --resume latest
@@ -64,6 +74,18 @@ Plans.md の計画を実行し、実際のコードを生成します。
 
 # 現在セッションから分岐
 /work --fork current --reason "試行版を別で進める"
+
+# 特定セッションから分岐
+/work --fork session-1700000000 --reason "別アプローチを試す"
+```
+
+**セッション状態の確認**:
+```bash
+# 現在のセッション状態
+cat .claude/state/session.json | jq '.state, .session_id'
+
+# イベント履歴
+tail -20 .claude/state/session.events.jsonl
 ```
 
 ### --full モードのフロー
