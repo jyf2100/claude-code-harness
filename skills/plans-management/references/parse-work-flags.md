@@ -1,6 +1,6 @@
 ---
 name: parse-work-flags
-description: "Parse /work command flags from user_prompt. Extracts --full, --parallel, --isolation, --commit-strategy, --deploy, --max-iterations, --skip-cross-review options."
+description: "Parse /work command flags from user_prompt. Extracts --full, --parallel, --isolation, --commit-strategy, --deploy, --max-iterations, --skip-cross-review, --resume, --fork options."
 allowed-tools: ["Read"]
 ---
 
@@ -29,7 +29,11 @@ allowed-tools: ["Read"]
   "commit_strategy": "task",
   "deploy_after_commit": false,
   "max_iterations": 3,
-  "skip_cross_review": false
+  "skip_cross_review": false,
+  "resume_session_id": "",
+  "resume_latest": false,
+  "fork_session_id": "",
+  "fork_reason": ""
 }
 ```
 
@@ -76,6 +80,22 @@ allowed-tools: ["Read"]
 - デフォルト: `false`
 - 出力: `skip_cross_review: true`
 
+### `--resume <session_id|latest>`
+- 検出: `--resume`の後にIDまたは`latest`が続く
+- パターン: `--resume\\s+(\\S+)` または `--resume=(\\S+)`
+- デフォルト: `""`
+- 出力:
+  - `resume_session_id: <id>`（`latest`の場合は空）
+  - `resume_latest: true`（`latest`の場合）
+
+### `--fork <session_id|current> --reason <text>`
+- 検出: `--fork`の後にIDまたは`current`が続く
+- パターン: `--fork\\s+(\\S+)` または `--fork=(\\S+)`
+- デフォルト: `""`
+- 出力:
+  - `fork_session_id: <id>`（`current`の場合は空）
+  - `fork_reason: "<text>"`（省略時は空）
+
 ---
 
 ## 実行手順
@@ -100,7 +120,11 @@ const flags = {
   commit_strategy: extractString(user_prompt, /--commit-strategy[\s=]+(task|phase|all)/) || "task",
   deploy_after_commit: /--deploy/.test(user_prompt),
   max_iterations: extractNumber(user_prompt, /--max-iterations[\s=]+(\d+)/) || 3,
-  skip_cross_review: /--skip-cross-review/.test(user_prompt)
+  skip_cross_review: /--skip-cross-review/.test(user_prompt),
+  resume_session_id: extractString(user_prompt, /--resume[\s=]+(\S+)/) || "",
+  resume_latest: /--resume[\s=]+latest/.test(user_prompt),
+  fork_session_id: extractString(user_prompt, /--fork[\s=]+(\S+)/) || "",
+  fork_reason: extractString(user_prompt, /--reason[\s=]+(.+)/) || ""
 };
 ```
 
@@ -142,6 +166,10 @@ output:
   deploy_after_commit: false
   max_iterations: 3
   skip_cross_review: false
+  resume_session_id: ""
+  resume_latest: false
+  fork_session_id: ""
+  fork_reason: ""
 ```
 
 ### 例2: 並列実行指定

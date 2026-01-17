@@ -95,6 +95,11 @@
 - **PostToolUse**: 重要Eventのみ記録（Write/Edit/Task/Skill/Bashの結果）
 - **Stop**: `session.stop` 記録 + Snapshot更新
 
+### セッションログ簡易メモ
+- Snapshot: `.claude/state/session.json`（最新状態）
+- Event Log: `.claude/state/session.events.jsonl`（追記履歴）
+- Archive: `.claude/state/sessions/{session_id}.json` と `.events.jsonl`
+
 ## Resume / Fork の契約
 ### Resume
 入力:
@@ -132,6 +137,10 @@
 - `session.event_log_path`
 - `session.resume_policy`
 - `session.fork_policy`
+
+## 運用メモ（変更整理）
+本仕様はセッション系の変更に限定する。作業ツリーに残る無関係な変更は自動整理しない。
+必要なら別コミットで明示的に切り分ける。
 
 ## 既存フローとの対応
 `/work --full` Phase1-4 は `executing → reviewing → verifying → completed` に対応させる。

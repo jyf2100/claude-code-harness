@@ -15,6 +15,8 @@ Plans.md の計画を実行し、実際のコードを生成します。
 - 「**全部まとめてやって**」→ 並列実行で一気に処理します
 - 「**途中から再開したい**」→ 進行中（cc:WIP）や依頼中（pm:依頼中）を拾って再開
 - 「**フルサイクルで**」→ `--full` モード（実装→レビュー→commit）
+- 「**セッションを再開**」→ `--resume <id|latest>`（履歴セッションを復元）
+- 「**セッションを分岐**」→ `--fork <id|current> --reason "<text>"`
 
 ## できること（成果物）
 
@@ -40,6 +42,9 @@ Plans.md の計画を実行し、実際のコードを生成します。
 | `--deploy` | commit 後に deploy | false |
 | `--max-iterations` | 改善ループ上限 | 3 |
 | `--skip-cross-review` | Phase 2 スキップ | false |
+| `--resume <id|latest>` | セッション再開 | - |
+| `--fork <id|current>` | セッション分岐 | - |
+| `--reason "<text>"` | 分岐理由（--fork時） | - |
 
 ### --isolation オプション
 
@@ -47,6 +52,19 @@ Plans.md の計画を実行し、実際のコードを生成します。
 |-----|------|------|
 | `lock` | 同一worktree + ファイルロック | 小〜中規模タスク |
 | `worktree` | git worktree分離 + pnpmで容量節約 | 大規模タスク、真の並列ビルド |
+
+### セッション再開/分岐
+
+```bash
+# 最新の停止セッションを再開
+/work --resume latest
+
+# 特定セッションIDを再開
+/work --resume session-1700000000
+
+# 現在セッションから分岐
+/work --fork current --reason "試行版を別で進める"
+```
 
 ### --full モードのフロー
 

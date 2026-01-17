@@ -32,6 +32,22 @@ steps:
         - deploy_after_commit
         - max_iterations
         - skip_cross_review
+        - resume_session_id
+        - resume_latest
+        - fork_session_id
+        - fork_reason
+    mode: required
+
+  # Step 1.6: セッション再開/分岐制御（指定時のみ）
+  - id: session-control
+    skill: session-control
+    condition: "resume_latest == true || resume_session_id != '' || fork_session_id != '' || fork_reason != ''"
+    input:
+      variables:
+        - resume_session_id
+        - resume_latest
+        - fork_session_id
+        - fork_reason
     mode: required
 
   # Step 2: 実行対象タスクの特定

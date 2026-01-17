@@ -16,6 +16,7 @@ STATE_FILE="$STATE_DIR/session.json"
 TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
 EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 PLANS_FILE="Plans.md"
+CONFIG_FILE=".claude-code-harness.config.yaml"
 
 # ================================
 # ヘルパー関数
@@ -85,6 +86,20 @@ else
   TODO_COUNT="0"
   PENDING_COUNT="0"
   COMPLETED_COUNT="0"
+fi
+
+# Orchestration 設定の読み取り（簡易パース）
+ORCH_MAX_RETRIES="3"
+ORCH_BACKOFF="10"
+if [ -f "$CONFIG_FILE" ]; then
+  max_retries_line=$(grep -E "max_state_retries:" "$CONFIG_FILE" 2>/dev/null | head -n 1 || true)
+  backoff_line=$(grep -E "retry_backoff_seconds:" "$CONFIG_FILE" 2>/dev/null | head -n 1 || true)
+  if [ -n "$max_retries_line" ]; then
+    ORCH_MAX_RETRIES=$(echo "$max_retries_line" | sed 's/.*: *//' | tr -d '"' || echo "3")
+  fi
+  if [ -n "$backoff_line" ]; then
+    ORCH_BACKOFF=$(echo "$backoff_line" | sed 's/.*: *//' | tr -d '"' || echo "10")
+  fi
 fi
 
 # 前回セッション情報
@@ -217,6 +232,8 @@ if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
        --argjson todo "$TODO_COUNT" \
        --argjson pending "$PENDING_COUNT" \
        --argjson completed "$COMPLETED_COUNT" \
+       --argjson orchestration_max_retries "$ORCH_MAX_RETRIES" \
+       --argjson orchestration_backoff "$ORCH_BACKOFF" \
        '.state_version = 1 |
         .cwd = $cwd |
         .project_name = $project |
@@ -230,7 +247,9 @@ if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
         .plans.wip_tasks = $wip |
         .plans.todo_tasks = $todo |
         .plans.pending_tasks = $pending |
-        .plans.completed_tasks = $completed' \
+        .plans.completed_tasks = $completed |
+        .orchestration.max_state_retries = $orchestration_max_retries |
+        .orchestration.retry_backoff_seconds = $orchestration_backoff' \
        "$STATE_FILE" > "$tmp_file" && mv "$tmp_file" "$STATE_FILE"
   fi
 
@@ -257,6 +276,10 @@ else
   "event_seq": 0,
   "last_event_id": "",
   "fork_count": 0,
+  "orchestration": {
+    "max_state_retries": $ORCH_MAX_RETRIES,
+    "retry_backoff_seconds": $ORCH_BACKOFF
+  },
   "cwd": "$(pwd)",
   "project_name": "$PROJECT_NAME",
   "prompt_seq": 0,
@@ -282,6 +305,16 @@ EOF
   else
     append_event "session.start" "initialized" "$CURRENT_TIME" ""
   fi
+fi
+
+# Resume / Fork 情報（表示用）
+RESUME_INFO=""
+FORK_INFO=""
+if [ "$RESUME_MODE" = "true" ]; then
+  RESUME_INFO="↩ resume: previous session continued"
+fi
+if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
+  FORK_INFO="🍴 fork: parent ${EXISTING_SESSION_ID}"
 fi
 
 # ================================
@@ -424,6 +457,14 @@ if [ -n "$LAST_SESSION_TIME" ] && [ "$LAST_SESSION_TIME" != "0" ] && [ "$LAST_SE
   NOW=$(date +%s)
   DIFF=$((NOW - LAST_SESSION_TIME))
   echo "⏰ 前回セッション: $(relative_time $DIFF)"
+fi
+
+if [ -n "$RESUME_INFO" ]; then
+  echo "$RESUME_INFO"
+fi
+
+if [ -n "$FORK_INFO" ]; then
+  echo "$FORK_INFO"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

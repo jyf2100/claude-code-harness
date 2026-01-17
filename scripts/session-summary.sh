@@ -10,6 +10,7 @@ STATE_FILE=".claude/state/session.json"
 MEMORY_DIR=".claude/memory"
 SESSION_LOG_FILE="${MEMORY_DIR}/session-log.md"
 EVENT_LOG_FILE=".claude/state/session.events.jsonl"
+ARCHIVE_DIR=".claude/state/sessions"
 CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # 状態ファイルがなければスキップ
@@ -199,6 +200,20 @@ if command -v jq >/dev/null 2>&1; then
      --arg duration "$DURATION_MINUTES" \
      '. + {ended_at: $ended_at, duration_minutes: ($duration | tonumber), memory_logged: true}' \
      "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+fi
+
+# アーカイブ保存（resume/fork 用）
+if [ -f "$STATE_FILE" ]; then
+  mkdir -p "$ARCHIVE_DIR" 2>/dev/null || true
+  if command -v jq >/dev/null 2>&1; then
+    ARCHIVE_ID=$(jq -r '.session_id // empty' "$STATE_FILE" 2>/dev/null)
+    if [ -n "$ARCHIVE_ID" ]; then
+      cp "$STATE_FILE" "$ARCHIVE_DIR/${ARCHIVE_ID}.json" 2>/dev/null || true
+      if [ -f "$EVENT_LOG_FILE" ]; then
+        cp "$EVENT_LOG_FILE" "$ARCHIVE_DIR/${ARCHIVE_ID}.events.jsonl" 2>/dev/null || true
+      fi
+    fi
+  fi
 fi
 
 exit 0

@@ -108,6 +108,10 @@ allowed-tools: [Read,Edit,Bash]
 
 ## リトライ戦略
 
+**リトライ上限の決定**:
+- `claude-code-harness.config.yaml` の `orchestration.max_state_retries` があればそれを優先
+- 未設定時はデフォルト `3`
+
 | 回数 | 戦略 |
 |------|------|
 | 1回目 | 直接的なパターンマッチ修正 |
