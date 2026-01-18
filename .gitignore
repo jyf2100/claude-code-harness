@@ -84,7 +84,9 @@ docs/claude-code-bypass-permissions-guide.md
 docs/constitution.md
 docs/update-summary-*.md
 docs/notebooklm-*.yaml
+docs/notebooklm/
 docs/x-posts-*.md
+docs/masao.md
 
 # LSP (Language Server Protocol) configuration
 .lsp.json
@@ -129,6 +131,12 @@ docs/images/image*.webp
 # マイグレーションスクリプト（一時的）
 scripts/migrate-usage-history.js
 .claude-plugin/CLAUDE.md
+
+# Local sandbox secrets
+scripts/sandbox-test/.env
+
+# Local benchmark scratch
+benchmarks/evals-v3/scripts/mcp-empty.json
 
 # リリース告知資料（ローカルのみ）
 docs/releases/
