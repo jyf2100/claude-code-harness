@@ -13,6 +13,34 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.14] - 2026-01-19
+
+### 🎯 What's Changed for You
+
+**`/codex-review` now shows real-time progress. Expert prompts optimized for token efficiency.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| MCP mode: no progress display during review | exec mode: progress visible in STDERR in real-time |
+| Expert responses in Japanese (high token cost) | English only, max 500 chars (Claude integrates in Japanese) |
+| No output limits on parallel experts | Critical/High: all, Medium/Low: max 3 each |
+
+### Changed
+
+- **Default execution mode**: MCP → exec (CLI direct) for single `/codex-review`
+  - Progress now visible in STDERR during execution
+  - Legacy MCP mode available via `execution_mode: mcp` setting
+- **Parallel experts remain MCP**: Claude's built-in parallel tool calls for efficiency
+- **Expert output constraints** (all 8 experts):
+  - English only (token savings, Claude integrates in Japanese)
+  - Max 500 chars per expert
+  - Critical/High: report all, Medium/Low: max 3 each
+  - No issues → `Score: A / No issues.`
+
+---
+
 ## [2.9.11] - 2026-01-18
 
 ### 🎯 What's Changed for You
