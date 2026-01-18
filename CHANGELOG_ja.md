@@ -7,6 +7,42 @@
 
 ## [Unreleased]
 
+---
+
+## [2.9.15] - 2026-01-19
+
+### 🎯 あなたにとって何が変わるか
+
+**hooks の実行権限問題が自動修正されます。Cursor コマンドの更新が明示的に上書き方式に（意図しないマージを防止）。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `.claude/hooks/` 内のシェルスクリプトが `chmod +x` 未設定で静かに失敗 | `/harness-init` と `/harness-update` で自動修正 |
+| `/harness-update` が旧 Cursor コマンドをマージすることがあった | Cursor コマンドはテンプレートから明示的に上書き |
+
+### Added
+
+- **hooks 権限自動修正**（`/harness-init`, `/harness-update`）
+  - Phase 4.5 / Step 6: `.claude/hooks/*.sh` に自動 `chmod +x`
+  - 権限問題による hooks の静かな失敗を防止
+- **`hooks/BEST_PRACTICES.md`**: シェルスクリプト hooks のドキュメント
+  - チェックリスト: 権限、shebang、パス検証
+  - よくある問題のトラブルシューティング
+- **`.claude/rules/github-release.md`**: リリースノートのフォーマットルール
+  - `🎯 あなたにとって何が変わるか` セクション必須
+  - Before/After テーブル必須
+
+### Changed
+
+- **Cursor コマンド更新ポリシー**（`/harness-update` 内）
+  - 「ALWAYS overwritten, never merged」を明記
+  - 「既存ファイルを読まずに更新」という指示を追加
+  - Claude が旧バージョンをマージすることを防止
+
+---
+
 ## [2.9.14] - 2026-01-19
 
 ### 🎯 あなたにとって何が変わるか

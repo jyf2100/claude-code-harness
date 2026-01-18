@@ -912,23 +912,69 @@ fi
 
 ### Step 5: Update Cursor Commands (For 2-Agent mode)
 
-Update only if `.cursor/commands/` exists:
+Update only if `.cursor/commands/` exists.
+
+**IMPORTANT: Cursor commands are ALWAYS overwritten, never merged.**
+
+Unlike other workflow files, Cursor command templates:
+- Are **not localized** (users should not modify them)
+- Should be **completely replaced** with latest plugin templates
+- Do **NOT read existing files** before updating
+
+**Update procedure**:
+
+1. **Do NOT read** existing `.cursor/commands/*.md` files
+2. **Read only** from plugin templates: `templates/cursor/commands/*.md`
+3. **Overwrite** target files completely with template content
 
 ```bash
 if [ -d .cursor/commands ]; then
   PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-  # Copy latest command templates
+  # OVERWRITE (not merge) with latest command templates
   for cmd in "$PLUGIN_PATH/templates/cursor/commands"/*.md; do
     if [ -f "$cmd" ]; then
+      # Skip CLAUDE.md (claude-mem context file)
+      [ "$(basename "$cmd")" = "CLAUDE.md" ] && continue
       cp "$cmd" .cursor/commands/
-      echo "✅ Updated: $(basename $cmd)"
+      echo "✅ Overwritten: $(basename $cmd)"
     fi
   done
 fi
 ```
 
-### Step 6: Update Version File
+**Target files** (5 commands):
+- `start-session.md` - Session start
+- `plan-with-cc.md` - Plan creation
+- `handoff-to-claude.md` - Task handoff
+- `review-cc-work.md` - Implementation review
+- `project-overview.md` - Project overview
+
+### Step 6: Hooks Permission Check (Auto-execute)
+
+**Auto-fix execution permissions for shell scripts in `.claude/hooks/`**:
+
+```bash
+# Check and fix .claude/hooks/*.sh execution permissions
+if [ -d .claude/hooks ]; then
+  FIXED_COUNT=0
+  for script in .claude/hooks/*.sh; do
+    [ -f "$script" ] || continue
+    if [ ! -x "$script" ]; then
+      chmod +x "$script"
+      echo "✅ Fixed permission: $script"
+      FIXED_COUNT=$((FIXED_COUNT + 1))
+    fi
+  done
+  if [ "$FIXED_COUNT" -gt 0 ]; then
+    echo "ℹ️ Fixed execution permissions for $FIXED_COUNT shell script(s)"
+  fi
+fi
+```
+
+**Why this matters**: Shell scripts without execution permission (`chmod +x`) will fail to run as hooks, causing silent failures or errors.
+
+### Step 7: Update Version File
 
 Update `.claude-code-harness-version` to latest:
 

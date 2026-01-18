@@ -13,6 +13,40 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.15] - 2026-01-19
+
+### 🎯 What's Changed for You
+
+**Hooks permission issues are now auto-fixed. Cursor command updates are explicitly overwritten (no more unwanted merges).**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Shell scripts in `.claude/hooks/` fail silently if missing `chmod +x` | `/harness-init` and `/harness-update` auto-fix permissions |
+| `/harness-update` may merge old Cursor commands | Cursor commands are explicitly overwritten from templates |
+
+### Added
+
+- **Hooks permission auto-fix** (`/harness-init`, `/harness-update`)
+  - Phase 4.5 / Step 6: Auto `chmod +x` for `.claude/hooks/*.sh`
+  - Prevents silent hook failures from permission issues
+- **`hooks/BEST_PRACTICES.md`**: Documentation for shell script hooks
+  - Checklist: permission, shebang, path validation
+  - Troubleshooting guide for common issues
+- **`.claude/rules/github-release.md`**: Release notes format rules
+  - Mandatory `🎯 What's Changed for You` section
+  - Before/After table requirement
+
+### Changed
+
+- **Cursor command update policy** (in `/harness-update`)
+  - Now explicitly marked as "ALWAYS overwritten, never merged"
+  - Instructions: "Do NOT read existing files before updating"
+  - Prevents Claude from merging old versions
+
+---
+
 ## [2.9.14] - 2026-01-19
 
 ### 🎯 What's Changed for You

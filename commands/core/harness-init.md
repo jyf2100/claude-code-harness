@@ -249,6 +249,30 @@ command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh"
 
 Show warning if issues exist. **No questions** (information only).
 
+### Phase 4.5: Hooks Permission Check (Auto-execute)
+
+**Auto-fix execution permissions for shell scripts in `.claude/hooks/`**:
+
+```bash
+# Check and fix .claude/hooks/*.sh execution permissions
+if [ -d .claude/hooks ]; then
+  FIXED_COUNT=0
+  for script in .claude/hooks/*.sh; do
+    [ -f "$script" ] || continue
+    if [ ! -x "$script" ]; then
+      chmod +x "$script"
+      echo "✅ Fixed permission: $script"
+      FIXED_COUNT=$((FIXED_COUNT + 1))
+    fi
+  done
+  if [ "$FIXED_COUNT" -gt 0 ]; then
+    echo "ℹ️ Fixed execution permissions for $FIXED_COUNT shell script(s)"
+  fi
+fi
+```
+
+**Why this matters**: Shell scripts without execution permission (`chmod +x`) will fail to run as hooks, causing silent failures or errors.
+
 ---
 
 ## Phase 5: Completion Report (Detailed Summary)
