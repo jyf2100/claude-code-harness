@@ -9,6 +9,27 @@
 
 ---
 
+## [2.9.16] - 2026-01-19
+
+### 🎯 あなたにとって何が変わるか
+
+**`/review-cc-work` のハンドオフ出力に `/work` コマンドが自動付与されるようになり、`/handoff-to-claude` と形式が統一されました。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| ハンドオフ出力が `## 依頼` や `## 修正依頼` から開始 | `/claude-code-harness:core:work` + `ultrathink` を冒頭に付与 |
+
+### Changed
+
+- **`/review-cc-work` ハンドオフ形式**（Cursor → Claude Code）
+  - `approve` と `request_changes` 両方の出力に `/work` コマンドを追加
+  - `/handoff-to-claude` と同じ形式に統一
+  - Claude Code に貼り付け後、即座に `/work` が実行可能に
+
+---
+
 ## [2.9.15] - 2026-01-19
 
 ### 🎯 あなたにとって何が変わるか

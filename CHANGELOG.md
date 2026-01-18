@@ -13,6 +13,27 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.16] - 2026-01-19
+
+### 🎯 What's Changed for You
+
+**`/review-cc-work` now outputs handoff prompts with `/work` command prefix, matching `/handoff-to-claude` format.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Handoff output starts with `## 依頼` or `## 修正依頼` | Handoff starts with `/claude-code-harness:core:work` + `ultrathink` |
+
+### Changed
+
+- **`/review-cc-work` handoff format** (Cursor → Claude Code)
+  - Both `approve` and `request_changes` outputs now include `/work` command prefix
+  - Consistent with `/handoff-to-claude` format
+  - Enables immediate `/work` execution when pasting to Claude Code
+
+---
+
 ## [2.9.15] - 2026-01-19
 
 ### 🎯 What's Changed for You
