@@ -13,6 +13,34 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.18] - 2026-01-19
+
+### 🎯 What's Changed for You
+
+**`/resume` now automatically restores Harness session state. Your work context is preserved across session interruptions.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/resume` only restored Claude Code conversation | `/resume` also restores Harness session state (Plans.md progress, task markers) |
+| Session state lost on interruption | CC session_id → Harness session mapping enables seamless restoration |
+
+### Added
+
+- **SessionStart Resume detection** (hooks.json `matcher: "resume"`)
+  - Automatically triggers when using `/resume` command
+  - Restores session.json and session.events.jsonl from archive
+  - CC session_id ↔ Harness session_id mapping for reliable restoration
+- **session-resume.sh**: New script for resume-specific session restoration
+- **D16 decision**: Design-implementation gap prevention measures documented
+
+### Changed
+
+- **session-init.sh**: Now captures CC session_id and saves mapping for future resume
+
+---
+
 ## [2.9.16] - 2026-01-19
 
 ### 🎯 What's Changed for You

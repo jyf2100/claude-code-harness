@@ -9,6 +9,34 @@
 
 ---
 
+## [2.9.18] - 2026-01-19
+
+### 🎯 あなたにとって何が変わるか
+
+**`/resume` で Harness のセッション状態が自動復元されるようになりました。作業の中断・再開がシームレスに。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/resume` は Claude Code の会話のみ復元 | `/resume` で Harness セッション状態（Plans.md 進捗、タスクマーカー）も復元 |
+| 中断時にセッション状態が失われる | CC session_id → Harness session マッピングで確実に復元 |
+
+### Added
+
+- **SessionStart Resume 検出**（hooks.json `matcher: "resume"`）
+  - `/resume` コマンド実行時に自動トリガー
+  - session.json と session.events.jsonl をアーカイブから復元
+  - CC session_id ↔ Harness session_id マッピングで確実な復元を実現
+- **session-resume.sh**: Resume 専用のセッション復元スクリプト
+- **D16 意思決定**: 設計と実装の乖離防止策をドキュメント化
+
+### Changed
+
+- **session-init.sh**: CC session_id を取得し、マッピングを保存するように更新
+
+---
+
 ## [2.9.16] - 2026-01-19
 
 ### 🎯 あなたにとって何が変わるか
