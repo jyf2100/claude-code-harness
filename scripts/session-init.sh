@@ -27,11 +27,13 @@ else
   INPUT=$(cat 2>/dev/null || true)
 fi
 
-# ===== agent_type 判定（Claude Code v2.1.2+） =====
+# ===== agent_type / session_id 判定（Claude Code v2.1.2+） =====
 AGENT_TYPE=""
+CC_SESSION_ID=""
 if [ -n "$INPUT" ]; then
   if command -v jq >/dev/null 2>&1; then
     AGENT_TYPE="$(echo "$INPUT" | jq -r '.agent_type // empty' 2>/dev/null)"
+    CC_SESSION_ID="$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
   fi
 fi
 
@@ -76,6 +78,62 @@ mkdir -p "$STATE_DIR"
 
 # session-skills-used.json をリセット（新セッション開始）
 echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
+
+# ===== Step 2.5: Harness セッション初期化 & CC session_id マッピング =====
+SESSION_FILE="${STATE_DIR}/session.json"
+SESSION_MAP_FILE="${STATE_DIR}/session-map.json"
+ARCHIVE_DIR="${STATE_DIR}/sessions"
+mkdir -p "$ARCHIVE_DIR"
+
+# 新規セッション用の Harness session_id を生成
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+HARNESS_SESSION_ID="session-$(date +%s)"
+
+# session.json を初期化（存在しない場合、または stopped 状態の場合）
+INIT_NEW_SESSION="false"
+if [ ! -f "$SESSION_FILE" ]; then
+  INIT_NEW_SESSION="true"
+elif command -v jq >/dev/null 2>&1; then
+  CURRENT_STATE="$(jq -r '.state // "idle"' "$SESSION_FILE" 2>/dev/null)"
+  if [ "$CURRENT_STATE" = "stopped" ] || [ "$CURRENT_STATE" = "completed" ] || [ "$CURRENT_STATE" = "failed" ]; then
+    INIT_NEW_SESSION="true"
+  fi
+fi
+
+if [ "$INIT_NEW_SESSION" = "true" ]; then
+  cat > "$SESSION_FILE" <<SESSEOF
+{
+  "session_id": "$HARNESS_SESSION_ID",
+  "parent_session_id": null,
+  "state": "initialized",
+  "started_at": "$NOW",
+  "updated_at": "$NOW",
+  "event_seq": 0,
+  "last_event_id": ""
+}
+SESSEOF
+
+  # イベントログを初期化
+  echo "{\"type\":\"session.start\",\"ts\":\"$NOW\",\"state\":\"initialized\",\"data\":{\"cc_session_id\":\"$CC_SESSION_ID\"}}" > "${STATE_DIR}/session.events.jsonl"
+else
+  # 既存セッションの session_id を取得
+  if command -v jq >/dev/null 2>&1; then
+    HARNESS_SESSION_ID="$(jq -r '.session_id // empty' "$SESSION_FILE" 2>/dev/null)"
+  fi
+fi
+
+# CC session_id と Harness session_id のマッピングを保存
+if [ -n "$CC_SESSION_ID" ] && [ -n "$HARNESS_SESSION_ID" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    if [ -f "$SESSION_MAP_FILE" ]; then
+      tmp_file=$(mktemp)
+      jq --arg cc_id "$CC_SESSION_ID" --arg harness_id "$HARNESS_SESSION_ID" \
+         '.[$cc_id] = $harness_id' "$SESSION_MAP_FILE" > "$tmp_file" && mv "$tmp_file" "$SESSION_MAP_FILE"
+    else
+      echo "{\"$CC_SESSION_ID\":\"$HARNESS_SESSION_ID\"}" > "$SESSION_MAP_FILE"
+    fi
+  fi
+fi
 
 # skills-config.json の読み込みと表示
 SKILLS_INFO=""
