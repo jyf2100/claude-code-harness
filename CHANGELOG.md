@@ -13,6 +13,15 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.22] - 2026-01-20
+
+### Fixed
+
+- **README version badge fixed** - Badge was not updated during v2.9.21 release
+- **sync-version.sh README update restored** - Unified badge format so `bump` command auto-updates README
+
+---
+
 ## [2.9.21] - 2026-01-19
 
 ### 🎯 What's Changed for You
