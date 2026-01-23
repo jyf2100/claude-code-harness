@@ -1,24 +1,60 @@
-import { readdir, readFile } from 'fs/promises';
-import { join } from 'path';
+import { readdir, readFile, realpath } from 'fs/promises';
+import { join, resolve, isAbsolute } from 'path';
+import type { Dirent } from 'fs';
 import type { Project } from '@shared/types';
 
-// plansDirectory 設定を読み取る
+// plansDirectory 設定を読み取る（検証付き）
 async function getPlansDirectory(projectPath: string): Promise<string> {
   const configPath = join(projectPath, '.claude-code-harness.config.yaml');
   try {
     const content = await readFile(configPath, 'utf-8');
     // 簡易 YAML パース: plansDirectory: の値を取得
     const match = content.match(/^plansDirectory:\s*["']?([^"'\n]+)["']?/m);
-    return match?.[1]?.trim() || '.';
+    const plansDir = match?.[1]?.trim() || '.';
+
+    // Security: Reject absolute paths and parent directory traversal
+    if (isAbsolute(plansDir) || plansDir.includes('..')) {
+      return '.';
+    }
+
+    return plansDir;
   } catch {
     return '.';
   }
 }
 
-// plansPath を解決
+// plansPath を解決（パストラバーサル対策付き）
 async function resolvePlansPath(projectPath: string): Promise<string> {
   const plansDir = await getPlansDirectory(projectPath);
   const basePath = plansDir === '.' ? projectPath : join(projectPath, plansDir);
+
+  // Helper to check if child path is within parent (handles /project vs /project-evil edge case)
+  const isWithinDirectory = (parent: string, child: string): boolean => {
+    const normalizedParent = parent.endsWith('/') ? parent : parent + '/';
+    return child === parent || child.startsWith(normalizedParent);
+  };
+
+  // Security: Ensure resolved path is within project root (symlink protection)
+  try {
+    const resolvedBase = await realpath(projectPath);
+    // Resolve plansDir with realpath to catch symlinks pointing outside
+    const resolvedPlansDir = plansDir === '.'
+      ? resolvedBase
+      : await realpath(join(projectPath, plansDir));
+
+    // Check if the resolved path stays within project root
+    if (!isWithinDirectory(resolvedBase, resolvedPlansDir)) {
+      return join(projectPath, 'Plans.md');
+    }
+  } catch {
+    // If realpath fails (e.g., path doesn't exist yet), use logical check only
+    const resolvedPlansDir = resolve(projectPath, plansDir);
+    const resolvedBase = resolve(projectPath);
+    if (!isWithinDirectory(resolvedBase, resolvedPlansDir)) {
+      return join(projectPath, 'Plans.md');
+    }
+  }
+
   return join(basePath, 'Plans.md');
 }
 
@@ -97,14 +133,14 @@ async function scanDirectory(
 ): Promise<void> {
   if (depth > maxDepth || results.length >= maxProjects) return;
 
-  let entries: Awaited<ReturnType<typeof readdir>>;
+  let entries: Dirent[];
   try {
     entries = await readdir(dir, { withFileTypes: true });
   } catch {
     return;
   }
 
-  const names = new Set(entries.map((entry) => entry.name));
+  const names = new Set<string>(entries.map((entry) => entry.name));
   if (isCandidate(names)) {
     results.push(await toProject(dir));
     return;

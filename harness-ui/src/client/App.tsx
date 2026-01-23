@@ -20,9 +20,16 @@ export function App() {
 
   const { projects, activeProject, activateProject, addProject, removeProject } = useProjects();
 
-  // Fetch context window data periodically
+  // Fetch context window data periodically (with Page Visibility API optimization)
   useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let isFetching = false;
+
     const fetchContext = async () => {
+      // Prevent overlapping requests
+      if (isFetching) return;
+      isFetching = true;
+
       try {
         const res = await fetch('/api/context');
         if (res.ok) {
@@ -33,12 +40,45 @@ export function App() {
         }
       } catch {
         // Silently ignore errors
+      } finally {
+        isFetching = false;
       }
     };
 
+    const startPolling = () => {
+      if (!intervalId) {
+        intervalId = setInterval(fetchContext, CONTEXT_POLL_INTERVAL);
+      }
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        fetchContext(); // Fetch immediately when becoming visible
+        startPolling();
+      }
+    };
+
+    // Initial fetch and start polling if visible
     fetchContext();
-    const interval = setInterval(fetchContext, CONTEXT_POLL_INTERVAL);
-    return () => clearInterval(interval);
+    if (!document.hidden) {
+      startPolling();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
   const { plans, updatePlans } = usePlans({ projectId: activeProject?.id });
 

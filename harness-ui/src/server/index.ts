@@ -1,7 +1,7 @@
-import { readFile, readdir } from 'fs/promises';
-import { readFileSync } from 'fs';
+import { readFile, readdir, realpath } from 'fs/promises';
+import { readFileSync, realpathSync } from 'fs';
 import { homedir } from 'os';
-import { join } from 'path';
+import { join, resolve, isAbsolute } from 'path';
 import { ptyManager } from './services/pty-manager';
 import { PlansParser } from './services/plans-parser';
 import { commandCatalog } from './services/command-catalog';
@@ -26,14 +26,47 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 const DEFAULT_COMMANDS_PATH = join(process.cwd(), '..', 'commands', 'core');
 const DEFAULT_DISCOVERY_ROOT = join(homedir(), 'Desktop', 'Code');
 
-// plansDirectory 設定を読み取り、Plans.md のパスを解決
+// plansDirectory 設定を読み取り、Plans.md のパスを解決（パストラバーサル対策付き）
 function resolvePlansPath(projectPath: string): string {
   const configPath = join(projectPath, '.claude-code-harness.config.yaml');
   try {
     const content = readFileSync(configPath, 'utf-8');
     const match = content.match(/^plansDirectory:\s*["']?([^"'\n]+)["']?/m);
     const plansDir = match?.[1]?.trim() || '.';
+
+    // Security: Reject absolute paths and parent directory traversal
+    if (isAbsolute(plansDir) || plansDir.includes('..')) {
+      console.warn(`Invalid plansDirectory: ${plansDir} - using default`);
+      return join(projectPath, 'Plans.md');
+    }
+
     const basePath = plansDir === '.' ? projectPath : join(projectPath, plansDir);
+
+    // Security: Ensure resolved path is within project root (including symlink protection)
+    // Helper to check if child path is within parent (handles /project vs /project-evil edge case)
+    const isWithinDirectory = (parent: string, child: string): boolean => {
+      const normalizedParent = parent.endsWith('/') ? parent : parent + '/';
+      return child === parent || child.startsWith(normalizedParent);
+    };
+
+    try {
+      const resolvedBase = realpathSync(projectPath);
+      // Resolve the full plansDir path to catch symlinks pointing outside
+      const resolvedPlansDir = plansDir === '.' ? resolvedBase : realpathSync(join(projectPath, plansDir));
+      if (!isWithinDirectory(resolvedBase, resolvedPlansDir)) {
+        console.warn(`plansDirectory escapes project root via symlink: ${plansDir} - using default`);
+        return join(projectPath, 'Plans.md');
+      }
+    } catch {
+      // If realpath fails (e.g., path doesn't exist yet), use logical check only
+      const resolvedPlansDir = resolve(projectPath, plansDir);
+      const resolvedBase = resolve(projectPath);
+      if (!isWithinDirectory(resolvedBase, resolvedPlansDir)) {
+        console.warn(`plansDirectory escapes project root: ${plansDir} - using default`);
+        return join(projectPath, 'Plans.md');
+      }
+    }
+
     return join(basePath, 'Plans.md');
   } catch {
     return join(projectPath, 'Plans.md');
