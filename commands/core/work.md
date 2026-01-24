@@ -27,6 +27,28 @@ Executes the plan in Plans.md and generates actual code.
 
 ---
 
+## 🚀 Magic Keywords (Presets)
+
+One word to enable full automation:
+
+| Keyword | Effect | Use Case |
+|---------|--------|----------|
+| `ultrawork` | `--full --parallel 3 --isolation worktree --commit-strategy phase` | Maximum parallel efficiency |
+| `quickwork` | `--full --parallel 1 --commit-strategy task` | Fast single-task execution |
+| `deploywork` | `--full --parallel 2 --deploy --commit-strategy all` | Full cycle with deploy |
+
+**Examples**:
+```bash
+/work ultrawork              # Full parallel automation
+/work quickwork              # Quick single execution
+/work deploywork             # With deployment
+/work ultrawork --parallel 5 # Override parallel count
+```
+
+Magic keywords apply presets first, then explicit flags override them.
+
+---
+
 ## 🚀 --full Mode (Full Cycle Automation)
 
 `/work --full` automatically runs "implement → self-review → improve → commit".

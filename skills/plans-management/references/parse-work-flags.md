@@ -1,6 +1,6 @@
 ---
 name: parse-work-flags
-description: "Parse /work command flags from user_prompt. Extracts --full, --parallel, --isolation, --commit-strategy, --deploy, --max-iterations, --skip-cross-review, --resume, --fork options."
+description: "Parse /work command flags from user_prompt. Extracts --full, --parallel, --isolation, --commit-strategy, --deploy, --max-iterations, --skip-cross-review, --resume, --fork options. Also supports magic keywords (ultrawork, quickwork)."
 allowed-tools: ["Read"]
 ---
 
@@ -14,6 +14,8 @@ allowed-tools: ["Read"]
 
 - **user_prompt**: `/work`コマンドの入力文字列
   - 例: `/work --full --parallel 3 --isolation worktree`
+  - 例: `/work ultrawork` (マジックキーワード)
+  - 例: `/work ultrawork --parallel 5` (マジックキーワード + 上書き)
 
 ---
 
@@ -35,6 +37,79 @@ allowed-tools: ["Read"]
   "fork_session_id": "",
   "fork_reason": ""
 }
+```
+
+---
+
+## マジックキーワード
+
+マジックキーワードを使用すると、複数のフラグを一括で設定できます。
+明示的なフラグ指定で上書き可能です。
+
+### キーワード定義
+
+| キーワード | 展開されるフラグ | 用途 |
+|-----------|-----------------|------|
+| `ultrawork` | `--full --parallel 3 --isolation worktree --commit-strategy phase --max-iterations 3` | 最大効率の並列実行 |
+| `quickwork` | `--full --parallel 1 --commit-strategy task` | 高速な単一タスク実行 |
+| `deploywork` | `--full --parallel 2 --deploy --commit-strategy all` | デプロイ込みの実行 |
+
+### マジックキーワード検出
+
+```javascript
+// マジックキーワードプリセット
+const magicKeywords = {
+  "ultrawork": {
+    full_mode: true,
+    parallel_count: 3,
+    isolation_mode: "worktree",
+    commit_strategy: "phase",
+    max_iterations: 3
+  },
+  "quickwork": {
+    full_mode: true,
+    parallel_count: 1,
+    isolation_mode: "lock",
+    commit_strategy: "task",
+    max_iterations: 3
+  },
+  "deploywork": {
+    full_mode: true,
+    parallel_count: 2,
+    isolation_mode: "lock",
+    commit_strategy: "all",
+    deploy_after_commit: true,
+    max_iterations: 3
+  }
+};
+
+// 検出パターン
+const keywordPattern = /\b(ultrawork|quickwork|deploywork)\b/i;
+const match = user_prompt.match(keywordPattern);
+if (match) {
+  const preset = magicKeywords[match[1].toLowerCase()];
+  // プリセットを適用後、明示的フラグで上書き
+}
+```
+
+### 使用例
+
+```
+入力: "/work ultrawork"
+出力:
+  full_mode: true
+  parallel_count: 3
+  isolation_mode: "worktree"
+  commit_strategy: "phase"
+  max_iterations: 3
+
+入力: "/work ultrawork --parallel 5"
+出力:
+  full_mode: true
+  parallel_count: 5  ← 明示フラグで上書き
+  isolation_mode: "worktree"
+  commit_strategy: "phase"
+  max_iterations: 3
 ```
 
 ---
