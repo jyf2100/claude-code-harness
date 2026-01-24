@@ -73,6 +73,19 @@ Change history for claude-code-harness.
 
 - **CLAUDE_CODE_COMPATIBILITY.md**: Updated matrix for v2.1.10-v2.1.17
 - **hooks.json**: Added Setup event and TodoWrite PostToolUse matcher
+- **TodoWrite integration**: TodoWrite tool now syncs with Plans.md
+  - Todo status changes automatically logged to session events
+  - Pending/in_progress/completed counts tracked in real-time
+  - State persisted to `.claude/state/todo-sync-state.json`
+
+### Fixed
+
+- **Symlink escape protection**: Shell scripts now validate paths to prevent directory traversal via symlinks
+- **harness-ui security**: Path traversal protection strengthened with proper path normalization
+- **harness-ui accessibility**: ContextIndicator now includes ARIA attributes for screen readers
+- **harness-ui performance**: App.tsx polling optimized with Page Visibility API (pauses when tab hidden)
+- **MCP server namespace**: Changed from `@anthropic-ai` to `@claude-code-harness` to avoid confusion
+- **Session scripts resource leak**: Added trap cleanup for temp files in session-broadcast.sh and session-list.sh
 
 ---
 

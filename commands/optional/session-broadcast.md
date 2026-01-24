@@ -1,6 +1,7 @@
 ---
 description: 全セッションにメッセージを送信（セッション間通信）
 description-en: Broadcast message to all sessions (inter-session communication)
+user-invocable: false
 ---
 
 # /session-broadcast - セッション間ブロードキャスト
