@@ -7,20 +7,45 @@
 
 ## [Unreleased]
 
+---
+
+## [2.9.24] - 2026-01-24
+
 ### 🎯 あなたにとって何が変わるか
 
-**セッション間でリアルタイムにメッセージを共有でき、Codex や Cursor からも Harness が使えるようになりました。**
+**Claude Code v2.1.10-v2.1.17 の新機能に完全対応。セッション間通信、Setup hooks、Plans.md カスタム配置、コンテキスト監視、TodoWrite 同期が使えるようになりました。**
 
 #### Before → After
 
 | Before | After |
 |--------|-------|
+| `claude --init` / `--maintenance` 未対応 | Setup hooks で自動初期化・メンテナンス |
+| Plans.md は固定位置 | `plansDirectory` 設定でカスタム配置可能 |
+| コンテキスト使用量が不明 | harness-ui で色分け表示（緑/黄/赤） |
+| TodoWrite と Plans.md が未連携 | PostToolUse hook で自動同期・リアルタイム追跡 |
+| MCP auto:N の説明がない | MCP 設定ガイドを追加 |
 | セッションは独立して動作 | `/session-broadcast` で他セッションに通知 |
 | Claude Code 専用 | MCP サーバーで Codex、Cursor からも利用可能 |
 | PR レビューは手動 | `/webhook-setup` で GitHub Actions 自動レビュー |
 
 ### Added
 
+- **Setup hook イベント** (v2.1.10): `claude --init` / `--maintenance` 時に自動実行
+  - `init` モード: デフォルト設定、CLAUDE.md、Plans.md を作成
+  - `maintenance` モード: 古いセッション削除、キャッシュ同期、設定検証
+- **plansDirectory 設定**: 全スクリプトと harness-ui で対応
+  - `scripts/config-utils.sh` で設定読み取りを集約
+  - session-init, session-monitor, plans-watcher が設定を参照
+  - harness-ui のプロジェクト検出がカスタムパスに対応
+- **context_window 使用率表示** (v2.1.6): harness-ui でリアルタイム表示
+  - 緑 (0-50%)、黄 (50-70%)、赤 (70%+) の色分け
+  - 高使用時に警告メッセージ表示
+- **TodoWrite 同期** (v2.1.17): PostToolUse hook で状態変更を追跡
+  - 保留/進行中/完了のカウントをセッションイベントに記録
+  - 状態を `.claude/state/todo-sync-state.json` に保存
+- **MCP 設定ガイド**: `docs/MCP_CONFIGURATION.md` を新規追加
+  - `auto:N` 構文（閾値ベース自動承認）を解説
+  - サーバー信頼レベル別の設定例
 - **関連ファイル検証** (`verify-related-files`) - 実装後に修正漏れを自動チェック
   - 関数シグネチャ変更 → 呼び出し元の確認漏れを警告
   - 型/interface変更 → 実装箇所の不整合を警告
@@ -43,6 +68,24 @@
   - PR 作成時に `/harness-review` を自動実行
   - Plans.md ステータスを PR にコメント
 - **E2E 検証設計** (`docs/E2E_VERIFICATION_DESIGN.md`) - 将来の CDP/Playwright 連携
+
+### Changed
+
+- **CLAUDE_CODE_COMPATIBILITY.md**: v2.1.10-v2.1.17 対応マトリックスを更新
+- **hooks.json**: Setup イベントと TodoWrite PostToolUse マッチャーを追加
+- **TodoWrite 統合**: Plans.md と自動同期
+  - Todo 状態変更をセッションイベントに自動記録
+  - pending/in_progress/completed をリアルタイム追跡
+  - 状態を `.claude/state/todo-sync-state.json` に永続化
+
+### Fixed
+
+- **シンボリックリンクエスケープ保護**: シェルスクリプトでディレクトリトラバーサル攻撃を防止
+- **harness-ui セキュリティ**: パストラバーサル対策を強化（パス正規化）
+- **harness-ui アクセシビリティ**: ContextIndicator に ARIA 属性追加（スクリーンリーダー対応）
+- **harness-ui パフォーマンス**: App.tsx のポーリング最適化（Page Visibility API でタブ非表示時に停止）
+- **MCP サーバー名前空間**: `@anthropic-ai` → `@claude-code-harness` に変更（混乱防止）
+- **セッションスクリプトのリソースリーク**: session-broadcast.sh / session-list.sh に trap cleanup 追加
 
 ---
 
@@ -1937,7 +1980,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.22...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.24...HEAD
+[2.9.24]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.22...v2.9.24
 [2.9.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.21...v2.9.22
 [2.9.21]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.20...v2.9.21
 [2.9.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.10...v2.9.11
