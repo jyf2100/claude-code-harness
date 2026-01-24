@@ -13,7 +13,7 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**Full Claude Code v2.1.10-v2.1.17 compatibility with Setup hooks, plansDirectory, context monitoring, and TodoWrite sync.**
+**Full Claude Code v2.1.10-v2.1.19 compatibility with Setup hooks, plansDirectory, context monitoring, and TodoWrite sync.**
 
 #### Before → After
 
@@ -71,7 +71,7 @@ Change history for claude-code-harness.
 
 ### Changed
 
-- **CLAUDE_CODE_COMPATIBILITY.md**: Updated matrix for v2.1.10-v2.1.17
+- **CLAUDE_CODE_COMPATIBILITY.md**: Updated matrix for v2.1.10-v2.1.19
 - **hooks.json**: Added Setup event and TodoWrite PostToolUse matcher
 - **TodoWrite integration**: TodoWrite tool now syncs with Plans.md
   - Todo status changes automatically logged to session events

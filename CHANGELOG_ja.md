@@ -13,7 +13,7 @@
 
 ### 🎯 あなたにとって何が変わるか
 
-**Claude Code v2.1.10-v2.1.17 の新機能に完全対応。セッション間通信、Setup hooks、Plans.md カスタム配置、コンテキスト監視、TodoWrite 同期が使えるようになりました。**
+**Claude Code v2.1.10-v2.1.19 の新機能に完全対応。セッション間通信、Setup hooks、Plans.md カスタム配置、コンテキスト監視、TodoWrite 同期が使えるようになりました。**
 
 #### Before → After
 
@@ -71,7 +71,7 @@
 
 ### Changed
 
-- **CLAUDE_CODE_COMPATIBILITY.md**: v2.1.10-v2.1.17 対応マトリックスを更新
+- **CLAUDE_CODE_COMPATIBILITY.md**: v2.1.10-v2.1.19 対応マトリックスを更新
 - **hooks.json**: Setup イベントと TodoWrite PostToolUse マッチャーを追加
 - **TodoWrite 統合**: Plans.md と自動同期
   - Todo 状態変更をセッションイベントに自動記録
