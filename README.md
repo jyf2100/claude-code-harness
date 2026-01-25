@@ -89,7 +89,7 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 ### Parallel Full-Cycle Automation
 
 ```bash
-/work ultrawork    # Magic keyword: --full --parallel 3 in one word
+/work turbo    # Magic keyword: --full --parallel 3 in one word
 /work --full --parallel 3  # Or explicit flags
 ```
 

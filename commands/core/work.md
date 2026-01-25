@@ -33,16 +33,16 @@ One word to enable full automation:
 
 | Keyword | Effect | Use Case |
 |---------|--------|----------|
-| `ultrawork` | `--full --parallel 3 --isolation worktree --commit-strategy phase` | Maximum parallel efficiency |
-| `quickwork` | `--full --parallel 1 --commit-strategy task` | Fast single-task execution |
-| `deploywork` | `--full --parallel 2 --deploy --commit-strategy all` | Full cycle with deploy |
+| `turbo` | `--full --parallel 3 --isolation worktree --commit-strategy phase` | Maximum parallel efficiency |
+| `quick` | `--full --parallel 1 --commit-strategy task` | Fast single-task execution |
+| `ship` | `--full --parallel 2 --deploy --commit-strategy all` | Full cycle with deploy |
 
 **Examples**:
 ```bash
-/work ultrawork              # Full parallel automation
-/work quickwork              # Quick single execution
-/work deploywork             # With deployment
-/work ultrawork --parallel 5 # Override parallel count
+/work turbo              # Full parallel automation
+/work quick              # Quick single execution
+/work ship               # With deployment
+/work turbo --parallel 5 # Override parallel count
 ```
 
 Magic keywords apply presets first, then explicit flags override them.
