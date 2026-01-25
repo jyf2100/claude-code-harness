@@ -142,3 +142,12 @@ benchmarks/evals-v3/scripts/mcp-empty.json
 docs/releases/
 docs/notebooklm/work-full-slides-compact.yaml
 docs/notebooklm/work-full-slides-minimal.yaml
+
+# Remotion (動画生成) - 生成ファイル
+remotion/out/
+remotion/assets/
+.remotion/
+out/
+*.mp4
+*.webm
+*.gif
