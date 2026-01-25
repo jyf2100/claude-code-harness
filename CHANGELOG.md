@@ -9,6 +9,57 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.11.0] - 2026-01-26
+
+### 🎯 What's Changed for You
+
+**`/generate-video` automatically generates product demo, architecture explanation, and release note videos. Analyzes your codebase, suggests optimal structure, and generates scenes in parallel with AI agents.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Video creation was manual with external tools | `/generate-video` for analysis → proposal → parallel generation |
+| Remotion setup was complex | `/remotion-setup` for one-command initialization |
+| Manual component creation per scene | AI agents auto-generate each scene |
+
+### Added
+
+- **`/generate-video` auto video generation command**
+  - Codebase analysis (framework, features, UI detection)
+  - Auto scenario proposal (video type auto-detection)
+  - AskUserQuestion for scene confirmation/editing
+  - Task tool for up to 5 parallel scene generation
+  - Remotion rendering (MP4/WebM/GIF)
+
+- **`/remotion-setup` setup command**
+  - New project creation (`npx create-video@latest`)
+  - Brownfield integration for existing projects
+  - Remotion Agent Skills auto-install
+  - Harness templates (optional)
+
+- **`skills/video/` video generation skills**
+  - `analyzer.md` - Codebase analysis engine
+  - `planner.md` - Scenario planner
+  - `generator.md` - Parallel scene generation engine
+
+- **`agents/video-scene-generator.md` subagent**
+  - Specialized for single scene generation
+  - intro/ui-demo/cta/architecture/changelog templates
+  - Playwright MCP integration (UI capture)
+
+### Video Types
+
+| Type | Auto-detection | Structure |
+|------|---------------|-----------|
+| Product Demo | New project, UI changes | Intro → Feature Demo → CTA |
+| Architecture | Major structural changes | Overview → Details → Data Flow |
+| Release Notes | Recent release, CHANGELOG update | Version → Changes → New Feature Demo |
+
+> ⚠️ **License Note**: Remotion may require a paid license for commercial use
+
+---
+
 ## [2.10.8] - 2026-01-26
 
 ### 🎯 What's Changed for You
@@ -1352,7 +1403,16 @@ Key milestones:
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...HEAD
+[2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.8...v2.11.0
+[2.10.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.7...v2.10.8
+[2.10.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.6...v2.10.7
+[2.10.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.5...v2.10.6
+[2.10.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.4...v2.10.5
+[2.10.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.3...v2.10.4
+[2.10.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.2...v2.10.3
+[2.10.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.1...v2.10.2
+[2.10.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.24...v2.10.0
 [2.9.24]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.22...v2.9.24
 [2.9.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.21...v2.9.22

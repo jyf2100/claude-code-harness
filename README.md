@@ -9,7 +9,7 @@ English | [日本語](README_ja.md)
 Claude Harness runs Claude Code in an autonomous **Plan → Work → Review** cycle,
 catching mistakes before they ship.
 
-[![Version: 2.10.1](https://img.shields.io/badge/version-2.10.1-blue.svg)](VERSION)
+[![Version: 2.11.0](https://img.shields.io/badge/version-2.11.0-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-v2.1.6+-purple.svg)](docs/CLAUDE_CODE_COMPATIBILITY.md)
 
@@ -81,6 +81,32 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 ```
 
 </details>
+
+---
+
+## What's New in v2.11
+
+### Video Generation (v2.11.0)
+
+**Auto-generate product demo, architecture, and release note videos from your codebase.**
+
+```bash
+/remotion-setup    # One-time Remotion setup
+/generate-video    # Analyze → Plan → Generate (parallel)
+```
+
+| Video Type | Auto-detected When | Structure |
+|------------|-------------------|-----------|
+| Product Demo | New project, UI changes | Intro → Feature Demo → CTA |
+| Architecture | Major refactoring | Overview → Details → Data Flow |
+| Release Notes | CHANGELOG updated | Version → Changes → New Feature Demo |
+
+- **Codebase analysis**: Auto-detects framework, features, UI components
+- **Smart scenario**: Suggests optimal video structure with AskUserQuestion
+- **Parallel generation**: Up to 5 agents generate scenes simultaneously
+- **Playwright integration**: Captures real UI interactions
+
+> ⚠️ Remotion may require a paid license for commercial use
 
 ---
 

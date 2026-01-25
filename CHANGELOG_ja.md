@@ -9,6 +9,57 @@
 
 ---
 
+## [2.11.0] - 2026-01-26
+
+### 🎯 あなたにとって何が変わるか
+
+**`/generate-video` でプロダクトデモ・アーキテクチャ解説・リリースノート動画を自動生成できるようになりました。コードベースを分析して最適な構成を提案し、並列エージェントで高速に生成します。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| 動画作成は外部ツールで手動作業 | `/generate-video` で分析→提案→並列生成 |
+| Remotion セットアップが複雑 | `/remotion-setup` でワンコマンド初期化 |
+| シーンごとに手動でコンポーネント作成 | AI エージェントが各シーンを自動生成 |
+
+### Added
+
+- **`/generate-video` 動画自動生成コマンド**
+  - コードベース分析（フレームワーク、機能、UI検出）
+  - シナリオ自動提案（動画タイプ自動判定）
+  - AskUserQuestion でシーン構成を確認・編集
+  - Task tool で最大5並列のシーン生成
+  - Remotion でレンダリング（MP4/WebM/GIF）
+
+- **`/remotion-setup` セットアップコマンド**
+  - 新規プロジェクト作成（`npx create-video@latest`）
+  - 既存プロジェクトへの統合（Brownfield）
+  - Remotion Agent Skills 自動インストール
+  - Harness テンプレート追加（オプション）
+
+- **`skills/video/` 動画生成スキル群**
+  - `analyzer.md` - コードベース分析エンジン
+  - `planner.md` - シナリオプランナー
+  - `generator.md` - 並列シーン生成エンジン
+
+- **`agents/video-scene-generator.md` サブエージェント**
+  - 単一シーンの生成に特化
+  - intro/ui-demo/cta/architecture/changelog テンプレート対応
+  - Playwright MCP 連携（UI キャプチャ）
+
+### 動画タイプ
+
+| タイプ | 自動判定条件 | 構成 |
+|--------|-------------|------|
+| プロダクトデモ | 新規プロジェクト、UI変更 | イントロ → 機能デモ → CTA |
+| アーキテクチャ解説 | 大きな構造変更 | 概要図 → 詳細解説 → データフロー |
+| リリースノート | リリース直後、CHANGELOG更新 | バージョン → 変更点 → 新機能デモ |
+
+> ⚠️ **ライセンス注意**: Remotion は企業利用時に有料ライセンスが必要な場合があります
+
+---
+
 ## [2.10.8] - 2026-01-26
 
 ### 🎯 あなたにとって何が変わるか
@@ -2236,7 +2287,16 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...HEAD
+[2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.8...v2.11.0
+[2.10.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.7...v2.10.8
+[2.10.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.6...v2.10.7
+[2.10.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.5...v2.10.6
+[2.10.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.4...v2.10.5
+[2.10.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.3...v2.10.4
+[2.10.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.2...v2.10.3
+[2.10.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.1...v2.10.2
+[2.10.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.24...v2.10.0
 [2.9.24]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.22...v2.9.24
 [2.9.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.21...v2.9.22

@@ -9,9 +9,36 @@
 Claude Code を「Plan → Work → Review」の自律サイクルで運用し、
 **迷い・雑さ・事故・忘却** を仕組みで防ぐ開発ハーネスです。
 
-[![Version: 2.10.0](https://img.shields.io/badge/version-2.10.0-blue.svg)](VERSION)
+[![Version: 2.11.0](https://img.shields.io/badge/version-2.11.0-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#採点基準)
+
+---
+
+## v2.11 の新機能 | What's New in v2.11
+
+### 動画自動生成（v2.11.0）| Video Generation
+
+**コードベースからプロダクトデモ・アーキテクチャ解説・リリースノート動画を自動生成**
+*Auto-generate product demo, architecture, and release note videos from your codebase*
+
+```bash
+/remotion-setup    # Remotion 環境を初期化（1回のみ）
+/generate-video    # 分析 → シナリオ提案 → 並列生成
+```
+
+| 動画タイプ | 自動判定条件 | 構成 |
+|-----------|-------------|------|
+| プロダクトデモ | 新規プロジェクト、UI変更 | イントロ → 機能デモ → CTA |
+| アーキテクチャ | 大規模リファクタ | 概要図 → 詳細解説 → データフロー |
+| リリースノート | CHANGELOG 更新 | バージョン → 変更点 → 新機能デモ |
+
+- **コードベース分析**: フレームワーク、機能、UI コンポーネントを自動検出
+- **シナリオ提案**: AskUserQuestion で最適な動画構成を確認
+- **並列生成**: 最大5エージェントが同時にシーンを生成
+- **Playwright 連携**: 実際の UI 操作をキャプチャ
+
+> ⚠️ Remotion は企業利用時に有料ライセンスが必要な場合があります
 
 ---
 
