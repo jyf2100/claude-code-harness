@@ -99,6 +99,22 @@ copy_opencode_files() {
         error "opencode/commands not found in Harness"
     fi
 
+    # .claude/skills/ を作成してスキルをコピー
+    mkdir -p "$PROJECT_DIR/.claude/skills"
+
+    if [ -d "$PROJECT_DIR/.claude/skills" ] && [ "$(ls -A "$PROJECT_DIR/.claude/skills" 2>/dev/null)" ]; then
+        warn ".claude/skills/ already has content, creating backup"
+        mv "$PROJECT_DIR/.claude/skills" "$PROJECT_DIR/.claude/skills.backup.$(date +%Y%m%d%H%M%S)"
+        mkdir -p "$PROJECT_DIR/.claude/skills"
+    fi
+
+    if [ -d "$TEMP_DIR/harness/opencode/skills" ]; then
+        cp -r "$TEMP_DIR/harness/opencode/skills/"* "$PROJECT_DIR/.claude/skills/"
+        success "Skills copied to .claude/skills/"
+    else
+        warn "opencode/skills not found in Harness (optional)"
+    fi
+
     # AGENTS.md をコピー（既存の場合はバックアップ）
     if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
         warn "AGENTS.md already exists, creating backup"
@@ -107,7 +123,7 @@ copy_opencode_files() {
 
     if [ -f "$TEMP_DIR/harness/opencode/AGENTS.md" ]; then
         cp "$TEMP_DIR/harness/opencode/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
-        success "AGENTS.md created"
+        success "AGENTS.md created (from CLAUDE.md)"
     fi
 }
 
@@ -146,8 +162,17 @@ print_success() {
     echo ""
     echo "Created files:"
     echo "  📁 .opencode/commands/  - Harness commands"
-    echo "  📄 AGENTS.md            - Rules file"
+    echo "  📁 .claude/skills/      - Harness skills (docs, review, impl, etc.)"
+    echo "  📄 AGENTS.md            - Rules file (from CLAUDE.md)"
     [ -f "$PROJECT_DIR/opencode.json" ] && echo "  📄 opencode.json        - MCP configuration"
+    echo ""
+    echo "Available skills:"
+    echo "  • docs    - Documentation (NotebookLM, slides)"
+    echo "  • impl    - Feature implementation"
+    echo "  • review  - Code review"
+    echo "  • verify  - Build verification"
+    echo "  • auth    - Authentication (Clerk, Stripe)"
+    echo "  • deploy  - Deployment (Vercel, Netlify)"
     echo ""
     echo "Next steps:"
     echo "  1. Start opencode: ${BLUE}opencode${NC}"

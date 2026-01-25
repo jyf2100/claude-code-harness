@@ -9,6 +9,45 @@
 
 ---
 
+## [2.10.7] - 2026-01-25
+
+### 🎯 あなたにとって何が変わるか
+
+**`/opencode-setup` で Harness の全スキル（26個）が OpenCode.ai でも利用可能になりました。NotebookLM、レビュー、デプロイなど、Claude Code で使える機能がそのまま使えます。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| OpenCode.ai ではスキルが使えない | 26 スキルが `.claude/skills/` にコピーされ利用可能 |
+| `AGENTS.md` は簡易版のみ | `CLAUDE.md` の全内容が `AGENTS.md` に反映 |
+| シンボリックリンク前提で Windows 非対応 | コピー方式がデフォルトで Windows 対応 |
+| スキル更新時に再リンクが必要 | `build-opencode.js` で一括再生成 |
+
+### Added
+
+- **`/opencode-setup` にスキルコピー機能を追加**
+  - 26 スキル（docs, impl, review, deploy など）が自動コピー
+  - `test-*`, `x-*` 開発用スキルは自動除外
+  - `--symlink` オプションで従来のシンボリックリンク方式も選択可能
+
+- **`build-opencode.js` をスキル変換の SSOT（Single Source of Truth）に**
+  - スキルディレクトリの再帰コピー
+  - `AGENTS.md` を `CLAUDE.md` 全文から生成
+  - `opencode/` ディレクトリに 32 コマンド、26 スキルを事前生成
+
+### Changed
+
+- **`AGENTS.md` の内容を大幅拡充**
+  - 従来：簡易版（概要のみ）
+  - 新：`CLAUDE.md` の全内容（開発ルール、スキル一覧、SSOT 情報など）
+
+- **`setup-opencode.sh` を `/opencode-setup` と同期**
+  - `.claude/skills/` コピー処理を追加
+  - 完了メッセージで利用可能スキル一覧を表示
+
+---
+
 ## [2.10.6] - 2026-01-25
 
 ### 🎯 あなたにとって何が変わるか

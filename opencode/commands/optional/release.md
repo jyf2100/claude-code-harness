@@ -198,6 +198,29 @@ gh release list --limit 5
 cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/*/VERSION | sort -u
 ```
 
+### Step 9: リリースノート検証（必須）
+
+> 🔴 **必ず実行**: リリースノートのフォーマットが `.claude/rules/github-release.md` に準拠しているか検証
+
+```bash
+./scripts/validate-release-notes.sh vX.Y.Z
+```
+
+**チェック項目**:
+- ✅ 見出し: `🎯 あなたにとって何が変わるか`（日本語統一）
+- ✅ Before → After テーブル
+- ✅ フッター: `🤖 Generated with [Claude Code](...)`
+- ✅ 日英混在なし
+
+エラーがある場合は `gh release edit` で修正:
+```bash
+gh release edit vX.Y.Z --notes "$(cat <<'EOF'
+## 🎯 あなたにとって何が変わるか
+...
+EOF
+)"
+```
+
 ## keepachangelog の原則
 
 1. **人間のために書く** - 機械的なコミットログではなく、ユーザーが理解できる言葉で

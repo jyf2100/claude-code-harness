@@ -5,18 +5,20 @@ description-en: Setup project for opencode.ai compatibility
 
 # /opencode-setup - OpenCode セットアップ
 
-現在のプロジェクトに opencode.ai 互換のコマンドと設定ファイルを生成します。
+現在のプロジェクトに opencode.ai 互換のコマンド、スキル、設定ファイルを生成します。
 
 ## VibeCoder Quick Reference
 
 - "**opencode でも使いたい**" → このコマンド
 - "**GPT でも Harness 使いたい**" → opencode セットアップ
 - "**マルチ LLM 開発したい**" → opencode 互換設定
+- "**スキルも opencode で使いたい**" → このコマンドで自動対応
 
 ## Deliverables
 
 - `.opencode/commands/` - opencode 用コマンド
-- `AGENTS.md` - opencode 用ルールファイル
+- `.claude/skills/` - opencode 互換スキル（NotebookLM、レビュー等）
+- `AGENTS.md` - opencode 用ルールファイル（CLAUDE.md 全文）
 - `opencode.json` - MCP 設定（オプション）
 
 ---
@@ -25,6 +27,7 @@ description-en: Setup project for opencode.ai compatibility
 
 ```bash
 /opencode-setup
+/opencode-setup --symlink  # スキルをシンボリックリンクで配置（開発者向け）
 ```
 
 ---
@@ -36,8 +39,9 @@ description-en: Setup project for opencode.ai compatibility
 > 🔧 **opencode.ai 互換ファイルを生成します**
 >
 > 以下のファイルが作成されます：
-> - `.opencode/commands/` (Harness コマンド)
-> - `AGENTS.md` (ルールファイル)
+> - `.opencode/commands/` - Harness コマンド
+> - `.claude/skills/` - Harness スキル（NotebookLM、レビュー等）
+> - `AGENTS.md` - ルールファイル（CLAUDE.md 全文）
 >
 > 続行しますか？ (y/n)
 
@@ -48,9 +52,10 @@ description-en: Setup project for opencode.ai compatibility
 ```bash
 mkdir -p .opencode/commands/core
 mkdir -p .opencode/commands/optional
+mkdir -p .claude/skills
 ```
 
-### Step 3: コマンドファイル生成
+### Step 3: コマンドファイルをコピー
 
 Harness プラグインの `opencode/commands/` からコピー:
 
@@ -62,30 +67,47 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(dirname $(dirname $0))}"
 cp -r "$PLUGIN_DIR/opencode/commands/"* .opencode/commands/
 ```
 
-### Step 4: AGENTS.md 生成
+### Step 4: スキルをコピー
 
-プロジェクトルートに `AGENTS.md` を作成:
+Harness プラグインの `opencode/skills/` からコピー:
 
-```markdown
-# AGENTS.md
+```bash
+# 既存の .claude/skills がある場合はバックアップ
+if [ -d ".claude/skills" ]; then
+  mv .claude/skills ".claude/skills.backup.$(date +%Y%m%d%H%M%S)"
+  echo "既存の .claude/skills をバックアップしました"
+fi
 
-This project uses [claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) workflow.
+# スキルをコピー（デフォルト）
+cp -r "$PLUGIN_DIR/opencode/skills/"* .claude/skills/
 
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `/plan-with-agent` | Create development plan |
-| `/work` | Execute tasks |
-| `/harness-review` | Code review |
-| `/sync-status` | Check progress |
-
-## Workflow
-
-/plan-with-agent → /work → /harness-review → commit
+# または --symlink オプション指定時（UNIX/macOS のみ）
+# ln -s "$PLUGIN_DIR/skills" .claude/skills
 ```
 
-### Step 5: MCP 設定（オプション）
+**コピー vs シンボリックリンク:**
+
+| 方式 | メリット | デメリット |
+|------|----------|------------|
+| **コピー**（デフォルト） | Windows 対応、独立動作 | プラグイン更新時に再コピー必要 |
+| **シンボリックリンク** | 常に最新、容量節約 | UNIX/macOS のみ、プラグイン削除で動作不能 |
+
+### Step 5: AGENTS.md 生成
+
+Harness プラグインの `opencode/AGENTS.md`（CLAUDE.md 全文コピー）をプロジェクトルートに配置:
+
+```bash
+# 既存の AGENTS.md がある場合はバックアップ
+if [ -f "AGENTS.md" ]; then
+  mv AGENTS.md "AGENTS.md.backup.$(date +%Y%m%d%H%M%S)"
+  echo "既存の AGENTS.md をバックアップしました"
+fi
+
+# AGENTS.md をコピー
+cp "$PLUGIN_DIR/opencode/AGENTS.md" AGENTS.md
+```
+
+### Step 6: MCP 設定（オプション）
 
 > 🔧 **MCP サーバーも設定しますか？**
 >
@@ -110,14 +132,23 @@ This project uses [claude-code-harness](https://github.com/Chachamaru127/claude-
 }
 ```
 
-### Step 6: 完了メッセージ
+### Step 7: 完了メッセージ
 
 > ✅ **OpenCode セットアップ完了**
 >
 > 📁 **生成されたファイル:**
 > - `.opencode/commands/` - Harness コマンド
-> - `AGENTS.md` - ルールファイル
+> - `.claude/skills/` - Harness スキル
+> - `AGENTS.md` - ルールファイル（CLAUDE.md 全文）
 > - `opencode.json` - MCP 設定（選択時）
+>
+> **利用可能なスキル:**
+> - `docs` - ドキュメント生成（NotebookLM YAML、スライド）
+> - `impl` - 機能実装
+> - `review` - コードレビュー
+> - `verify` - ビルド検証・エラー復旧
+> - `auth` - 認証・決済（Clerk, Stripe）
+> - `deploy` - デプロイ（Vercel, Netlify）
 >
 > **使い方:**
 > ```bash
@@ -138,7 +169,9 @@ This project uses [claude-code-harness](https://github.com/Chachamaru127/claude-
 
 - 既存の `.opencode/` ディレクトリがある場合は上書き確認
 - `AGENTS.md` が既存の場合はバックアップを作成
+- `.claude/skills/` が既存の場合はバックアップを作成
 - MCP サーバーを使う場合は事前にビルドが必要
+- **Windows ユーザー**: シンボリックリンクは管理者権限が必要なため、コピーを推奨
 
 ---
 

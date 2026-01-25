@@ -18,8 +18,10 @@ const path = require('path');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const COMMANDS_DIR = path.join(ROOT_DIR, 'commands');
+const SKILLS_DIR = path.join(ROOT_DIR, 'skills');
 const OPENCODE_DIR = path.join(ROOT_DIR, 'opencode');
 const OPENCODE_COMMANDS_DIR = path.join(OPENCODE_DIR, 'commands');
+const OPENCODE_SKILLS_DIR = path.join(OPENCODE_DIR, 'skills');
 
 /**
  * ディレクトリを再帰的に作成
@@ -127,53 +129,40 @@ function processDirectory(srcDir, destDir) {
 }
 
 /**
- * AGENTS.md を生成
+ * AGENTS.md を生成（CLAUDE.md の全文コピー）
+ *
+ * opencode.ai は AGENTS.md をルールファイルとして認識し、
+ * CLAUDE.md をフォールバックとしてサポートする。
+ * ここでは CLAUDE.md の内容をそのまま AGENTS.md として出力する。
  */
 function generateAgentsMd() {
-  const agentsMd = `# AGENTS.md
+  const claudeMdPath = path.join(ROOT_DIR, 'CLAUDE.md');
 
-This project uses [claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) workflow.
+  if (!fs.existsSync(claudeMdPath)) {
+    console.log(`  ⚠ CLAUDE.md not found, skipping AGENTS.md generation`);
+    return;
+  }
 
-## Available Commands
+  let claudeMdContent = fs.readFileSync(claudeMdPath, 'utf8');
 
-### Core Commands
+  // タイトルを CLAUDE.md から AGENTS.md に変換
+  // "# CLAUDE.md" または "# CLAUDE.md - ..." のパターンに対応
+  claudeMdContent = claudeMdContent.replace(
+    /^# CLAUDE\.md(\s*-\s*.*)?$/m,
+    (match, suffix) => `# AGENTS.md${suffix || ''}`
+  );
 
-| Command | Description |
-|---------|-------------|
-| \`/harness-init\` | Project setup |
-| \`/plan-with-agent\` | Create development plan |
-| \`/work\` | Execute tasks |
-| \`/harness-review\` | Code review |
-| \`/sync-status\` | Check project status |
+  // opencode 互換のヘッダーを追加
+  const header = `<!-- Generated from CLAUDE.md by build-opencode.js -->
+<!-- opencode.ai compatible version of Claude Code Harness -->
 
-### Optional Commands
-
-| Command | Description |
-|---------|-------------|
-| \`/harness-update\` | Update Harness |
-| \`/mcp-setup\` | Setup MCP server |
-| \`/lsp-setup\` | Setup LSP |
-
-## Workflow
-
-\`\`\`
-/plan-with-agent → /work → /harness-review → commit
-\`\`\`
-
-## MCP Integration
-
-This project includes an MCP server for cross-client communication.
-See \`opencode.json\` for configuration.
-
-## More Information
-
-- [Harness Documentation](https://github.com/Chachamaru127/claude-code-harness)
-- [OpenCode Documentation](https://opencode.ai/docs/)
 `;
+
+  const agentsMd = header + claudeMdContent;
 
   const destPath = path.join(OPENCODE_DIR, 'AGENTS.md');
   fs.writeFileSync(destPath, agentsMd);
-  console.log(`  ✓ ${path.relative(ROOT_DIR, destPath)}`);
+  console.log(`  ✓ ${path.relative(ROOT_DIR, destPath)} (from CLAUDE.md)`);
 }
 
 /**
@@ -214,14 +203,15 @@ Claude Code Harness の opencode.ai 互換版です。
 
 ## セットアップ
 
-### 1. コマンドをプロジェクトにコピー
+### 1. コマンドとスキルをプロジェクトにコピー
 
 \`\`\`bash
 # Harness をクローン
 git clone https://github.com/Chachamaru127/claude-code-harness.git
 
-# opencode 用コマンドをコピー
+# opencode 用ファイルをコピー
 cp -r claude-code-harness/opencode/commands/ your-project/.opencode/commands/
+cp -r claude-code-harness/opencode/skills/ your-project/.claude/skills/
 cp claude-code-harness/opencode/AGENTS.md your-project/AGENTS.md
 \`\`\`
 
@@ -254,6 +244,20 @@ opencode
 | \`/work\` | タスク実行 |
 | \`/harness-review\` | コードレビュー |
 
+## 利用可能なスキル
+
+opencode.ai は \`.claude/skills/\` ディレクトリのスキルを自動認識します：
+
+| スキル | 説明 |
+|--------|------|
+| \`docs\` | ドキュメント生成（NotebookLM YAML、スライド） |
+| \`impl\` | 機能実装 |
+| \`review\` | コードレビュー |
+| \`verify\` | ビルド検証・エラー復旧 |
+| \`auth\` | 認証・決済（Clerk, Stripe） |
+| \`deploy\` | デプロイ（Vercel, Netlify） |
+| \`ui\` | UIコンポーネント生成 |
+
 ## MCP ツール
 
 MCP サーバー経由で以下のツールが利用可能です：
@@ -282,6 +286,79 @@ MCP サーバー経由で以下のツールが利用可能です：
 }
 
 /**
+ * スキルをコピー（.claude/skills/ 互換形式）
+ *
+ * opencode.ai は .claude/skills/<name>/SKILL.md を認識する。
+ * harness のスキルをそのままコピーする。
+ */
+function copySkills() {
+  if (!fs.existsSync(SKILLS_DIR)) {
+    console.log(`  ⚠ skills/ directory not found, skipping`);
+    return 0;
+  }
+
+  // 既存のスキルディレクトリをクリア
+  clearDir(OPENCODE_SKILLS_DIR);
+  ensureDir(OPENCODE_SKILLS_DIR);
+
+  const entries = fs.readdirSync(SKILLS_DIR, { withFileTypes: true });
+  let copiedCount = 0;
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const skillName = entry.name;
+    const srcSkillDir = path.join(SKILLS_DIR, skillName);
+    const destSkillDir = path.join(OPENCODE_SKILLS_DIR, skillName);
+
+    // テスト用・開発用スキルはスキップ
+    if (skillName.startsWith('test-') || skillName.startsWith('x-')) {
+      console.log(`  ⏭ ${skillName}/ (dev/test skill, skipped)`);
+      continue;
+    }
+
+    // SKILL.md が存在するか確認
+    const skillMdPath = path.join(srcSkillDir, 'SKILL.md');
+    if (!fs.existsSync(skillMdPath)) {
+      console.log(`  ⏭ ${skillName}/ (no SKILL.md, skipped)`);
+      continue;
+    }
+
+    // スキルディレクトリを再帰的にコピー
+    copyDirectoryRecursive(srcSkillDir, destSkillDir);
+    copiedCount++;
+    console.log(`  ✓ ${skillName}/`);
+  }
+
+  return copiedCount;
+}
+
+/**
+ * ディレクトリを再帰的にコピー
+ */
+function copyDirectoryRecursive(src, dest) {
+  ensureDir(dest);
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    // CLAUDE.md はスキップ（claude-mem の自動生成ファイル）
+    if (entry.name === 'CLAUDE.md') {
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      copyDirectoryRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+/**
  * メイン処理
  */
 function main() {
@@ -289,11 +366,16 @@ function main() {
 
   // opencode ディレクトリをクリア
   clearDir(OPENCODE_COMMANDS_DIR);
+  clearDir(OPENCODE_SKILLS_DIR);
   ensureDir(OPENCODE_DIR);
 
   // コマンドを変換
   console.log('📁 Converting commands:');
-  const count = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
+  const commandCount = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
+
+  // スキルをコピー
+  console.log('\n📁 Copying skills:');
+  const skillCount = copySkills();
 
   // 追加ファイルを生成
   console.log('\n📄 Generating additional files:');
@@ -301,7 +383,9 @@ function main() {
   generateOpencodeJson();
   generateReadme();
 
-  console.log(`\n✅ Done! Converted ${count} command files.`);
+  console.log(`\n✅ Done!`);
+  console.log(`   Commands: ${commandCount} files`);
+  console.log(`   Skills: ${skillCount} directories`);
   console.log(`   Output: ${path.relative(process.cwd(), OPENCODE_DIR)}/`);
 }
 

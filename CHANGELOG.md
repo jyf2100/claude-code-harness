@@ -9,6 +9,45 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.10.7] - 2026-01-25
+
+### 🎯 What's Changed for You
+
+**`/opencode-setup` now provides all 26 Harness skills for OpenCode.ai. NotebookLM, review, deploy, and more - everything available in Claude Code now works in OpenCode.ai.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Skills unavailable in OpenCode.ai | 26 skills copied to `.claude/skills/` and available |
+| `AGENTS.md` was minimal | Full `CLAUDE.md` content now in `AGENTS.md` |
+| Symlink-based, no Windows support | Copy-based by default, Windows compatible |
+| Re-linking needed for skill updates | `build-opencode.js` regenerates all at once |
+
+### Added
+
+- **Skill copy feature in `/opencode-setup`**
+  - 26 skills (docs, impl, review, deploy, etc.) auto-copied
+  - `test-*`, `x-*` dev skills automatically excluded
+  - `--symlink` option for traditional symlink approach
+
+- **`build-opencode.js` as SSOT (Single Source of Truth) for skill conversion**
+  - Recursive skill directory copying
+  - `AGENTS.md` generated from full `CLAUDE.md` content
+  - Pre-generates 32 commands, 26 skills in `opencode/` directory
+
+### Changed
+
+- **`AGENTS.md` content significantly expanded**
+  - Before: Minimal overview
+  - After: Full `CLAUDE.md` content (dev rules, skill list, SSOT info, etc.)
+
+- **`setup-opencode.sh` synced with `/opencode-setup`**
+  - Added `.claude/skills/` copy processing
+  - Completion message shows available skills list
+
+---
+
 ## [2.10.6] - 2026-01-25
 
 ### 🎯 What's Changed for You

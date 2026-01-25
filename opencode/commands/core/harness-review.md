@@ -121,6 +121,53 @@ Details: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
 
 ---
 
+## 🔧 Code Intelligence Integration (Optional)
+
+When `/dev-tools-setup` has been run, review automatically uses AST-Grep for deeper analysis.
+
+### AST-Grep Code Smell Detection
+
+If `harness_ast_search` MCP tool is available:
+
+```
+🔍 AST-Grep Code Smell Scan
+
+Patterns checked:
+- console.log($$$) → Debug logs
+- catch ($ERR) { } → Empty catch blocks
+- async function $NAME($$$) { $BODY_NO_AWAIT } → Unused async
+
+Results:
+├── 3x console.log found (src/api/*.ts)
+├── 1x empty catch block (src/utils/error.ts:45)
+└── 0x unused async
+```
+
+### LSP Diagnostics Integration
+
+If LSP is configured:
+
+```
+📊 LSP Diagnostics Summary
+
+src/components/UserForm.tsx:
+├── Line 15: Type error - string vs number
+├── Line 23: Unused variable 'tempData'
+
+src/api/users.ts:
+└── Line 42: Missing return type annotation
+```
+
+### How to Enable
+
+```bash
+/dev-tools-setup  # One-time setup
+```
+
+After setup, code intelligence is automatically used in reviews.
+
+---
+
 ## Purpose of This Command
 
 **Automates quality assurance for contract development**.
