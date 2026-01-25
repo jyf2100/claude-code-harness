@@ -281,9 +281,52 @@ Task tool 並列呼び出し:
 
 ---
 
+## 🔧 MCP Code Intelligence ツールの活用
+
+レビューでは MCP ツール（AST-Grep, LSP）を活用して精度を向上します。
+
+> **重要**: `/dev-tools-setup` で MCP サーバーが設定されている場合、標準ツール（Grep, Read）ではなく **MCP ツールを優先使用**してください。MCP ツールは構造的な検索が可能で、より正確な結果を得られます。
+
+### AST-Grep MCP ツール（harness_ast_search）
+
+**構造的なコードパターン検索**に使用します。正規表現ベースの Grep より精度が高く、コードスメル検出に最適です。
+
+| 検出パターン | AST-Grep パターン | 用途 |
+|-------------|------------------|------|
+| Debug logs | `console.log($$$)` | リリース前の残留ログ検出 |
+| Empty catch | `catch ($ERR) { }` | エラー握りつぶし検出 |
+| Unused async | `async function $NAME($$$) { $BODY }` | await なし async 検出 |
+| Magic numbers | 数値リテラル検索 | ハードコード定数検出 |
+
+**使用例**:
+```
+harness_ast_search pattern="console.log($$$)" language="typescript" path="src/"
+harness_ast_search pattern="catch ($ERR) { }" language="typescript" path="src/"
+```
+
+**出力例**:
+```markdown
+🔍 AST-Grep Code Smell Scan
+
+Patterns checked:
+- console.log($$$) → Debug logs
+- catch ($ERR) { } → Empty catch blocks
+
+Results:
+├── 3x console.log found (src/api/*.ts)
+├── 1x empty catch block (src/utils/error.ts:45)
+└── 0x unused async
+```
+
+> **注**: `harness_ast_search` が利用できない場合は、`sg` コマンド（Bash）または Grep にフォールバックします。
+
+---
+
 ## 🔧 LSP 機能の活用
 
 レビューでは LSP（Language Server Protocol）を活用して精度を向上します。
+
+> **MCP 版優先**: `harness_lsp_*` MCP ツールが利用可能な場合は、標準 LSP ツールより優先して使用してください。
 
 ### LSP をレビューに統合
 

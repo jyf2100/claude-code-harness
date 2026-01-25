@@ -9,6 +9,37 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.10.3] - 2026-01-25
+
+### 🎯 What's Changed for You
+
+**`/dev-tools-setup` now configures MCP server automatically, ensuring Claude uses AST-Grep and LSP tools instead of falling back to standard grep/read.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/dev-tools-setup` only installed tools | Also configures MCP server (`.mcp.json`) |
+| Claude might ignore AST-Grep | MCP tools explicitly available in prompts |
+| Review skill used standard tools | Review skill uses `harness_ast_search` for code smell detection |
+
+### Added
+
+- **Quality protection rules** - Prevent test tampering and hollow implementations
+  - `.claude/rules/test-quality.md` - Detects `it.skip()`, assertion removal, eslint-disable additions
+  - `.claude/rules/implementation-quality.md` - Detects hardcoded test values, stub implementations
+
+### Changed
+
+- **`/dev-tools-setup` now includes MCP configuration**
+  - Creates `.mcp.json` with harness MCP server
+  - Documents design intent: "Why MCP?" section explains tool discoverability
+- **Review skill enhanced with AST-Grep MCP usage**
+  - Added "MCP Code Intelligence Tools" section
+  - Explicit guidance to prefer `harness_ast_search` over grep
+
+---
+
 ## [2.10.0] - 2026-01-25
 
 ### 🎯 What's Changed for You

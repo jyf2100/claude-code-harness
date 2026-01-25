@@ -9,6 +9,37 @@
 
 ---
 
+## [2.10.3] - 2026-01-25
+
+### 🎯 あなたにとって何が変わるか
+
+**`/dev-tools-setup` が MCP サーバー設定まで自動化。Claude が標準ツール（grep/read）ではなく AST-Grep/LSP を確実に使用するようになりました。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/dev-tools-setup` はツールのインストールのみ | MCP サーバー設定（`.mcp.json`）も自動作成 |
+| Claude が AST-Grep を無視する可能性 | MCP ツールとして明示的に提供 |
+| review スキルは標準ツールを使用 | `harness_ast_search` でコードスメル検出 |
+
+### Added
+
+- **品質保護ルール** - テスト改ざんと形骸化実装を防止
+  - `.claude/rules/test-quality.md` - `it.skip()`、アサーション削除、eslint-disable 追加を検出
+  - `.claude/rules/implementation-quality.md` - テスト期待値のハードコード、スタブ実装を検出
+
+### Changed
+
+- **`/dev-tools-setup` に MCP 設定を統合**
+  - `.mcp.json` に harness MCP サーバーを自動登録
+  - 「Why MCP?」セクションで設計意図を明記
+- **review スキルに AST-Grep MCP 使用を追加**
+  - 「MCP Code Intelligence ツールの活用」セクション追加
+  - `harness_ast_search` を grep より優先する指示を明記
+
+---
+
 ## [2.10.0] - 2026-01-25
 
 ### 🎯 あなたにとって何が変わるか

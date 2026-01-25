@@ -9,6 +9,22 @@ Setup AST-Grep and LSP to enable advanced code intelligence features.
 
 ---
 
+## Why MCP? (設計意図)
+
+AST-Grep や LSP を「ただインストールするだけ」では、Claude は標準ツール（Grep, Read, Bash など）を使い続けてしまいます。
+
+**MCP 化することで**:
+
+| 課題 | MCP による解決 |
+|------|---------------|
+| Claude が `sg` コマンドを知らない | `harness_ast_search` として明示的に提供 |
+| スキルから呼び出せない | MCP ツールとしてスキル内で参照可能 |
+| 使い方が不明確 | ツール説明に用途・パターンを記載 |
+
+**結果**: `/harness-review` や review スキルが自動的に `harness_ast_search` を使用し、コードスメル検出の精度が向上します。
+
+---
+
 ## What This Enables
 
 After setup, these MCP tools become available:
@@ -61,7 +77,69 @@ Based on detected languages:
 | Rust | `which rust-analyzer` | `rustup component add rust-analyzer` |
 | Go | `which gopls` | `go install golang.org/x/tools/gopls@latest` |
 
-### Step 4: Report Status
+### Step 4: Configure MCP Server
+
+MCP ツールを有効にするため、harness MCP サーバーを設定します。
+
+#### 4.1: MCP サーバービルド確認
+
+```bash
+# MCP サーバーがビルド済みか確認
+ls "${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/index.js" 2>/dev/null || echo "Not built"
+```
+
+**ビルドされていない場合:**
+
+```bash
+cd "${CLAUDE_PLUGIN_ROOT}/mcp-server"
+npm install
+npm run build
+```
+
+#### 4.2: プロジェクト設定に追加
+
+`.mcp.json`（プロジェクトルート）に MCP サーバーを登録:
+
+```json
+{
+  "mcpServers": {
+    "harness": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+**実行するコマンド:**
+
+```bash
+# .mcp.json が存在しない場合は作成
+if [ ! -f .mcp.json ]; then
+  cat > .mcp.json << 'EOF'
+{
+  "mcpServers": {
+    "harness": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/index.js"]
+    }
+  }
+}
+EOF
+  echo "Created .mcp.json"
+else
+  echo ".mcp.json already exists - please add harness MCP server manually"
+fi
+```
+
+#### 4.3: 動作確認
+
+```bash
+# Claude Code を再起動後、MCP ツールが利用可能か確認
+# harness_ast_search, harness_lsp_* などが使用可能になる
+```
+
+### Step 5: Report Status
 
 ```markdown
 ## 🔧 Development Tools Status
@@ -78,9 +156,13 @@ Based on detected languages:
 | TypeScript | ✅/❌ | typescript-language-server |
 | Python | ✅/❌ | pylsp |
 
+### MCP Server
+- Status: ✅ Configured / ❌ Not Configured
+- Config: `.mcp.json`
+
 ### Available MCP Tools
 
-After installation:
+After setup complete:
 - `harness_ast_search` - Structural code search
 - `harness_lsp_references` - Find references
 - `harness_lsp_definition` - Go to definition
@@ -91,7 +173,7 @@ After installation:
 
 1. Install missing tools (commands shown above)
 2. Restart Claude Code session
-3. Use MCP tools in your workflow
+3. MCP tools are now available in your workflow
 ```
 
 ---
