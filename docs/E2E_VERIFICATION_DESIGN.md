@@ -2,7 +2,7 @@
 
 > **Status**: 設計フェーズ（将来実装予定）
 >
-> Clawdbot の CDP (Chrome DevTools Protocol) 連携から着想を得た機能設計。
+> CDP (Chrome DevTools Protocol) を活用した E2E 検証機能の設計。
 
 ## Overview
 
@@ -284,11 +284,9 @@ jobs:
 
 - [IMPLEMENTATION_GUIDE.md](../IMPLEMENTATION_GUIDE.md) - 実装ガイド
 - [docs/CURSOR_INTEGRATION.md](CURSOR_INTEGRATION.md) - Cursor 連携
-- Clawdbot CDP 実装 - 参考アーキテクチャ
 
 ## Notes
 
-- この設計は Clawdbot の CDP 連携から着想を得ています
 - 実装優先度は低め（Phase 4 として位置付け）
 - MCP Playwright サーバーの成熟度に依存
 - ユーザーからの需要に応じて優先度を調整

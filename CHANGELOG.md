@@ -105,7 +105,7 @@ Change history for claude-code-harness.
   - Detects export changes → warns about broken imports
   - Detects config changes → warns about unsynchronized related configs
   - Integrated into `/work` flow (Phase 1 self-review and Phase 3 pre-commit)
-- **Inter-session communication** - Real-time messaging between sessions (inspired by Clawdbot)
+- **Inter-session communication** - Real-time messaging between sessions
   - `/session-broadcast`: Send messages to all active sessions
   - `/session-inbox`: Check for messages from other sessions
   - `/session-list`: View active sessions
