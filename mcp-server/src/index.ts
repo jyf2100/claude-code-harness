@@ -21,6 +21,10 @@ import {
 import { sessionTools, handleSessionTool } from "./tools/session.js";
 import { workflowTools, handleWorkflowTool } from "./tools/workflow.js";
 import { statusTools, handleStatusTool } from "./tools/status.js";
+import {
+  codeIntelligenceTools,
+  handleCodeIntelligenceTool,
+} from "./tools/code-intelligence.js";
 
 // Server instance
 const server = new Server(
@@ -36,7 +40,12 @@ const server = new Server(
 );
 
 // Combine all tools
-const allTools: Tool[] = [...sessionTools, ...workflowTools, ...statusTools];
+const allTools: Tool[] = [
+  ...sessionTools,
+  ...workflowTools,
+  ...statusTools,
+  ...codeIntelligenceTools,
+];
 
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -59,6 +68,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name.startsWith("harness_status")) {
       return await handleStatusTool(name, args);
+    }
+
+    if (name.startsWith("harness_ast_") || name.startsWith("harness_lsp_")) {
+      return await handleCodeIntelligenceTool(name, args);
     }
 
     return {

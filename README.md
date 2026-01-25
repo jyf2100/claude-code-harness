@@ -44,6 +44,19 @@ Solo developers face 4 recurring problems. Claude Harness solves all of them:
 
 **Requirements**: Claude Code v2.1.6+ ([compatibility guide](docs/CLAUDE_CODE_COMPATIBILITY.md))
 
+### One-Liner Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/quick-install.sh | bash
+```
+
+With development tools (AST-Grep, LSP):
+```bash
+curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/quick-install.sh | bash -s -- --with-dev-tools
+```
+
+### Manual Install
+
 ```bash
 # 1. Open your project in Claude Code
 cd /path/to/your-project && claude
@@ -76,11 +89,23 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 ### Parallel Full-Cycle Automation
 
 ```bash
-/work --full --parallel 3
+/work                  # Full automation with smart parallel (default)
+/work --parallel 5     # Force 5 parallel workers
 ```
 
 Runs **implement → self-review → fix → commit** in parallel for each task.
 Each worker reviews its own code before marking done.
+
+### Code Intelligence (AST-Grep + LSP)
+
+```bash
+/dev-tools-setup   # One-time setup
+```
+
+Enables structural code search and semantic analysis:
+- Find code patterns: `console.log`, empty catch blocks, unused async
+- Impact analysis: Find all references before refactoring
+- Diagnostics: Type errors and warnings
 
 ### 8-Expert Code Review
 
@@ -165,6 +190,7 @@ See [opencode/README.md](opencode/README.md) for full setup instructions.
 |---------|---------|
 | `/harness-init` | Initialize project |
 | `/harness-update` | Update plugin files |
+| `/dev-tools-setup` | Setup AST-Grep + LSP |
 | `/codex-review` | Codex-only second opinion |
 | `/skill-list` | Show all 67 skills |
 
