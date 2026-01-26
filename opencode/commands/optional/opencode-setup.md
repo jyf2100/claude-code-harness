@@ -15,7 +15,11 @@ description: opencode.ai 用にプロジェクトをセットアップ
 
 ## Deliverables
 
-- `.opencode/commands/` - opencode 用コマンド
+- `.opencode/commands/` - opencode 用コマンド（Impl + PM）
+  - `core/` - コアコマンド（/work, /plan-with-agent 等）
+  - `optional/` - オプションコマンド
+  - `pm/` - PM コマンド（OpenCode を PM として使う場合）
+  - `handoff/` - ハンドオフコマンド
 - `.claude/skills/` - opencode 互換スキル（NotebookLM、レビュー等）
 - `AGENTS.md` - opencode 用ルールファイル（CLAUDE.md 全文）
 - `opencode.json` - MCP 設定（オプション）
@@ -51,6 +55,8 @@ description: opencode.ai 用にプロジェクトをセットアップ
 ```bash
 mkdir -p .opencode/commands/core
 mkdir -p .opencode/commands/optional
+mkdir -p .opencode/commands/pm
+mkdir -p .opencode/commands/handoff
 mkdir -p .claude/skills
 ```
 
@@ -137,6 +143,10 @@ cp "$PLUGIN_DIR/opencode/AGENTS.md" AGENTS.md
 >
 > 📁 **生成されたファイル:**
 > - `.opencode/commands/` - Harness コマンド
+>   - `core/` - コアコマンド（/work, /plan-with-agent 等）
+>   - `optional/` - オプションコマンド
+>   - `pm/` - PM コマンド（/start-session, /plan-with-cc 等）
+>   - `handoff/` - ハンドオフコマンド
 > - `.claude/skills/` - Harness スキル
 > - `AGENTS.md` - ルールファイル（CLAUDE.md 全文）
 > - `opencode.json` - MCP 設定（選択時）
@@ -149,15 +159,20 @@ cp "$PLUGIN_DIR/opencode/AGENTS.md" AGENTS.md
 > - `auth` - 認証・決済（Clerk, Stripe）
 > - `deploy` - デプロイ（Vercel, Netlify）
 >
-> **使い方:**
+> **使い方 (Impl モード - Claude Code で実装する場合):**
 > ```bash
-> # opencode を起動
+> # opencode を起動してタスク実行
 > opencode
->
-> # コマンドを実行
-> /plan-with-agent
 > /work
-> /harness-review
+> ```
+>
+> **使い方 (PM モード - OpenCode で計画管理する場合):**
+> ```bash
+> # opencode を起動してセッション開始
+> opencode
+> /start-session
+> /plan-with-cc
+> /handoff-to-claude  # Claude Code への依頼生成
 > ```
 >
 > **ドキュメント:** https://github.com/Chachamaru127/claude-code-harness

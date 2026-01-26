@@ -1,12 +1,11 @@
 ---
 description: Multi-perspective review (auto-detects: code, plan, scope based on context)
-description-en: Multi-perspective review (auto-detects: code, plan, scope based on context)
 context: fork
-hooks:
-  - event: PreCommandInvoke
-    type: command
-    command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
-    once: true
+hooks: 
+- event: PreCommandInvoke
+type: command
+command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
+once: true
 ---
 
 # /harness-review - Multi-Perspective Review

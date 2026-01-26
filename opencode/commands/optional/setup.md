@@ -1,6 +1,5 @@
 ---
 description: "[Optional] Unified setup command for CI, LSP, MCP, dev-tools, etc."
-description-en: "[Optional] Unified setup command for CI, LSP, MCP, dev-tools, etc."
 ---
 
 # /setup - Unified Setup Command

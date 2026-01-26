@@ -1,6 +1,5 @@
 ---
 description: Execute Plans.md tasks (Solo/2-Agent, parallel execution enabled)
-description-en: Execute Plans.md tasks (Solo/2-Agent, parallel execution enabled)
 ---
 
 # /work - Execute Plan

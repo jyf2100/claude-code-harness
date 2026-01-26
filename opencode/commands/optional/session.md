@@ -1,6 +1,5 @@
 ---
 description: "[Optional] Unified session management command (list, inbox, broadcast)"
-description-en: "[Optional] Unified session management command (list, inbox, broadcast)"
 ---
 
 # /session - Unified Session Management
