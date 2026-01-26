@@ -9,6 +9,35 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.11.1] - 2026-01-26
+
+### 🎯 What's Changed for You
+
+**session-inbox messages are now automatically displayed without confirmation prompts. When other sessions send you messages, they appear directly in the context—no need to run `/session-inbox` manually.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `📨 2 unread messages. Run /session-inbox to check.` | `📨 Messages from other sessions (2):\n---\n[10:30] session-abc1: UserAPI changed\n---` |
+| Manual command execution required | Message content shown automatically |
+| Needed user permission to view | Messages are for the session itself, no permission needed |
+
+### Changed
+
+- **`pretooluse-inbox-check.sh` auto-display messages**
+  - Message content now included directly in `additionalContext`
+  - "Please check" prompt removed
+  - Max 5 messages displayed (prevents long output)
+  - Auto-read mark not applied (user controls with `--mark`)
+
+- **`/session-inbox` command role clarified**
+  - Now used for detailed view and read-mark operations
+  - Auto-check section updated to reflect auto-display behavior
+  - Added note about v2.11.1+ behavior
+
+---
+
 ## [2.11.0] - 2026-01-26
 
 ### 🎯 What's Changed for You
@@ -1403,7 +1432,8 @@ Key milestones:
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.8...v2.11.0
 [2.10.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.7...v2.10.8
 [2.10.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.6...v2.10.7

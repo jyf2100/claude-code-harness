@@ -9,6 +9,35 @@
 
 ---
 
+## [2.11.1] - 2026-01-26
+
+### 🎯 あなたにとって何が変わるか
+
+**session-inbox のメッセージが確認なしで自動表示されるようになりました。他セッションからメッセージが届いた際、内容がそのままコンテキストに表示されます。`/session-inbox` の手動実行は不要です。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `📨 未読メッセージが2件あります。/session-inbox で確認してください。` | `📨 他セッションからのメッセージ 2件:\n---\n[10:30] session-abc1: UserAPI変更\n---` |
+| 手動でコマンド実行が必要 | メッセージ内容が自動表示 |
+| ユーザーの許可を求めていた | セッション自身への通知なので許可は不要 |
+
+### Changed
+
+- **`pretooluse-inbox-check.sh` メッセージ自動表示化**
+  - メッセージ内容を `additionalContext` に直接含める
+  - 「確認してください」の案内を削除
+  - 最大5件まで表示（長すぎる表示を防止）
+  - 自動既読マークはしない（ユーザーが `--mark` で制御）
+
+- **`/session-inbox` コマンドの役割明確化**
+  - 詳細確認・既読マーク専用として位置づけ
+  - Auto-check セクションの説明を更新
+  - v2.11.1+ の動作を Note に追加
+
+---
+
 ## [2.11.0] - 2026-01-26
 
 ### 🎯 あなたにとって何が変わるか
@@ -2287,7 +2316,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.8...v2.11.0
 [2.10.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.7...v2.10.8
 [2.10.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.6...v2.10.7

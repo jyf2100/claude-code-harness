@@ -57,15 +57,24 @@ fi
 UNREAD_COUNT=$(bash "$SCRIPT_DIR/session-inbox-check.sh" --count 2>/dev/null || echo "0")
 
 if [ "$UNREAD_COUNT" -gt 0 ]; then
-  # 未読メッセージの概要を取得
-  INBOX_SUMMARY=$(bash "$SCRIPT_DIR/session-inbox-check.sh" 2>/dev/null | head -5 || echo "")
+  # 未読メッセージの内容を取得（最大5件）
+  # session-inbox-check.sh の出力から実際のメッセージ行を抽出
+  INBOX_MESSAGES=$(bash "$SCRIPT_DIR/session-inbox-check.sh" 2>/dev/null | grep -E '^\[' | head -5 || echo "")
 
-  # エスケープ処理
-  ESCAPED_SUMMARY=$(echo "$INBOX_SUMMARY" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+  if [ -n "$INBOX_MESSAGES" ]; then
+    # メッセージ内容をエスケープ処理
+    ESCAPED_MESSAGES=$(echo "$INBOX_MESSAGES" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
 
-  cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"📨 他セッションからの未読メッセージが ${UNREAD_COUNT}件 あります。\\n/session-inbox で確認してください。"}}
+    # メッセージ内容を直接表示（確認不要）
+    cat <<EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"📨 他セッションからのメッセージ ${UNREAD_COUNT}件:\\n---\\n${ESCAPED_MESSAGES}\\n---"}}
 EOF
+  else
+    # メッセージ抽出に失敗した場合はフォールバック
+    cat <<EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"📨 他セッションからのメッセージが ${UNREAD_COUNT}件 あります"}}
+EOF
+  fi
 else
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":""}}'
 fi
