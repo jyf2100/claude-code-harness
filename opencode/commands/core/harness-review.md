@@ -1,28 +1,49 @@
 ---
-description: Code review (multi-perspective security/performance/quality)
+description: Multi-perspective review (auto-detects: code, plan, scope based on context)
+description-en: Multi-perspective review (auto-detects: code, plan, scope based on context)
 context: fork
-hooks: 
-- event: PreCommandInvoke
-type: command
-command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
-once: true
+hooks:
+  - event: PreCommandInvoke
+    type: command
+    command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
+    once: true
 ---
 
-# /harness-review - Code Review (Solo Mode)
+# /harness-review - Multi-Perspective Review
 
-Checks the quality of created code.
-Analyzes from multiple perspectives and suggests improvements.
+Reviews your work from multiple perspectives. **Auto-detects what to review based on context.**
+
+---
+
+## 🎯 Context-Aware Review
+
+This command automatically detects what to review based on your recent activity:
+
+| Recent Activity | Review Type | 4 Perspectives |
+|-----------------|-------------|----------------|
+| After `/plan-with-agent` | Plan Review | Clarity, Feasibility, Dependencies, Acceptance |
+| After `/work` | Code Review | Security, Performance, Quality, Accessibility |
+| After adding tasks to Plans.md | Scope Review | Scope-creep, Priority, Feasibility, Impact |
+
+### Usage
+
+```bash
+/harness-review           # Auto-detect from context
+/harness-review code      # Force code review
+/harness-review plan      # Force plan review
+/harness-review scope     # Force scope analysis
+```
 
 ---
 
 ## 💡 VibeCoder Usage Guide
 
-**This command is designed so you can receive high-quality code review without technical knowledge.**
+**This command is designed so you can receive high-quality review without technical knowledge.**
 
-- ✅ Auto-detect security issues
-- ✅ Suggest performance improvements
-- ✅ Auto-check code quality
-- ✅ Verify accessibility compliance
+- ✅ Auto-detect what needs review
+- ✅ Multi-perspective analysis (4 experts)
+- ✅ Clear actionable feedback
+- ✅ Works for code, plans, and scope
 
 **Important for contract development**: You can submit review results as a report to reassure clients
 
