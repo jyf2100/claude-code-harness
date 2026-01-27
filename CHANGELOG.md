@@ -9,6 +9,44 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.13.2] - 2026-01-27
+
+### 🎯 What's Changed for You
+
+**Deprecated session commands (`/session-broadcast`, `/session-inbox`, `/session-list`) have been removed. Use the unified `/session` command instead. Also, `/opencode-setup` is now fully automated via a single shell script.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/session-broadcast`, `/session-inbox`, `/session-list` (3 separate commands) | `/session` (unified command) |
+| `/opencode-setup` with manual multi-step copy | `bash ./scripts/opencode-setup-local.sh` (one command) |
+
+### Removed
+
+- **`/session-broadcast`** - Use `/session` instead
+- **`/session-inbox`** - Use `/session` instead
+- **`/session-list`** - Use `/session` instead
+
+### Changed
+
+- **`/opencode-setup`** simplified
+  - Manual multi-step copy replaced with `scripts/opencode-setup-local.sh`
+  - Auto-detects plugin location (env var, repo, marketplace, cache)
+  - `--symlink` option removed
+
+- **`.gitignore`** updated
+  - `benchmarks/`, `mcp-server/`, `.opencode/` excluded (local-only directories)
+  - 332 benchmark files removed from tracking
+
+### Added
+
+- **`scripts/opencode-setup-local.sh`** - OpenCode setup automation with plugin auto-detection
+- **`scripts/posttooluse-security-review.sh`** - PostToolUse security review hook
+- **`docs/HARNESS_COMPLETE_MAP.md`** - Complete project architecture documentation
+
+---
+
 ## [2.13.1] - 2026-01-27
 
 ### 🎯 What's Changed for You
@@ -1558,7 +1596,9 @@ Key milestones:
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.1...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.2...HEAD
+[2.13.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.1...v2.13.2
+[2.13.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.0...v2.13.1
 [2.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.12.0...v2.13.0
 [2.12.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.1...v2.12.0
 [2.11.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...v2.11.1
