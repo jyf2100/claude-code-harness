@@ -9,6 +9,31 @@
 
 ---
 
+## [2.14.3] - 2026-01-28
+
+### Added
+
+- **`work.commit_on_pm_approve` 設定オプション**
+  - 2-Agent モードで PM 承認後にコミットを実行する新しいワークフローを追加
+  - `commit_on_pm_approve: true` 設定時、`/work` はコミットを保留し、Handoff レポートに commit-pending フラグを含める
+  - PM が `review-cc-work` で approve すると、ハンドオフにコミット指示が含まれ、次回 `/work` 実行時にコミットが実行される
+  - Solo モードでは無視され、通常の `auto_commit` 設定に従う
+  - 設定: `.claude-code-harness.config.yaml` の `work.commit_on_pm_approve: true`
+
+### Changed
+
+- **`/work` の Phase 3/4 フロー拡張**
+  - Phase 3 に `commit_on_pm_approve` モードの分岐を追加（コミット保留 + pending 状態記録）
+  - Phase 4 の Handoff レポートに commit-pending セクションを追加
+  - 起動時に前回の保留コミットを検出・実行する Pre-task チェックを追加
+  - Cursor 版・OpenCode 版の両方を同期更新
+
+- **`review-cc-work` テンプレート拡張**（Cursor/OpenCode 両対応）
+  - approve 時に「Commit Status: Pending PM Approval」を検出し、コミット指示付きハンドオフを生成
+  - ワークフロー図に commit-pending フローを追記
+
+---
+
 ## [2.14.2] - 2026-01-28
 
 ### Changed
@@ -2508,7 +2533,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...HEAD
+[2.14.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.1...v2.14.2
 [2.13.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.2...v2.13.3
 [2.13.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.1...v2.13.2

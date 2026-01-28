@@ -4,6 +4,7 @@
 # /work command settings
 work:
   auto_commit: false  # Disable auto-commit for this project (harness itself)
+  commit_on_pm_approve: false  # true: 2-Agent mode で PM 承認後にコミット（Solo では無視）
 
 cleanup:
   plans:

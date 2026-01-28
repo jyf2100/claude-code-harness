@@ -43,6 +43,7 @@ Override default via `.claude-code-harness.config.yaml`:
 ```yaml
 work:
   auto_commit: false  # Disable auto-commit for this project
+  commit_on_pm_approve: true  # 2-Agent: defer commit until PM approves
 ```
 
 ### Smart Parallel Detection
@@ -157,13 +158,19 @@ tail -20 .claude/state/session.events.jsonl
 │  📝 Auto-commit with generated message                  │
 │                                                         │
 │  Skip with: --no-commit or config auto_commit: false    │
+│                                                         │
+│  ⏸️ commit_on_pm_approve: true (2-Agent only):           │
+│    → Skip commit, mark as "pending_pm_approval"         │
+│    → Handoff includes commit instruction for PM         │
 └─────────────────────────────────────────────────────────┘
-    ↓ Commit complete (or skipped)
+    ↓ Commit complete (or skipped / deferred)
 ┌─────────────────────────────────────────────────────────┐
 │ Phase 4: Handoff (2-Agent only)                         │
 ├─────────────────────────────────────────────────────────┤
 │  2-Agent mode (pm:requested detected):                  │
 │    → Execute `/handoff-to-opencode` to report to PM     │
+│    → If commit_on_pm_approve: include commit-pending    │
+│      flag in handoff report                             │
 │                                                         │
 │  Solo mode:                                             │
 │    → Skip (no handoff needed)                           │
@@ -325,8 +332,29 @@ Max iterations reached:
 Check auto-commit setting:
   1. --no-commit flag → Skip commit
   2. .claude-code-harness.config.yaml work.auto_commit: false → Skip commit
-  3. Otherwise → Auto-commit with generated message
+  3. .claude-code-harness.config.yaml work.commit_on_pm_approve: true
+     AND 2-Agent mode → Defer commit (pending PM approval)
+  4. Otherwise → Auto-commit with generated message
 ```
+
+**commit_on_pm_approve モード** (2-Agent 専用):
+
+```
+commit_on_pm_approve: true AND 2-Agent mode:
+    ↓
+Skip commit → Record pending state
+    ↓
+Handoff to PM with commit-pending flag:
+  "変更はレビュー済みですが、未コミットです。
+   approve 時にコミット指示を含めてください。"
+    ↓
+PM approves → Handoff includes commit instruction
+    ↓
+Next /work invocation: Detect "approved + commit pending"
+    → Execute commit before starting new tasks
+```
+
+> **Solo モードでは無視**: `commit_on_pm_approve` は 2-Agent モードでのみ有効。Solo モードでは通常の `auto_commit` 設定に従う。
 
 **Completion report (with auto-commit)**:
 
@@ -370,6 +398,29 @@ Next steps:
 2. Commit when ready: git add . && git commit
 ```
 
+**Completion report (with commit_on_pm_approve, 2-Agent)**:
+
+```
+✅ /work Complete (commit pending PM approval)
+
+| Item | Status |
+|------|--------|
+| Tasks | 5/5 implemented |
+| Review | APPROVE |
+| Iterations | 2 |
+| Commit | ⏸️ Pending PM approval |
+
+Changed files:
+- src/components/Header.tsx (new)
+- src/components/Footer.tsx (new)
+- src/components/Sidebar.tsx (new)
+
+## Commit Status: Pending PM Approval
+
+変更はハーネスレビュー済みですが、コミットを保留しています。
+PM が approve した場合、次回 /work 実行時にコミットされます。
+```
+
 ### Phase 4: Handoff (2-Agent only)
 
 **Review OK 判定条件** (Solo/2-Agent 共通):
@@ -386,12 +437,31 @@ Phase 3 (Auto-commit) 完了後:
     ↓
 2-Agent mode (pm:requested / cursor:requested detected)?
   YES → Execute `/handoff-to-opencode` (completion report to PM)
+        → If commit_on_pm_approve: add commit-pending section
   NO  → Solo mode: Skip handoff (workflow complete)
 ```
 
-**順序**: Review OK → Auto-commit → Handoff
+**順序（通常モード）**: Review OK → Auto-commit → Handoff
 
-> ⚠️ **重要**: Handoff は必ず auto-commit の後に実行する。commit 前に handoff すると、PM がレビューする変更が未コミットになり不整合が生じる。`--no-commit` の場合も、commit スキップ判定の後に handoff を実行する。
+> ⚠️ **重要**: 通常モードでは Handoff は必ず auto-commit の後に実行する。commit 前に handoff すると、PM がレビューする変更が未コミットになり不整合が生じる。
+
+**順序（commit_on_pm_approve モード）**: Review OK → Skip commit → Handoff (with commit-pending)
+
+> `commit_on_pm_approve: true` の場合、意図的にコミットを保留して Handoff する。PM が approve した後の次回 `/work` 実行時にコミットが実行される。
+
+**Handoff レポートの commit-pending セクション**:
+
+```
+## Commit Status: Pending PM Approval
+
+変更はハーネスレビュー済みですが、`commit_on_pm_approve` 設定により
+コミットを保留しています。
+
+approve の場合: ハンドオフに以下を含めてください:
+  「前回の変更を承認します。コミットしてから次のタスクに進んでください。」
+
+request_changes の場合: 通常通り修正指示を記載してください。
+```
 
 ---
 
@@ -449,6 +519,24 @@ Check Plans.md markers and operate in appropriate mode:
 | `cc:TODO` / `cc:WIP` only | Solo (autonomous) |
 
 **Priority**: `pm:requested` > `cc:WIP` (continue) > `cc:TODO` (new)
+
+### Pre-task: Pending Commit Check (commit_on_pm_approve)
+
+`/work` 起動時、前回の保留コミットがあるか確認する:
+
+```
+/work start:
+    ↓
+Check: PM approved + commit pending?
+  (Handoff message contains "承認" + uncommitted changes exist)
+    ↓
+YES → Execute pending commit first
+    → Then proceed to next task
+    ↓
+NO  → Proceed normally
+```
+
+> この処理により、PM 承認 → コミット → 次タスク実装 の流れが自然に繋がる。
 
 ### Auto-update Markers on Task Start
 

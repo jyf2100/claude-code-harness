@@ -219,6 +219,23 @@
       },
       "default": {}
     },
+    "work": {
+      "type": "object",
+      "description": "/work command behavior settings",
+      "properties": {
+        "auto_commit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-commit after review approval"
+        },
+        "commit_on_pm_approve": {
+          "type": "boolean",
+          "default": false,
+          "description": "Defer commit until PM approves in 2-Agent mode. When true, /work skips auto-commit and includes commit instruction in the handoff. PM's approve triggers commit via the next /work invocation. Ignored in Solo mode."
+        }
+      },
+      "default": {}
+    },
     "session": {
       "type": "object",
       "description": "Session persistence and resume/fork settings",

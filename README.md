@@ -9,7 +9,7 @@ English | [日本語](README_ja.md)
 Claude Harness runs Claude Code in an autonomous **Plan → Work → Review** cycle,
 catching mistakes before they ship.
 
-[![Version: 2.14.2](https://img.shields.io/badge/version-2.14.2-blue.svg)](VERSION)
+[![Version: 2.14.3](https://img.shields.io/badge/version-2.14.3-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-v2.1.6+-purple.svg)](docs/CLAUDE_CODE_COMPATIBILITY.md)
 
@@ -105,6 +105,7 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 # .claude-code-harness.config.yaml
 work:
   auto_commit: false  # Disable for this project
+  commit_on_pm_approve: true  # 2-Agent: defer commit until PM approves
 ```
 
 ---

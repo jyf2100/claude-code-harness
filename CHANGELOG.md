@@ -9,6 +9,31 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.14.3] - 2026-01-28
+
+### Added
+
+- **`work.commit_on_pm_approve` config option**
+  - New workflow to defer commit until PM approves in 2-Agent mode
+  - When `commit_on_pm_approve: true`, `/work` skips commit and includes commit-pending flag in handoff report
+  - PM's approve via `review-cc-work` generates handoff with commit instruction; next `/work` invocation commits first
+  - Ignored in Solo mode (follows normal `auto_commit` setting)
+  - Config: `.claude-code-harness.config.yaml` → `work.commit_on_pm_approve: true`
+
+### Changed
+
+- **Extended `/work` Phase 3/4 flow**
+  - Phase 3: Added `commit_on_pm_approve` branch (defer commit + record pending state)
+  - Phase 4: Added commit-pending section to handoff report
+  - Added pre-task pending commit check on `/work` startup
+  - Updated both Cursor and OpenCode versions
+
+- **Extended `review-cc-work` templates** (Cursor/OpenCode)
+  - Detects "Commit Status: Pending PM Approval" on approve and generates handoff with commit instruction
+  - Added commit-pending flow to workflow diagram
+
+---
+
 ## [2.14.2] - 2026-01-28
 
 ### Changed
@@ -1664,7 +1689,8 @@ Key milestones:
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...HEAD
+[2.14.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.1...v2.14.2
 [2.14.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.3...v2.14.1
 [2.13.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.2...v2.13.3

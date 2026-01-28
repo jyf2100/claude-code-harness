@@ -12,6 +12,12 @@
     "comment": "品質ゲート・DoD・原則を集約したファイル（プロジェクトごとにカスタマイズ可）"
   },
 
+  "work": {
+    "auto_commit": true,
+    "commit_on_pm_approve": false,
+    "comment": "commit_on_pm_approve: true にすると 2-Agent モードで PM 承認後にコミット"
+  },
+
   "safety": {
     "mode": "dry-run",
     "require_confirmation": true,
