@@ -9,6 +9,18 @@
 
 ---
 
+## [2.14.4] - 2026-01-28
+
+### Changed
+
+- **ハンドオフコマンドのドキュメント品質改善** (`commands/handoff/`)
+  - `handoff-to-cursor.md` を JARVIS 参照構成に基づき VibeCoder Quick Reference / Deliverables / Steps / Output Format の見出しで刷新
+  - `handoff-to-opencode.md` を同構成・同等品質に更新
+  - `commands/handoff/CLAUDE.md` に用途説明・コマンド一覧・`<claude-mem-context>` 編集禁止の注意事項を追記
+  - Plans.md マーカー表記を `cc:完了` に統一（レガシーの `cc:done` を除去）
+
+---
+
 ## [2.14.3] - 2026-01-28
 
 ### Added
@@ -2533,7 +2545,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.4...HEAD
+[2.14.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...v2.14.4
 [2.14.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.1...v2.14.2
 [2.13.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.2...v2.13.3

@@ -9,6 +9,18 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.14.4] - 2026-01-28
+
+### Changed
+
+- **Improved handoff command documentation quality** (`commands/handoff/`)
+  - Restructured `handoff-to-cursor.md` with VibeCoder Quick Reference / Deliverables / Steps / Output Format sections (aligned with JARVIS reference)
+  - Updated `handoff-to-opencode.md` to the same structure and quality
+  - Added `commands/handoff/CLAUDE.md` with usage guide, command table, and `<claude-mem-context>` editing warning
+  - Unified Plans.md marker notation to `cc:完了` (removed legacy `cc:done`)
+
+---
+
 ## [2.14.3] - 2026-01-28
 
 ### Added
@@ -1689,7 +1701,8 @@ Key milestones:
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.4...HEAD
+[2.14.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.3...v2.14.4
 [2.14.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.1...v2.14.2
 [2.14.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.3...v2.14.1
