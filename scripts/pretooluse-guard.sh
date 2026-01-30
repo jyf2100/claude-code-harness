@@ -52,6 +52,24 @@ detect_lang() {
 
 LANG_CODE="$(detect_lang)"
 
+# ===== Ultrawork Mode Detection =====
+# ultrawork 実行中は特定の確認プロンプトをスキップ
+ULTRAWORK_ACTIVE_FILE=".claude/state/ultrawork-active.json"
+ULTRAWORK_MODE="false"
+ULTRAWORK_BYPASS_RM_RF="false"
+ULTRAWORK_BYPASS_GIT_PUSH="false"
+
+if [ -f "$ULTRAWORK_ACTIVE_FILE" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    ULTRAWORK_MODE=$(jq -r '.active // false' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
+    if [ "$ULTRAWORK_MODE" = "true" ]; then
+      # バイパス設定を読み込み
+      ULTRAWORK_BYPASS_RM_RF=$(jq -r '.bypass_guards | contains(["rm_rf"])' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
+      ULTRAWORK_BYPASS_GIT_PUSH=$(jq -r '.bypass_guards | contains(["git_push"])' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
+    fi
+  fi
+fi
+
 msg() {
   # msg <key> [arg]
   local key="$1"
@@ -587,13 +605,23 @@ if [ "$TOOL_NAME" = "Bash" ]; then
   fi
 
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)'; then
-    emit_ask "$(msg ask_git_push "$COMMAND")"
-    exit 0
+    # Ultrawork モード中はバイパス可能
+    if [ "$ULTRAWORK_MODE" = "true" ] && [ "$ULTRAWORK_BYPASS_GIT_PUSH" = "true" ]; then
+      : # スキップ（自動承認）
+    else
+      emit_ask "$(msg ask_git_push "$COMMAND")"
+      exit 0
+    fi
   fi
 
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]+-rf([[:space:]]|$)'; then
-    emit_ask "$(msg ask_rm_rf "$COMMAND")"
-    exit 0
+    # Ultrawork モード中はバイパス可能
+    if [ "$ULTRAWORK_MODE" = "true" ] && [ "$ULTRAWORK_BYPASS_RM_RF" = "true" ]; then
+      : # スキップ（自動承認）
+    else
+      emit_ask "$(msg ask_rm_rf "$COMMAND")"
+      exit 0
+    fi
   fi
 
   exit 0
