@@ -9,6 +9,61 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.0] - 2026-01-31
+
+### 🎯 What's Changed for You
+
+**`/ultrawork` が rm -rf と git push を自動承認できるようになりました（ホワイトリスト方式・実験的機能）**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/ultrawork` 中でも rm -rf で毎回確認 | ホワイトリストに登録された basename のみ自動承認 |
+| git push で毎回確認 | ultrawork 中は自動承認（ただし force push は除外） |
+| 確認プロンプトで作業が中断 | 計画承認時に指定したパスのみ自動削除可能 |
+
+### Added
+
+- **ultrawork guard bypass（実験的機能）** (`scripts/pretooluse-guard.sh`)
+  - ホワイトリスト方式で rm -rf を自動承認
+  - `ultrawork-active.json` に `allowed_rm_paths` フィールド追加
+  - 10条件の厳格なセキュリティチェック:
+    1. `rm -rf` または `rm -r -f` 形式のみ許可
+    2. シェル構文（`*?$(){};&|`）を含む場合は確認
+    3. `sudo/xargs/find` を含む場合は確認
+    4. 単一ターゲットのみ許可
+    5. 絶対パス・ホームディレクトリ起点は確認
+    6. 親ディレクトリ参照（`..`）は確認
+    7. 末尾スラッシュ・二重スラッシュは確認
+    8. パス区切りを含む場合は確認（basename のみ許可）
+    9. 保護パス（`.git`, `.env`, `secrets`, `keys`, etc.）は常に確認
+    10. ホワイトリストに登録されたパスのみ自動承認
+  - git push も ultrawork 中は自動承認（force push 除外）
+
+- **ultrawork 事前要件** (`commands/core/ultrawork.md`)
+  - 実行前に clean git status を要求
+  - gitignore 対象ファイルは除外
+
+### Changed
+
+- **Remotion video スキルの改善**
+  - `agents/video-scene-generator.md`: シーン生成ロジックを大幅強化
+  - `commands/optional/remotion-setup.md`: セットアップ手順を拡充
+  - `skills/video/references/generator.md`: 生成仕様を追加
+
+### Security
+
+- **ホワイトリスト方式の採用理由**
+  - PreToolUse フックはシェル展開前のコマンド文字列のみ参照可能
+  - パス正規化アプローチは OS 間差異とシンボリックリンクで脆弱
+  - basename ホワイトリストで明示的な許可のみ自動承認
+
+> ⚠️ **実験的機能**: この機能は Codex レビューで PASS を取得していますが、
+> 実環境での十分なテストは未完了です。重要なプロジェクトでは慎重に使用してください。
+
+---
+
 ## [2.15.0] - 2026-01-30
 
 ### 🎯 What's Changed for You

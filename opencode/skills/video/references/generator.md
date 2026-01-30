@@ -34,6 +34,11 @@ planner.md からのシナリオ:
     │   ├── トランジション追加
     │   └── 音声同期（オプション）
     │
+    ├─[ナレーション追加（オプション）]
+    │   ├── Aivis Cloud API で音声生成
+    │   ├── NarratedScene コンポーネントで統合
+    │   └── 詳細: aivis-narration.md
+    │
     └─[レンダリングフェーズ]
         └── 最終出力（mp4/webm/gif）
 ```
@@ -328,8 +333,54 @@ npx remotion render remotion/index.ts FullVideo out/video.webm --codec=vp8
 
 ---
 
+---
+
+## ナレーション追加（オプション）
+
+動画にナレーション音声を追加する場合は、Aivis Cloud API を使用します。
+
+### 事前準備
+
+```bash
+# 環境変数を設定
+export AIVIS_API_KEY=aivis_xxxxxx
+
+# 音声生成
+npm run generate-narration
+```
+
+### NarratedScene コンポーネント
+
+```tsx
+import { NarratedScene } from "./components/NarratedScene";
+
+<NarratedScene
+  narration={{
+    sceneId: "hook",
+    audioFile: "audio/v6/hook.wav",
+    startFrame: 0,
+    durationInFrames: 90,
+  }}
+  volume={1.0}
+  enableAudio={true}
+>
+  <HookScene />
+</NarratedScene>
+```
+
+### ナレーション付きレンダリング
+
+```bash
+npm run render:v6-narrated
+```
+
+> 詳細: [aivis-narration.md](aivis-narration.md)
+
+---
+
 ## Notes
 
 - 並列生成は独立したシーンに対してのみ有効
 - Playwright キャプチャは事前にアプリが起動している必要がある
 - 大きな動画（3分以上）は分割レンダリングを推奨
+- ナレーション追加時は商用利用ライセンス（ACML 1.0）を確認

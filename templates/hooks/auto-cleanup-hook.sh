@@ -32,7 +32,7 @@ for file in $CLAUDE_FILE_PATHS; do
     if [ -f "$file" ]; then
       lines=$(wc -l < "$file" | tr -d ' ')
       if [ "$lines" -gt "$PLANS_MAX_LINES" ]; then
-        FEEDBACK="${FEEDBACK}Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。\`/cleanup plans\` で古いタスクをアーカイブすることを推奨します。\n"
+        FEEDBACK="${FEEDBACK}Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。\`/maintenance\` で古いタスクをアーカイブすることを推奨します。\n"
       fi
     fi
   fi
@@ -42,7 +42,7 @@ for file in $CLAUDE_FILE_PATHS; do
     if [ -f "$file" ]; then
       lines=$(wc -l < "$file" | tr -d ' ')
       if [ "$lines" -gt "$SESSION_LOG_MAX_LINES" ]; then
-        FEEDBACK="${FEEDBACK}session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。\`/cleanup sessions\` で月別に分割することを推奨します。\n"
+        FEEDBACK="${FEEDBACK}session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。\`/maintenance\` で月別に分割することを推奨します。\n"
       fi
     fi
   fi

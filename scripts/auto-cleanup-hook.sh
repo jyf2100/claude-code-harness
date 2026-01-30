@@ -63,7 +63,7 @@ if [[ "$FILE_PATH" == *"Plans.md"* ]] || [[ "$FILE_PATH" == *"plans.md"* ]]; the
   if [ -f "$FILE_PATH" ]; then
     lines=$(wc -l < "$FILE_PATH" | tr -d ' ')
     if [ "$lines" -gt "$PLANS_MAX_LINES" ]; then
-      FEEDBACK="⚠️ Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。/cleanup plans で古いタスクをアーカイブすることを推奨します。"
+      FEEDBACK="⚠️ Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。/maintenance で古いタスクをアーカイブすることを推奨します。"
     fi
 
     # Plans.md クリーンアップ（アーカイブ移動）検知時の SSOT 同期チェック
@@ -95,7 +95,7 @@ if [[ "$FILE_PATH" == *"session-log.md"* ]]; then
   if [ -f "$FILE_PATH" ]; then
     lines=$(wc -l < "$FILE_PATH" | tr -d ' ')
     if [ "$lines" -gt "$SESSION_LOG_MAX_LINES" ]; then
-      FEEDBACK="⚠️ session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。/cleanup sessions で月別に分割することを推奨します。"
+      FEEDBACK="⚠️ session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。/maintenance で月別に分割することを推奨します。"
     fi
   fi
 fi

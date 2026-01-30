@@ -12,7 +12,61 @@ color: magenta
 Remotion のシーンコンポジションを生成するエージェント。
 `/generate-video` の Step 4 で並列起動され、各シーンを独立して生成します。
 
-> **必読**: シーン生成時は [skills/video/references/best-practices.md](../skills/video/references/best-practices.md) のガイドラインに従うこと
+---
+
+## 🚨 起動時必須アクション
+
+**コード生成を開始する前に、必ず以下のファイルを Read ツールで読み込むこと:**
+
+```
+1. remotion/.agents/skills/remotion-best-practices/SKILL.md
+2. remotion/.agents/skills/remotion-best-practices/animations.md
+3. remotion/.agents/skills/remotion-best-practices/transitions.md
+4. remotion/.agents/skills/remotion-best-practices/audio.md
+5. remotion/.agents/skills/remotion-best-practices/timing.md
+```
+
+**これらのルールは本ファイルの内容より優先される。矛盾がある場合は Remotion Skills に従うこと。**
+
+> **参考資料**:
+> - [skills/video/references/quality-patterns.md](../.claude/skills/video/references/quality-patterns.md) - V8品質基準
+> - [skills/video/references/best-practices.md](../.claude/skills/video/references/best-practices.md) - SaaS動画ガイドライン
+
+---
+
+## V8 品質基準（必須）
+
+### 必須インポート
+
+```tsx
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, staticFile, Img, Sequence } from "remotion";
+import { Audio } from "@remotion/media";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { brand, gradients, shadows } from "./brand";
+import { Particles } from "./components/Particles";
+import { Terminal } from "./components/Terminal";
+import { TypingText } from "./components/TypingText";
+```
+
+### 必須パターン
+
+| パターン | 説明 |
+|---------|------|
+| **SceneBackground** | Particles + グロー効果の共通背景 |
+| **TransitionSeries** | シーン間遷移（fade, slide） |
+| **brand.ts** | ブランドカラー・グラデーション |
+| **Audio** | `@remotion/media` の Audio コンポーネント |
+| **Sequence premountFor** | 音声のプリマウント（遅延再生対応） |
+
+### 禁止事項
+
+- ❌ CSS transitions / animations（useCurrentFrame() を使用）
+- ❌ Tailwind アニメーションクラス
+- ❌ remotion の `Audio`（→ `@remotion/media` の Audio を使用）
+- ❌ ハードコードされた色（→ `brand.ts` を使用）
+- ❌ 文字ごとの opacity アニメーション（→ 文字列スライスを使用）
 
 ---
 
@@ -82,35 +136,56 @@ run_in_background: true で並列実行
 
 ## テンプレート別生成ルール
 
-### intro テンプレート
+### intro テンプレート（V8基準）
 
 **入力 content**:
 ```json
 {
   "title": "プロジェクト名",
   "tagline": "タグライン",
-  "logo": "public/logo.svg"  // オプション
+  "logo": "public/logo-icon.png"
 }
 ```
 
 **出力**:
 ```tsx
 // remotion/scenes/{name}.tsx
-import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, staticFile, Img } from "remotion";
+import { brand, gradients, shadows } from "../brand";
+import { Particles } from "../components/Particles";
 
 export const IntroScene: React.FC<{
   title: string;
   tagline: string;
 }> = ({ title, tagline }) => {
   const frame = useCurrentFrame();
-  const opacity = interpolate(frame, [0, 30], [0, 1]);
+  const { fps } = useVideoConfig();
+
+  const logoScale = spring({ frame, fps, config: { damping: 12, stiffness: 80 } });
+  const logoOpacity = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const titleOpacity = interpolate(frame, [20, 40], [0, 1], { extrapolateRight: "clamp" });
+  const titleY = interpolate(frame, [20, 50], [30, 0], { extrapolateRight: "clamp" });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#000", opacity }}>
-      <div style={{ ... }}>
-        <h1>{title}</h1>
-        <p>{tagline}</p>
-      </div>
+    <AbsoluteFill style={{ background: gradients.background }}>
+      <Particles count={60} color={brand.particleColor} />
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        width: 800, height: 800, transform: "translate(-50%, -50%)",
+        background: `radial-gradient(circle, ${brand.glowColor} 0%, transparent 70%)`,
+      }} />
+
+      <AbsoluteFill style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+        <div style={{ opacity: logoOpacity, transform: `scale(${logoScale})`, marginBottom: 40 }}>
+          <Img src={staticFile("logo-icon.png")} style={{ width: 120, height: 120, filter: `drop-shadow(${shadows.glow})` }} />
+        </div>
+        <div style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)`, textAlign: "center" }}>
+          <div style={{ fontSize: 64, fontWeight: 800, color: brand.textPrimary, marginBottom: 16 }}>{title}</div>
+          <div style={{ fontSize: 48, fontWeight: 700, background: gradients.text, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            {tagline}
+          </div>
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -166,36 +241,78 @@ export const UIDemoScene: React.FC<{
 };
 ```
 
-### cta テンプレート
+### cta テンプレート（V8基準）
 
 **入力 content**:
 ```json
 {
   "url": "https://myapp.com",
-  "text": "今すぐ試す"
+  "text": "今すぐ試す",
+  "tagline": "Plan → Work → Review",
+  "logo": "public/logo.png"
 }
 ```
 
 **出力**:
 ```tsx
 // remotion/scenes/{name}.tsx
-import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, staticFile, Img } from "remotion";
+import { brand, gradients, shadows } from "../brand";
+import { Particles } from "../components/Particles";
 
 export const CTAScene: React.FC<{
   url: string;
   text: string;
-}> = ({ url, text }) => {
+  tagline?: string;
+}> = ({ url, text, tagline }) => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 15], [0.8, 1], {
-    extrapolateRight: "clamp",
-  });
+  const { fps } = useVideoConfig();
+
+  const logoScale = spring({ frame, fps, config: { damping: 12, stiffness: 80 } });
+  const logoOpacity = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const textOpacity = interpolate(frame, [30, 60], [0, 1], { extrapolateRight: "clamp" });
+  const buttonOpacity = interpolate(frame, [80, 120], [0, 1], { extrapolateRight: "clamp" });
+  const urlOpacity = interpolate(frame, [140, 180], [0, 1], { extrapolateRight: "clamp" });
+
+  // Pulsing glow effect
+  const pulse = Math.sin(frame / 15) * 0.2 + 0.8;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#1a1a1a" }}>
-      <div style={{ transform: `scale(${scale})` }}>
-        <h2>{text}</h2>
-        <p>{url}</p>
-      </div>
+    <AbsoluteFill style={{ background: gradients.background }}>
+      <Particles count={60} color={brand.particleColor} />
+      <AbsoluteFill style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+        {/* Logo with pulsing glow */}
+        <div style={{ opacity: logoOpacity, transform: `scale(${logoScale})`, marginBottom: 30, filter: `drop-shadow(0 0 ${40 * pulse}px ${brand.primary})` }}>
+          <Img src={staticFile("logo.png")} style={{ height: 100 }} />
+        </div>
+
+        {/* Tagline */}
+        {tagline && (
+          <div style={{ opacity: textOpacity, fontSize: 32, color: brand.textSecondary, marginBottom: 60 }}>
+            {tagline}
+          </div>
+        )}
+
+        {/* CTA Button */}
+        <div style={{
+          opacity: buttonOpacity,
+          background: gradients.primary,
+          padding: "24px 72px",
+          borderRadius: 16,
+          fontSize: 32,
+          fontWeight: 700,
+          color: brand.textPrimary,
+          boxShadow: shadows.glow,
+          marginBottom: 40,
+        }}>
+          {text}
+        </div>
+
+        {/* URL */}
+        <div style={{ opacity: urlOpacity, fontSize: 28, fontFamily: "monospace", color: brand.primary }}>
+          {url}
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -375,27 +492,61 @@ ui-demo テンプレートの場合:
 
 ---
 
-## スタイリングガイドライン
+## スタイリングガイドライン（V8基準）
 
-### 共通スタイル
+### ブランドシステム（brand.ts）
 
 ```tsx
-const baseStyles = {
-  fontFamily: "'Inter', -apple-system, sans-serif",
-  color: "#fff",
-};
+// remotion/src/brand.ts から import
+import { brand, gradients, shadows } from "./brand";
 
-const gradients = {
-  primary: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  dark: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+// 使用例
+style={{
+  color: brand.primary,              // #F97316 (orange)
+  background: gradients.background,  // ダークグラデーション
+  boxShadow: shadows.glow,           // オレンジグロー
+}}
+```
+
+### SceneBackground パターン（必須）
+
+```tsx
+const SceneBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <AbsoluteFill style={{ background: gradients.background }}>
+      <Particles count={60} color={brand.particleColor} />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: 800,
+          height: 800,
+          transform: "translate(-50%, -50%)",
+          background: `radial-gradient(circle, ${brand.glowColor} 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }}
+      />
+      {children}
+    </AbsoluteFill>
+  );
 };
 ```
 
 ### アニメーション原則
 
 - **フェードイン**: 30フレーム（1秒）
-- **スケール**: 0.8 → 1.0 over 15フレーム
-- **スライド**: translateY(20px) → 0 over 20フレーム
+- **スケール**: 0.8 → 1.0 over 15-30フレーム
+- **スライド**: translateY(30px) → 0 over 30フレーム
+- **遅延**: 複数要素は各 30-50 フレームずつ遅延
+- **spring**: ロゴ等の弾むアニメーション
+
+```tsx
+// カードアニメーションの例
+const cardOpacity = interpolate(frame, [delay, delay + 30], [0, 1], { extrapolateRight: "clamp" });
+const cardY = interpolate(frame, [delay, delay + 30], [40, 0], { extrapolateRight: "clamp" });
+const cardScale = interpolate(frame, [delay, delay + 30], [0.8, 1], { extrapolateRight: "clamp" });
+```
 
 ---
 

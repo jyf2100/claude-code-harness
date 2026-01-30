@@ -34,6 +34,7 @@ Remotionによるプログラマティック動画生成環境をセットアッ
 /remotion-setup                    # 基本セットアップ
 /remotion-setup --with-templates   # Harnessテンプレート付き
 /remotion-setup --brownfield       # 既存プロジェクトに追加
+/remotion-setup --with-narration   # ナレーション機能付き
 ```
 
 ---
@@ -129,25 +130,60 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(dirname $(dirname $0))}"
 cp -r "$PLUGIN_DIR/templates/remotion/"* remotion/
 ```
 
-### Step 6: package.json スクリプト追加
+### Step 6: ナレーション機能追加（オプション）
+
+> 🎙️ **ナレーション機能を追加しますか？**
+>
+> Aivis Cloud API を使用して、動画にAI音声ナレーションを追加できます。
+>
+> **必要なもの**:
+> - Aivis Cloud API キー（[ダッシュボード](https://hub.aivis-project.com/cloud-api/dashboard)で取得）
+> - 商用利用可能なモデル（ACML 1.0ライセンス）
+>
+> 追加しますか？ (y/n)
+
+**「y」の場合**:
+
+```bash
+# 環境変数を設定
+export AIVIS_API_KEY=aivis_xxxxxx
+
+# 必要なファイルを作成
+mkdir -p remotion/src/utils remotion/src/hooks remotion/src/components remotion/public/audio
+```
+
+**作成するファイル**:
+
+| ファイル | 用途 |
+|---------|------|
+| `src/utils/aivis-client.ts` | Aivis Cloud API クライアント |
+| `src/utils/narration-generator.ts` | ナレーション生成ロジック |
+| `src/hooks/useNarration.ts` | ナレーション状態管理 |
+| `src/components/NarratedScene.tsx` | 音声付きシーンラッパー |
+
+> 詳細: [aivis-narration.md](skills/video/references/aivis-narration.md)
+
+### Step 7: package.json スクリプト追加
 
 ```json
 {
   "scripts": {
     "remotion": "remotion studio remotion/index.ts",
     "render": "remotion render remotion/index.ts Main out/video.mp4",
-    "render:gif": "remotion render remotion/index.ts Main out/video.gif"
+    "render:gif": "remotion render remotion/index.ts Main out/video.gif",
+    "generate-narration": "npx ts-node src/utils/narration-generator.ts"
   }
 }
 ```
 
-### Step 7: 完了メッセージ
+### Step 8: 完了メッセージ
 
 > ✅ **Remotion セットアップ完了**
 >
 > 📁 **作成されたファイル**:
 > - `remotion/` - Remotionプロジェクト
 > - `.claude/skills/remotion/` - Agent Skills
+> - `src/utils/aivis-client.ts` - ナレーション用（オプション）
 >
 > **使い方**:
 > ```bash
@@ -156,6 +192,9 @@ cp -r "$PLUGIN_DIR/templates/remotion/"* remotion/
 >
 > # 動画をレンダリング
 > npm run render
+>
+> # ナレーション生成（オプション）
+> AIVIS_API_KEY=your_key npm run generate-narration
 >
 > # Claude Code で動画を作成
 > claude
@@ -203,6 +242,14 @@ npx remotion render --concurrency 4
 > 詳細: https://www.remotion.dev/license
 >
 > 個人・OSS利用は無料です。
+
+> ⚠️ **Aivis Cloud API ライセンス（ナレーション機能使用時）**
+>
+> 商用利用には ACML 1.0 ライセンスのモデルを使用してください。
+> - コハク、まい、にせ、fumifumi 等
+> - 詳細: [AivisHub](https://hub.aivis-project.com/search)
+>
+> 料金: 従量課金（440円/10,000文字）または月額サブスク（1,980円/月）
 
 ---
 

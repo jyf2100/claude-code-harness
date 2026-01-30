@@ -54,21 +54,74 @@ LANG_CODE="$(detect_lang)"
 
 # ===== Ultrawork Mode Detection =====
 # ultrawork 実行中は特定の確認プロンプトをスキップ
-ULTRAWORK_ACTIVE_FILE=".claude/state/ultrawork-active.json"
+# セキュリティ: 有効期限（24時間）でバイパスを制限
+# Note: CWD は後で JSON から取得されるため、ここでは初期化のみ
+
 ULTRAWORK_MODE="false"
 ULTRAWORK_BYPASS_RM_RF="false"
 ULTRAWORK_BYPASS_GIT_PUSH="false"
+ULTRAWORK_MAX_AGE_HOURS=24
 
-if [ -f "$ULTRAWORK_ACTIVE_FILE" ]; then
-  if command -v jq >/dev/null 2>&1; then
-    ULTRAWORK_MODE=$(jq -r '.active // false' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
-    if [ "$ULTRAWORK_MODE" = "true" ]; then
-      # バイパス設定を読み込み
-      ULTRAWORK_BYPASS_RM_RF=$(jq -r '.bypass_guards | contains(["rm_rf"])' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
-      ULTRAWORK_BYPASS_GIT_PUSH=$(jq -r '.bypass_guards | contains(["git_push"])' "$ULTRAWORK_ACTIVE_FILE" 2>/dev/null || echo "false")
-    fi
+# Ultrawork モード検出関数（CWD 取得後に呼び出す）
+check_ultrawork_mode() {
+  local cwd_path="$1"
+  local active_file="${cwd_path}/.claude/state/ultrawork-active.json"
+
+  [ ! -f "$active_file" ] && return
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "[ultrawork] Warning: jq not installed, guard bypass disabled" >&2
+    return
   fi
-fi
+
+  local is_active
+  is_active=$(jq -r '.active // false' "$active_file" 2>/dev/null || echo "false")
+  [ "$is_active" != "true" ] && return
+
+  # 有効期限チェック（started_at から 24 時間以内か）
+  local started_at
+  started_at=$(jq -r '.started_at // empty' "$active_file" 2>/dev/null)
+  [ -z "$started_at" ] && return
+
+  # ISO8601 パース（macOS/Linux 両対応）
+  # Z suffix を除去してパース
+  local started_clean="${started_at%%Z*}"
+  started_clean="${started_clean%%+*}"  # タイムゾーンオフセットも除去
+  started_clean="${started_clean%%.*}"  # ミリ秒も除去
+
+  local started_epoch=0
+  local current_epoch
+  current_epoch=$(date +%s)
+
+  # macOS: date -j -f, Linux: date -d
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    started_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$started_clean" +%s 2>/dev/null || echo 0)
+  else
+    started_epoch=$(date -d "${started_at}" +%s 2>/dev/null || echo 0)
+  fi
+
+  if [ "$started_epoch" -eq 0 ]; then
+    echo "[ultrawork] Warning: failed to parse started_at, guard bypass disabled" >&2
+    return
+  fi
+
+  # 未来時刻チェック（改ざん防止）
+  if [ "$started_epoch" -gt "$current_epoch" ]; then
+    echo "[ultrawork] Warning: started_at is in the future, guard bypass disabled" >&2
+    return
+  fi
+
+  local age_hours=$(( (current_epoch - started_epoch) / 3600 ))
+  if [ "$age_hours" -ge "$ULTRAWORK_MAX_AGE_HOURS" ]; then
+    rm -f "$active_file" 2>/dev/null || true
+    echo "[ultrawork] Warning: ultrawork-active.json expired (${age_hours}h >= ${ULTRAWORK_MAX_AGE_HOURS}h), removed" >&2
+    return
+  fi
+
+  ULTRAWORK_MODE="true"
+  ULTRAWORK_BYPASS_RM_RF=$(jq -r '.bypass_guards | contains(["rm_rf"])' "$active_file" 2>/dev/null || echo "false")
+  ULTRAWORK_BYPASS_GIT_PUSH=$(jq -r '.bypass_guards | contains(["git_push"])' "$active_file" 2>/dev/null || echo "false")
+}
 
 msg() {
   # msg <key> [arg]
@@ -140,6 +193,11 @@ PY
 fi
 
 [ -z "$TOOL_NAME" ] && exit 0
+
+# ===== Ultrawork モード検出実行（CWD 取得後） =====
+if [ -n "$CWD" ]; then
+  check_ultrawork_mode "$CWD"
+fi
 
 # ===== Cost Control: セッション単位でツール呼び出し数を追跡 =====
 CONFIG_FILE=".claude-code-harness.config.yaml"
@@ -614,14 +672,94 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     fi
   fi
 
-  if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]+-rf([[:space:]]|$)'; then
-    # Ultrawork モード中はバイパス可能
+  # rm の危険な再帰削除パターンを検出
+  # 注意: rm -rf / rm -r -f のみバイパス対象。それ以外のフラグ組み合わせは確認を求める
+  if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]+-[a-z]*r[a-z]*[[:space:]]' || \
+     echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]+--recursive'; then
+
+    # ===== Ultrawork ホワイトリスト方式（Codex 承認済み） =====
+    # デフォルト: 確認を求める
+    RM_AUTO_APPROVE="false"
+
+    # Ultrawork モードが有効で rm_rf バイパスが許可されている場合のみチェック
     if [ "$ULTRAWORK_MODE" = "true" ] && [ "$ULTRAWORK_BYPASS_RM_RF" = "true" ]; then
-      : # スキップ（自動承認）
-    else
+
+      # 0. 許可されるフラグ形式のみ（rm -rf または rm -r -f）
+      # rm -rfv, rm -fr, rm --recursive など他の形式は確認を求める
+      if ! echo "$COMMAND" | grep -Eq '(^|[[:space:]])rm[[:space:]]+(-rf|-r[[:space:]]+-f)[[:space:]]+'; then
+        : # 確認を求める（許可されないフラグ形式）
+      # 1. 危険なシェル構文を含む場合は確認（* ? $ ( ) { } ; | & < > \ `）
+      elif echo "$COMMAND" | grep -Eq '[\*\?\$\(\)\{\};|&<>\\`]'; then
+        : # 確認を求める
+      # 2. sudo/xargs/find を含む場合は確認
+      elif echo "$COMMAND" | grep -Eiq '(sudo|xargs|find)[[:space:]]'; then
+        : # 確認を求める
+      else
+        # rm ターゲットを抽出（フラグ部分を除去）
+        RM_TARGET=$(echo "$COMMAND" | sed -E 's/^.*rm[[:space:]]+(-rf|-r[[:space:]]+-f)[[:space:]]+//' | sed 's/[[:space:]].*//')
+
+        # 3. 単一ターゲットチェック（スペースで複数指定されていないか）
+        RM_TARGET_COUNT=$(echo "$COMMAND" | sed -E 's/^.*rm[[:space:]]+(-rf|-fr|-r[[:space:]]+-f|-f[[:space:]]+-r)[[:space:]]+//' | wc -w | tr -d ' ')
+        if [ "$RM_TARGET_COUNT" -eq 1 ]; then
+
+          # 4. 相対パスのみ（/ や ~ で始まらない）
+          # 5. 親参照なし（.. を含まない）
+          # 6. 末尾スラッシュなし
+          # 7. パス区切りなし（basename のみ許可）
+          # 8. . や // を含まない
+          case "$RM_TARGET" in
+            /*|~*|*..*)
+              : # 確認を求める
+              ;;
+            */)
+              : # 確認を求める（末尾スラッシュ）
+              ;;
+            *//*|*/.*)
+              : # 確認を求める（// や /. を含む）
+              ;;
+            */*)
+              : # 確認を求める（パス区切りを含む）
+              ;;
+            .)
+              : # 確認を求める（カレントディレクトリ）
+              ;;
+            *)
+              # 9. 保護パスチェック
+              case "$RM_TARGET" in
+                .git*|.env*|*secrets*|*keys*|*.pem|*.key|*id_rsa*|*id_ed25519*|.ssh*|.npmrc*|.aws*|.gitmodules*)
+                  : # 確認を求める（保護パス）
+                  ;;
+                *)
+                  # 10. ホワイトリストチェック
+                  if [ -n "$CWD" ]; then
+                    ULTRAWORK_FILE="$CWD/.claude/state/ultrawork-active.json"
+                    if [ -f "$ULTRAWORK_FILE" ] && command -v jq >/dev/null 2>&1; then
+                      # allowed_rm_paths からホワイトリストを取得
+                      ALLOWED_PATHS=$(jq -r '.allowed_rm_paths[]? // empty' "$ULTRAWORK_FILE" 2>/dev/null)
+                      if [ -n "$ALLOWED_PATHS" ]; then
+                        while IFS= read -r ALLOWED; do
+                          if [ "$RM_TARGET" = "$ALLOWED" ]; then
+                            RM_AUTO_APPROVE="true"
+                            break
+                          fi
+                        done <<< "$ALLOWED_PATHS"
+                      fi
+                    fi
+                  fi
+                  ;;
+              esac
+              ;;
+          esac
+        fi
+      fi
+    fi
+
+    # 自動承認でない場合は確認を求める
+    if [ "$RM_AUTO_APPROVE" != "true" ]; then
       emit_ask "$(msg ask_rm_rf "$COMMAND")"
       exit 0
     fi
+    # else: 自動承認（何も出力せずに通過）
   fi
 
   exit 0

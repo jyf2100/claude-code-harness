@@ -181,7 +181,7 @@ Plans.md から以下を抽出：
 
 - `/work` - タスク実行（並列実行対応）
 - `/sync-status` - Plans.md の進捗サマリー
-- `/cleanup` - ファイルの自動整理
+- `/maintenance` - ファイルの自動整理
 
 ---
 

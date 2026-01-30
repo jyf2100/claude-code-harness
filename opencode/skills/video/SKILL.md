@@ -23,11 +23,13 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 | **コードベース分析** | See [references/analyzer.md](references/analyzer.md) |
 | **シナリオプランニング** | See [references/planner.md](references/planner.md) |
 | **並列シーン生成** | See [references/generator.md](references/generator.md) |
+| **ナレーション統合** | See [references/aivis-narration.md](references/aivis-narration.md) |
 
 ## Prerequisites
 
 - Remotion がセットアップ済み（`/remotion-setup`）
 - Node.js 18+
+- ナレーション機能を使う場合: `AIVIS_API_KEY` 環境変数
 
 ## `/generate-video` フロー
 
@@ -45,10 +47,15 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
     │   ├─ シーン構成提案
     │   └─ ユーザー確認
     │
-    └─[Step 3] 並列生成（generator.md）
-        ├─ シーン並列生成（Task tool）
-        ├─ 統合 + トランジション
-        └─ 最終レンダリング
+    ├─[Step 3] 並列生成（generator.md）
+    │   ├─ シーン並列生成（Task tool）
+    │   ├─ 統合 + トランジション
+    │   └─ 最終レンダリング
+    │
+    └─[Step 4] ナレーション追加（オプション）
+        ├─ Aivis Cloud API で音声生成
+        ├─ シーンごとの音声配置
+        └─ 音声付きレンダリング
 ```
 
 ## 実行手順
@@ -110,3 +117,5 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 - Remotion未セットアップの場合は `/remotion-setup` を案内
 - 並列生成数はシーン数に応じて自動調整（max 5）
 - 生成された動画は `out/` ディレクトリに出力
+- ナレーション追加時は事前に音声ファイルを生成（`npm run generate-narration`）
+- 商用利用時は Aivis モデルのライセンス（ACML 1.0）を確認

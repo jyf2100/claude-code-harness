@@ -17,7 +17,7 @@ Plans.md、session-log.md 等のファイル肥大化を防ぐ自動整理スキ
 - 「ファイルを整理して」
 - 「アーカイブして」
 - 「古いタスクを移動して」
-- `/cleanup`
+- `/maintenance`
 - "clean up files"
 - "archive old tasks"
 
@@ -298,7 +298,7 @@ PostToolUse Hook から呼び出される場合：
 ```json
 {
   "decision": "allow",
-  "feedback": "⚠️ Plans.md が 200行を超えました。`/cleanup` で整理することを推奨します。"
+  "feedback": "⚠️ Plans.md が 200行を超えました。`/maintenance` で整理することを推奨します。"
 }
 ```
 
@@ -306,10 +306,7 @@ PostToolUse Hook から呼び出される場合：
 
 ## 関連コマンド
 
-- `/cleanup` - 手動で整理を実行
-- `/cleanup --dry-run` - 実行せずプレビュー
-- `/cleanup plans` - Plans.md のみ整理
-- `/cleanup sessions` - session-log のみ整理
+- `/maintenance` - 手動で整理を実行（「Plans.md 整理して」「アーカイブして」でも起動）
 
 ---
 
