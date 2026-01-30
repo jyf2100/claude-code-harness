@@ -70,7 +70,9 @@ if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
 fi
 
 # ===== Step 2: Skills Gate 初期化 =====
-STATE_DIR=".claude/state"
+# Resolve to git repository root for consistency with other hooks
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
+STATE_DIR="${REPO_ROOT}/.claude/state"
 SKILLS_CONFIG_FILE="${STATE_DIR}/skills-config.json"
 SESSION_SKILLS_USED_FILE="${STATE_DIR}/session-skills-used.json"
 

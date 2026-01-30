@@ -9,6 +9,26 @@
 
 ---
 
+## [2.14.11] - 2026-01-30
+
+### 🎯 あなたにとって何が変わるか
+
+**SSOT 同期フラグ機能の堅牢性を向上。SlashCommand 経由でも正しくフラグが作成されるように修正。**
+
+### Fixed
+
+- **scripts/usage-tracker.sh**: SlashCommand 分岐でも `/sync-ssot-from-memory` 実行時にフラグを作成するよう修正
+  - Skill 経由だけでなく、コマンド直接実行でも警告が正しく解除される
+
+- **scripts/session-resume.sh**: SSOT 同期フラグのクリア処理を追加
+  - セッション復元時もフラグが適切にリセットされる
+  - STATE_DIR を repo root 基準に統一
+
+- **scripts/session-init.sh**: STATE_DIR を repo root 基準に統一
+  - 全スクリプト間でパス解決が一貫するように修正
+
+---
+
 ## [2.14.10] - 2026-01-30
 
 ### 🎯 あなたにとって何が変わるか

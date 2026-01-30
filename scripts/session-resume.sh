@@ -30,8 +30,9 @@ if [ -n "$INPUT" ] && command -v jq >/dev/null 2>&1; then
   CC_SESSION_ID="$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
 fi
 
-# ===== Harness 状態ディレクトリ =====
-STATE_DIR=".claude/state"
+# ===== Harness 状態ディレクトリ (repo root 基準で統一) =====
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
+STATE_DIR="${REPO_ROOT}/.claude/state"
 SESSION_FILE="$STATE_DIR/session.json"
 EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 ARCHIVE_DIR="$STATE_DIR/sessions"
@@ -157,6 +158,11 @@ fi
 # ===== Skills Gate 初期化（session-init.sh と同様） =====
 SESSION_SKILLS_USED_FILE="${STATE_DIR}/session-skills-used.json"
 echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
+
+# ===== SSOT 同期フラグをクリア（新セッション/復元セッション開始時） =====
+# このフラグは /sync-ssot-from-memory 実行時に作成され、
+# Plans.md クリーンアップ前の SSOT 同期確認に使用される
+rm -f "${STATE_DIR}/.ssot-synced-this-session" 2>/dev/null || true
 
 # ===== Plans.md チェック =====
 PLANS_INFO=""

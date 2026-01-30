@@ -77,6 +77,21 @@ case "$TOOL_NAME" in
       # Remove leading slash if present
       BASE_NAME=$(echo "$CMD_NAME" | sed 's/^\///')
       node "$RECORD_USAGE" command "$BASE_NAME" 2>/dev/null || true
+
+      # Create session flag for sync-ssot-from-memory execution (same as Skill branch)
+      # This handles both /sync-ssot-from-memory and /claude-code-harness:optional:sync-ssot-from-memory
+      if [[ "$BASE_NAME" == *"sync-ssot-from-memory"* ]]; then
+        CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)
+        CWD="${CWD:-$(pwd)}"  # Fallback to pwd if empty
+
+        # Resolve to git repository root for consistency
+        REPO_ROOT=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$CWD"
+        STATE_DIR="${REPO_ROOT}/.claude/state"
+
+        # Ensure state directory exists and create flag
+        mkdir -p "$STATE_DIR" 2>/dev/null || true
+        touch "${STATE_DIR}/.ssot-synced-this-session" 2>/dev/null || true
+      fi
     fi
     ;;
 
