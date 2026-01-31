@@ -22,7 +22,7 @@ planner.md からのシナリオ:
     │
     ├─[素材生成フェーズ] ← NEW
     │   ├── 各シーンの素材必要判定
-    │   ├── Nano Banana Pro で画像生成（2枚）
+    │   ├── Nano Banana Pro で画像生成（2枚: 2回リクエスト）
     │   ├── Claude が品質判定
     │   └── OK → 採用 / NG → 再生成（最大3回）
     │
@@ -91,8 +91,8 @@ const needsGeneratedAsset = (scene) => {
         ├── [Step 1] プロンプト生成
         │   └─ シーン情報 + ブランド情報からプロンプト構築
         │
-        ├── [Step 2] 画像生成（2枚同時）
-        │   └─ Nano Banana Pro API 呼び出し
+        ├── [Step 2] 画像生成（2枚: 2回リクエスト）
+        │   └─ Nano Banana Pro API 呼び出し（generateContent × 2）
         │   └─ → image-generator.md 参照
         │
         ├── [Step 3] 品質判定
