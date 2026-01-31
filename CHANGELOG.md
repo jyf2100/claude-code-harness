@@ -9,6 +9,67 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.5] - 2026-01-31
+
+### 🎯 What's Changed for You
+
+**`/generate-video` now supports AI image generation, BGM, subtitles, and visual effects**
+
+Video generation is now richer. Nano Banana Pro AI image generation, BGM/subtitle support, and visual effects library (GlitchText, Particles, etc.) have been added.
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Manual image asset preparation | Nano Banana Pro auto-generates (2 images → quality check → select best) |
+| No BGM | Easy royalty-free BGM integration |
+| No subtitles | Japanese subtitle support with Base64 font embedding |
+| Basic transitions only | GlitchText, Particles, 3D Parallax effects |
+
+### Added
+
+- **Nano Banana Pro AI image generation** (`skills/video/references/image-generator.md`)
+  - Auto-generate images using Google Gemini 3 Pro Image Preview
+  - Generate 2 → Claude quality check → select optimal one
+  - Auto-regenerate on quality failure (max 3 attempts)
+  - Supports intro, CTA, architecture diagram scenes
+
+- **Image quality check** (`skills/video/references/image-quality-check.md`)
+  - 5-level scoring (Excellent/Good/Acceptable/Poor/Unacceptable)
+  - 3-axis evaluation: basic quality, scene fit, brand consistency
+  - Acceptance threshold: 3 (Acceptable) or higher
+
+- **BGM support** (`skills/video/references/generator.md`)
+  - `bgmPath` and `bgmVolume` properties
+  - Volume guidelines based on narration presence
+  - Royalty-free BGM source list
+
+- **Subtitle support** (`skills/video/references/generator.md`)
+  - Base64 font embedding for reliable loading
+  - Audio sync timing rules
+  - Subtitle component template
+
+- **Visual effects library** (`skills/video/references/visual-effects.md`)
+  - GlitchText: For hooks/titles
+  - Particles: Background/CTA convergence
+  - ScanLine: Analysis progress effect
+  - ProgressBar: Parallel processing display
+  - 3D Parallax: Card display
+
+- **Mandatory review before ultrawork completion** (`commands/core/ultrawork.md`)
+  - Auto-run `/harness-review` before completion
+  - Block commit if High+ issues found
+
+### Fixed
+
+- **image-generator.md API spec aligned with Google official docs**
+  - Endpoint: `:generateImage` → `:generateContent`
+  - Model: `gemini-3-pro-image` → `gemini-3-pro-image-preview`
+  - Auth: Removed Bearer, `x-goog-api-key` header only
+  - Response: Fixed to REST snake_case format
+
+---
+
 ## [2.16.1] - 2026-01-31
 
 ### 🎯 What's Changed for You

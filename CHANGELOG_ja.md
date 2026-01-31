@@ -9,6 +9,67 @@
 
 ---
 
+## [2.16.5] - 2026-01-31
+
+### 🎯 あなたにとって何が変わるか
+
+**`/generate-video` が AI 画像生成、BGM、字幕、視覚効果をサポートしました**
+
+動画生成がさらにリッチになりました。Nano Banana Pro による AI 画像生成、BGM/字幕サポート、そして GlitchText や Particles などの視覚効果ライブラリが追加されました。
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| 画像素材は手動で用意 | Nano Banana Pro が自動生成（2枚生成→品質判定→採用） |
+| BGM なし | 著作権フリー BGM を簡単に追加 |
+| 字幕なし | Base64 埋め込みフォントで日本語字幕対応 |
+| 基本的なトランジションのみ | GlitchText, Particles, 3D Parallax 等のエフェクト |
+
+### Added
+
+- **Nano Banana Pro AI 画像生成** (`skills/video/references/image-generator.md`)
+  - Google Gemini 3 Pro Image Preview による自動画像生成
+  - 2枚生成 → Claude 品質判定 → 最適な1枚を採用
+  - 品質不合格時は自動再生成（最大3回）
+  - イントロ、CTA、アーキテクチャ図などのシーンに対応
+
+- **画像品質判定** (`skills/video/references/image-quality-check.md`)
+  - 5段階スコアリング（Excellent/Good/Acceptable/Poor/Unacceptable）
+  - 基本品質、シーン適合性、ブランド整合性の3軸評価
+  - 採用閾値: 3（Acceptable）以上
+
+- **BGM サポート** (`skills/video/references/generator.md`)
+  - `bgmPath` と `bgmVolume` プロパティ追加
+  - ナレーション有無に応じた音量ガイドライン
+  - 著作権フリー BGM 入手先リスト
+
+- **字幕サポート** (`skills/video/references/generator.md`)
+  - Base64 フォント埋め込みで確実な読み込み
+  - 音声同期タイミングルール
+  - Subtitle コンポーネントテンプレート
+
+- **視覚効果ライブラリ** (`skills/video/references/visual-effects.md`)
+  - GlitchText: Hook/タイトル向け
+  - Particles: 背景/CTA 収束演出
+  - ScanLine: 解析中演出
+  - ProgressBar: 並列処理表示
+  - 3D Parallax: カード表示
+
+- **ultrawork 完了前レビュー必須化** (`commands/core/ultrawork.md`)
+  - `/harness-review` を完了前に自動実行
+  - High 以上の問題があればコミットをブロック
+
+### Fixed
+
+- **image-generator.md API 仕様を Google 公式に準拠**
+  - エンドポイント: `:generateImage` → `:generateContent`
+  - モデル名: `gemini-3-pro-image` → `gemini-3-pro-image-preview`
+  - 認証: Bearer 削除、`x-goog-api-key` ヘッダーのみ
+  - レスポンス形式: REST snake_case に修正
+
+---
+
 ## [2.16.1] - 2026-01-31
 
 ### 🎯 あなたにとって何が変わるか
