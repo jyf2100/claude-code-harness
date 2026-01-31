@@ -285,6 +285,8 @@ ultrawork の自律実行中は、**特定条件下でのみ**これらの確認
 │     → .claude/state/ultrawork.log.jsonl                    │
 │  4. ガードバイパス有効化                                    │
 │     → .claude/state/ultrawork-active.json                  │
+│  5. セッション状態に active_skill を記録 ★ NEW              │
+│     → session.json に active_skill: "ultrawork" を設定     │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -341,10 +343,12 @@ ultrawork の自律実行中は、**特定条件下でのみ**これらの確認
 │                                                             │
 │  1. ガードバイパス解除                                      │
 │     → ultrawork-active.json 削除                           │
-│  2. 最終コミット（「コミットしないで」でスキップ）          │
-│  3. ワークログ保存（完了ステータス）                        │
-│  4. 完了レポート生成                                        │
-│  5. 2-Agent モードなら handoff 実行                         │
+│  2. セッション状態の active_skill をクリア ★ NEW           │
+│     → session.json から active_skill を削除                │
+│  3. 最終コミット（「コミットしないで」でスキップ）          │
+│  4. ワークログ保存（完了ステータス）                        │
+│  5. 完了レポート生成                                        │
+│  6. 2-Agent モードなら handoff 実行                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -443,6 +447,58 @@ ultrawork の自律実行中は、**特定条件下でのみ**これらの確認
 ```
 
 指定された条件が真実になるまでループを継続。
+
+---
+
+## Session State Management
+
+ultrawork はセッション継続（compact/resume）後も正しく動作するため、セッション状態を永続化します。
+
+### Phase 1: 初期化時の設定
+
+ultrawork 開始時に以下を実行:
+
+```bash
+# 1. ultrawork-active.json を作成
+cat > .claude/state/ultrawork-active.json <<EOF
+{
+  "active": true,
+  "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "bypass_guards": ["rm_rf", "git_push"],
+  "allowed_rm_paths": ["node_modules", "dist", ".next", ".cache", "coverage", "build"],
+  "review_status": "pending"
+}
+EOF
+
+# 2. session.json に active_skill を記録（★ 必須）
+jq '.active_skill = "ultrawork" | .active_skill_started_at = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+  .claude/state/session.json > tmp.$$.json && mv tmp.$$.json .claude/state/session.json
+```
+
+> ⚠️ **重要**: `active_skill` を設定しないと、セッション継続後にスキル再起動の警告が表示されません。
+
+### 完了処理時のクリア
+
+ultrawork 完了時に以下を実行:
+
+```bash
+# 1. ultrawork-active.json を削除
+rm -f .claude/state/ultrawork-active.json
+
+# 2. session.json から active_skill を削除（★ 必須）
+jq 'del(.active_skill) | del(.active_skill_started_at)' \
+  .claude/state/session.json > tmp.$$.json && mv tmp.$$.json .claude/state/session.json
+```
+
+### セッション継続時の復元
+
+セッションが継続（compact/resume）した場合、`session-resume.sh` が自動的に:
+
+1. `session.json` の `active_skill` を検出
+2. 「`/ultrawork 続きやって` でスキルを再起動してください」と強く促す
+3. スキル再起動なしでの実装開始を警告
+
+**これにより、スキル文脈なしでの作業開始を防止します。**
 
 ---
 

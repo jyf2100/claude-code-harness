@@ -179,6 +179,31 @@ else
   PLANS_INFO="📄 Plans.md: 未検出"
 fi
 
+# ===== active_skill 検出（スキル再起動が必要かチェック） =====
+ACTIVE_SKILL_INFO=""
+if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
+  ACTIVE_SKILL=$(jq -r '.active_skill // empty' "$SESSION_FILE" 2>/dev/null)
+  ACTIVE_SKILL_STARTED=$(jq -r '.active_skill_started_at // "不明"' "$SESSION_FILE" 2>/dev/null)
+
+  if [ -n "$ACTIVE_SKILL" ]; then
+    ACTIVE_SKILL_INFO="
+## ⚠️ MANDATORY: ${ACTIVE_SKILL} Session Recovery
+
+**前回のセッションで \`/${ACTIVE_SKILL}\` が実行中でした（開始: ${ACTIVE_SKILL_STARTED}）**
+
+**必須アクション:**
+1. \`/${ACTIVE_SKILL} 続きやって\` でスキルを再起動してください
+2. スキルを再起動せずに直接実装を開始しないでください
+3. スキル文脈なしでは review_status ガードが機能しません
+
+スキルを再起動しない場合:
+- レビュー強制が機能しません
+- 前回の失敗からの学習が引き継がれません
+- 完了チェックが不完全になります
+"
+  fi
+fi
+
 # ===== ultrawork モード検出と harness-review 必須の再注入 =====
 ULTRAWORK_INFO=""
 ULTRAWORK_FILE="${STATE_DIR}/ultrawork-active.json"
@@ -220,6 +245,12 @@ esac
 
 add_line ""
 add_line "${PLANS_INFO}"
+
+# active_skill 再起動指示を追加（最優先で表示）
+if [ -n "$ACTIVE_SKILL_INFO" ]; then
+  add_line ""
+  add_line "$ACTIVE_SKILL_INFO"
+fi
 
 # ultrawork モード情報を追加
 if [ -n "$ULTRAWORK_INFO" ]; then
