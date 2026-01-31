@@ -509,8 +509,154 @@ npx remotion render remotion/index.ts FullVideo out/video.webm --codec=vp8
 
 ---
 
+## BGM サポート
+
+### 実装方法
+
+コンポジションに `bgmPath` と `bgmVolume` プロパティを追加:
+
+```tsx
+export const VideoComposition: React.FC<{
+  enableAudio?: boolean;
+  volume?: number;
+  bgmPath?: string;      // BGMファイルパス（staticFile相対）
+  bgmVolume?: number;    // BGM音量（0.0-1.0）
+}> = ({ enableAudio = true, volume = 1, bgmPath, bgmVolume = 0.25 }) => {
+  return (
+    <AbsoluteFill>
+      {/* シーン内容 */}
+
+      {/* BGM（ナレーションより控えめに） */}
+      {enableAudio && bgmPath && (
+        <Audio src={staticFile(bgmPath)} volume={bgmVolume} />
+      )}
+    </AbsoluteFill>
+  );
+};
+```
+
+### BGM 音量ガイドライン
+
+| ナレーション有無 | 推奨 bgmVolume |
+|-----------------|----------------|
+| あり | 0.20 - 0.30 |
+| なし | 0.50 - 0.80 |
+
+### 著作権フリー BGM 入手先
+
+- [DOVA-SYNDROME](https://dova-s.jp/) - 日本語、無料
+- [甘茶の音楽工房](https://amachamusic.chagasi.com/) - 日本語、無料
+- [Pixabay Music](https://pixabay.com/music/) - 英語、無料
+
+---
+
+## 字幕サポート
+
+### 実装方法
+
+```tsx
+// フォント埋め込み（Base64推奨）
+const FontStyle: React.FC = () => (
+  <style>
+    {`
+      @font-face {
+        font-family: 'CustomFont';
+        src: url('${FONT_DATA_URL}') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+      }
+    `}
+  </style>
+);
+
+// 字幕コンポーネント
+const Subtitle: React.FC<{ text: string }> = ({ text }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <>
+      <FontStyle />
+      <div
+        style={{
+          position: "absolute",
+          bottom: 80,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          padding: "0 60px",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'CustomFont', sans-serif",
+            fontSize: 32,
+            color: "#FFFFFF",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: "14px 28px",
+            borderRadius: 8,
+            textAlign: "center",
+            maxWidth: 1000,
+            lineHeight: 1.5,
+            opacity,
+          }}
+        >
+          {text}
+        </div>
+      </div>
+    </>
+  );
+};
+```
+
+### 字幕タイミングルール
+
+| 項目 | 値 |
+|------|-----|
+| 字幕開始 | 音声開始と同じタイミング |
+| 字幕duration | 音声長 + 10f（余白） |
+
+### フォント埋め込み（Base64）
+
+カスタムフォントを確実に読み込むには Base64 埋め込みを使用:
+
+```typescript
+// src/utils/custom-font.ts
+import fs from "fs";
+import path from "path";
+
+// ビルド時にBase64エンコード
+const fontPath = path.join(__dirname, "../../public/font/MyFont.otf");
+const fontBuffer = fs.readFileSync(fontPath);
+export const FONT_DATA_URL = `data:font/otf;base64,${fontBuffer.toString("base64")}`;
+```
+
+### 字幕データ構造
+
+```tsx
+const SUBTITLES = [
+  { id: "hook", text: "字幕テキスト", start: 30, duration: 120 },
+  { id: "problem", text: "次の字幕", start: 175, duration: 178 },
+  // ...
+];
+
+// 使用
+{SUBTITLES.map((sub) => (
+  <Sequence key={sub.id} from={sub.start} durationInFrames={sub.duration}>
+    <Subtitle text={sub.text} />
+  </Sequence>
+))}
+```
+
+---
+
 ## Notes
 
 - 並列生成は独立したシーンに対してのみ有効
 - Playwright キャプチャは事前にアプリが起動している必要がある
 - 大きな動画（3分以上）は分割レンダリングを推奨
+- BGMはナレーションが聞こえるよう控えめに設定
+- カスタムフォントはBase64埋め込みで確実に読み込む

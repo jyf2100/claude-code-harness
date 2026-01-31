@@ -23,6 +23,7 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 | **コードベース分析** | See [references/analyzer.md](references/analyzer.md) |
 | **シナリオプランニング** | See [references/planner.md](references/planner.md) |
 | **並列シーン生成** | See [references/generator.md](references/generator.md) |
+| **視覚効果ライブラリ** | See [references/visual-effects.md](references/visual-effects.md) |
 | **AI画像生成** | See [references/image-generator.md](references/image-generator.md) |
 | **画像品質判定** | See [references/image-quality-check.md](references/image-quality-check.md) |
 
@@ -128,6 +129,40 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 **事前確認**: `ffprobe` で音声長さを確認してからシーン設計
 
 > 詳細: [references/generator.md](references/generator.md#音声同期ルール重要)
+
+## BGM サポート
+
+| 項目 | 推奨値 |
+|------|--------|
+| ナレーションあり | bgmVolume: 0.20 - 0.30 |
+| ナレーションなし | bgmVolume: 0.50 - 0.80 |
+| ファイル配置 | `public/BGM/` |
+
+> 詳細: [references/generator.md](references/generator.md#bgm-サポート)
+
+## 字幕サポート
+
+| ルール | 値 |
+|--------|-----|
+| 字幕開始 | 音声開始と同じ |
+| 字幕duration | 音声長 + 10f |
+| フォント | Base64埋め込み推奨 |
+
+> 詳細: [references/generator.md](references/generator.md#字幕サポート)
+
+## 視覚効果ライブラリ
+
+インパクトのある動画向けエフェクト集:
+
+| エフェクト | 用途 |
+|-----------|------|
+| GlitchText | Hook、タイトル |
+| Particles | 背景、CTA収束 |
+| ScanLine | 解析中演出 |
+| ProgressBar | 並列処理表示 |
+| 3D Parallax | カード表示 |
+
+> 詳細: [references/visual-effects.md](references/visual-effects.md)
 
 ## Notes
 
