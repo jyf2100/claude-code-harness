@@ -87,6 +87,8 @@ docs/notebooklm-*.yaml
 docs/notebooklm/
 docs/x-posts-*.md
 docs/masao.md
+docs/MOSHI_REMOTE_SETUP.md
+docs/claude-mem-japanese-setup.md
 
 # LSP (Language Server Protocol) configuration
 .lsp.json

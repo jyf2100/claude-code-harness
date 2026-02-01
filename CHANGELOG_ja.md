@@ -9,6 +9,52 @@
 
 ---
 
+## [2.16.11] - 2026-02-02
+
+### 🎯 あなたにとって何が変わるか
+
+**コマンドがスキルアーキテクチャに移行 + スキル名の明確化**
+
+このリリースで、コマンド→スキルへの移行が完了し、複数のスキル名がより分かりやすく改名されました。
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/work`, `/harness-review`, `/harness-init` がコマンドとして存在 | 同じコマンドがスキルで動作 |
+| `dev-browser` スキル | `agent-browser` スキル |
+| `docs` スキル | `notebookLM` スキル |
+| `video` スキル | `generate-video` スキル |
+| `workflow` スキル | `handoff` スキル |
+
+### Changed
+
+- **アーキテクチャ: コマンド→スキル移行**
+  - コアコマンド (`/work`, `/harness-review`, `/harness-init`, `/plan-with-agent`, `/ultrawork`, `/skill-list`, `/sync-status`) がスキルに移行
+  - ハンドオフコマンド (`/handoff-to-cursor`, `/handoff-to-opencode`) が `handoff` スキルに統合
+  - オプションコマンドが対応するスキルに移行
+  - コマンドはスキルを呼び出す薄いラッパーに
+
+- **スキル名の明確化**
+  - `dev-browser` → `agent-browser` (ブラウザ自動化)
+  - `docs` → `notebookLM` (ドキュメント生成)
+  - `video` → `generate-video` (動画作成)
+  - `workflow` → `handoff` (PM↔Impl遷移)
+
+- **新規スキルの追加**
+  - `cc-cursor-cc` - Cursor検証ワークフロー
+  - `planning` - 実装計画
+  - `crud` - CRUD生成
+  - `harness-init`, `harness-update`, `harness-ui`, `harness-mem` - セットアップスキル
+  - `setup-tools` - 統合ツールセットアップ (CI, LSP, MCP等)
+  - `localize-rules`, `release`, `sync-status` - ユーティリティスキル
+
+### Added
+
+- `.claude/rules/skill-editing.md` - スキルファイル編集ルール
+
+---
+
 ## [2.16.7] - 2026-02-01
 
 ### 🎯 あなたにとって何が変わるか

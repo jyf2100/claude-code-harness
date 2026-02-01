@@ -9,6 +9,52 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.11] - 2026-02-02
+
+### 🎯 What's Changed for You
+
+**Commands migrated to Skills architecture + Skill renaming for clarity**
+
+This release completes the Commands → Skills migration and renames several skills for better discoverability.
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/work`, `/harness-review`, `/harness-init` as commands | Same commands now powered by skills |
+| `dev-browser` skill | `agent-browser` skill |
+| `docs` skill | `notebookLM` skill |
+| `video` skill | `generate-video` skill |
+| `workflow` skill | `handoff` skill |
+
+### Changed
+
+- **Architecture: Commands → Skills migration**
+  - Core commands (`/work`, `/harness-review`, `/harness-init`, `/plan-with-agent`, `/ultrawork`, `/skill-list`, `/sync-status`) migrated to skills
+  - Handoff commands (`/handoff-to-cursor`, `/handoff-to-opencode`) consolidated into `handoff` skill
+  - Optional commands migrated to corresponding skills
+  - Commands are now thin wrappers that invoke skills
+
+- **Skill renaming for clarity**
+  - `dev-browser` → `agent-browser` (browser automation)
+  - `docs` → `notebookLM` (documentation generation)
+  - `video` → `generate-video` (video creation)
+  - `workflow` → `handoff` (PM↔Impl transitions)
+
+- **New skills created**
+  - `cc-cursor-cc` - Cursor validation workflow
+  - `planning` - Implementation planning
+  - `crud` - CRUD generation
+  - `harness-init`, `harness-update`, `harness-ui`, `harness-mem` - Setup skills
+  - `setup-tools` - Unified tool setup (CI, LSP, MCP, etc.)
+  - `localize-rules`, `release`, `sync-status` - Utility skills
+
+### Added
+
+- `.claude/rules/skill-editing.md` - Rules for editing skill files
+
+---
+
 ## [2.16.7] - 2026-02-01
 
 ### 🎯 What's Changed for You
