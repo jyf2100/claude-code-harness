@@ -11,6 +11,19 @@
 
 ---
 
+## [2.16.20] - 2026-02-03
+
+### Added
+
+- `ultrawork` スキルに Options テーブルと Quick Reference 例を追加（`--codex`, `--parallel`, `--worktree-base`）
+
+### Internal
+
+- スキルルーティングルールを `skills/routing-rules.md` に一元化（SSOT パターン導入）
+- `codex-review` と `codex-worker` のルーティングを決定的に（文脈判定を排除）
+
+---
+
 ## [2.16.19] - 2026-02-03
 
 ### Fixed

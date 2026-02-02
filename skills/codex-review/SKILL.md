@@ -1,6 +1,6 @@
 ---
 name: codex-review
-description: "Integrates OpenAI Codex CLI as an MCP server to provide second-opinion reviews. Triggered by requests for Codex review, second opinion, or Codex setup. Do NOT load for: standard reviews without Codex, implementation work, or non-setup tasks."
+description: "Codex MCP でセカンドオピニオンレビューを提供。ルーティングルールは skills/routing-rules.md を参照。"
 allowed-tools: ["Bash", "Read", "Write", "Edit"]
 argument-hint: "[code|plan|scope]"
 ---
@@ -8,6 +8,12 @@ argument-hint: "[code|plan|scope]"
 # Codex Review Integration Skill
 
 OpenAI Codex CLI を MCP サーバーとして Claude Code に統合し、コードレビュー時にセカンドオピニオンを提供するスキル。
+
+## Routing Rules (SSOT)
+
+> **このスキルのトリガー/除外ルールは [skills/routing-rules.md](../routing-rules.md) で一元管理されています。**
+>
+> ローカルにルールを重複記載しないこと。変更が必要な場合は routing-rules.md を編集してください。
 
 ## 🎯 使用場面
 

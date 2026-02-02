@@ -8,6 +8,19 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.20] - 2026-02-03
+
+### Added
+
+- `ultrawork` skill now has Options table and Quick Reference examples (`--codex`, `--parallel`, `--worktree-base`)
+
+### Internal
+
+- Centralized skill routing rules to `skills/routing-rules.md` (SSOT pattern)
+- Made `codex-review` and `codex-worker` routing deterministic (removed context judgment)
+
+---
+
 ## [2.16.19] - 2026-02-03
 
 ### Fixed
