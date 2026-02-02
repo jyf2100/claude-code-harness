@@ -8,6 +8,14 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.19] - 2026-02-03
+
+### Fixed
+
+- Reduced duplicate display of Stop hook reason (now outputs keywords only)
+
+---
+
 ## [2.16.17] - 2026-02-03
 
 ### 🎯 What's Changed for You
