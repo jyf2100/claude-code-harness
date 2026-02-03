@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.16.18-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.1-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-42-orange.svg" alt="Skills">
@@ -324,6 +324,37 @@ Generate product videos with Remotion:
 AI-generated scenes, narration, and effects.
 
 > **Dependencies**: Requires [Remotion](https://www.remotion.dev/) project setup and ffmpeg. This is an optional feature for advanced users.
+
+</details>
+
+<details>
+<summary><strong>Agent Trace</strong></summary>
+
+Automatically tracks AI-generated code edits:
+
+```
+.claude/state/agent-trace.jsonl
+```
+
+**What it does:**
+- Records every Edit/Write operation with timestamps
+- Shows project name, current task, and recent edits at session end
+- Enables `/sync-status` to compare Plans.md with actual changes
+
+**Session end output:**
+```
+📊 Session Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 Project: my-app
+🎯 Current Task: Add login form
+✅ Completed: 3 tasks
+📄 Recent edits:
+   - src/components/LoginForm.tsx
+   - src/lib/auth.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+No setup required—enabled by default.
 
 </details>
 

@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.16.18-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.1-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-42-orange.svg" alt="Skills">
@@ -324,6 +324,37 @@ Remotion でプロダクト動画を生成：
 AI生成のシーン、ナレーション、エフェクト。
 
 > **依存関係**: [Remotion](https://www.remotion.dev/) プロジェクトのセットアップと ffmpeg が必要です。上級者向けのオプション機能です。
+
+</details>
+
+<details>
+<summary><strong>Agent Trace</strong></summary>
+
+AI による編集操作を自動追跡：
+
+```
+.claude/state/agent-trace.jsonl
+```
+
+**機能:**
+- Edit/Write 操作をタイムスタンプ付きで記録
+- セッション終了時にプロジェクト名、現在のタスク、直近の編集を表示
+- `/sync-status` で Plans.md と実際の変更を照合可能に
+
+**セッション終了時の出力:**
+```
+📊 セッションサマリー
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 プロジェクト: my-app
+🎯 現在のタスク: ログインフォーム追加
+✅ 完了タスク: 3件
+📄 直近の編集:
+   - src/components/LoginForm.tsx
+   - src/lib/auth.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+設定不要—デフォルトで有効です。
 
 </details>
 
