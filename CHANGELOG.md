@@ -8,6 +8,15 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.17.7] - 2026-02-04
+
+### Fixed
+
+- **release skill**: Fix `/release` not launching via Skill tool
+  - Removed `disable-model-invocation: true`
+
+---
+
 ## [2.17.6] - 2026-02-04
 
 ### 🎯 What's Changed for You
