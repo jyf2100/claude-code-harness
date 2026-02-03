@@ -8,11 +8,22 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.21] - 2026-02-03
+
+### Changed
+
+- `ultrawork` Codex Mode options (`--codex`, `--parallel`, `--worktree-base`) moved to Design Draft
+  - These features are planned but not yet implemented
+  - Documentation now clearly marks them as "(Design Draft / 未実装)"
+
+### Internal
+
+- Added `skills/ultrawork/references/codex-mode.md` as design draft documentation
+- Added Codex Worker scripts and references (untracked, for future implementation)
+
+---
+
 ## [2.16.20] - 2026-02-03
-
-### Added
-
-- `ultrawork` skill now has Options table and Quick Reference examples (`--codex`, `--parallel`, `--worktree-base`)
 
 ### Internal
 

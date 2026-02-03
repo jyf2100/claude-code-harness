@@ -2,7 +2,7 @@
 name: ultrawork
 description: "Autonomously iterates until specified Plans.md range is complete - long-running /work with self-learning. Use when user mentions '/ultrawork', complete until done, finish all tasks, or autonomous execution. Do NOT load for: single tasks, reviews, or setup."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
-argument-hint: "[natural language range] [--max-iterations N] [--codex] [--parallel N] [--worktree-base PATH]"
+argument-hint: "[natural language range]"
 disable-model-invocation: true
 ---
 
@@ -10,15 +10,6 @@ disable-model-invocation: true
 
 Plans.md の指定範囲を**完了まで自動的に反復実行**する。
 `/work` の長期版として、Ralph Loop + Ultrawork のコンセプトを採用。
-
-## Options (オプション)
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--max-iterations N` | 最大反復回数を制限 | 無制限 |
-| `--codex` | Codex Worker を並列実行に使用 | 無効 |
-| `--parallel N` | 並列ワーカー数（`--codex` 時のみ有効） | 1 |
-| `--worktree-base PATH` | git worktree のベースディレクトリ（並列時の分離用） | なし |
 
 ## Philosophy
 
@@ -41,13 +32,6 @@ Plans.md の指定範囲を**完了まで自動的に反復実行**する。
 
 # 前回の続きから
 /ultrawork 続きやって
-
-# Codex Worker で並列実行
-/ultrawork 全部やって --codex --parallel 3
-/ultrawork 認証機能 --codex --parallel 2 --worktree-base ~/worktrees
-
-# 反復回数を制限
-/ultrawork ログイン機能 --max-iterations 5
 ```
 
 ## /work との違い
@@ -68,7 +52,7 @@ Plans.md の指定範囲を**完了まで自動的に反復実行**する。
 | **Self-Learning** | See [references/self-learning.md](references/self-learning.md) |
 | **Security & Guards** | See [references/security-guards.md](references/security-guards.md) |
 | **Session State** | See [references/session-state.md](references/session-state.md) |
-| **Codex Mode** | See [references/codex-mode.md](references/codex-mode.md) |
+| **Codex Mode** (Design Draft / 未実装) | See [references/codex-mode.md](references/codex-mode.md) |
 
 ## Completion Conditions
 
