@@ -9,36 +9,23 @@
 
 set -euo pipefail
 
-# 色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# スクリプトディレクトリ
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ヘルパー関数
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_merge() { echo -e "${BLUE}[MERGE]${NC} $1"; }
-
-# 依存チェック
-check_dependencies() {
-    for cmd in git jq sed; do
-        if ! command -v "$cmd" &> /dev/null; then
-            log_error "必須コマンドが見つかりません: $cmd"
-            exit 1
-        fi
-    done
-}
+# 共通ライブラリ読み込み
+# shellcheck source=lib/codex-worker-common.sh
+source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 
 # Plans.md 更新
+# Note: CWD 依存排除のため repo root からの絶対パスを使用
 update_plans() {
     local task_pattern="$1"
-    local plans_file="Plans.md"
+    local repo_root
+    repo_root=$(get_repo_root) || return 1
+    local plans_file="$repo_root/Plans.md"
 
     if [[ ! -f "$plans_file" ]]; then
-        log_warn "Plans.md が見つかりません"
+        log_warn "Plans.md が見つかりません: $plans_file"
         return 1
     fi
 
@@ -105,9 +92,10 @@ main() {
     check_dependencies
 
     local worktree=""
-    local target_branch="main"
+    local target_branch=""
     local squash=false
     local dry_run=false
+    local force=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -125,10 +113,16 @@ main() {
                 target_branch="$2"; shift 2 ;;
             --squash) squash=true; shift ;;
             --dry-run) dry_run=true; shift ;;
+            --force) force=true; shift ;;
             -h|--help) usage; exit 0 ;;
             *) log_error "Unknown option: $1"; exit 1 ;;
         esac
     done
+
+    # デフォルトブランチの取得
+    if [[ -z "$target_branch" ]]; then
+        target_branch=$(get_default_branch)
+    fi
 
     # 必須パラメータチェック
     if [[ -z "$worktree" ]]; then
@@ -139,6 +133,44 @@ main() {
     if [[ ! -d "$worktree" ]]; then
         log_error "Worktree が存在しません: $worktree"
         exit 1
+    fi
+
+    # Security: 同一リポジトリの worktree か検証（共通関数を使用）
+    if ! validate_worktree_path "$worktree"; then
+        exit 1
+    fi
+
+    # Quality: worktree の作業ツリーがクリーンか確認
+    local worktree_status
+    worktree_status=$(cd "$worktree" && git status --porcelain 2>/dev/null)
+    if [[ -n "$worktree_status" ]]; then
+        log_warn "worktree に未コミットの変更があります:"
+        echo "$worktree_status" | head -5
+        if [[ "$force" != "true" ]]; then
+            log_error "未コミットの変更があるため中断します。--force でスキップ可能"
+            echo '{"status": "blocked", "reason": "uncommitted_changes"}'
+            exit 1
+        fi
+        log_warn "⚠️ 未コミットの変更を無視してマージを続行"
+    fi
+
+    # Security: 品質ゲート通過確認（中央管理のゲート結果を検証）
+    local require_gate_pass
+    require_gate_pass=$(get_config "require_gate_pass_for_merge")
+
+    if [[ "$require_gate_pass" == "true" ]]; then
+        # verify_gate_result は worktree の HEAD コミットに対応するゲート結果を検証
+        # Worker が改ざんできない中央管理の結果ファイルを参照
+        if ! verify_gate_result "$worktree"; then
+            log_error "品質ゲートを通過してからマージしてください"
+            log_error "--force オプションでスキップ可能ですが推奨しません"
+
+            if [[ "$force" != "true" ]]; then
+                echo '{"status": "blocked", "reason": "gate_not_passed"}'
+                exit 1
+            fi
+            log_warn "⚠️ 品質ゲート未通過でマージを強制実行"
+        fi
     fi
 
     # worktree の最新コミット取得
@@ -167,9 +199,9 @@ main() {
     # ターゲットブランチに切り替え
     if [[ "$current_branch" != "$target_branch" ]]; then
         if [[ "$dry_run" == "false" ]]; then
-            git checkout -- "$target_branch"
+            git switch "$target_branch"
         else
-            log_info "[DRY-RUN] git checkout -- $target_branch"
+            log_info "[DRY-RUN] git switch $target_branch"
         fi
     fi
 
@@ -220,6 +252,11 @@ main() {
 
     echo "$result"
 
+    # 元のブランチに戻る（マージ後）
+    if [[ "$dry_run" == "false" ]] && [[ -n "$current_branch" ]] && [[ "$current_branch" != "$target_branch" ]]; then
+        git switch "$current_branch" 2>/dev/null || log_warn "元のブランチに戻れませんでした: $current_branch"
+    fi
+
     # 終了コード
     if [[ "$merge_status" == "merged" ]]; then
         exit 0
@@ -238,6 +275,7 @@ Options:
   --target-branch BRANCH  マージ先ブランチ（デフォルト: main）
   --squash                squash merge を使用
   --dry-run               実際にマージせず確認のみ
+  --force                 品質ゲート未通過でも強制マージ（非推奨）
   -h, --help              ヘルプ表示
 
 Examples:
@@ -245,6 +283,7 @@ Examples:
   $0 --worktree ../worktrees/worker-1 --target-branch develop
   $0 --worktree ../worktrees/worker-1 --squash
   $0 --worktree ../worktrees/worker-1 --dry-run
+  $0 --worktree ../worktrees/worker-1 --force  # 品質ゲートスキップ（注意）
 EOF
 }
 

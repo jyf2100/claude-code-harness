@@ -8,17 +8,30 @@
 
 set -euo pipefail
 
-# 色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# スクリプトディレクトリ
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# デフォルト設定
-MAX_RETRIES=3
-APPROVAL_POLICY="never"
-SANDBOX="workspace-write"
+# 共通ライブラリ読み込み
+# shellcheck source=lib/codex-worker-common.sh
+source "$SCRIPT_DIR/lib/codex-worker-common.sh"
+
+# ============================================
+# ローカル設定（main で初期化）
+# ============================================
+MAX_RETRIES=""
+APPROVAL_POLICY=""
+SANDBOX=""
+
+# 設定初期化（check_dependencies 後に呼び出す）
+init_config() {
+    validate_config || {
+        log_error "設定ファイルが不正です"
+        exit 1
+    }
+    MAX_RETRIES=$(get_config "max_retries")
+    APPROVAL_POLICY=$(get_config "approval_policy")
+    SANDBOX=$(get_config "sandbox")
+}
 
 # グローバル変数
 TASK=""
@@ -26,28 +39,6 @@ WORKTREE_PATH=""
 DRY_RUN=false
 PROJECT_ROOT=""
 AGENTS_HASH=""
-
-# 依存コマンドチェック
-check_dependencies() {
-    local missing=()
-
-    for cmd in jq shasum git; do
-        if ! command -v "$cmd" &> /dev/null; then
-            missing+=("$cmd")
-        fi
-    done
-
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        log_error "必須コマンドが見つかりません: ${missing[*]}"
-        exit 1
-    fi
-}
-
-# ヘルパー関数
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
 
 # 使用方法
 usage() {
@@ -113,6 +104,11 @@ parse_args() {
 # プロジェクトルート検出
 detect_project_root() {
     if [[ -n "$WORKTREE_PATH" ]]; then
+        # Security: worktree パス検証（repo 外 OK、同一リポジトリの worktree か確認）
+        if ! validate_worktree_path "$WORKTREE_PATH"; then
+            log_error "無効な worktree パス: $WORKTREE_PATH"
+            exit 1
+        fi
         PROJECT_ROOT="$WORKTREE_PATH"
     else
         PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -130,24 +126,34 @@ compute_agents_hash() {
         exit 1
     fi
 
-    # BOM除去、LF正規化、SHA256先頭8文字
-    AGENTS_HASH=$(sed '1s/^\xEF\xBB\xBF//' "$agents_file" | tr -d '\r' | shasum -a 256 | cut -c1-8)
+    # BOM除去、LF正規化、SHA256先頭8文字（クロスプラットフォーム対応）
+    AGENTS_HASH=$(calculate_file_hash "$agents_file" 8)
     log_info "AGENTS.md ハッシュ: $AGENTS_HASH"
 }
 
-# Rules 連結
+# Rules 連結（決定性のため名前順ソート）
 collect_rules() {
     local rules_dir="$PROJECT_ROOT/.claude/rules"
     local rules_content=""
+    local rules_hash=""
 
     if [[ -d "$rules_dir" ]]; then
-        for rule_file in "$rules_dir"/*.md; do
-            if [[ -f "$rule_file" ]]; then
-                rules_content+="# $(basename "$rule_file")"$'\n'
-                rules_content+="$(cat "$rule_file")"$'\n\n'
-            fi
-        done
-        log_info "Rules ファイル収集: $(find "$rules_dir" -name "*.md" | wc -l | tr -d ' ') 件"
+        # Quality: 決定性のため名前順にソートして連結
+        local rule_files
+        rule_files=$(find "$rules_dir" -name "*.md" -type f 2>/dev/null | sort)
+
+        if [[ -n "$rule_files" ]]; then
+            while IFS= read -r rule_file; do
+                if [[ -f "$rule_file" ]]; then
+                    rules_content+="# $(basename "$rule_file")"$'\n'
+                    rules_content+="$(cat "$rule_file")"$'\n\n'
+                fi
+            done <<< "$rule_files"
+
+            # 連結結果のハッシュをログ出力（デバッグ用）
+            rules_hash=$(calculate_sha256 "$rules_content" 8 2>/dev/null || echo "unknown")
+            log_info "Rules ファイル収集: $(echo "$rule_files" | wc -l | tr -d ' ') 件 (hash: $rules_hash)"
+        fi
     else
         log_warn "Rules ディレクトリが見つかりません: $rules_dir"
     fi
@@ -207,7 +213,7 @@ verify_agents_summary() {
         local hash="${BASH_REMATCH[2]}"
 
         if [[ "${hash,,}" == "${AGENTS_HASH,,}" ]]; then
-            log_info "証跡検証: OK (ハッシュ一致)"
+            log_info "証跡検証: OK (ハッシュ一致, summary: ${summary:0:50}...)"
             return 0
         else
             log_error "証跡検証: NG (ハッシュ不一致: 期待=$AGENTS_HASH, 実際=$hash)"
@@ -274,12 +280,13 @@ invoke_codex_worker() {
             "sandbox": $sandbox
         }' > "$output_dir/mcp-params.json"
 
-    # 検証用情報を保存
+    # 検証用情報を保存（注: agents_hash は含めない - セキュリティ上の理由）
+    # Worker が AGENTS.md を実際に読んで証跡を出力することを強制するため
     cat > "$output_dir/verify-info.json" << EOF
 {
-  "agents_hash": "$AGENTS_HASH",
   "max_retries": $MAX_RETRIES,
-  "verify_pattern": "AGENTS_SUMMARY:\\\\s*(.+?)\\\\s*\\\\|\\\\s*HASH:([A-Fa-f0-9]{8})"
+  "verify_pattern": "AGENTS_SUMMARY:\\\\s*(.+?)\\\\s*\\\\|\\\\s*HASH:([A-Fa-f0-9]{8})",
+  "note": "agents_hash は quality-gate が検証時に計算する（Worker へのリーク防止）"
 }
 EOF
 
@@ -307,6 +314,9 @@ main() {
 
     log_step "2. 依存コマンドチェック"
     check_dependencies
+
+    log_step "2.5. 設定初期化"
+    init_config
 
     log_step "3. AGENTS.md ハッシュ計算"
     compute_agents_hash

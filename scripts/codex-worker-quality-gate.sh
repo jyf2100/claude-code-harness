@@ -9,37 +9,18 @@
 
 set -euo pipefail
 
-# 色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# スクリプトディレクトリ
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 設定
+# 共通ライブラリ読み込み
+# shellcheck source=lib/codex-worker-common.sh
+source "$SCRIPT_DIR/lib/codex-worker-common.sh"
+
+# ============================================
+# ローカル設定
+# ============================================
 GATE_SKIP_LOG=".claude/state/gate-skips.log"
 AGENTS_SUMMARY_PATTERN='AGENTS_SUMMARY:[[:space:]]*(.+?)[[:space:]]*\|[[:space:]]*HASH:([A-Fa-f0-9]{8})'
-
-# ヘルパー関数
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_gate() { echo -e "${BLUE}[GATE]${NC} $1"; }
-
-# 依存チェック
-check_dependencies() {
-    for cmd in jq shasum git npm; do
-        if ! command -v "$cmd" &> /dev/null; then
-            log_error "必須コマンドが見つかりません: $cmd"
-            exit 1
-        fi
-    done
-}
-
-# ISO8601 UTC 現在時刻
-now_utc() {
-    date -u +%Y-%m-%dT%H:%M:%SZ
-}
 
 # スキップログ記録
 log_skip() {
@@ -67,7 +48,7 @@ gate_evidence() {
 
     # ハッシュ計算（engine と完全同一: BOM除去、CR除去、SHA256先頭8文字）
     local expected_hash
-    expected_hash=$(sed '1s/^\xEF\xBB\xBF//' "$agents_file" | tr -d '\r' | shasum -a 256 | cut -c1-8)
+    expected_hash=$(calculate_file_hash "$agents_file" 8)
 
     # Worker 出力から AGENTS_SUMMARY を検索
     # 1. Worker 出力ログ（優先）
@@ -92,10 +73,11 @@ gate_evidence() {
         fi
     fi
 
-    # パターンマッチ
+    # パターンマッチ（AGENTS_SUMMARY 行からのみ HASH を抽出）
     if echo "$search_content" | grep -qE "$AGENTS_SUMMARY_PATTERN"; then
         local found_hash
-        found_hash=$(echo "$search_content" | grep -oE 'HASH:[A-Fa-f0-9]{8}' | head -1 | cut -d: -f2)
+        # AGENTS_SUMMARY を含む行からのみ HASH を抽出（無関係な HASH を拾わない）
+        found_hash=$(echo "$search_content" | grep -E 'AGENTS_SUMMARY' | grep -oE 'HASH:[A-Fa-f0-9]{8}' | head -1 | cut -d: -f2)
 
         if [[ "${found_hash,,}" == "${expected_hash,,}" ]]; then
             echo '{"status": "passed", "details": "証跡確認OK"}' > "$output_file"
@@ -127,10 +109,17 @@ gate_structure() {
         return 0
     fi
 
+    # Quality: パッケージマネージャを自動検出
+    local pm
+    pm=$(detect_package_manager "$worktree")
+    local pm_run
+    pm_run=$(get_pm_run_command "$pm")
+    log_info "パッケージマネージャ検出: $pm"
+
     # jq で scripts キーを正確に判定
     # lint チェック
     if jq -e '.scripts.lint' "$worktree/package.json" > /dev/null 2>&1; then
-        if ! (cd "$worktree" && npm run lint --silent 2>&1); then
+        if ! (cd "$worktree" && $pm_run lint --silent 2>&1); then
             lint_result=1
             details="lint エラー"
         fi
@@ -138,7 +127,7 @@ gate_structure() {
 
     # type-check
     if jq -e '.scripts["type-check"]' "$worktree/package.json" > /dev/null 2>&1; then
-        if ! (cd "$worktree" && npm run type-check --silent 2>&1); then
+        if ! (cd "$worktree" && $pm_run type-check --silent 2>&1); then
             type_result=1
             details="${details:+$details, }type エラー"
         fi
@@ -161,12 +150,15 @@ gate_test() {
     log_gate "Gate 3: テスト (test)"
 
     # 改ざん検出パターン（追加行用）
-    local tamper_add_patterns=(
+    # Note: toBe(true/false) は正当な変更の可能性があるため、Critical ではなく Warning 扱い
+    local tamper_critical_patterns=(
         'it\.skip\s*\('
         'test\.skip\s*\('
         'describe\.skip\s*\('
+    )
+    # eslint-disable は Warning（正当な理由がある場合もある）
+    local tamper_warn_patterns=(
         'eslint-disable'
-        'expect\([^)]*\)\.toBe\((true|false|null|undefined|0|1)\)'
     )
 
     # 削除行用パターン（アサーション削除検出）
@@ -177,19 +169,30 @@ gate_test() {
         '\.to\.\w+'
     )
 
-    # 差分ベースの改ざん検出（main ブランチからの全変更）
+    # 差分ベースの改ざん検出（デフォルトブランチからの全変更）
+    local default_branch
+    default_branch=$(get_default_branch)
     local merge_base
-    merge_base=$(cd "$worktree" && git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo "")
+    merge_base=$(cd "$worktree" && git merge-base HEAD "origin/$default_branch" 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo "")
 
     if [[ -n "$merge_base" ]]; then
         # 追加行の検出（+で始まる行、+++ ヘッダのみ除外）
         local added_lines
         added_lines=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.spec.*' '*.test.*' 2>/dev/null | grep '^+' | grep -v '^+++ ' || echo "")
 
-        for pattern in "${tamper_add_patterns[@]}"; do
+        # Critical パターン検出（skip 系 - 明確な改ざん）
+        for pattern in "${tamper_critical_patterns[@]}"; do
             if echo "$added_lines" | grep -qE "$pattern"; then
                 echo "{\"status\": \"critical\", \"details\": \"改ざん検出: 追加行に '$pattern' パターン\"}" > "$output_file"
                 return 2  # Critical: 改ざん検出
+            fi
+        done
+
+        # Warning パターン検出（eslint-disable - 正当な場合もある）
+        for pattern in "${tamper_warn_patterns[@]}"; do
+            if echo "$added_lines" | grep -qE "$pattern"; then
+                log_warn "要確認: 追加行に '$pattern' パターン（改ざんの可能性）"
+                # Warning として記録するが、Critical ではない
             fi
         done
 
@@ -208,10 +211,15 @@ gate_test() {
         done
     fi
 
-    # テスト実行
+    # テスト実行（パッケージマネージャ自動検出）
     if [[ -f "$worktree/package.json" ]]; then
         if jq -e '.scripts.test' "$worktree/package.json" > /dev/null 2>&1; then
-            if ! (cd "$worktree" && npm test --silent 2>&1); then
+            local pm
+            pm=$(detect_package_manager "$worktree")
+            local pm_run
+            pm_run=$(get_pm_run_command "$pm")
+
+            if ! (cd "$worktree" && $pm_run test 2>&1); then
                 echo '{"status": "failed", "details": "テスト失敗"}' > "$output_file"
                 return 1
             fi
@@ -266,10 +274,38 @@ main() {
         exit 1
     fi
 
+    # Security: 同一リポジトリの worktree か検証
+    if ! validate_worktree_path "$worktree"; then
+        exit 1
+    fi
+
     # スキップ時は理由必須
     if [[ ${#skip_gates[@]} -gt 0 ]] && [[ -z "$skip_reason" ]]; then
         log_error "--skip-gate 使用時は --reason が必須です"
         exit 1
+    fi
+
+    # Security: スキップ許可リストの確認（デフォルトは拒否）
+    if [[ ${#skip_gates[@]} -gt 0 ]]; then
+        local allowlist
+        allowlist=$(get_config "gate_skip_allowlist")
+
+        # 許可リストが空または [] の場合、全てのスキップを拒否
+        if [[ -z "$allowlist" || "$allowlist" == "[]" || "$allowlist" == "null" ]]; then
+            log_error "Gate スキップは許可されていません（allowlist が空）"
+            log_error "スキップを許可するには設定ファイルの gate_skip_allowlist を編集してください"
+            exit 1
+        fi
+
+        for gate in "${skip_gates[@]}"; do
+            # 許可リストに含まれるか確認
+            if ! echo "$allowlist" | jq -e --arg g "$gate" 'index($g) != null' >/dev/null 2>&1; then
+                log_error "Gate '$gate' は許可リストに含まれていません"
+                log_error "許可されたゲート: $allowlist"
+                exit 1
+            fi
+            log_warn "Gate '$gate' をスキップ: $skip_reason (user=${USER:-unknown})"
+        done
     fi
 
     # 一時ディレクトリ
@@ -360,6 +396,11 @@ main() {
             skipped: $skipped,
             errors: $errors
         }')
+
+    # Security: ゲート結果を中央管理（worktree 外に保存）
+    local details_summary
+    details_summary=$(echo "$result" | jq -c '.errors')
+    save_gate_result "$worktree" "$overall_status" "$details_summary"
 
     echo "$result"
 

@@ -13,40 +13,86 @@
 
 set -euo pipefail
 
-# 色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+# スクリプトディレクトリ
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 設定
-TTL_MINUTES=30
-HEARTBEAT_MINUTES=10
-LOCK_DIR=".claude/state/locks"
-LOCK_LOG=".claude/state/locks.log"
+# 共通ライブラリ読み込み
+# shellcheck source=lib/codex-worker-common.sh
+source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 
-# ヘルパー関数
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+# ============================================
+# ローカル設定（main で初期化）
+# ============================================
+TTL_MINUTES=""
+HEARTBEAT_MINUTES=""
+LOCK_DIR=""  # 絶対パスで初期化される
+LOCK_LOG=""  # 絶対パスで初期化される
 
-# 依存チェック
-check_dependencies() {
-    for cmd in jq shasum date; do
-        if ! command -v "$cmd" &> /dev/null; then
-            log_error "必須コマンドが見つかりません: $cmd"
+# 設定初期化（check_dependencies 後に呼び出す）
+init_lock_config() {
+    validate_config || {
+        log_error "設定ファイルが不正です"
+        exit 1
+    }
+    TTL_MINUTES=$(get_config "ttl_minutes")
+    HEARTBEAT_MINUTES=$(get_config "heartbeat_minutes")
+
+    # Security: 絶対パスで固定（CWD 依存を排除）
+    local repo_root
+    repo_root=$(get_repo_root) || exit 1
+    LOCK_DIR="$repo_root/.claude/state/locks"
+    LOCK_LOG="$repo_root/.claude/state/locks.log"
+}
+
+# ============================================
+# ロック固有関数
+# ============================================
+
+# ロックディレクトリの検証と初期化
+# Security: symlink 攻撃を防止（親ディレクトリ含む）
+# Note: LOCK_DIR は init_lock_config() で絶対パスに設定済み
+init_lock_dir() {
+    local repo_root
+    repo_root=$(get_repo_root) || exit 1
+
+    # リポジトリルートを解決
+    local real_repo_root
+    real_repo_root=$(realpath "$repo_root" 2>/dev/null) || {
+        log_error "リポジトリルートを解決できません: $repo_root"
+        exit 1
+    }
+
+    # LOCK_DIR は既に絶対パス（init_lock_config で設定）
+    local full_lock_dir="$LOCK_DIR"
+
+    # 親ディレクトリの symlink チェック（Security: 各階層を検証）
+    local check_path="$repo_root"
+    for segment in .claude state locks; do
+        check_path="$check_path/$segment"
+        if [[ -L "$check_path" ]]; then
+            log_error "パス階層に symlink が含まれています（セキュリティ上禁止）: $check_path"
             exit 1
         fi
     done
-}
 
-# パス正規化
-normalize_path() {
-    local path="$1"
-    # ./ 除去、/ 統一
-    path="${path#./}"
-    path="${path//\\//}"
-    printf '%s' "$path"
+    # ディレクトリが存在する場合、リポジトリ内か確認
+    if [[ -e "$full_lock_dir" ]]; then
+        local real_lock_dir
+        real_lock_dir=$(realpath "$full_lock_dir" 2>/dev/null) || {
+            log_error "ロックディレクトリを解決できません: $full_lock_dir"
+            exit 1
+        }
+
+        # Security: /repo と /repo2 を区別
+        if [[ "$real_lock_dir" != "$real_repo_root" && "$real_lock_dir" != "$real_repo_root/"* ]]; then
+            log_error "ロックディレクトリがリポジトリ外: $real_lock_dir"
+            exit 1
+        fi
+    fi
+
+    # ディレクトリ作成（Security: 700 権限）
+    mkdir -p "$full_lock_dir"
+    chmod 700 "$full_lock_dir"
 }
 
 # ロックキー生成（SHA256 先頭8文字）
@@ -54,7 +100,7 @@ generate_lock_key() {
     local path="$1"
     local normalized
     normalized=$(normalize_path "$path")
-    printf '%s' "$normalized" | shasum -a 256 | cut -c1-8
+    calculate_sha256 "$normalized" 8
 }
 
 # ロックファイルパス取得
@@ -65,19 +111,24 @@ get_lock_file() {
     printf '%s/%s.lock.json' "$LOCK_DIR" "$key"
 }
 
-# ISO8601 UTC 現在時刻
-now_utc() {
-    date -u +%Y-%m-%dT%H:%M:%SZ
-}
+# ロックファイルの複数フィールドを一度に取得（Performance 最適化）
+# Usage: read_lock_fields "$lock_file" worker heartbeat path
+# Returns: tab-separated values
+read_lock_fields() {
+    local lock_file="$1"
+    shift
+    local fields=("$@")
 
-# ISO8601 UTC をエポック秒に変換（macOS/Linux 互換）
-parse_utc_to_epoch() {
-    local ts="$1"
-    # Z サフィックスを除去して -u フラグで UTC として解釈
-    local ts_no_z="${ts%Z}"
-    date -u -j -f "%Y-%m-%dT%H:%M:%S" "$ts_no_z" "+%s" 2>/dev/null || \
-    date -u -d "$ts" "+%s" 2>/dev/null || \
-    echo 0
+    if [[ ! -f "$lock_file" ]]; then
+        return 1
+    fi
+
+    # 単一の jq 呼び出しで複数フィールドを取得
+    local jq_filter
+    jq_filter=$(printf '.%s, ' "${fields[@]}")
+    jq_filter="${jq_filter%, }"  # 末尾のカンマを削除
+
+    jq -r "[$jq_filter] | @tsv" "$lock_file"
 }
 
 # ログ記録
@@ -117,19 +168,31 @@ cmd_acquire() {
         exit 1
     fi
 
-    mkdir -p "$LOCK_DIR"
+    # Security: パス検証
+    if ! validate_repo_path "$path"; then
+        exit 1
+    fi
+
+    # Security: ロックディレクトリ検証
+    init_lock_dir
 
     local lock_file
     lock_file=$(get_lock_file "$path")
     local normalized_path
     normalized_path=$(normalize_path "$path")
 
-    # 既存ロックチェック
+    # 既存ロックチェック（Performance: 1回の jq で複数フィールド取得）
     if [[ -f "$lock_file" ]]; then
+        local lock_data
+        lock_data=$(read_lock_fields "$lock_file" worker heartbeat) || {
+            log_warn "ロックファイルの読み込みに失敗: $lock_file"
+            rm -f "$lock_file"
+        }
+
         local existing_worker
         local heartbeat
-        existing_worker=$(jq -r '.worker' "$lock_file")
-        heartbeat=$(jq -r '.heartbeat' "$lock_file")
+        existing_worker=$(echo "$lock_data" | cut -f1)
+        heartbeat=$(echo "$lock_data" | cut -f2)
 
         # TTL チェック
         local heartbeat_epoch
@@ -153,9 +216,9 @@ cmd_acquire() {
     local now
     now=$(now_utc)
 
+    # Security: 本人のみ読み書き可能な権限で作成
     local tmp_file
     tmp_file=$(mktemp "$LOCK_DIR/tmp.XXXXXX")
-
     jq -n \
         --arg path "$normalized_path" \
         --arg worker "$worker" \
@@ -167,6 +230,7 @@ cmd_acquire() {
             acquired: $acquired,
             heartbeat: $heartbeat
         }' > "$tmp_file"
+    chmod 600 "$tmp_file"
 
     # ln で原子的配置（既存ファイルがあれば失敗）
     if ! ln "$tmp_file" "$lock_file" 2>/dev/null; then
@@ -175,6 +239,7 @@ cmd_acquire() {
         exit 1
     fi
 
+    chmod 600 "$lock_file"
     rm -f "$tmp_file"
     log_event "acquire" "$normalized_path" "$worker"
     log_info "ロック取得: $normalized_path (worker=$worker)"
@@ -205,6 +270,11 @@ cmd_release() {
 
     if [[ -z "$path" ]] || [[ -z "$worker" ]]; then
         log_error "--path と --worker は必須です"
+        exit 1
+    fi
+
+    # Security: パス検証
+    if ! validate_repo_path "$path"; then
         exit 1
     fi
 
@@ -259,6 +329,11 @@ cmd_heartbeat() {
         exit 1
     fi
 
+    # Security: パス検証
+    if ! validate_repo_path "$path"; then
+        exit 1
+    fi
+
     local lock_file
     lock_file=$(get_lock_file "$path")
     local normalized_path
@@ -281,6 +356,8 @@ cmd_heartbeat() {
     now=$(now_utc)
 
     jq --arg heartbeat "$now" '.heartbeat = $heartbeat' "$lock_file" > "$lock_file.tmp"
+    # Security: 権限を維持
+    chmod 600 "$lock_file.tmp"
     mv "$lock_file.tmp" "$lock_file"
 
     log_info "heartbeat 更新: $normalized_path (worker=$worker)"
@@ -304,6 +381,11 @@ cmd_check() {
 
     if [[ -z "$path" ]]; then
         log_error "--path は必須です"
+        exit 1
+    fi
+
+    # Security: パス検証
+    if ! validate_repo_path "$path"; then
         exit 1
     fi
 
@@ -340,7 +422,8 @@ cmd_check() {
 
 # 期限切れロックのクリーンアップ
 cmd_cleanup() {
-    mkdir -p "$LOCK_DIR"
+    # Security: ロックディレクトリ検証
+    init_lock_dir
 
     local cleaned=0
     local now_epoch
@@ -350,12 +433,16 @@ cmd_cleanup() {
     for lock_file in "$LOCK_DIR"/*.lock.json; do
         [[ -f "$lock_file" ]] || continue
 
+        # Performance: 1回の jq で複数フィールド取得
+        local lock_data
+        lock_data=$(read_lock_fields "$lock_file" heartbeat worker path) || continue
+
         local heartbeat
         local worker
         local path
-        heartbeat=$(jq -r '.heartbeat' "$lock_file")
-        worker=$(jq -r '.worker' "$lock_file")
-        path=$(jq -r '.path' "$lock_file")
+        heartbeat=$(echo "$lock_data" | cut -f1)
+        worker=$(echo "$lock_data" | cut -f2)
+        path=$(echo "$lock_data" | cut -f3)
 
         local heartbeat_epoch
         heartbeat_epoch=$(parse_utc_to_epoch "$heartbeat")
@@ -404,6 +491,7 @@ EOF
 # メイン処理
 main() {
     check_dependencies
+    init_lock_config
 
     if [[ $# -eq 0 ]]; then
         usage

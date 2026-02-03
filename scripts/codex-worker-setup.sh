@@ -181,26 +181,30 @@ generate_config() {
         mcp_registered="true"
     fi
 
-    # 設定ファイル生成
+    # 設定ファイル生成（キー名は common.sh の get_config と一致させる）
     cat > "$config_file" << EOF
 {
   "codex_version": "$codex_version",
   "mcp_registered": $mcp_registered,
   "setup_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "default_approval_policy": "never",
-  "default_sandbox": "workspace-write",
+  "approval_policy": "never",
+  "sandbox": "workspace-write",
+  "ttl_minutes": 30,
+  "heartbeat_minutes": 10,
+  "max_retries": 3,
+  "base_branch": "",
+  "gate_skip_allowlist": [],
+  "require_gate_pass_for_merge": true,
   "parallel": {
     "enabled": true,
     "max_workers": 3,
     "worktree_base": "../worktrees"
-  },
-  "lock": {
-    "ttl_minutes": 30,
-    "heartbeat_minutes": 10
   }
 }
 EOF
 
+    # Security: 本人のみ読み書き可能
+    chmod 600 "$config_file"
     log_info "設定ファイル生成完了: $config_file"
 }
 

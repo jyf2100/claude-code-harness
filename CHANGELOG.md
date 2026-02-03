@@ -8,6 +8,29 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.17.2] - 2026-02-03
+
+### 🎯 What's Changed for You
+
+**Codex Worker 完了時に Plans.md が自動更新されるようになりました**
+
+| Before | After |
+|--------|-------|
+| 作業完了後に手動で Plans.md を更新 | スキルが自動で `cc:done` に更新 |
+
+### Added
+
+- **Plans.md 自動更新**: Codex Worker スキル完了時に必ずタスク完了処理を実行
+  - 該当タスクを自動特定
+  - `[ ]` → `[x]`, `cc:WIP` → `cc:done` に更新
+  - タスクが見つからない場合はユーザーに確認
+
+### Internal
+
+- Codex Worker スクリプト品質改善（共通ライブラリ化、セキュリティ強化）
+
+---
+
 ## [2.17.1] - 2026-02-03
 
 ### Added
