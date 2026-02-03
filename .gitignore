@@ -99,6 +99,7 @@ skills/test-*/
 
 # 開発用スキル（非公開）
 skills/x-promo/
+skills/x-release-harness/
 
 # Harness UI - ベータゲート（Polarライセンス検証）で保護済み
 # /harness-ui/  ← 2.6.22+ で配布対象に変更
