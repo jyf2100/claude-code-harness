@@ -23,7 +23,7 @@ const crypto = require('crypto');
 // Configuration
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_GENERATIONS = 3;
-const TRACE_VERSION = '0.1.0';
+const TRACE_VERSION = '0.2.0';
 const CACHE_TTL_MS = 60000; // 1 minute cache for project info
 
 // In-memory cache for project metadata (persists across hook invocations within same process)
@@ -229,6 +229,50 @@ function getProjectMetadata(repoRoot) {
   projectCacheTime = now;
 
   return projectCache;
+}
+
+// Attribution cache
+let attributionCache = null;
+let attributionCacheTime = 0;
+
+/**
+ * Get attribution information from plugin.json
+ * v0.2.0: Added for tracking AI-generated code provenance
+ */
+function getAttribution() {
+  const now = Date.now();
+
+  // Return cached if still valid
+  if (attributionCache && (now - attributionCacheTime) < CACHE_TTL_MS) {
+    return attributionCache;
+  }
+
+  try {
+    const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+    if (!pluginRoot) {
+      return null;
+    }
+
+    const pluginJsonPath = path.join(pluginRoot, 'plugin.json');
+    if (!fs.existsSync(pluginJsonPath)) {
+      return null;
+    }
+
+    const pluginJson = JSON.parse(fs.readFileSync(pluginJsonPath, 'utf8'));
+
+    attributionCache = {
+      plugin: pluginJson.name || 'unknown',
+      version: pluginJson.version || 'unknown',
+      license: pluginJson.license || null,
+      author: pluginJson.author || null
+    };
+    attributionCacheTime = now;
+
+    return attributionCache;
+  } catch (err) {
+    logError('getAttribution', err);
+    return null;
+  }
 }
 
 /**
@@ -445,6 +489,12 @@ function main() {
   record.metadata = { ...metadata };
   if (sessionId) {
     record.metadata.sessionId = sessionId;
+  }
+
+  // v0.2.0: Add attribution for AI-generated code tracking
+  const attribution = getAttribution();
+  if (attribution) {
+    record.attribution = attribution;
   }
 
   const stateDir = path.join(repoRoot, '.claude', 'state');

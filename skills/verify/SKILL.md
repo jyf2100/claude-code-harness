@@ -3,6 +3,7 @@ name: verify
 description: "Verifies builds, recovers from errors, and applies review fixes. Use when user mentions build verification, error recovery, applying review fixes, test failures, lint errors, or CI breaks. Do NOT load for: implementation work, reviews, setup, or new feature development."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 user-invocable: false
+context: fork
 ---
 
 # Verify Skills

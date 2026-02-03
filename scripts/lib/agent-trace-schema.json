@@ -1,14 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "agent-trace-v0.1.0",
+  "$id": "agent-trace-v0.2.0",
   "title": "Agent Trace Record",
-  "description": "Open specification for tracking AI-generated code edits (v0.1.0)",
+  "description": "Open specification for tracking AI-generated code edits (v0.2.0)",
   "type": "object",
   "required": ["version", "id", "timestamp", "tool", "files"],
   "properties": {
     "version": {
       "type": "string",
-      "const": "0.1.0",
+      "enum": ["0.1.0", "0.2.0"],
       "description": "Agent Trace specification version"
     },
     "id": {
@@ -87,6 +87,28 @@
       },
       "additionalProperties": true,
       "description": "Additional metadata"
+    },
+    "attribution": {
+      "type": "object",
+      "description": "v0.2.0: Attribution information for AI-generated code tracking",
+      "properties": {
+        "plugin": {
+          "type": "string",
+          "description": "Plugin name that generated this edit"
+        },
+        "version": {
+          "type": "string",
+          "description": "Plugin version"
+        },
+        "license": {
+          "type": ["string", "null"],
+          "description": "Plugin license (optional)"
+        },
+        "author": {
+          "type": ["string", "null"],
+          "description": "Plugin author (optional)"
+        }
+      }
     }
   },
   "additionalProperties": false

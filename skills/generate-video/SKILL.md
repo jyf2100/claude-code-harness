@@ -4,6 +4,7 @@ description: "プロダクトデモ動画を自動生成。百聞は一見にし
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUserQuestion", "WebFetch"]
 disable-model-invocation: true
 argument-hint: "[demo|arch|release]"
+context: fork
 ---
 
 # Generate Video Skill

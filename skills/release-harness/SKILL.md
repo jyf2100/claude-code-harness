@@ -1,19 +1,20 @@
 ---
-name: release
-description: "リリース作業を自動化。CHANGELOG、バージョン、タグをポチッと一発。Use when user mentions release, version bump, or tag creation. Do NOT load for: release planning discussions, version number mentions, 'ship it' casual talk."
+name: release-harness
+description: "Harness リリース作業を自動化。CHANGELOG、バージョン、タグをポチッと一発。Use when user mentions harness release, harness version bump. Do NOT load for: general release discussions, other project releases."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 argument-hint: "[patch|minor|major]"
+context: fork
 ---
 
-# Release Skill
+# Release Harness Skill
 
 Automates the claude-code-harness release process.
 
 ## Quick Reference
 
-- "**Release a new version**" → `/release`
-- "**Bump patch version**" → `/release patch`
-- "**Create a minor release**" → `/release minor`
+- "**Release a new harness version**" → `/release-harness`
+- "**Bump patch version**" → `/release-harness patch`
+- "**Create a minor release**" → `/release-harness minor`
 
 ---
 
