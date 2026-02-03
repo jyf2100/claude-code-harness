@@ -24,6 +24,38 @@ Displays the Harness UI dashboard for monitoring sessions, tasks, and project st
 /harness-ui --force      # Force re-setup
 ```
 
+## Accessibility Settings (CC 2.1.30+)
+
+視覚的な快適性のための設定です。
+
+### Reduced Motion 設定
+
+Claude Code の設定ファイルでアニメーションを最小化できます:
+
+```jsonc
+// settings.json
+{
+  "reducedMotion": true  // アニメーションを最小化
+}
+```
+
+**推奨設定**:
+
+| 設定 | 用途 |
+|------|------|
+| `reducedMotion: true` | モーション酔い対策、集中力向上 |
+| `reducedMotion: false` | デフォルト（アニメーションあり） |
+
+**こんな方におすすめ**:
+- 長時間作業で目が疲れやすい方
+- アニメーションによる視覚的な刺激に敏感な方
+- 集中して作業したい方
+
+設定ファイルの場所:
+- **macOS**: `~/Library/Application Support/Claude/settings.json`
+- **Windows**: `%APPDATA%\Claude\settings.json`
+- **Linux**: `~/.config/Claude/settings.json`
+
 ## Features
 
 - Session monitoring

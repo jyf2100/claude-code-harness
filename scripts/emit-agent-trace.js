@@ -23,7 +23,7 @@ const crypto = require('crypto');
 // Configuration
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_GENERATIONS = 3;
-const TRACE_VERSION = '0.2.0';
+const TRACE_VERSION = '0.3.0';
 const CACHE_TTL_MS = 60000; // 1 minute cache for project info
 
 // In-memory cache for project metadata (persists across hook invocations within same process)
@@ -276,6 +276,30 @@ function getAttribution() {
 }
 
 /**
+ * Extract metrics from Task tool result
+ * v0.3.0: Added for Claude Code 2.1.30+ Task tool metrics
+ */
+function extractTaskMetrics(toolResult) {
+  try {
+    if (!toolResult) return null;
+
+    const result = typeof toolResult === 'string' ? JSON.parse(toolResult) : toolResult;
+
+    if (result.metrics) {
+      return {
+        tokenCount: result.metrics.tokenCount ?? null,
+        toolUses: result.metrics.toolUses ?? null,
+        duration: result.metrics.duration ?? null
+      };
+    }
+  } catch (err) {
+    logError('extractTaskMetrics', err);
+  }
+
+  return null;
+}
+
+/**
  * Validate that a path is within the repository
  * Security: Prevents recording paths outside the repo
  * Handles both existing and non-existing paths safely
@@ -455,16 +479,17 @@ function rotateIfNeeded(tracePath) {
 function main() {
   const toolName = process.env.CLAUDE_TOOL_NAME;
   const toolInput = process.env.CLAUDE_TOOL_INPUT;
+  const toolResult = process.env.CLAUDE_TOOL_RESULT;
   const sessionId = process.env.CLAUDE_SESSION_ID || '';
 
-  if (!toolName || !['Edit', 'Write'].includes(toolName)) {
+  if (!toolName || !['Edit', 'Write', 'Task'].includes(toolName)) {
     process.exit(0);
   }
 
   const repoRoot = findRepoRoot();
   const files = parseToolInput(toolName, toolInput, repoRoot);
 
-  if (files.length === 0) {
+  if (files.length === 0 && toolName !== 'Task') {
     process.exit(0);
   }
 
@@ -495,6 +520,24 @@ function main() {
   const attribution = getAttribution();
   if (attribution) {
     record.attribution = attribution;
+  }
+
+  // v0.3.0: Add Task tool metrics (Claude Code 2.1.30+)
+  if (toolName === 'Task') {
+    const metrics = extractTaskMetrics(toolResult);
+    if (metrics) {
+      record.metrics = metrics;
+    }
+
+    // Extract taskId from tool input if available
+    try {
+      const input = typeof toolInput === 'string' ? JSON.parse(toolInput) : toolInput;
+      if (input.task_id) {
+        record.metadata.taskId = input.task_id;
+      }
+    } catch {
+      // Ignore parsing errors
+    }
   }
 
   const stateDir = path.join(repoRoot, '.claude', 'state');

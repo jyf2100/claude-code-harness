@@ -4,7 +4,19 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
-## [Unreleased]
+## [2.18.0] - 2026-02-04
+
+### Added
+
+- **Claude Code 2.1.30 compatibility**: Full integration with new features
+  - **AgentTrace v0.3.0**: Task tool metrics (tokenCount, toolUses, duration) in `docs/AGENT_TRACE_SCHEMA.md`
+  - **`/debug` command integration**: troubleshoot skill now routes to `/debug` for complex session issues
+  - **PDF page range reading**: notebookLM and harness-review support `pages` parameter for large documents
+  - **Git log extended flags**: harness-review, CI, release-harness use `--format`, `--raw`, `--cherry-pick`
+  - **OAuth `--client-id/--client-secret`**: codex-mcp-setup.md documents DCR-incompatible MCP setup
+  - **68% memory optimization**: session-memory and session skills document `--resume` benefits
+  - **Subagent MCP access**: task-worker and codex-worker document MCP tool sharing (bugfix in CC 2.1.30)
+  - **Accessibility settings**: harness-ui documents `reducedMotion` setting
 
 ---
 
@@ -376,3 +388,5 @@ Change history for claude-code-harness.
 ## Earlier Versions
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
+
+[2.18.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.10...v2.18.0

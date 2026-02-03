@@ -65,6 +65,49 @@ Sends a message to all active sessions.
 | **State Control** | Resume/fork session based on flags | See [references/session-control.md](references/session-control.md) |
 | **Communication** | Cross-session messaging | See [../session-state/SKILL.md](../session-state/SKILL.md) |
 
+---
+
+## メモリ最適化（CC 2.1.30+）
+
+Claude Code 2.1.30 以降、セッション再開時のメモリ使用量が **68% 削減** されました。
+
+### 長時間セッション管理のベストプラクティス
+
+| ワークロード | 推奨戦略 |
+|------------|---------|
+| **通常実装** | 1-2時間ごとに `--resume` で再開 |
+| **大規模リファクタ** | 機能単位でセッション分割 → 各セッションで `--resume` |
+| **並列タスク** | `/ultrawork` で並列実行、長時間なら途中で `--resume` |
+| **メモリ警告時** | 即座に `--resume` で再開（以前より高速） |
+
+### 効率的なワークフロー例
+
+```bash
+# 実装フェーズ1
+claude "認証機能を実装"
+# → 1時間後
+
+# セッション再開（メモリ効率的）
+claude --resume "パスワードリセット機能を追加"
+# → 1時間後
+
+# さらに再開
+claude --resume "テストを追加"
+```
+
+### メモリ管理の推奨事項
+
+| 推奨事項 | 理由 |
+|---------|------|
+| **積極的なセッション再開** | 68% メモリ削減で再開コストが低い |
+| **定期的な再開** | コンテキストを整理し、集中力を維持 |
+| **機能単位の分割** | 大規模タスクを小さく分けて再開 |
+| **Plans.md を活用** | 再開時の引き継ぎがスムーズ |
+
+> 💡 メモリ効率が大幅に改善されたため、セッション再開を積極的に活用してください。
+
+---
+
 ## When to Use
 
 - Session initialization (`/harness-init`)
