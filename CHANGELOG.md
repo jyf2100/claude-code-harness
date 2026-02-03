@@ -8,6 +8,21 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.17.10] - 2026-02-04
+
+### Added
+
+- **PreCompact/SessionEnd hooks**: Support automatic session state save and cleanup
+- **AgentTrace v0.2.0**: Added Attribution field for plugin attribution tracking
+- **Sandbox settings template**: Added `templates/settings/harness-sandbox.json`
+
+### Changed
+
+- **context: fork added**: deploy/generate-video/memory/verify skills now use isolated context
+- **release → release-harness**: Renamed to avoid conflict with Claude Code built-in command
+
+---
+
 ## [2.17.9] - 2026-02-04
 
 ### Changed

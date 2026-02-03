@@ -11,6 +11,21 @@
 
 ---
 
+## [2.17.10] - 2026-02-04
+
+### Added
+
+- **PreCompact/SessionEnd フック**: セッション状態の自動保存・クリーンアップに対応
+- **AgentTrace v0.2.0**: Attribution フィールド追加（プラグイン帰属情報の記録）
+- **Sandbox 設定テンプレート**: `templates/settings/harness-sandbox.json` を追加
+
+### Changed
+
+- **context: fork 追加**: deploy/generate-video/memory/verify スキルで独立コンテキストを使用
+- **release → release-harness**: Claude Code 組み込みコマンドとの名前衝突を回避
+
+---
+
 ## [2.17.9] - 2026-02-04
 
 ### Changed
