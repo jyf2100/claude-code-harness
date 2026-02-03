@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.1-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.6-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-42-orange.svg" alt="Skills">
+  <img src="https://img.shields.io/badge/Skills-45-orange.svg" alt="Skills">
 </p>
 
 <p align="center">
@@ -24,6 +24,16 @@
 
 Claude Code は強力だが、時に構造が必要になる。
 
+| Harness なし | Harness あり |
+|--------------|--------------|
+| すぐにコードを書き始める | まず計画、それから実行 |
+| 頼まれたときだけレビュー | 全ての変更を自動レビュー |
+| 過去の決定を忘れる | SSOT ファイルでコンテキストを保持 |
+| `rm -rf` が警告なく実行される | 危険なコマンドをブロック |
+| 一度に1タスク | 並列ワーカー |
+
+**3つのコマンド。1つのワークフロー。本番品質のコード。**
+
 ```mermaid
 graph LR
     A[アイデア] --> B["/plan-with-agent"]
@@ -34,72 +44,9 @@ graph LR
     F --> G["リリース"]
 ```
 
-**3つのコマンド。1つのワークフロー。本番品質のコード。**
-
-> **VibeCoder向け**: 「メールバリデーション付きのログインフォームが欲しい」と言うだけで、Harness が計画・実装・レビューを自動で行います。
-
----
-
-## 🪄 Ultrawork — 魔法の言葉
-
-> **⚠️ 実験的機能**: 強力だが、十分に理解してから使用してください。
-
-**「計画して、並列で実装して、レビューして、コミットして」**
-
-...と毎回言うのは面倒。だから:
-
-```
-ultrawork
-```
-
-**この一言で、Harness が全部やる。**
-
-```mermaid
-graph LR
-    A["ultrawork"] --> B["計画生成"]
-    B --> C["並列実装"]
-    C --> D["セルフレビュー"]
-    D --> E["品質チェック"]
-    E --> F["自動コミット"]
-```
-
-### Before → After
-
-| Before | After |
-|--------|-------|
-| `/plan-with-agent` → 承認 → `/work` → `/harness-review` → `git commit` | `ultrawork` |
-| 5回のコマンド入力 | **1回** |
-| 毎回「はい」を押す | **計画承認後は自動進行** |
-| rm -rf で毎回確認 | **ホワイトリスト方式で自動承認** |
-
-### 使い方
-
-```bash
-# 基本（タスクを指定）
-ultrawork ログインフォームを作って
-
-# 並列数を指定
-ultrawork --parallel 3 API エンドポイントを5つ追加
-
-# Plans.md の全タスクを実行
-ultrawork --all
-```
-
-### なぜ「実験的」？
-
-- `rm -rf` や `git push` を**計画時に承認したパスのみ**自動実行
-- 24時間で自動失効（暴走防止）
-- 品質チェックで問題があればコミットをブロック
-
-**つまり**: 人間が計画を承認したら、あとは Claude が責任を持って完遂する。
-
-> 💡 **忙しい人向け**: `ultrawork` と打って、計画を承認したら、コーヒーを取りに行こう。戻ってきたらコードができている。
-
 ---
 
 ## 動作要件
-
-インストール前に以下を確認:
 
 - **Claude Code v2.1+** ([インストールガイド](https://docs.anthropic.com/claude-code))
 - **Node.js 18+** (セーフティフック用)
@@ -124,11 +71,37 @@ claude
 
 ---
 
-## コアループ
+## 🪄 説明が長い？ならこれ: Ultrawork
+
+**読むのが面倒？** これだけ打てばいい:
+
+```
+ultrawork ログインフォームを作って
+```
+
+**この一言で、Harness が全部やる。** 計画 → 実装 → レビュー → コミット。
+
+```mermaid
+graph LR
+    A["ultrawork"] --> B["計画生成"]
+    B --> C["並列実装"]
+    C --> D["セルフレビュー"]
+    D --> E["品質チェック"]
+    E --> F["自動コミット"]
+```
+
+| Before | After |
+|--------|-------|
+| `/plan-with-agent` → `/work` → `/harness-review` → `git commit` | `ultrawork` |
+| 5回のコマンド | **1回** |
+
+> ⚠️ **実験的機能**: 計画を承認したら、Claude が責任を持って完遂。品質チェックで問題があればコミットをブロック。
+
+---
+
+## コアループ（詳細）
 
 ### 1. Plan（計画）
-
-アイデアを構造化されたタスクに変換。
 
 ```bash
 /plan-with-agent
@@ -140,8 +113,6 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 
 ### 2. Work（実装）
 
-並列ワーカーでタスクを実行。
-
 ```bash
 /work              # 並列数を自動検出
 /work --parallel 5 # 5ワーカーで同時実行
@@ -150,8 +121,6 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 各ワーカーが実装、セルフレビュー、報告を行う。
 
 ### 3. Review（レビュー）
-
-4つの視点で並列コードレビュー。
 
 ```bash
 /harness-review
@@ -162,28 +131,13 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 | Security | 脆弱性、インジェクション、認証 |
 | Performance | ボトルネック、メモリ、スケーリング |
 | Quality | パターン、命名、保守性 |
-| Accessibility | WCAG準拠、スクリーンリーダー、UX |
-
----
-
-## 何が変わるか
-
-| Harness なし | Harness あり |
-|--------------|--------------|
-| すぐにコードを書き始める | まず計画、それから実行 |
-| 頼まれたときだけレビュー | 全ての変更を自動レビュー |
-| 過去の決定を忘れる | SSOT ファイルでコンテキストを保持 |
-| `rm -rf` が警告なく実行される | 危険なコマンドをブロック |
-| 手動で git 操作 | 承認時に自動コミット |
-| 一度に1タスク | 並列ワーカー |
-
-> **SSOT** (Single Source of Truth): 決定事項やパターンをセッション横断で保存するファイル。
+| Accessibility | WCAG準拠、スクリーンリーダー |
 
 ---
 
 ## セーフティファースト
 
-Harness はフック（自動安全チェック）でコードベースを保護:
+Harness はフックでコードベースを保護:
 
 | 保護対象 | アクション |
 |----------|------------|
@@ -194,20 +148,28 @@ Harness はフック（自動安全チェック）でコードベースを保護
 
 ---
 
-## 42スキル、設定不要
+## 45スキル、設定不要
 
 スキルはコンテキストに応じて自動ロード。スラッシュコマンドでも自然言語でも起動可能。
 
-| こう言うと | このスキルが起動 |
-|------------|------------------|
+| こう言うと | スキル |
+|------------|--------|
 | 「ログインを実装して」 | `impl` |
 | 「このコードをレビューして」 | `harness-review` |
 | 「ビルドエラーを直して」 | `verify` |
 | 「Stripe決済を追加して」 | `auth` |
 | 「Vercelにデプロイして」 | `deploy` |
-| 「ヒーローセクションを作って」 | `ui` |
 
-> **Note**: すべてのスキルは `/スキル名` コマンドまたは自然言語で起動できます。
+### 主要コマンド
+
+| コマンド | 機能 |
+|----------|------|
+| `/plan-with-agent` | アイデア → `Plans.md` |
+| `/work` | タスクを並列実行 |
+| `/harness-review` | 4視点レビュー |
+| `/harness-init` | プロジェクト初期化 |
+| `/sync-status` | 進捗確認 |
+| `/memory` | SSOT ファイルを管理 |
 
 ---
 
@@ -223,41 +185,11 @@ Harness はフック（自動安全チェック）でコードベースを保護
 
 ---
 
-## コマンド一覧
-
-### コアワークフロー
-
-| コマンド | 機能 |
-|----------|------|
-| `/plan-with-agent` | アイデア → `Plans.md` |
-| `/work` | タスクを並列実行 |
-| `/harness-review` | 4視点レビュー |
-
-### オペレーション
-
-| コマンド | 機能 |
-|----------|------|
-| `/harness-init` | プロジェクト初期化 |
-| `/harness-update` | プラグイン更新 |
-| `/sync-status` | 進捗確認 |
-| `/maintenance` | 古いタスクを整理 |
-
-### メモリ
-
-| コマンド | 機能 |
-|----------|------|
-| `/sync-ssot-from-memory` | 決定事項を SSOT に昇格 |
-| `/memory` | SSOT ファイルを管理 |
-
-> **仕組み**: v2.16 でコマンドからスキルに移行。`/コマンド` でも自然言語でも起動可能—同じ機能、賢いローディング。
-
----
-
 ## アーキテクチャ
 
 ```
 claude-code-harness/
-├── skills/       # 42のスキル定義
+├── skills/       # 45のスキル定義
 ├── agents/       # 8つのサブエージェント（並列ワーカー）
 ├── hooks/        # セーフティ & オートメーション
 ├── scripts/      # ガードスクリプト
@@ -269,18 +201,17 @@ claude-code-harness/
 ## 高度な機能
 
 <details>
-<summary><strong>並列実行</strong></summary>
+<summary><strong>Codex Worker</strong></summary>
+
+実装タスクを OpenAI Codex に並列委託:
 
 ```bash
-/work --parallel 5
+/codex-worker API エンドポイントを5つ実装して
 ```
 
-各ワーカーは独立して動作：
-1. 割り当てられたタスクを実装
-2. セルフレビューを実行
-3. 完了を報告
+Codex が実装 → セルフレビュー → 報告。Claude Code ワーカーと併用可能。
 
-全ワーカー完了後にグローバルレビューを実行。
+> **セットアップが必要**: [Codex CLI](https://github.com/openai/codex) をインストールし、APIキーを設定。
 
 </details>
 
@@ -298,7 +229,7 @@ Plans.md が両者間で同期。
 </details>
 
 <details>
-<summary><strong>Codex 連携</strong></summary>
+<summary><strong>Codex レビュー連携</strong></summary>
 
 OpenAI Codex でセカンドオピニオンを追加：
 
@@ -308,22 +239,22 @@ OpenAI Codex でセカンドオピニオンを追加：
 
 Codex が16種のスペシャリストから4人の関連エキスパートを選出。
 
-> **セットアップが必要**: [Codex CLI](https://github.com/openai/codex) をインストールし、APIキーを設定してください。これはオプション機能です。
-
 </details>
 
 <details>
 <summary><strong>動画生成</strong></summary>
 
-Remotion でプロダクト動画を生成：
+JSON Schema 駆動のパイプラインでプロダクト動画を生成：
 
 ```bash
 /generate-video
 ```
 
-AI生成のシーン、ナレーション、エフェクト。
+- JSON Schema を SSOT (Single Source of Truth) として使用
+- 3層バリデーション: scene → scenario → E2E
+- Remotion ベースの決定論的レンダリング
 
-> **依存関係**: [Remotion](https://www.remotion.dev/) プロジェクトのセットアップと ffmpeg が必要です。上級者向けのオプション機能です。
+> **依存関係**: [Remotion](https://www.remotion.dev/) プロジェクトのセットアップと ffmpeg が必要。
 
 </details>
 
@@ -336,25 +267,11 @@ AI による編集操作を自動追跡：
 .claude/state/agent-trace.jsonl
 ```
 
-**機能:**
 - Edit/Write 操作をタイムスタンプ付きで記録
 - セッション終了時にプロジェクト名、現在のタスク、直近の編集を表示
 - `/sync-status` で Plans.md と実際の変更を照合可能に
 
-**セッション終了時の出力:**
-```
-📊 セッションサマリー
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📁 プロジェクト: my-app
-🎯 現在のタスク: ログインフォーム追加
-✅ 完了タスク: 3件
-📄 直近の編集:
-   - src/components/LoginForm.tsx
-   - src/lib/auth.ts
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-設定不要—デフォルトで有効です。
+設定不要—デフォルトで有効。
 
 </details>
 
@@ -378,7 +295,7 @@ AI による編集操作を自動追跡：
 /plugin uninstall claude-code-harness
 ```
 
-プラグインを削除します。プロジェクトファイル（Plans.md、SSOT ファイル）はそのまま残ります。
+プロジェクトファイル（Plans.md、SSOT ファイル）はそのまま残ります。
 
 ---
 
