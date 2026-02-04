@@ -11,6 +11,36 @@
 
 ---
 
+## [2.18.1] - 2026-02-04
+
+### Added
+
+- **Aivis/VOICEVOX TTS 対応**: generate-video スキルで日本語 TTS プロバイダーを追加
+  - `aivis`: Aivis Cloud API（speaker_id, intonation_scale 等）
+  - `voicevox`: VOICEVOX（ずんだもん等のキャラクター音声）
+  - サンプルキャラクター設定を追加
+
+### Changed
+
+- **MCP サーバーのオプション化**: `.mcp.json` を削除し、mcp-server を配布から除外
+  - 必要なユーザーは別途セットアップ
+
+---
+
+## [2.18.0] - 2026-02-04
+
+### Added
+
+- **Claude Code 2.1.30 対応**: 新機能との完全統合
+  - **AgentTrace v0.3.0**: Task tool メトリクス対応（tokenCount, toolUses, duration）
+  - **`/debug` コマンド連携**: troubleshoot スキルが複雑なセッション問題に `/debug` を案内
+  - **PDF ページ範囲読み込み**: notebookLM, harness-review で `pages` パラメータ対応
+  - **Git log 拡張フラグ**: `--format`, `--raw`, `--cherry-pick` を活用
+  - **68% メモリ最適化**: `--resume` の恩恵をドキュメント化
+  - **サブエージェント MCP アクセス**: MCP ツール共有のバグ修正対応
+
+---
+
 ## [2.17.10] - 2026-02-04
 
 ### Added

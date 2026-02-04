@@ -4,6 +4,22 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.18.1] - 2026-02-04
+
+### Added
+
+- **Aivis/VOICEVOX TTS support**: Added Japanese TTS providers to generate-video skill
+  - `aivis`: Aivis Cloud API (speaker_id, intonation_scale, etc.)
+  - `voicevox`: VOICEVOX (character voices like Zundamon)
+  - Sample character configurations included
+
+### Changed
+
+- **MCP server optional**: Removed `.mcp.json`, excluded mcp-server from distribution
+  - Users who need it can set up separately
+
+---
+
 ## [2.18.0] - 2026-02-04
 
 ### Added
