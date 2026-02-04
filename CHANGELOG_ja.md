@@ -11,6 +11,30 @@
 
 ---
 
+## [2.18.6] - 2026-02-05
+
+### Fixed
+
+- **Codex ガード**: `.codex/rules/harness.rules` が安定してパースされ、`git clean -n` / `sudo -n true` のような安全コマンドで止まりにくくなりました（破壊的コマンドは prompt）。
+- **Claude ガード**: `templates/claude/settings.security.json.template` のパーミッション構文を修正し、破壊的操作のみ prompt するように見直しました。
+
+### Internal
+
+- **Codex パッケージテスト**: rules の例（match/not_match）検証を追加し、起動時のパース失敗を防止。
+
+---
+
+## [2.18.5] - 2026-02-05
+
+### Added
+
+- **gogcli-ops スキル**: Google Workspace CLI 操作（Drive/Sheets/Docs/Slides）
+  - 認証フロー / 複数アカウント選択
+  - URL → ID 解決（`gog_parse_url.py`）
+  - 原則 read-only、書き込みは明示確認
+
+---
+
 ## [2.18.4] - 2026-02-04
 
 ### Added
