@@ -224,7 +224,7 @@ https://code.claude.com/docs/ja/settings
 
 - `.claude/settings.json` が存在し、JSONとしてパース可能
 - `permissions.deny` に `.env` / `secrets` / SSH鍵系の `Read(...)` が含まれる
-- `permissions.ask` に `Bash(rm:*)` / `Bash(git push:*)` 等が含まれる（**Edit / Write は含まない**）
+- `permissions.ask` に `Bash(rm -r:*)` / `Bash(git push:*)` / `Bash(git reset --hard:*)` / `Bash(git clean -f:*)` 等が含まれる（**Edit / Write は含まない**）
 - `permissions.disableBypassPermissionsMode` が **設定されていない**（bypassPermissions 許可）
 
 ---

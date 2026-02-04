@@ -1,6 +1,9 @@
 # Temporary guardrails for Codex CLI.
 # When Hooks are supported, migrate rules with the same HOOK:<id> tag.
 
+# NOTE: `match` / `not_match` examples are validated at parse time.
+# Keep patterns narrow enough that "safe" examples do not accidentally match.
+
 prefix_rule(
   pattern = ["rm", ["-rf", "-fr"]],
   decision = "prompt",
@@ -11,6 +14,19 @@ prefix_rule(
   ],
   not_match = [
     "rm -r build",
+  ],
+)
+
+prefix_rule(
+  pattern = ["sudo", "rm", ["-rf", "-fr"]],
+  decision = "prompt",
+  justification = "HOOK:dangerous-commands",
+  match = [
+    "sudo rm -rf /tmp",
+    "sudo rm -fr /tmp",
+  ],
+  not_match = [
+    "sudo -n true",
   ],
 )
 
@@ -27,11 +43,25 @@ prefix_rule(
 )
 
 prefix_rule(
-  pattern = ["git", "clean"],
+  pattern = ["sudo", "git", "reset", "--hard"],
+  decision = "prompt",
+  justification = "HOOK:dangerous-commands",
+  match = [
+    "sudo git reset --hard HEAD~1",
+  ],
+  not_match = [
+    "sudo git reset --soft HEAD~1",
+  ],
+)
+
+prefix_rule(
+  pattern = ["git", "clean", ["-f", "-ff", "-fd", "-fdx", "-fx", "-xdf", "-ffdx"]],
   decision = "prompt",
   justification = "HOOK:dangerous-commands",
   match = [
     "git clean -fdx",
+    "git clean -f -d -x",
+    "git clean -fx",
   ],
   not_match = [
     "git clean -n",
@@ -39,13 +69,23 @@ prefix_rule(
 )
 
 prefix_rule(
-  pattern = ["sudo"],
+  pattern = ["sudo", "git", "clean", ["-f", "-ff", "-fd", "-fdx", "-fx", "-xdf", "-ffdx"]],
   decision = "prompt",
   justification = "HOOK:dangerous-commands",
   match = [
-    "sudo rm -rf /tmp",
+    "sudo git clean -fdx",
+  ],
+)
+
+prefix_rule(
+  pattern = ["git", "push", ["-f", "--force", "--force-with-lease"]],
+  decision = "prompt",
+  justification = "HOOK:dangerous-commands",
+  match = [
+    "git push --force-with-lease origin main",
+    "git push -f origin main",
   ],
   not_match = [
-    "sudo -n true",
+    "git push origin main",
   ],
 )

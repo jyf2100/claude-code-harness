@@ -5,14 +5,14 @@
   "language": "japanese",
   "permissions": {
     "allow": [
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(bun *)",
-      "Bash(pnpm *)",
-      "Bash(git status)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git branch *)"
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(bun:*)",
+      "Bash(pnpm:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [
       "Bash(sudo:*)",
@@ -30,11 +30,16 @@
       "Read(**/.ssh/**)"
     ],
     "ask": [
-      "Bash(rm *)",
-      "Bash(git push *)",
-      "Bash(git reset *)",
-      "Bash(git rebase *)",
-      "Bash(git merge *)"
+      "Bash(rm -r:*)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git clean -fdx:*)",
+      "Bash(git clean -fx:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)"
     ]
   }
 }

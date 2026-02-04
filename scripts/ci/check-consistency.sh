@@ -245,6 +245,19 @@ if [ -f "$SECURITY_TEMPLATE" ]; then
   fi
 fi
 
+# Check 2.5: Bash パーミッション構文の回帰チェック（prefix は :* 必須）
+if [ -f "$SECURITY_TEMPLATE" ]; then
+  # Portable regex: use [(] / [*] instead of escaping to avoid BSD grep issues.
+  if grep -nEq 'Bash[(][^)]*[^:][*]' "$SECURITY_TEMPLATE"; then
+    echo "  ❌ settings.security.json.template に不正な Bash パーミッション構文が含まれています"
+    echo "      prefix マッチングは :* を使用してください（例: Bash(git status:*)）"
+    grep -nE 'Bash[(][^)]*[^:][*]' "$SECURITY_TEMPLATE" | head -3 | sed 's/^/      /'
+    BYPASS_ISSUES=$((BYPASS_ISSUES + 1))
+  else
+    echo "  ✅ Bash パーミッション構文OK (:*)"
+  fi
+fi
+
 # Check 3: settings.local.json.template が存在し、defaultMode が bypassPermissions であること
 LOCAL_TEMPLATE="$PLUGIN_ROOT/templates/claude/settings.local.json.template"
 if [ -f "$LOCAL_TEMPLATE" ]; then

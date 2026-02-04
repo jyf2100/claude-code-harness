@@ -41,6 +41,102 @@ else
   log_fail "Missing required files"
 fi
 
+# Test 1.5: execpolicy rules examples are consistent (prevents Codex startup parse errors)
+log_test "Execpolicy rules examples are valid"
+if command -v python3 >/dev/null 2>&1; then
+  if python3 - <<'PY'
+from __future__ import annotations
+
+import shlex
+import sys
+from pathlib import Path
+
+
+def _matches_prefix(pattern: list[object], tokens: list[str]) -> bool:
+    if len(tokens) < len(pattern):
+        return False
+
+    for i, pe in enumerate(pattern):
+        t = tokens[i]
+        if isinstance(pe, str):
+            if t != pe:
+                return False
+        elif isinstance(pe, (list, tuple)):
+            if t not in pe:
+                return False
+        else:
+            raise TypeError(f"Unsupported pattern element at index {i}: {pe!r}")
+    return True
+
+
+def _load_rules(path: Path) -> list[dict[str, object]]:
+    rules: list[dict[str, object]] = []
+
+    def prefix_rule(**kwargs):  # type: ignore[no-redef]
+        rules.append(kwargs)
+
+    g = {"prefix_rule": prefix_rule}
+    code = path.read_text(encoding="utf-8")
+    exec(compile(code, str(path), "exec"), g, {})
+    return rules
+
+
+def _validate(path: Path) -> list[str]:
+    errs: list[str] = []
+    rules = _load_rules(path)
+    if not rules:
+        return [f"{path}: no prefix_rule() found"]
+
+    for idx, rule in enumerate(rules):
+        pattern = rule.get("pattern")
+        if not isinstance(pattern, list):
+            errs.append(f"{path}: rule {idx} missing/invalid pattern: {pattern!r}")
+            continue
+
+        for field, should_match in (("match", True), ("not_match", False)):
+            examples = rule.get(field, [])
+            if examples is None:
+                continue
+            if not isinstance(examples, list):
+                errs.append(f"{path}: rule {idx} {field} is not a list: {examples!r}")
+                continue
+
+            for ex in examples:
+                if not isinstance(ex, str):
+                    errs.append(f"{path}: rule {idx} {field} example is not str: {ex!r}")
+                    continue
+                tokens = shlex.split(ex)
+                ok = _matches_prefix(pattern, tokens)
+                if ok != should_match:
+                    verdict = "matches" if ok else "does not match"
+                    errs.append(
+                        f"{path}: rule {idx} {field} example {ex!r} {verdict} pattern {pattern!r}"
+                    )
+    return errs
+
+
+errors: list[str] = []
+for p in [Path("codex/.codex/rules/harness.rules")]:
+    errors.extend(_validate(p))
+
+if errors:
+    print("ERROR: execpolicy rules examples invalid:")
+    for e in errors:
+        print("  -", e)
+    sys.exit(1)
+
+print("ok")
+PY
+  then
+    log_pass "Rules examples are consistent"
+  else
+    log_fail "Rules examples invalid (Codex may ignore custom rules)"
+  fi
+else
+  echo "  skipped: python3 not found"
+  log_pass "Rules examples check skipped"
+fi
+
 # Test 2: skills directory parity
 log_test "Skills parity by SKILL name"
 if [ -d "opencode/skills" ] && [ -d "codex/.codex/skills" ]; then
