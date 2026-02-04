@@ -107,8 +107,13 @@ skills/x-release-harness/
 # Harness UI Archive (deprecated old implementation)
 /harness-ui-archive/
 
+# MCP Server（オプション機能、別途インストール）
+/mcp-server/
+.mcp.json
+
 # スライド中間ファイル
 docs/slides/
+docs/video/
 docs/images/slides/
 docs/presentation/1.png
 docs/presentation/2.png
