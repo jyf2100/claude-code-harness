@@ -4,6 +4,17 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.18.5] - 2026-02-05
+
+### Added
+
+- **gogcli-ops skill**: Google Workspace CLI operations (Drive/Sheets/Docs/Slides)
+  - Auth workflow and account selection
+  - URL-to-ID resolution via `gog_parse_url.py`
+  - Read-only by default, write requires confirmation
+
+---
+
 ## [2.18.4] - 2026-02-04
 
 ### Added
