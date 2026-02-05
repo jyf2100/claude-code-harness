@@ -4,6 +4,17 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.18.10] - 2026-02-06
+
+### Added
+
+- **Agent persistent memory**: Added `memory: project/user` to all 7 agents
+  - Subagents can now build institutional knowledge across conversations
+  - Security: Read-only agents (code-reviewer, project-analyzer) keep Bash/Write/Edit disabled
+  - Privacy guards: Each agent documents forbidden data (secrets, PII, source code snippets)
+
+---
+
 ## [2.18.7] - 2026-02-05
 
 ### Changed
