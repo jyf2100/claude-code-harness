@@ -62,6 +62,11 @@ ULTRAWORK_BYPASS_RM_RF="false"
 ULTRAWORK_BYPASS_GIT_PUSH="false"
 ULTRAWORK_MAX_AGE_HOURS=24
 
+# ===== Codex Mode Detection =====
+# --codex モード時は Claude は PM 役であり、Edit/Write は禁止
+# （実装は Codex Worker に委譲）
+CODEX_MODE="false"
+
 # Ultrawork モード検出関数（CWD 取得後に呼び出す）
 check_ultrawork_mode() {
   local cwd_path="$1"
@@ -123,6 +128,43 @@ check_ultrawork_mode() {
   ULTRAWORK_BYPASS_GIT_PUSH=$(jq -r '.bypass_guards | contains(["git_push"])' "$active_file" 2>/dev/null || echo "false")
 }
 
+# Codex モード検出関数（CWD 取得後に呼び出す）
+# ultrawork-active.json に codex_mode: true がある場合、Claude の Edit/Write をブロック
+# 前提: ULTRAWORK_MODE が true かつ TTL が有効な場合のみ CODEX_MODE を設定
+check_codex_mode() {
+  local cwd_path="$1"
+  local active_file="${cwd_path}/.claude/state/ultrawork-active.json"
+
+  [ ! -f "$active_file" ] && return
+
+  # Ultrawork モードが有効でない場合はスキップ（TTL 切れ等を考慮）
+  [ "$ULTRAWORK_MODE" != "true" ] && return
+
+  local is_codex="false"
+
+  if command -v jq >/dev/null 2>&1; then
+    is_codex=$(jq -r '.codex_mode // false' "$active_file" 2>/dev/null || echo "false")
+  elif command -v python3 >/dev/null 2>&1; then
+    # jq がない場合は python3 でパース
+    # セキュリティ: ファイルパスは引数で渡す（RCE 防止）
+    is_codex=$(python3 -c '
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        data = json.load(f)
+    val = data.get("codex_mode", False)
+    print("true" if val is True else "false")
+except:
+    print("false")
+' "$active_file" 2>/dev/null || echo "false")
+  else
+    echo "[Codex Mode] Warning: jq/python3 not found, codex_mode detection disabled" >&2
+    return
+  fi
+
+  [ "$is_codex" = "true" ] && CODEX_MODE="true"
+}
+
 msg() {
   # msg <key> [arg]
   local key="$1"
@@ -137,6 +179,7 @@ msg() {
       ask_git_push) echo "Confirm: git push requested ($arg)" ;;
       ask_rm_rf) echo "Confirm: rm -rf requested ($arg)" ;;
       deny_git_commit_no_review) echo "Blocked: Run /harness-review before committing. After review approval, run git commit again." ;;
+      deny_codex_mode) echo "[Codex Mode] Claude is the PM. Direct Edit/Write is prohibited. Delegate implementation to Codex Worker via mcp__codex__codex." ;;
       *) echo "$key $arg" ;;
     esac
     return 0
@@ -151,6 +194,7 @@ msg() {
     ask_git_push) echo "確認: git push を実行しようとしています（command: $arg）" ;;
     ask_rm_rf) echo "確認: rm -rf を実行しようとしています（command: $arg）" ;;
     deny_git_commit_no_review) echo "ブロック: コミット前に /harness-review を実行してください。レビュー後、再度 git commit を実行できます。" ;;
+    deny_codex_mode) echo "[Codex Mode] --codex モードでは Claude は PM 役です。直接の Edit/Write は禁止されています。実装は mcp__codex__codex 経由で Codex Worker に委譲してください。" ;;
     *) echo "$key $arg" ;;
   esac
 }
@@ -197,6 +241,7 @@ fi
 # ===== Ultrawork モード検出実行（CWD 取得後） =====
 if [ -n "$CWD" ]; then
   check_ultrawork_mode "$CWD"
+  check_codex_mode "$CWD"
 fi
 
 # ===== Cost Control: セッション単位でツール呼び出し数を追跡 =====
@@ -441,6 +486,25 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
     exit 0
   fi
 
+  # ===== Codex Mode: PM は Edit/Write 禁止（Plans.md は許可） =====
+  if [ "$CODEX_MODE" = "true" ]; then
+    # Plans.md の状態マーカー更新は許可（PM の正当な操作）
+    # パターンを厳格化: 正確に "Plans.md" で終わる場合のみ許可
+    # シンボリックリンクは拒否（セキュリティ対策）
+    if [ -L "$FILE_PATH" ]; then
+      emit_deny "[Codex Mode] Symbolic links are not allowed for Plans.md"
+      exit 0
+    fi
+    # 関数外なので local は使わない
+    BASENAME_FILE="${FILE_PATH##*/}"
+    if [ "$BASENAME_FILE" = "Plans.md" ]; then
+      : # 許可（正確に Plans.md のみ）
+    else
+      emit_deny "$(msg deny_codex_mode)"
+      exit 0
+    fi
+  fi
+
   # Normalize paths for cross-platform comparison
   NORM_FILE_PATH="$(normalize_path "$FILE_PATH")"
   NORM_CWD="$(normalize_path "$CWD")"
@@ -458,9 +522,10 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   REL_PATH="$NORM_FILE_PATH"
   if [ -n "$NORM_CWD" ] && is_path_under "$NORM_FILE_PATH" "$NORM_CWD"; then
     # Remove the CWD prefix to get relative path
-    local cwd_with_slash="${NORM_CWD%/}/"
-    if [[ "$NORM_FILE_PATH" == "$cwd_with_slash"* ]]; then
-      REL_PATH="${NORM_FILE_PATH#$cwd_with_slash}"
+    # 関数外なので local は使わない
+    CWD_WITH_SLASH="${NORM_CWD%/}/"
+    if [[ "$NORM_FILE_PATH" == "$CWD_WITH_SLASH"* ]]; then
+      REL_PATH="${NORM_FILE_PATH#$CWD_WITH_SLASH}"
     fi
   fi
 
@@ -626,6 +691,27 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     exit 0
   fi
 
+  # ===== Codex Mode: PM は Bash での書き込み系コマンドも制限 =====
+  if [ "$CODEX_MODE" = "true" ]; then
+    # 書き込み系パターンを検出
+    # - リダイレクト: >, >>, 2>, &>
+    # - tee コマンド
+    # - sed -i（in-place 編集）
+    # - awk -i inplace
+    # 注意: 読み取り専用コマンド（cat, grep, ls, git status 等）は許可
+    # 注意: rm は後の rm -rf ホワイトリストで処理するためここでは除外
+    if echo "$COMMAND" | grep -Eq '(>|>>|2>|&>|(^|[[:space:]])tee([[:space:]]|$)|sed[[:space:]]+-i|awk[[:space:]]+-i[[:space:]]+inplace)'; then
+      emit_deny "$(msg deny_codex_mode)"
+      exit 0
+    fi
+    # mv, cp は確認を求める（ask）
+    # rm は後の rm -rf ホワイトリストで処理（順序問題を回避）
+    if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])(mv|cp)[[:space:]]'; then
+      emit_ask "[Codex Mode] PM モードでファイル操作（mv/cp）を実行しますか？実装は Codex Worker に委譲を推奨します。"
+      exit 0
+    fi
+  fi
+
   # ===== Commit Guard: レビュー完了前のコミットをブロック =====
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])git[[:space:]]+commit([[:space:]]|$)'; then
     REVIEW_STATE_FILE=".claude/state/review-approved.json"
@@ -756,10 +842,23 @@ if [ "$TOOL_NAME" = "Bash" ]; then
 
     # 自動承認でない場合は確認を求める
     if [ "$RM_AUTO_APPROVE" != "true" ]; then
-      emit_ask "$(msg ask_rm_rf "$COMMAND")"
+      # Codex モード時は PM 用のメッセージを追加
+      if [ "$CODEX_MODE" = "true" ]; then
+        emit_ask "[Codex Mode] PM モードで rm -rf を実行しますか？実装は Codex Worker に委譲を推奨します。($COMMAND)"
+      else
+        emit_ask "$(msg ask_rm_rf "$COMMAND")"
+      fi
       exit 0
     fi
     # else: 自動承認（何も出力せずに通過）
+  fi
+
+  # ===== Codex Mode: 単純な rm（-r なし）も確認 =====
+  if [ "$CODEX_MODE" = "true" ]; then
+    if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]'; then
+      emit_ask "[Codex Mode] PM モードで rm を実行しますか？実装は Codex Worker に委譲を推奨します。"
+      exit 0
+    fi
   fi
 
   exit 0

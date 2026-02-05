@@ -4,6 +4,42 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.18.11] - 2026-02-06
+
+### 🎯 What's Changed for You
+
+**In `--codex` mode, Claude now acts as PM and Edit/Write are automatically blocked**
+
+| Before | After |
+|--------|-------|
+| Claude could edit directly in `--codex` mode | Edit/Write blocked except for Plans.md |
+| Ambiguous role separation | Clear PM (Claude) vs Worker (Codex) separation |
+
+### Added
+
+- **breezing skill**: Full auto task completion using Agent Teams
+  - Lead in delegate mode (coordination only), Implementer for coding, independent Reviewer
+  - `--codex-review` for multi-AI review integration
+  - For larger task sets than `/ultrawork`
+- **Codex mode guard**: Added Codex mode detection to `pretooluse-guard.sh`
+  - Claude functions as PM, delegating implementation to Codex Worker
+  - Enabled via `codex_mode: true` in `ultrawork-active.json`
+  - Only Plans.md state marker updates allowed
+
+### Changed
+
+- **Codex review improvements**: Enhanced parallel review quality
+  - SSOT-aware reviews (considers decisions.md/patterns.md)
+  - Output limit relaxed 1500 → 2500 chars for thorough analysis
+  - Clear termination conditions (APPROVE when Critical/High = 0)
+  - Fixed "nitpicking" issue (Low/Medium only → APPROVE)
+
+### Internal
+
+- Minor expert template fixes
+
+---
+
 ## [2.18.10] - 2026-02-06
 
 ### Added

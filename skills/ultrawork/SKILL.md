@@ -54,6 +54,23 @@ Plans.md の指定範囲を**完了まで自動的に反復実行**する。
 | **Session State** | See [references/session-state.md](references/session-state.md) |
 | **Codex Mode** (Experimental) | See [references/codex-mode.md](references/codex-mode.md) |
 
+## --codex モード時の役割分担
+
+`--codex` フラグ使用時、Claude と Codex Worker の役割は明確に分離されます。
+
+| 操作 | Claude (PM) | Codex Worker |
+|------|-------------|--------------|
+| タスク分析・分割 | ✅ | - |
+| 実装（Edit/Write） | ❌ **禁止** | ✅ |
+| レビュー・品質チェック | ✅ | - |
+| Plans.md マーカー更新 | ✅ | - |
+| Worktree 管理 | ✅ | - |
+
+**重要**: `--codex` 使用時、Claude の Edit/Write は `pretooluse-guard.sh` によってブロックされます。
+すべての実装は `mcp__codex__codex` 経由で Codex Worker に委譲してください。
+
+詳細: [references/codex-mode.md](references/codex-mode.md)
+
 ## Completion Conditions
 
 以下の**全て**を満たしたとき完了:

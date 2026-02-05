@@ -26,9 +26,10 @@ Codex MCP に送信する要件分析用プロンプト。
 
 ### CONSTRAINTS
 
-- **English only, max 1500 chars** (Claude integrates in Japanese)
-- Critical/High: report all, Medium/Low: max 3 each
+- **English only, max 2500 chars** (increased for thorough analysis)
+- Critical/High: report all, **Medium: max 5**, Low: max 3
 - No issues → `Score: A / No issues.`
+- **Consider project SSOT (decisions.md, patterns.md) when reviewing**
 - Focus on real problems
 - Avoid over-analysis
 

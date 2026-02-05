@@ -33,6 +33,47 @@ Claude Code (Orchestrator)
           - Worktree クリーンアップ
 ```
 
+## Claude の役割（PM モード）
+
+`--codex` モード時、Claude は **PM（Project Manager）** として機能します。
+
+### 許可される操作
+
+| 操作 | 許可 | 説明 |
+|------|------|------|
+| ファイル読み込み | ✅ | Read, Glob, Grep |
+| Codex Worker 呼び出し | ✅ | `mcp__codex__codex` |
+| レビューと判定 | ✅ | 品質ゲート、証跡検証 |
+| Plans.md 更新 | ✅ | 状態マーカーの更新のみ |
+| Edit/Write | ❌ | **禁止**（pretooluse-guard でブロック） |
+| Bash（読み取り系） | ✅ | cat, grep, ls, git status 等 |
+| Bash（書き込み系） | ⚠️ | リダイレクト/tee/sed -i はブロック、mv/cp/rm は確認 |
+
+### 保証範囲
+
+| 対象 | 保証レベル | 説明 |
+|------|-----------|------|
+| Edit/Write | **厳格** | Plans.md 以外は完全にブロック |
+| Bash | **ヒューリスティック** | 主要な書き込みパターンを検出してブロック/確認 |
+
+> **Note**: Bash の制限はブラックリスト方式のため、`python -c`, `git apply` 等一部のコマンドはすり抜ける可能性があります。厳密な書き込み禁止が必要な場合は、Codex Worker を使用してください。
+
+### 初期化時の設定
+
+`--codex` フラグ指定時、`ultrawork-active.json` に `codex_mode: true` を設定：
+
+```json
+{
+  "active": true,
+  "started_at": "2025-02-06T10:00:00Z",
+  "codex_mode": true,
+  "bypass_guards": ["rm_rf", "git_push"],
+  "allowed_rm_paths": ["node_modules", "dist", ".cache"]
+}
+```
+
+**重要**: `codex_mode: true` が設定されている間、Claude の Edit/Write は `pretooluse-guard.sh` によってブロックされます。すべての実装は `mcp__codex__codex` 経由で Codex Worker に委譲してください。
+
 ## Usage
 
 ```bash

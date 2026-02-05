@@ -185,13 +185,68 @@ experts:
 → 4エキスパート並列
 ```
 
-### Step 4: エキスパートプロンプトの準備
+### Step 4: エキスパートプロンプトの準備（拡張版）
 
-**Step 3 で決定したエキスパートのみ**、`experts/*.md` からプロンプトを読み込み:
-- `{files}`: 変更ファイルリスト
-- `{tech_stack}`: 検出された技術スタック
-- `{plan_content}`: Plans.md の内容（Plan Reviewer 用）
-- `{requirements}`: 要件内容（Scope Analyst 用）
+**Step 3 で決定したエキスパートのみ**、`experts/*.md` からプロンプトを読み込み、以下の変数を展開:
+
+| 変数 | 内容 | 取得方法 | 注記 |
+|------|------|----------|------|
+| `{files}` | 変更ファイルリスト | `git diff --name-only HEAD~1` | 必須 |
+| `{tech_stack}` | **詳細な技術スタック** | package.json/pyproject.toml から検出 | 必須 |
+| `{plan_content}` | Plans.md の内容 | Plan Reviewer 用 | 該当時のみ |
+| `{requirements}` | 要件内容 | Scope Analyst 用 | 該当時のみ |
+
+> **Note**: 差分と SSOT コンテキストは **オーケストレーターが直接 Codex に注入**します。エキスパートテンプレートへのプレースホルダー追加は不要です。
+
+#### 4.1 差分の取得（文脈提供のため重要）
+
+Codex に十分な文脈を提供するため、ファイル名だけでなく **差分の内容** も渡す:
+
+```bash
+# 変更ファイルリスト
+FILES=$(git diff --name-only HEAD~1)
+
+# 差分内容（各ファイル最大 200 行）
+for file in $FILES; do
+  echo "=== $file ==="
+  git diff HEAD~1 -- "$file" | head -200
+done
+```
+
+> **注意**: 差分が大きすぎる場合は 200 行で truncate してプロンプトサイズを制御。
+
+#### 4.2 技術スタック詳細検出
+
+package.json または pyproject.toml から主要な依存関係を抽出:
+
+```bash
+# package.json から主要フレームワーク検出
+jq -r '.dependencies // {} | keys | map(select(
+  test("react|vue|next|nuxt|express|fastify|nest|prisma|drizzle|trpc|zod|typescript|tailwind")
+)) | join(", ")' package.json
+```
+
+**出力例**: `"react, next, prisma, zod, typescript, tailwind"`
+
+#### 4.3 SSOT コンテキストの注入（お門違いな指摘防止）
+
+プロジェクトの意思決定と再利用パターンを Codex に伝える:
+
+```markdown
+## Project Context (SSOT)
+
+### Recent Decisions (decisions.md)
+- D-12: OAuth 認証を採用、追加の認証機能は不要
+- D-15: Prisma で eager loading を標準化
+
+### Relevant Patterns (patterns.md)
+- P-8: エラーハンドリングは Result 型を使用
+- P-12: API レスポンスは統一フォーマット
+
+Review with these project conventions in mind.
+```
+
+> **効果**: SSOT を参照することで、「なぜこの実装なのか」を理解した上でレビューでき、的外れな指摘を防止。
 
 ### Step 5: 並列 MCP 呼び出し
 
@@ -218,7 +273,7 @@ const results = await Promise.all(
 );
 ```
 
-### Step 5.1: 出力制限ルール（Context 溢れ防止）
+### Step 5.1: 出力制限ルール（Context 溢れ防止 + 十分な分析）
 
 各エキスパートの応答は以下の制約に従う:
 
@@ -227,21 +282,23 @@ const results = await Promise.all(
 | 制約 | 内容 |
 |------|------|
 | 言語 | **English only**（トークン節約、Claude が統合時に日本語化） |
-| 最大文字数 | 1500 文字 |
+| 最大文字数 | **2500 文字**（十分な分析のため緩和） |
 | スコア形式 | A-F |
-| 件数制限 | Critical/High: 全件、Medium/Low: 各3件まで |
+| 件数制限 | Critical/High: 全件、**Medium: 5件まで**、Low: 3件 |
 | 問題なし | `Score: A / No issues.` のみ |
+| **SSOT 考慮** | プロジェクト決定事項を考慮してレビュー |
 
 **Plan/Scope Review エキスパート**:
 
 | 制約 | 内容 |
 |------|------|
 | 言語 | **English only** |
-| 最大文字数 | 1500 文字 |
-| スコア形式 | X/10 |
-| 問題なし | `Score: 10/10 / No issues.` のみ |
+| 最大文字数 | **2500 文字** |
+| スコア形式 | **A-F**（Code Review と統一） |
+| 問題なし | `Score: A / No issues.` のみ |
+| **SSOT 考慮** | プロジェクト決定事項を考慮してレビュー |
 
-> **理由**: 4エキスパート並列でも 1500文字×4 = 6,000文字 ≒ 2,000トークン程度で収まる
+> **理由**: 4エキスパート並列でも 2500文字×4 = 10,000文字 ≒ 3,300トークン程度で許容範囲。十分な分析のため 1500 → 2500 に緩和。
 
 ### Step 6: 結果統合
 
@@ -272,15 +329,36 @@ const results = await Promise.all(
 | 3 | Architect | High | src/services/ | Circular dependency |
 ```
 
-### Step 7: コミット判定
+### Step 7: コミット判定（終了条件明確化）
 
 統合結果から最終判定を算出:
 
-| 集計 | 判定 |
-|------|------|
-| Critical ≥ 1 | REJECT |
-| High ≥ 1 または Medium > 3 | REQUEST CHANGES |
-| それ以外 | APPROVE |
+| 集計 | 判定 | アクション |
+|------|------|-----------|
+| Critical ≥ 1 | REJECT | 手動介入必須、ループ終了 |
+| High ≥ 1 | REQUEST CHANGES | 自動修正ループ（最大 3 回） |
+| **Critical = 0 かつ High = 0** | **APPROVE** | **ループ終了、コミット可能** |
+
+#### 終了条件の明確化（重要）
+
+**レビューループの終了条件**（以下のいずれかを満たした時点で終了）:
+
+1. ✅ **APPROVE**: Critical = 0 かつ High = 0
+2. ❌ **REJECT**: Critical ≥ 1（手動介入必須）
+3. ⏹️ **STOP**: 検証失敗（lint/test エラー）
+4. 🔄 **リトライ上限**: 3 回の自動修正後も High が残る
+
+#### 「重箱の隅つつき」問題への対処
+
+**Low/Medium のみの指摘は「重箱の隅」として扱い、Critical/High が 0 なら APPROVE とする。**
+
+| 状況 | 判定 | 理由 |
+|------|------|------|
+| Medium: 5, Low: 10 | **APPROVE** | Critical/High が 0 なので許容 |
+| High: 1, Medium: 0 | REQUEST CHANGES | High があるので修正必要 |
+| Critical: 1, その他: 0 | REJECT | 手動対応必須 |
+
+> **原則**: レビューが終わらない問題を防ぐため、**Low/Medium は次回改善として許容**する。
 
 ### Step 7.1: 判定出力テンプレート（統一）
 
@@ -296,7 +374,7 @@ const results = await Promise.all(
 **A Grade Criteria**:
 - Critical: 0 ✅
 - High: 0 ✅
-- Medium: ≤3 ✅
+- Medium: ≤5 ✅
 **Required fixes**: None
 **次のアクション**: `git commit` でコミット可能
 ```
@@ -311,7 +389,7 @@ const results = await Promise.all(
 **A Grade Criteria**:
 - Critical: 0 [status]
 - High: 0 [status]
-- Medium: ≤3 [status]
+- Medium: ≤5 [status]
 **Required fixes**:
 1. [file:line] - [issue] → [fix]
 ```

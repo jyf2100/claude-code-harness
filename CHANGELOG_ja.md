@@ -11,6 +11,42 @@
 
 ---
 
+## [2.18.11] - 2026-02-06
+
+### 🎯 What's Changed for You
+
+**`--codex` モード時、Claude は PM として振る舞い、Edit/Write が自動ブロックされるようになりました**
+
+| Before | After |
+|--------|-------|
+| `--codex` 時も Claude が直接編集可能 | Claude の Edit/Write は Plans.md 以外ブロック |
+| 役割分担が曖昧 | PM（Claude）と Worker（Codex）の明確な分離 |
+
+### Added
+
+- **breezing スキル**: Agent Teams を活用した完全自動タスク完走
+  - Lead は delegate mode で調整専念、実装は Implementer、レビューは独立 Reviewer
+  - `--codex-review` でマルチ AI レビュー統合
+  - `/ultrawork` より大規模なタスクセット向け
+- **Codex モードガード**: `pretooluse-guard.sh` に Codex モード検出を追加
+  - Claude が PM 役として機能し、実装は Codex Worker に委譲
+  - `ultrawork-active.json` の `codex_mode: true` で有効化
+  - Plans.md の状態マーカー更新のみ許可
+
+### Changed
+
+- **Codex レビュー改善**: 並列レビューの品質向上
+  - SSOT（decisions.md/patterns.md）を考慮した文脈あるレビュー
+  - 出力制限を 1500 → 2500 文字に緩和（十分な分析のため）
+  - 終了条件を明確化（Critical/High = 0 で APPROVE）
+  - 「重箱の隅つつき」問題を解消（Low/Medium のみは APPROVE）
+
+### Internal
+
+- エキスパートテンプレートの軽微な修正
+
+---
+
 ## [2.18.10] - 2026-02-06
 
 ### Added
