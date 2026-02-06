@@ -5,27 +5,65 @@ export interface ApiResponse<T> {
 
 export interface ApiClientOptions {
   baseUrl: string;
-  timeout?: number;
-  retries?: number;
+  timeout?: number;   // default 5000ms
+  retries?: number;   // default 3
 }
 
-// エラー処理なしの素朴な実装
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public retryable: boolean
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export class ApiClient {
-  constructor(private options: ApiClientOptions) {}
+  private maxRetries: number;
+  private timeout: number;
+
+  constructor(private options: ApiClientOptions) {
+    this.maxRetries = options.retries ?? 3;
+    this.timeout = options.timeout ?? 5000;
+  }
 
   async get<T>(path: string): Promise<ApiResponse<T>> {
-    const response = await fetch(`${this.options.baseUrl}${path}`);
-    const data = await response.json();
-    return { data: data as T, status: response.status };
+    return this.requestWithRetry<T>('GET', path);
   }
 
   async post<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
-    const response = await fetch(`${this.options.baseUrl}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await response.json();
-    return { data: data as T, status: response.status };
+    return this.requestWithRetry<T>('POST', path, body);
+  }
+
+  private async requestWithRetry<T>(
+    method: string,
+    path: string,
+    body?: unknown
+  ): Promise<ApiResponse<T>> {
+    let lastError: Error = new Error('Request failed');
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        // TODO: create AbortController for timeout
+        // TODO: set up timeout with setTimeout + controller.abort()
+        // TODO: build fetch options (method, headers, body, signal)
+        // TODO: call fetch with the URL and options
+        // TODO: clear the timeout
+        // TODO: check response.ok
+        //   - if 4xx: throw ApiError with retryable=false
+        //   - if 5xx: throw ApiError with retryable=true
+        // TODO: parse JSON and return { data, status }
+        throw new Error('Not implemented');
+      } catch (error) {
+        lastError = error as Error;
+        // TODO: if error is ApiError and not retryable, throw immediately (don't retry)
+        // TODO: if this is the last attempt, throw
+        // TODO: otherwise wait before retrying (exponential backoff: 2^attempt * 100ms)
+      }
+    }
+
+    throw lastError;
   }
 }
