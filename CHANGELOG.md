@@ -4,6 +4,92 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.20.0] - 2026-02-08
+
+### 🎯 What's Changed for You
+
+**28 skills consolidated to 19. Breezing now runs with Phase A/B/C separation, teammate permissions fixed, and repo cleaned up.**
+
+| Before | After |
+|--------|-------|
+| `memory`, `sync-ssot-from-memory`, `cursor-mem` as 3 skills | Unified `memory` (SSOT promotion + memory search in references) |
+| `setup`, `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` as 6 skills | Unified `setup` (routing table dispatches to references) |
+| `ci`, `agent-browser`, `x-release-harness` visible as slash commands | Hidden with `user-invocable: false` (auto-load still works) |
+| Delegate mode ON at breezing start → bypass permissions lost | Phase A (prep) maintains bypass → delegate only in Phase B |
+| Delegate mode stays on during completion → commit restricted | Phase C exits delegate → Lead can commit directly |
+| Teammates auto-denied Bash due to "prompts unavailable" | `mode: "bypassPermissions"` + PreToolUse hooks for safety |
+| Build artifacts, dev docs, lock files tracked in git | 33 files untracked, .gitignore updated |
+
+### Changed
+
+- **Skill consolidation (28 → 19)**:
+  - `/memory`: Absorbed `sync-ssot-from-memory` and `cursor-mem`
+  - `/setup`: Absorbed `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules`
+  - `/troubleshoot`: Added CI failure triggers to description
+- **Breezing Phase separation**: Restructured execution flow into Phase A (Pre-delegate) / Phase B (Delegate) / Phase C (Post-delegate)
+  - Phase A: Maintain user's permission mode while initializing Team and spawning teammates
+  - Phase B: Delegate mode — Lead uses only TaskCreate/TaskUpdate/SendMessage
+  - Phase C: Exit delegate, then run integration verification, commit, and cleanup
+- **Teammate permission model**: All teammate spawns use `mode: "bypassPermissions"` with PreToolUse hooks as safety layer
+  - PreToolUse hooks fire independently of permission system (official spec)
+  - Safety layers: disallowedTools + spawn prompt constraints + .claude/rules/ + Lead monitoring
+- **English-only releases**: GitHub release notes now written in English. Updated release rules and skills.
+- **All related docs updated**: execution-flow.md, team-composition.md, codex-engine.md, guardrails-inheritance.md, session-resilience.md
+
+### Added
+
+- `skills/memory/references/cursor-mem-search.md` - Cursor memory search reference
+- `skills/setup/references/harness-mem.md` - Harness-Mem setup reference
+- `skills/setup/references/localize-rules.md` - Rule localization reference
+- **Codex first-use check hook**: Auto-runs `check-codex.sh` on first `/codex-review` use (`once: true`)
+- **timeout/gtimeout detection**: Guides macOS users to `brew install coreutils`
+
+### Fixed
+
+- **Codex review fixes (22 issues)**: pretooluse-guard JSON parse consolidation (5→1 jq call), symlink security guard, session-monitor `eval` removal
+- **macOS compatibility**: All docs `timeout N codex exec` → `$TIMEOUT N codex exec` (GNU coreutils independent)
+- **Teammate Bash auto-deny**: Resolved "prompts unavailable" error for background teammates
+
+### Removed
+
+- **Untracked 33 files**: `mcp-server/dist/` (24 build artifacts), `docs/design/` (2), `docs/slides/` (1), `docs/claude-mem-japanese-setup.md`, dev-only docs (3), lock files (2)
+- **Archived skills**: `sync-ssot-from-memory`, `cursor-mem`, `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` → `skills/_archived/`
+
+---
+
+## [2.19.0] - 2026-02-08
+
+### 🎯 What's Changed for You
+
+**5つの実装コマンドを `/work` と `/breezing` の2つに統一。両方 `--codex` 対応。**
+
+| Before | After |
+|--------|-------|
+| `/work`, `/ultrawork`, `/breezing`, `/breezing-codex`, `/codex-worker` の5コマンド | `/work` と `/breezing` の2コマンドに統一 |
+| コマンドの使い分けが複雑 | `/work` = Claude 実装、`/breezing` = チーム完走 |
+| Codex は別コマンド (`/codex-worker`, `/breezing-codex`) | `--codex` フラグで統一切り替え |
+| スコープ指定方法がコマンドごとに異なる | 両コマンド共通の対話式スコープ確認 |
+
+### Changed
+
+- **`/work` 全面改修**: 対話式スコープ確認 + タスク数に応じた自動戦略選択
+  - 1タスク → 直接実装、2-3 → 並列、4+ → 自動反復（旧 ultrawork 統合）
+  - `--codex` フラグで Codex MCP 実装委託モード
+  - 新リファレンス: scope-dialog.md, auto-iteration.md, codex-engine.md
+- **`/breezing` 更新**: `--codex` フラグ統合（旧 breezing-codex 吸収）
+  - 対話式スコープ確認の追加
+  - Codex Implementer 連携を codex-engine.md に集約
+- **pretooluse-guard.sh**: `ultrawork-active.json` → `work-active.json` に統一
+  - 後方互換: 旧ファイル名もフォールバックで検出
+
+### Removed
+
+- **ultrawork** スキル → `/work all` で同等機能（`skills/_archived/` に移動）
+- **breezing-codex** スキル → `/breezing --codex` で同等機能（`skills/_archived/` に移動）
+- **codex-worker** スキル → `/work --codex` で同等機能（`skills/_archived/` に移動）
+
+---
+
 ## [2.18.11] - 2026-02-06
 
 ### 🎯 What's Changed for You
@@ -17,10 +103,14 @@ Change history for claude-code-harness.
 
 ### Added
 
-- **breezing skill**: Full auto task completion using Agent Teams
+- **breezing skill (v2)**: Full auto task completion using Agent Teams
   - Lead in delegate mode (coordination only), Implementer for coding, independent Reviewer
   - `--codex-review` for multi-AI review integration
-  - For larger task sets than `/ultrawork`
+  - session_id-based Hook enforcement: Reviewer Read-only, Implementer file ownership (pretooluse-guard.sh)
+  - Flexible flow: Lead-autonomous stages replace rigid Phase 0-4
+  - State simplification: Agent Teams TaskList as SSOT, breezing-active.json metadata-only
+  - Peer-to-peer: Reviewer↔Implementer direct dialogue for lightweight questions
+  - Agent Trace: per-Teammate metrics in completion reports
 - **Codex mode guard**: Added Codex mode detection to `pretooluse-guard.sh`
   - Claude functions as PM, delegating implementation to Codex Worker
   - Enabled via `codex_mode: true` in `ultrawork-active.json`

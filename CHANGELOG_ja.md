@@ -11,6 +11,59 @@
 
 ---
 
+## [2.20.0] - 2026-02-08
+
+### 🎯 What's Changed for You
+
+**28スキルを19に統合。Breezing の Phase A/B/C 分離、Teammate 権限修正、リポジトリクリーンアップを実施。**
+
+| Before | After |
+|--------|-------|
+| `memory`, `sync-ssot-from-memory`, `cursor-mem` の3スキル | `memory` 1つに統合（SSOT昇格・記憶検索を references に移設） |
+| `setup` 系が6スキルに分散 | `setup` 1つに統合（ルーティングテーブルで分岐） |
+| `ci`, `agent-browser`, `x-release-harness` がメニューに露出 | `user-invocable: false` で非表示化（自動ロード経由でアクセス可能） |
+| `/breezing` 開始直後に bypass permissions が失われる | Phase A で bypass 維持 → Phase B でのみ delegate |
+| 完了ステージでも delegate mode のまま | Phase C で delegate 解除 → Lead が直接コミット可能 |
+| Teammate が "prompts unavailable" で Bash 自動拒否 | `mode: "bypassPermissions"` + PreToolUse hooks で安全に解決 |
+| ビルド成果物・開発専用ドキュメントが git に追跡されていた | 33ファイルを untrack、.gitignore 更新 |
+
+### Changed
+
+- **スキル統合 (28 → 19)**:
+  - `/memory`: `sync-ssot-from-memory` と `cursor-mem` を吸収
+  - `/setup`: `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` を吸収
+  - `/troubleshoot`: CI 障害トリガーを description に追加
+- **Breezing Phase 分離**: Phase A (Pre-delegate) / Phase B (Delegate) / Phase C (Post-delegate) の3段階に構造化
+  - Phase A: ユーザーのパーミッションモードを維持したまま Team 初期化・spawn
+  - Phase B: delegate mode で Lead は調整専念（TaskCreate/TaskUpdate/SendMessage のみ）
+  - Phase C: delegate 解除後に統合検証・コミット・クリーンアップ
+- **Teammate 権限モデル**: 全 Teammate spawn に `mode: "bypassPermissions"` を指定
+  - PreToolUse hooks は権限システムと独立して発火（公式仕様）
+  - 安全層: disallowedTools + spawn prompt 制約 + .claude/rules/ + Lead 監視
+- **英語リリース**: GitHub リリースノートを英語に統一。リリースルール・スキルを更新
+- **全関連ドキュメント更新**: execution-flow.md, team-composition.md, codex-engine.md, guardrails-inheritance.md, session-resilience.md
+
+### Added
+
+- `skills/memory/references/cursor-mem-search.md` - Cursor 連携メモリ検索リファレンス
+- `skills/setup/references/harness-mem.md` - Harness-Mem セットアップリファレンス
+- `skills/setup/references/localize-rules.md` - ルールローカライズリファレンス
+- **Codex 初回チェックフック**: `/codex-review` 初回使用時に `check-codex.sh` を自動実行（`once: true`）
+- **timeout/gtimeout 検出**: macOS ユーザー向けに `brew install coreutils` を案内
+
+### Fixed
+
+- **Codex レビュー指摘 22 件修正**: pretooluse-guard の JSON パース統合（5→1 jq call）、symlink セキュリティガード追加、session-monitor の `eval` 除去
+- **macOS 互換性**: 全ドキュメントの `timeout N codex exec` → `$TIMEOUT N codex exec` に置換（GNU coreutils 非依存化）
+- **Teammate Bash 自動拒否**: バックグラウンド Teammate の "prompts unavailable" エラーを解決
+
+### Removed
+
+- **33ファイルを untrack**: `mcp-server/dist/`（ビルド成果物 24件）、`docs/design/`（2件）、`docs/slides/`（1件）、`docs/claude-mem-japanese-setup.md`、開発専用ドキュメント（3件）、ロックファイル（2件）
+- **アーカイブ済みスキル**: `sync-ssot-from-memory`, `cursor-mem`, `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` → `skills/_archived/`
+
+---
+
 ## [2.18.11] - 2026-02-06
 
 ### 🎯 What's Changed for You

@@ -96,13 +96,13 @@ function determineParallelCount(tasks) {
 ### `--isolation lock|worktree`
 - 検出: `--isolation`の後に`lock`または`worktree`が続く
 - パターン: `--isolation\s+(lock|worktree)` または `--isolation=(lock|worktree)`
-- デフォルト: `lock`
+- デフォルト: `worktree`
 - 出力: `isolation_mode: "lock"` または `"worktree"`
 
 ### `--commit-strategy task|phase|all`
 - 検出: `--commit-strategy`の後に`task`/`phase`/`all`が続く
 - パターン: `--commit-strategy\s+(task|phase|all)` または `--commit-strategy=(task|phase|all)`
-- デフォルト: `task`
+- デフォルト: `phase`
 - 出力: `commit_strategy: "task"` / `"phase"` / `"all"`
 
 ### `--max-iterations N`
@@ -140,7 +140,7 @@ function determineParallelCount(tasks) {
 
 ```bash
 # user_promptはワークフローから渡される
-# 例: "/work --full --parallel 3"
+# 例: "/work --parallel 3"
 ```
 
 ### Step 2: フラグの抽出
@@ -150,11 +150,10 @@ function determineParallelCount(tasks) {
 ```javascript
 // 疑似コード例
 const flags = {
-  full_mode: /--full/.test(user_prompt),
-  parallel_count: extractNumber(user_prompt, /--parallel[\s=]+(\d+)/) || 1,
-  isolation_mode: extractString(user_prompt, /--isolation[\s=]+(lock|worktree)/) || "lock",
-  commit_strategy: extractString(user_prompt, /--commit-strategy[\s=]+(task|phase|all)/) || "task",
-  deploy_after_commit: /--deploy/.test(user_prompt),
+  full_mode: true, // always true (Turbo Mode default)
+  parallel_count: extractNumber(user_prompt, /--parallel[\s=]+(\d+)/) || "auto",
+  isolation_mode: extractString(user_prompt, /--isolation[\s=]+(lock|worktree)/) || "worktree",
+  commit_strategy: extractString(user_prompt, /--commit-strategy[\s=]+(task|phase|all)/) || "phase",
   max_iterations: extractNumber(user_prompt, /--max-iterations[\s=]+(\d+)/) || 3,
   skip_cross_review: /--skip-cross-review/.test(user_prompt),
   resume_session_id: extractString(user_prompt, /--resume[\s=]+(\S+)/) || "",
@@ -182,24 +181,27 @@ output:
     - parallel_count
     - isolation_mode
     - commit_strategy
-    - deploy_after_commit
     - max_iterations
     - skip_cross_review
+    - resume_session_id
+    - resume_latest
+    - fork_session_id
+    - fork_reason
 ```
 
 ---
 
 ## 使用例
 
-### 例1: 基本的な`--full`
+### 例1: デフォルト（Turbo Mode）
 ```
-入力: "/work --full"
+入力: "/work"
 出力:
   full_mode: true
-  parallel_count: 1
-  isolation_mode: "lock"
-  commit_strategy: "task"
-  deploy_after_commit: false
+  parallel_count: "auto"
+  isolation_mode: "worktree"
+  commit_strategy: "phase"
+
   max_iterations: 3
   skip_cross_review: false
   resume_session_id: ""
@@ -210,39 +212,38 @@ output:
 
 ### 例2: 並列実行指定
 ```
-入力: "/work --full --parallel 5"
+入力: "/work --parallel 5"
 出力:
   full_mode: true
   parallel_count: 5
-  isolation_mode: "lock"
-  commit_strategy: "task"
-  deploy_after_commit: false
+  isolation_mode: "worktree"
+  commit_strategy: "phase"
+
   max_iterations: 3
   skip_cross_review: false
 ```
 
 ### 例3: 完全なオプション指定
 ```
-入力: "/work --full --parallel 3 --isolation worktree --commit-strategy phase --deploy --max-iterations 5"
+入力: "/work --parallel 3 --isolation lock --commit-strategy task --max-iterations 5"
 出力:
   full_mode: true
   parallel_count: 3
-  isolation_mode: "worktree"
-  commit_strategy: "phase"
-  deploy_after_commit: true
+  isolation_mode: "lock"
+  commit_strategy: "task"
   max_iterations: 5
   skip_cross_review: false
 ```
 
-### 例4: 非`--full`モード（既存フロー）
+### 例4: 逐次実行モード
 ```
-入力: "/work"
+入力: "/work --sequential"
 出力:
-  full_mode: false
+  full_mode: true
   parallel_count: 1
-  isolation_mode: "lock"
-  commit_strategy: "task"
-  deploy_after_commit: false
+  isolation_mode: "worktree"
+  commit_strategy: "phase"
+
   max_iterations: 3
   skip_cross_review: false
 ```
@@ -251,7 +252,7 @@ output:
 
 ## 注意事項
 
-- **フラグの順序は問わない**: `--full --parallel 3`と`--parallel 3 --full`は同じ結果
-- **大文字小文字を区別しない**: `--FULL`も`--full`として認識
+- **フラグの順序は問わない**: `--parallel 3 --sequential`と`--sequential --parallel 3`は同じ結果
+- **大文字小文字を区別しない**: `--SEQUENTIAL`も`--sequential`として認識
 - **未指定フラグはデフォルト値**: 明示的に指定されていないフラグはデフォルト値を使用
-- **不正な値はデフォルトにフォールバック**: `--parallel abc`は`parallel_count: 1`になる
+- **不正な値はデフォルトにフォールバック**: `--parallel abc`は`parallel_count: "auto"`になる

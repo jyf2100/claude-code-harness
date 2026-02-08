@@ -1,6 +1,8 @@
 ---
 name: session
 description: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
+description-en: "Unified session management window. Handles initialization, memory, state all-in-one. Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
+description-ja: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
 allowed-tools: ["Read", "Bash", "Write", "Edit", "Glob"]
 argument-hint: "[list|inbox|broadcast \"message\"]"
 ---
@@ -77,7 +79,7 @@ Claude Code 2.1.30 以降、セッション再開時のメモリ使用量が **6
 |------------|---------|
 | **通常実装** | 1-2時間ごとに `--resume` で再開 |
 | **大規模リファクタ** | 機能単位でセッション分割 → 各セッションで `--resume` |
-| **並列タスク** | `/ultrawork` で並列実行、長時間なら途中で `--resume` |
+| **並列タスク** | `/work all` で並列実行、長時間なら途中で `--resume` |
 | **メモリ警告時** | 即座に `--resume` で再開（以前より高速） |
 
 ### 効率的なワークフロー例

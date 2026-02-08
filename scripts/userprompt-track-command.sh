@@ -69,11 +69,25 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
 
   # Skill必須コマンドかチェック
   if echo "$COMMAND_NAME" | grep -qiE "^($SKILL_REQUIRED_COMMANDS)$"; then
-    # pending ディレクトリ作成
+    # Permission hardening: prompt_preview contains user input,
+    # restrict file permissions to owner-only (rwx------/rw-------)
+    OLD_UMASK=$(umask)
+    umask 077
+
+    # pending ディレクトリ作成 (symlink bypass protection)
+    if [ -L "$PENDING_DIR" ] || [ -L "$(dirname "$PENDING_DIR")" ]; then
+      echo "[track-command] Warning: symlink detected in state path, skipping" >&2
+      umask "$OLD_UMASK"
+    else
     mkdir -p "$PENDING_DIR"
 
     # pending ファイル作成（タイムスタンプ付き）
     PENDING_FILE="${PENDING_DIR}/${COMMAND_NAME}.pending"
+    # Security: refuse if pending file is a symlink
+    if [ -L "$PENDING_FILE" ]; then
+      echo "[track-command] Warning: symlink detected at $PENDING_FILE, skipping" >&2
+      umask "$OLD_UMASK"
+    else
     cat > "$PENDING_FILE" <<EOF
 {
   "command": "$COMMAND_NAME",
@@ -81,6 +95,11 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
   "prompt_preview": "$(echo "$PROMPT" | head -c 200 | tr '\n' ' ' | sed 's/"/\\"/g')"
 }
 EOF
+
+    # Restore original umask
+    umask "$OLD_UMASK"
+    fi  # end symlink check for PENDING_FILE
+    fi  # end symlink check for PENDING_DIR
   fi
 fi
 

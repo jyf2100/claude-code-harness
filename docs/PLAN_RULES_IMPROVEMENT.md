@@ -239,7 +239,7 @@ paths: src/**/*.{ts,tsx,js,jsx}
 ### 5.3 新規プロジェクトへの展開
 
 ```
-/harness-init
+/setup（旧 /harness-init）
     ↓
 1. プロジェクト構造検出
 2. 適切なスタック用テンプレート選択
@@ -415,8 +415,7 @@ generated-files.json
 
 ## 付録: 関連ファイル
 
-- `/commands/optional/localize-rules.md`
 - `/scripts/template-tracker.sh`（将来的に廃止予定）
 - `/templates/template-registry.json`
-- `/commands/optional/harness-update.md`
+- `/skills/harness-update/SKILL.md`（旧 `/commands/optional/harness-update.md` から移行）
 - `/scripts/session-init.sh`

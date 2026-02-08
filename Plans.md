@@ -1,440 +1,216 @@
-# Plans.md - Claude Code 2.1.30 対応プラン
+# スキル統合プラン — 28 → 19 スキルへ
 
-## 概要
+## 背景
 
-Claude Code が 2.1.30 にアップデートされました。新機能を Harness プラグインで活用するための改善プランです。
-
-## 変更点サマリー
-
-| カテゴリ | 変更内容 | Harness への影響 |
-|---------|---------|-----------------|
-| **Task tool メトリクス** | トークン数、ツール使用数、実行時間を表示 | ✅ 活用可能 |
-| **PDF ページ範囲読み取り** | Read ツールに `pages` パラメータ追加 | ✅ ドキュメント系スキル強化 |
-| **`/debug` コマンド** | セッションのトラブルシューティング | ✅ troubleshoot スキル連携 |
-| **メモリ使用量 68% 削減** | `--resume` 時の最適化 | 🔵 恩恵を受ける |
-| **OAuth Client 認証** | MCP サーバー認証強化 | 🔵 将来的に活用 |
-| **Git log フラグ拡張** | `--format`, `--raw` 等 | ✅ CI/レビュースキル強化 |
-| **Phantom "(no content)" 修正** | トークン無駄遣い解消 | 🔵 自動で恩恵 |
-| **サブエージェント MCP アクセス修正** | SDK提供 MCP ツールの共有 | ✅ Codex 統合に影響 |
+v2.19.0 で実装コマンドを 5→2 に統合した。次はスキル全体の整理。
+ユーザーに見えるスキル数を 28 → 19 に削減し、認知負荷を下げる。
 
 ---
 
-## Phase 1: 高優先度改善（即時効果）
+## Phase 1: memory 統合 (3→1)
 
-### 1.1 Task tool メトリクス活用 `[feature]`
+`/memory` に `/sync-ssot-from-memory` と `/cursor-mem` を吸収。
 
-**背景**: Task tool 結果にトークン数、ツール使用数、実行時間が追加。
+### 1.1 memory SKILL.md に統合機能を追加
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 1.1.1 | emit-agent-trace.js に Task tool メトリクス取得ロジック追加 | `cc:DONE` |
-| 1.1.2 | AgentTrace スキーマ v0.3.0 設計（metrics フィールド） | `cc:DONE` |
-| 1.1.3 | ultrawork/parallel-workflows でのメトリクス集計表示 | `cc:DONE` |
+| 1.1.1 | `/memory` SKILL.md の description に sync-ssot, cursor-mem のトリガーフレーズを追加 | ✅ |
+| 1.1.2 | SKILL.md 本文に「SSOT 昇格」と「記憶検索」セクションを追加 | ✅ |
+| 1.1.3 | sync-ssot-from-memory の処理ロジックを `references/sync-ssot.md` として移設 | ✅ |
+| 1.1.4 | cursor-mem の処理ロジックを `references/cursor-mem-search.md` として移設 | ✅ |
 
-**成果物**:
-- AgentTrace にサブエージェント実行コストを記録
-- `/ultrawork` 完了時にトータルコストを表示
-
----
-
-### 1.2 `/debug` コマンドとの troubleshoot 連携 `[feature]`
-
-**背景**: 新しい `/debug` コマンドがセッション診断に使える。
+### 1.2 旧スキルのアーカイブ
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 1.2.1 | troubleshoot スキルに `/debug` への誘導ルート追加 | `cc:DONE` |
-| 1.2.2 | troubleshoot の診断フローに Claude Code 固有診断を追加 | `cc:DONE` |
-
-**成果物**:
-- 複雑な問題時に `/debug` を推奨する分岐
-- VibeCoder 向けの「もっと詳しく診断して」→ `/debug` 連携
+| 1.2.1 | `skills/sync-ssot-from-memory/` → `skills/_archived/sync-ssot-from-memory/` に移動 | ✅ |
+| 1.2.2 | `skills/cursor-mem/` → `skills/_archived/cursor-mem/` に移動 | ✅ |
 
 ---
 
-### 1.3 PDF ページ範囲読み取り活用 `[feature]`
+## Phase 2: setup 統合 (5→1)
 
-**背景**: Read ツールで `pages: "1-5"` のようにページ範囲指定が可能に。
+`/setup` に `/harness-mem`, `/codex-setup`, `/2agent`, `/localize-rules` を吸収。
+`/setup-tools` をベースに、サブコマンド的に分岐する構成。
+
+### 2.1 setup SKILL.md の拡張
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 1.3.1 | notebookLM スキルでの PDF 活用ドキュメント追加 | `cc:DONE` |
-| 1.3.2 | harness-review での大型ドキュメントレビュー対応 | `cc:DONE` |
+| 2.1.1 | `/setup-tools` SKILL.md の description に統合対象のトリガーフレーズを追加 | ✅ |
+| 2.1.2 | SKILL.md 本文にルーティングテーブル追加（ユーザー意図 → 適切な reference へ分岐） | ✅ |
+| 2.1.3 | harness-mem の処理ロジックを `references/harness-mem.md` として移設 | ✅ |
+| 2.1.4 | codex-setup の処理ロジックを `references/codex-setup.md` として移設 | ✅ |
+| 2.1.5 | 2agent の SKILL.md + references/ を `references/2agent-setup.md` + `references/2agent/` として移設 | ✅ |
+| 2.1.6 | localize-rules の処理ロジックを `references/localize-rules.md` として移設 | ✅ |
 
-**成果物**:
-- 大型 PDF を効率的に扱うベストプラクティス
-- ドキュメントレビュー時のページ範囲指定ガイド
-
----
-
-## Phase 2: 中優先度改善（機能強化）
-
-### 2.1 Git log フラグ拡張の活用 `[feature]`
-
-**背景**: `--topo-order`, `--cherry-pick`, `--format`, `--raw` が read-only で使用可能に。
+### 2.2 スキル名変更
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 2.1.1 | harness-review での変更履歴分析強化 | `cc:DONE` |
-| 2.1.2 | CI スキルでのコミット分析改善 | `cc:DONE` |
-| 2.1.3 | release-harness でのリリースノート生成改善 | `cc:DONE` |
+| 2.2.1 | `skills/setup-tools/` → `skills/setup/` にリネーム（name: setup に変更） | ✅ |
 
-**成果物**:
-- より詳細なコミット情報を活用したレビュー
-- `--format` による構造化されたログ出力
-
----
-
-### 2.2 サブエージェント MCP アクセス修正への対応 `[bugfix]`
-
-**背景**: SDK 提供 MCP ツールがサブエージェントで使えない問題が修正。
+### 2.3 旧スキルのアーカイブ
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 2.2.1 | Codex 統合での MCP ツール利用状況確認 | `cc:DONE` |
-| 2.2.2 | task-worker エージェントでの MCP ツール利用ガイド追加 | `cc:DONE` |
-
-**成果物**:
-- サブエージェントでの MCP ツール活用パターン
-- Codex 並列実行時の MCP ツール共有設定
+| 2.3.1 | `skills/harness-mem/` → `skills/_archived/harness-mem/` に移動 | ✅ |
+| 2.3.2 | `skills/codex-setup/` → `skills/_archived/codex-setup/` に移動 | ✅ |
+| 2.3.3 | `skills/2agent/` → `skills/_archived/2agent/` に移動 | ✅ |
+| 2.3.4 | `skills/localize-rules/` → `skills/_archived/localize-rules/` に移動 | ✅ |
 
 ---
 
-### 2.3 メモリ最適化の活用 `[optimization]`
+## Phase 3: 非表示化 (3スキル)
 
-**背景**: セッション再開時のメモリ使用量が 68% 削減。
+`user-invocable: false` を設定。description のトリガーフレーズは維持し、
+他スキルからの内部呼び出しは引き続き可能にする。
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 2.3.1 | session-memory スキルでの `--resume` 推奨強化 | `cc:DONE` |
-| 2.3.2 | ultrawork での長時間セッション管理ガイド更新 | `cc:DONE` |
-
-**成果物**:
-- セッション再開を活用した効率的なワークフロー
-- 長時間実行時のメモリ管理ベストプラクティス
+| 3.1 | `skills/x-release-harness/SKILL.md` に `user-invocable: false` 追加 | ✅ |
+| 3.2 | `skills/ci/SKILL.md` に `user-invocable: false` 追加。`/troubleshoot` の description に「CIが落ちた」トリガーを追加し、内部で ci を呼ぶ導線を確保 | ✅ |
+| 3.3 | `skills/agent-browser/SKILL.md` に `user-invocable: false` 追加。description のトリガーフレーズ（「ブラウザで操作」等）は維持し自動ロード経由のアクセスを確保 | ✅ |
 
 ---
 
-## Phase 3: 低優先度改善（将来的な活用）
-
-### 3.1 OAuth Client 認証の活用検討 `[research]`
-
-**背景**: `claude mcp add --client-id --client-secret` で OAuth 認証設定が可能に。
+## Phase 4: CLAUDE.md 更新 + ミラー同期
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 3.1.1 | Slack MCP サーバー統合の検討 | `cc:DONE` |
-| 3.1.2 | setup-tools での OAuth 設定ガイド追加 | `cc:DONE` |
-
-**成果物**:
-- OAuth 対応 MCP サーバーのセットアップガイド（codex-mcp-setup.md に追加完了）
-- Slack 通知統合の可能性調査（範囲外として分離を記録）
+| 4.1 | CLAUDE.md のスキルカテゴリテーブルを更新（統合後の 19 スキル反映） | ✅ |
+| 4.2 | CLAUDE.md のスキル階層構造ツリーを更新 | ✅ |
+| 4.3 | ミラー同期 (`rsync skills/ → codex/.codex/skills/, opencode/skills/, .opencode/skills/`) | ✅ |
+| 4.4 | バージョンバンプ (v2.20.0) + CHANGELOG エントリ追加 | ✅ |
+| 4.5 | `./tests/validate-plugin.sh && ./scripts/ci/check-consistency.sh` で検証 | ✅ |
 
 ---
 
-### 3.2 Reduced Motion モードの活用 `[a11y]`
+## 検証方法
 
-**背景**: 設定に reduced motion モードが追加。
+1. **構造検証**: `./tests/validate-plugin.sh && ./scripts/ci/check-consistency.sh`
+2. **統合後の動作**: `/memory sync`, `/memory search` で旧機能がルーティングされること
+3. **setup ルーティング**: `/setup codex`, `/setup 2agent` 等で正しい reference にルーティング
+4. **非表示確認**: スキルリストに ci, agent-browser, release-harness が出ないこと
+5. **自動ロード確認**: 「CIが落ちた」→ troubleshoot 経由で ci にルーティングされること
+6. **ミラー一致**: `diff -rq skills/ codex/.codex/skills/`
+
+## Phase C: Codex レビュー修正ループ (R1-R10)
+
+3エキスパート（Security, Quality, Architect）による Codex 並列レビュー → 修正 → 再レビューを10ラウンド実施。
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 3.2.1 | harness-ui でのアクセシビリティ設定ガイド追加 | `cc:DONE` |
-
-**成果物**:
-- アクセシビリティ設定の推奨構成
+| C.1 | Security エキスパート: Score A 達成（R5で達成、R10まで維持） | ✅ |
+| C.2 | Quality エキスパート: consolidation スコープ High ゼロ達成（R10） | ✅ |
+| C.3 | Architect エキスパート: consolidation スコープ High ゼロ達成（R10） | ✅ |
+| C.4 | 累計修正: ~34ファイル、壊れたリンク・旧スキル名参照・コマンド名不一致を修正 | ✅ |
+| C.5 | ミラー同期 + validate-plugin.sh + check-consistency.sh 全パス | ✅ |
 
 ---
 
-## Phase 4: ドキュメント更新
+## Phase 5: DEFER 項目（Codex レビューで検出された pre-existing 問題）
 
-### 4.1 CHANGELOG 更新 `[docs]`
+R1-R10 で検出されたが、consolidation スコープ外の pre-existing 問題。
+
+### 5.1 Security 強化
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 4.1.1 | 2.1.30 対応機能の CHANGELOG 記載 | `cc:DONE` |
-| 4.1.2 | CLAUDE.md への新機能活用ガイド追加 | `cc:DONE` |
+| 5.1.1 | `pretooluse-guard.sh` symlink bypass 対策（realpath 検証追加） | ✅ |
+| 5.1.2 | `permission-request.sh:58` npm/pnpm/yarn 自動承認をリポジトリ別 allowlist 方式に変更 | ✅ |
+| 5.1.3 | `userprompt-track-command.sh:77` prompt_preview のパーミッション hardening (umask 077) | ✅ |
+| 5.1.4 | `session-monitor.sh:275` resume_token の chmod 600 + umask 077 | ✅ |
+| 5.1.5 | `pretooluse-guard.sh:354` eval を直接パース（jq/python）に置換 | ✅ |
 
----
-
-## 完了基準
-
-- [x] Phase 1: 高優先度改善（Task tool メトリクス、/debug 連携、PDF）
-- [x] Phase 2: 中優先度改善（Git log、MCP アクセス、メモリ最適化）
-- [x] Phase 3: 低優先度改善（OAuth、Reduced Motion）
-- [x] Phase 4: ドキュメント更新
-- [ ] テスト検証
-- [ ] リリース
-
----
-
-## 技術決定事項
-
-| 項目 | 決定 | 根拠 |
-|------|------|------|
-| Task tool メトリクス | AgentTrace v0.3.0 で対応 | 既存スキーマを拡張 |
-| `/debug` 連携 | troubleshoot スキルから誘導 | 既存フローへの統合 |
-| PDF ページ範囲 | notebookLM/harness-review で活用 | 大型ドキュメント対応 |
-| サブエージェント MCP | Codex 統合で活用 | 並列レビューでの MCP 共有 |
-
----
-
-## 優先度マトリクス
-
-| Priority | Feature | Impact | Effort |
-|----------|---------|--------|--------|
-| 🔴 Required | Task tool メトリクス | High | Medium |
-| 🔴 Required | `/debug` 連携 | High | Low |
-| 🟡 Recommended | PDF ページ範囲 | Medium | Low |
-| 🟡 Recommended | Git log フラグ | Medium | Low |
-| 🟢 Optional | OAuth 認証 | Low | Medium |
-| 🟢 Optional | Reduced Motion | Low | Low |
-
----
-
-## Codex レビュー検証結果
-
-### ✅ 採用した指摘
-
-| 指摘 | 対応 | 検証結果 |
-|------|------|---------|
-| OAuth 手順が弱い | 3.1 で対応 | codex-mcp-setup.md に具体的手順がない → 追記必要 |
-| メモリ最適化の具体化 | 2.3 で対応 | session-control で `--resume` 多用 → 恩恵説明追加 |
-
-### ❌ 不採用とした指摘（Harness で該当なし）
-
-| 指摘 | 検証結果 |
-|------|---------|
-| 大型 PDF `@` 参照対応 | Harness で PDF `@` 参照を使用していない |
-| TaskStop 結果表示対応 | "Task stopped" をパースするコードなし |
-| `/model` 即時実行対応 | 依存するワークフローなし |
-| Slack MCP 統合 | 範囲外、別企画として分離 |
-
----
-
-# Harness 紹介資料・動画アップデートプラン
-
-## 概要
-
-Harness v2.17.x の価値を「成果ベース」で伝える紹介資料と動画を作成する。
-
-### 核心メッセージ（一文）
-
-> **「AIコーディングの手戻りを80%削減し、品質を担保する自律型ワークフロー」**
-
-### 成果物
-
-1. **NotebookLM用スライドYAML** - 2案（ミニマル案 + エディトリアル案）
-2. **紹介動画**（音声付き） - 90秒ティザー
-
----
-
-## 訴求設計（Codexレビュー反映）
-
-### ストーリー構造: 成果 → 仕組み → 証拠 → CTA
-
-| 現行（NG） | 改善後（OK） |
-|-----------|-------------|
-| 問題→機能→機能→機能 | 成果→仕組み→証拠→CTA |
-| 機能の羅列 | 成果ベースの一文 |
-| 証拠なし | Before/After + 数字 |
-
-### ターゲット別訴求
-
-| ターゲット | 刺さる軸 | 訴求ポイント |
-|-----------|---------|-------------|
-| **開発者** | すぐ使える・手戻り削減 | 3コマンドで即導入、レビュー自動化 |
-| **チームリード** | 標準化・品質一貫性 | チーム全員が同じワークフロー |
-| **経営層** | リスク低減・ROI | 手戻り80%削減、予測可能な開発速度 |
-
----
-
-## Phase A: スライド資料（10枚・成果ベース構成）
+### 5.2 ドキュメント・リンク修正
 
 | Task | 内容 | Status |
 |------|------|--------|
-| A.1 | `/notebookLM slides` でヒアリング＆YAML生成 | `cc:DONE` |
+| 5.2.1 | `docs/QUALITY_GUARD_DESIGN.md` broken SSOT link 修正 | ✅ |
+| 5.2.2 | `docs/PLAN_RULES_IMPROVEMENT.md` stale command refs 修正 | ✅ |
+| 5.2.3 | `docs/plans/claude-mem-integration.md` stale paths 修正 | ✅ |
+| 5.2.4 | `skills/workflow-guide/references/commands.md` path mismatch 修正 | ✅ |
+| 5.2.5 | templates 内の `/skills-update` 参照を削除または更新 | ✅ |
 
-**スライド構成（改善版）**:
-
-| No. | スライド | 内容 |
-|-----|---------|------|
-| 1 | 表紙 | 一文の成果メッセージ |
-| 2 | 痛み | AI暴走で発生する具体損失（手戻り、品質低下） |
-| 3 | 約束 | 「手戻り80%削減、品質担保」の一文 |
-| 4 | 仕組み | Plan → Work → Review |
-| 5 | 証拠 | Before/After の具体結果 |
-| 6 | 差別化 | 他のAI支援との違い（自律型ワークフロー） |
-| 7 | 代表機能1 | /ultrawork（成果と直結） |
-| 8 | 代表機能2 | 4視点レビュー（成果と直結） |
-| 9 | 導入方法 | 3ステップで即導入 |
-| 10 | CTA | 具体的な次の一手 |
-
----
-
-## Phase B: 紹介動画（10-12分フル紹介）
+### 5.3 generate-video メンテナンス
 
 | Task | 内容 | Status |
 |------|------|--------|
-| B.1 | `/generate-video` でシナリオ確認＆生成 | `cc:DONE` |
+| 5.3.1 | `agents/video-scene-generator.md` Remotion paths 更新 | ✅ |
+| 5.3.2 | `skills/generate-video/` references 内の Remotion paths 更新 | ✅ |
+| 5.3.3 | `generate-video/src/schemas/*.ts` z.any() → z.unknown() / proper unions に修正 | ✅ |
 
-### カラーパレット（ハイブリッド）
-
-**Cyberpunk + Corporate可読性**:
-- 背景: `#0A0A0F`（ダークベース）
-- 本文: 白（可読性）
-- 強調: `#00F5FF`（シアン）+ `#FF6B35`（オレンジ）
-- マゼンタ: **使わない**（安っぽく見える）
-
-### シーン構成（10-12分フル紹介）
-
-| 時間 | セグメント | 視覚効果 | 内容 |
-|------|-----------|----------|------|
-| 0:00-0:20 | 結果提示 | `Split-screen` | **Before/Afterを先に見せる** |
-| 0:20-1:30 | コアループ | `3D Parallax` | Plan → Work → Review |
-| 1:30-2:30 | /ultrawork | `ProgressBar` + 実演 | 自動反復デモ |
-| 2:30-3:30 | 45スキル | `Particles` | 自動ロードの仕組み |
-| 3:30-4:30 | Codex並列 | `ProgressBar` ×5 | 最大5並列実行 |
-| 4:30-5:30 | 4視点レビュー | `3D Parallax` | セキュリティ/パフォーマンス/品質/保守性 |
-| 5:30-6:30 | 2-Agent連携 | `Split-screen` | PM↔実装役の連携 |
-| 6:30-7:30 | セッション管理 | 最小限演出 | メモリ永続化 |
-| 7:30-8:30 | Worktree最適化 | 最小限演出 | 自動スキップ |
-| 8:30-10:30 | **1ユースケース完走** | 実演中心 | 時間短縮の証明 |
-| 10:30-12:00 | 導入判断+CTA | `Particles(収束)` | 次のアクション |
-
-### 視覚設計の原則
-
-| 原則 | 理由 |
-|------|------|
-| **最初の20秒で結末を見せる** | 先に結果を見せて興味を引く |
-| **各セグメント60-90秒** | 長すぎると離脱 |
-| **進捗バー常時表示** | 今どこかを明示 |
-| **数字は必ずアニメ** | 静的数値は読まれない |
-| **意味のある演出のみ** | 開発者は無意味な派手さを嫌う |
-
----
-
-## 完了基準
-
-- [x] Phase A: スライドYAML 2案完成
-  - 成果物: `remotion/src/deep-dive/` (Remotion コンポーネント)
-  - 検証: 10セクション構成、必須項目（タイトル、痛み、仕組み、CTA）を含む
-
-- [x] Phase B: 紹介動画（10-12分フル紹介動画）完成
-  - 成果物: `docs/video/harness-intro-narration.md` (ナレーション原稿)
-  - 検証: 10-12分相当、セクション構成完備
-  - **スコープ変更**: 2026-02-04 90秒ティザー → 10-12分フル紹介に拡張（理由: 全機能紹介のため）
-
----
-
-## 参考資料
-
-- 既存スライド: `docs/images/slides/2.6.0/`
-- NotebookLMスキル: `skills/notebookLM/`
-- generate-videoスキル: `skills/generate-video/`
-
----
-
-# プラグイン配布対象外ファイルの整理
-
-## 概要
-
-Claude Code Harness プラグインとして配布すべきでないファイル/フォルダを .gitignore に追加し、ルート直下のフォルダ構成を整理する。
-
-## 現状分析
-
-### ルート直下のフォルダ一覧
-
-| フォルダ | 状態 | 配布対象 | 判定理由 |
-|---------|------|---------|---------|
-| `.claude-plugin/` | Git追跡済 | ✅ 配布 | プラグインマニフェスト |
-| `.claude/` | 部分追跡 | ✅ 部分配布 | rules のみ配布 |
-| `.cursor/` | 未追跡 | ❌ 除外 | ローカル開発用 |
-| `.github/` | Git追跡済 | ✅ 配布 | CI/CD 設定 |
-| `.githooks/` | Git追跡済 | ✅ 配布 | Git フック |
-| `.serena/` | 未追跡 | ❌ 除外済 | MCP ローカル設定 |
-| `.opencode/` | 未追跡 | ❌ 除外済 | OpenCode ローカル |
-| `.cache/` | 未追跡 | ❌ 除外 | キャッシュ |
-| `.playwright-mcp/` | 未追跡 | ❌ 除外済 | テスト用 |
-| `agents/` | Git追跡済 | ✅ 配布 | サブエージェント定義 |
-| `app/` | 未追跡 | ❌ 除外 | 実験的コード（未使用） |
-| `benchmarks/` | 未追跡 | ❌ 除外済 | ベンチマーク |
-| `codex/` | Git追跡済 | ✅ 配布 | Codex CLI 統合 |
-| `commands/` | Git追跡済 | ✅ 配布 | レガシーコマンド |
-| `docs/` | 部分追跡 | ✅ 部分配布 | 公開ドキュメントのみ |
-| `frontend/` | 未追跡 | ❌ 除外 | 実験的コード（未使用） |
-| `harness-ui/` | Git追跡済 | ✅ 配布 | UI コンポーネント |
-| `harness-ui-archive/` | 未追跡 | ❌ 除外済 | 廃止版 |
-| `hooks/` | Git追跡済 | ✅ 配布 | ライフサイクルフック |
-| `image/` | 未追跡 | ❌ 除外 | X投稿用画像（ローカル） |
-| `mcp-server/` | 未追跡 | ❌ 除外済 | MCP サーバー（別配布） |
-| `opencode/` | Git追跡済 | ✅ 配布 | OpenCode 統合 |
-| `profiles/` | Git追跡済 | ✅ 配布 | プロファイル |
-| `remotion/` | 未追跡 | ❌ 除外済 | 動画生成（ローカル） |
-| `scripts/` | Git追跡済 | ✅ 配布 | スクリプト |
-| `skills/` | Git追跡済 | ✅ 配布 | スキル定義 |
-| `src/` | 未追跡 | ❌ 除外 | 実験的コード（未使用） |
-| `templates/` | Git追跡済 | ✅ 配布 | テンプレート |
-| `tests/` | Git追跡済 | ✅ 配布 | テスト |
-| `Users/` | 未追跡 | ❌ 削除 | 誤作成（絶対パス残骸） |
-| `workflows/` | Git追跡済 | ✅ 配布 | ワークフロー |
-
-### ルート直下のファイル一覧
-
-| ファイル | 状態 | 配布対象 | 判定理由 |
-|---------|------|---------|---------|
-| `CC-harness.code-workspace` | 未追跡 | ❌ 除外 | VS Code workspace（ローカル） |
-| `TEST_CURSOR_INTEGRATION.md` | Git追跡済 | ❓ 検討 | テストドキュメント |
-| `DEVELOPMENT_FLOW_GUIDE.md` | Git追跡済 | ✅ 配布 | 開発ガイド |
-| `IMPLEMENTATION_GUIDE.md` | Git追跡済 | ✅ 配布 | 実装ガイド |
-
----
-
-## Phase 1: .gitignore 追加項目
+### 5.4 Architecture: Hook オーケストレーター
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 1.1 | `.cache/` を .gitignore に追加 | `cc:DONE` |
-| 1.2 | `app/` を .gitignore に追加（実験的コード） | `cc:DONE` |
-| 1.3 | `frontend/` を .gitignore に追加（実験的コード） | `cc:DONE` |
-| 1.4 | `src/` を .gitignore に追加（実験的コード） | `cc:DONE` |
-| 1.5 | `image/` を .gitignore に追加（X投稿用画像） | `cc:DONE` |
-| 1.6 | `*.code-workspace` を .gitignore に追加 | `cc:DONE` |
+| 5.4.1 | PostToolUse fan-out (9スクリプト) を単一 Node オーケストレーターに統合 | |
+| 5.4.2 | stdin JSON パース共通化（scripts/lib/hook-input.js） | |
 
----
-
-## Phase 2: 不要フォルダの削除
+### 5.5 Architecture: State 管理
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 2.1 | `Users/` フォルダを削除（誤作成の絶対パス残骸） | `cc:DONE` |
+| 5.5.1 | `.claude/state/*.json` のスキーマ定義 + atomic write helper 導入 | |
+| 5.5.2 | ロック戦略の統一（flock or advisory lock） | |
 
----
-
-## Phase 3: 検証
+### 5.6 ビルド・ツーリング整理
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 3.1 | `git status` で変更確認 | `cc:DONE` |
-| 3.2 | `./tests/validate-plugin.sh` で構造検証 | `cc:DONE` |
+| 5.6.1 | `check-checklist-sync.sh` empty gate logic 修正 | ✅ |
+| 5.6.2 | `workflows/default/init.yaml` project-analyzer 参照修正 | ✅ |
+| 5.6.3 | `build-opencode.js` commands/ 空ディレクトリ対応 | ✅ |
+| 5.6.4 | `harness-ui` command catalog 空対応（統合後） | ✅ |
+| 5.6.5 | `parse-work-flags.md` internal inconsistency 修正 | ✅ |
+
+### 5.7 命名・ルーティング整理
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 5.7.1 | `/planning` → `/plan-with-agent` 完全統一（dual naming 解消） | ✅ |
+| 5.7.2 | `verify` skill の `user-invocable` 整合性確認 | ✅ |
+| 5.7.3 | setup と codex-review の Codex セットアップ重複整理 | ✅ |
+| 5.7.4 | `_archived/` 配下からの dangling references 削除 | ✅ |
 
 ---
 
-## 完了基準
+## Phase 6: リリースクリーンアップ (v2.20.0 再統合)
 
-- [x] Phase 1: .gitignore 追加完了
-- [x] Phase 2: 不要フォルダ削除完了
-- [x] Phase 3: 検証完了
+v2.20.1 の内容を v2.20.0 に統合し、リポジトリ品質を向上。
+
+### 6.1 Breezing Teammate 権限修正
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 6.1.1 | Teammate の "prompts unavailable" 根本原因調査（公式仕様検証） | ✅ |
+| 6.1.2 | `mode: "bypassPermissions"` + PreToolUse hooks 多層防御の採用決定 | ✅ |
+| 6.1.3 | execution-flow.md, team-composition.md, codex-engine.md, guardrails-inheritance.md に反映 | ✅ |
+| 6.1.4 | session-resilience.md のコンパクション回復処理にも反映 | ✅ |
+
+### 6.2 Breezing Phase A/B/C 分離
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 6.2.1 | Phase A (Pre-delegate): ユーザー権限維持でTeam初期化・spawn | ✅ |
+| 6.2.2 | Phase B (Delegate): Lead は TaskCreate/TaskUpdate/SendMessage のみ | ✅ |
+| 6.2.3 | Phase C (Post-delegate): delegate 解除→統合検証・コミット・クリーンアップ | ✅ |
+
+### 6.3 英語リリース + gitignore クリーンアップ
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 6.3.1 | GitHub リリースノートを英語に統一（ルール・スキル更新） | ✅ |
+| 6.3.2 | 不要ファイルの精査: ビルド成果物, 開発ドキュメント, ロックファイル | ✅ |
+| 6.3.3 | .gitignore 更新 + 33ファイル untrack | ✅ |
+| 6.3.4 | v2.20.1 を v2.20.0 に統合 (amend + force push) | ✅ |
+| 6.3.5 | CHANGELOG.md / CHANGELOG_ja.md を v2.20.0 に統合更新 | ✅ |
 
 ---
 
-## 補足: 配布対象の判定基準
+## 対象外（今回は見送り）
 
-| 基準 | 配布対象 | 配布対象外 |
-|------|---------|-----------|
-| プラグイン機能 | ✅ | - |
-| 開発者向けドキュメント | ✅ | - |
-| ローカル開発用ファイル | - | ❌ |
-| 実験的・未完成コード | - | ❌ |
-| 個人用アセット（画像等） | - | ❌ |
-| IDE 設定 | - | ❌ |
-| 別途配布するコンポーネント | - | ❌ |
+- `/gogcli-ops` — 独立した外部ツール連携。統合先がない。使用頻度に応じて別途判断
+- `/deploy` — 高インパクト操作。明示的なコマンドとして維持（Codex も非表示に反対）

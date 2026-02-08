@@ -1,6 +1,8 @@
 ---
 name: crud
-description: "Auto-generates production-ready CRUD functionality with validation, auth, and tests. Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
+description: "CRUDをサクッと自動生成。ボイラープレートはAIにお任せ。Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
+description-en: "Auto-generate CRUD quickly. Boilerplate left to AI. Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
+description-ja: "CRUDをサクッと自動生成。ボイラープレートはAIにお任せ。Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "<entity-name>"
 user-invocable: false
@@ -43,7 +45,7 @@ Auto-generates CRUD functionality for specified entities (tables) at **productio
 
 ## Execution Flow
 
-See [references/execution-flow.md](references/execution-flow.md) for detailed steps.
+Detailed steps are described in the phases below.
 
 ### Phase 1: Entity Analysis
 

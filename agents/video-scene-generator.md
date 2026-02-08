@@ -22,17 +22,17 @@ Remotion のシーンコンポジションを生成するエージェント。
 
 ```
 1. remotion/.agents/skills/remotion-best-practices/SKILL.md
-2. remotion/.agents/skills/remotion-best-practices/animations.md
-3. remotion/.agents/skills/remotion-best-practices/transitions.md
-4. remotion/.agents/skills/remotion-best-practices/audio.md
-5. remotion/.agents/skills/remotion-best-practices/timing.md
+2. remotion/.agents/skills/remotion-best-practices/rules/animations.md
+3. remotion/.agents/skills/remotion-best-practices/rules/transitions.md
+4. remotion/.agents/skills/remotion-best-practices/rules/audio.md
+5. remotion/.agents/skills/remotion-best-practices/rules/timing.md
 ```
 
 **これらのルールは本ファイルの内容より優先される。矛盾がある場合は Remotion Skills に従うこと。**
 
 > **参考資料**:
-> - [skills/generate-video/references/quality-patterns.md](../.claude/skills/generate-video/references/quality-patterns.md) - V8品質基準
-> - [skills/generate-video/references/best-practices.md](../.claude/skills/generate-video/references/best-practices.md) - SaaS動画ガイドライン
+> - [skills/generate-video/references/best-practices.md](../skills/generate-video/references/best-practices.md) - SaaS動画ガイドライン
+> - [skills/generate-video/references/visual-effects.md](../skills/generate-video/references/visual-effects.md) - ビジュアルエフェクト
 
 ---
 

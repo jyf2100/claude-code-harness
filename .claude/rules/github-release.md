@@ -1,112 +1,113 @@
 # GitHub Release Notes Rules
 
-GitHub Releases のリリースノート作成時に適用されるフォーマットルール。
+Formatting rules applied when creating GitHub Release notes.
 
-## 必須フォーマット
+## Required Format
 
-### 構造
+### Structure
 
 ```markdown
-## 🎯 What's Changed for You
+## What's Changed
 
-**1行で変更の価値を説明**
+**One-line description of the change's value**
 
-### Before → After
+### Before / After
 
 | Before | After |
 |--------|-------|
-| 変更前の状態 | 変更後の状態 |
+| Previous state | New state |
 | ... | ... |
 
 ---
 
 ## Added
 
-- **機能名**: 説明
-  - 詳細項目1
-  - 詳細項目2
+- **Feature name**: Description
+  - Detail 1
+  - Detail 2
 
 ## Changed
 
-- **変更内容**: 説明
+- **Change**: Description
 
 ## Fixed
 
-- **修正内容**: 説明
+- **Fix**: Description
 
-## Requirements（必要な場合のみ）
+## Requirements (if applicable)
 
-- **Claude Code vX.X.X+** (推奨)
-- リンク: [ドキュメント](URL)
+- **Claude Code vX.X.X+** (recommended)
+- Link: [Documentation](URL)
 
 ---
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-### 必須要素
+### Required Elements
 
-| 要素 | 必須 | 説明 |
-|------|------|------|
-| `🎯 What's Changed for You` | ✅ | 見出し（日本語: あなたにとって何が変わるか） |
-| **太字サマリー** | ✅ | 1行で変更の価値を説明 |
-| `Before → After` テーブル | ✅ | ユーザー視点での変化を明示 |
-| `Added/Changed/Fixed` | 該当時 | 詳細な変更内容 |
-| フッター | ✅ | `🤖 Generated with [Claude Code](...)` |
+| Element | Required | Description |
+|---------|----------|-------------|
+| `## What's Changed` | Yes | Section heading |
+| **Bold summary** | Yes | One-line value description |
+| `Before / After` table | Yes | User-facing changes |
+| `Added/Changed/Fixed` | When applicable | Detailed changes |
+| Footer | Yes | `Generated with [Claude Code](...)` |
 
-### 言語
+### Language
 
-- **日本語推奨**（国内ユーザー中心）
-- Before/After は「Before → After」形式（矢印付き）
-- 見出しは `🎯 What's Changed for You` または `🎯 あなたにとって何が変わるか`
+- **English required** for all release notes
+- Use `Before / After` format with table
+- Keep descriptions concise and user-focused
 
-## 禁止事項
+## Prohibited
 
-- ❌ Before/After テーブルの省略
-- ❌ フッターの省略
-- ❌ 技術詳細のみの記載（ユーザー視点必須）
-- ❌ 変更内容の羅列のみ（価値の説明必須）
+- No skipping the Before / After table
+- No skipping the footer
+- No technical-only descriptions (user perspective required)
+- No bare change lists without value explanation
+- No Japanese in release notes
 
-## 良い例
+## Good Example
 
 ```markdown
-## 🎯 What's Changed for You
+## What's Changed
 
-**`/work --full` で「実装→セルフレビュー→改善→コミット」が並列自動化されました**
+**`/work --full` now automates implement -> self-review -> improve -> commit in parallel**
 
-### Before → After
+### Before / After
 
 | Before | After |
 |--------|-------|
-| `/work` はタスクを1つずつ実行 | `/work --full --parallel 3` で並列実行 |
-| レビューは別途手動で実行 | 各 task-worker が自律的にセルフレビュー |
+| `/work` executes tasks one at a time | `/work --full --parallel 3` runs in parallel |
+| Reviews required separate manual step | Each task-worker self-reviews autonomously |
 ```
 
-## 悪い例
+## Bad Example
 
 ```markdown
 ## What's New
 
 ### Added
-- task-worker.md を追加
-- --full オプションを追加
+- Added task-worker.md
+- Added --full option
 ```
 
-→ ユーザーにとっての価値が伝わらない
+-> Doesn't communicate user value
 
-## リリース作成コマンド
+## Release Creation Command
 
 ```bash
 gh release create vX.X.X \
-  --title "vX.X.X - タイトル" \
+  --title "vX.X.X - Title" \
   --notes "$(cat <<'EOF'
-## 🎯 What's Changed for You
+## What's Changed
 ...
 EOF
 )"
 ```
 
-## 過去リリースの編集
+## Editing Past Releases
 
 ```bash
 gh release edit vX.X.X --notes "$(cat <<'EOF'
@@ -115,7 +116,7 @@ EOF
 )"
 ```
 
-## 参照
+## Reference
 
-- 良い例: v2.8.0, v2.8.2, v2.9.1
-- CHANGELOG と整合性を保つこと
+- Good examples: v2.8.0, v2.8.2, v2.9.1
+- Keep consistent with CHANGELOG

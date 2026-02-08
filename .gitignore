@@ -15,6 +15,11 @@ Thumbs.db
 *~
 *.code-workspace
 docs/design/
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Local development
 .claude/*
 !.claude/rules/
@@ -93,6 +98,9 @@ docs/claude-mem-japanese-setup.md
 # LSP (Language Server Protocol) configuration
 .lsp.json
 *lsp*config*.json
+
+# アーカイブ済みスキル（統合・非推奨）
+**/skills/_archived/
 
 # 開発用テストスキル
 skills/test-*/
@@ -173,8 +181,20 @@ out/
 # OpenCode (local-only)
 .opencode/
 
-# Benchmarks - entire directory (local development only)
-/benchmarks/
+# Benchmarks - local development data only
+/benchmarks/evals-*/
+/benchmarks/results/
+/benchmarks/test-project/
+/benchmarks/versions/
+/benchmarks/scripts/
+/benchmarks/tasks/
+/benchmarks/breezing-bench/results/
+/benchmarks/breezing-bench/agent-eval/results/
+/benchmarks/breezing-bench/agent-eval/node_modules/
+/benchmarks/breezing-bench/agent-eval/.env
+/benchmarks/breezing-codex-test/dist/
+/benchmarks/breezing-codex-test/node_modules/
+/benchmarks/breezing-codex-test/.claude/
 
 # MCP Server (local development only)
 /mcp-server/
@@ -192,6 +212,14 @@ out/
 
 # VS Code workspace files
 *.code-workspace
+
+# Dev-only documentation (not for distribution)
+/DEVELOPMENT_FLOW_GUIDE.md
+/IMPLEMENTATION_GUIDE.md
+/TEST_CURSOR_INTEGRATION.md
+
+# Lock files in subdirectories (not for distribution)
+**/package-lock.json
 
 # Absolute path remnants (accidentally created)
 /Users/

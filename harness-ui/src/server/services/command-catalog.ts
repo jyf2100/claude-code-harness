@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'fs/promises';
+import { readdir, readFile, access } from 'fs/promises';
 import { join, basename } from 'path';
 import type { CoreCommand } from '@shared/types';
 
@@ -25,8 +25,25 @@ export class CommandCatalog {
 
   async reload(): Promise<CoreCommand[]> {
     try {
+      // Check if directory exists before attempting to read
+      try {
+        await access(this.config.commandsCorePath);
+      } catch {
+        // Directory does not exist — commands migrated to skills in v2.17.0+
+        this.commands = [];
+        this.lastLoaded = Date.now();
+        return this.commands;
+      }
+
       const files = await readdir(this.config.commandsCorePath);
       const mdFiles = files.filter(f => f.endsWith('.md') && f !== 'CLAUDE.md');
+
+      if (mdFiles.length === 0) {
+        // No command files found (commands migrated to skills in v2.17.0+)
+        this.commands = [];
+        this.lastLoaded = Date.now();
+        return this.commands;
+      }
 
       const commands: CoreCommand[] = [];
 

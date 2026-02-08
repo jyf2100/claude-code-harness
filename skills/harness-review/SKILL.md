@@ -1,6 +1,8 @@
 ---
 name: harness-review
 description: "コード・プラン・スコープを多角的にレビュー。品質の番人、参上。Use when user mentions reviews, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, or change review. Do NOT load for: implementation work, new feature development, bug fixes, or setup."
+description-en: "Multi-angle review of code, plans, and scope. Quality guardian at your service. Use when user mentions reviews, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, or change review. Do NOT load for: implementation work, new feature development, bug fixes, or setup."
+description-ja: "コード・プラン・スコープを多角的にレビュー。品質の番人、参上。Use when user mentions reviews, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, or change review. Do NOT load for: implementation work, new feature development, bug fixes, or setup."
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 context: fork
 argument-hint: "[code|plan|scope]"
@@ -321,7 +323,7 @@ Codex MCP 経由で**レビュータイプに応じた4つのエキスパート*
    - CLI/バックエンド → Accessibility, SEO 除外
    - ドキュメントのみ変更 → Quality, Architect, Plan Reviewer, Scope Analyst を優先（Security, Performance は除外可）
 2. 有効なエキスパートの `experts/*.md` からプロンプトを **個別に読み込む**
-3. 有効なエキスパートのみ `mcp__codex__codex` を **1つのレスポンス内で並列実行**
+3. 有効なエキスパートのみ `codex exec` を **Bash バックグラウンドプロセスで並列実行**
 4. 各結果を統合して判定
 
 **詳細**: [codex-review/references/codex-parallel-review.md](../codex-review/references/codex-parallel-review.md)
