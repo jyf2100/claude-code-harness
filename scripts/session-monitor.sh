@@ -119,6 +119,11 @@ fi
 # ================================
 # 状態ファイル生成
 # ================================
+# Security: refuse if STATE_DIR or its parent is a symlink (prevents symlink-based overwrites)
+if [ -L "$STATE_DIR" ] || [ -L "$(dirname "$STATE_DIR")" ]; then
+  echo "[session-monitor] Warning: symlink detected in state directory path, aborting" >&2
+  exit 0
+fi
 mkdir -p "$STATE_DIR"
 
 # 既存セッションが未終了なら resume を試みる
@@ -136,18 +141,26 @@ if [ -f "$STATE_FILE" ]; then
     EXISTING_RESUME_TOKEN=$(jq -r '.resume_token // empty' "$STATE_FILE" 2>/dev/null)
     EXISTING_EVENT_SEQ=$(jq -r '.event_seq // 0' "$STATE_FILE" 2>/dev/null)
   elif command -v python3 >/dev/null 2>&1; then
-    eval "$(python3 - <<'PY' 2>/dev/null
-import json, shlex
+    # Security: avoid eval — extract all fields in one python3 call with tab separation
+    _py_session="$(python3 -c '
+import json, sys
 try:
-    data = json.load(open(".claude/state/session.json"))
+    with open(sys.argv[1]) as f:
+        data = json.load(f)
 except Exception:
     data = {}
-print(f"EXISTING_SESSION_ID={shlex.quote(data.get('session_id',''))}")
-print(f"EXISTING_ENDED_AT={shlex.quote(data.get('ended_at','') or '')}")
-print(f"EXISTING_RESUME_TOKEN={shlex.quote(data.get('resume_token','') or '')}")
-print(f"EXISTING_EVENT_SEQ={shlex.quote(str(data.get('event_seq',0)))}")
-PY
-)"
+fields = [
+    str(data.get("session_id", "")),
+    str(data.get("ended_at", "") or ""),
+    str(data.get("resume_token", "") or ""),
+    str(data.get("event_seq", 0))
+]
+print("\t".join(fields))
+' "$STATE_FILE" 2>/dev/null)"
+    if [ -n "$_py_session" ]; then
+      IFS=$'\t' read -r EXISTING_SESSION_ID EXISTING_ENDED_AT EXISTING_RESUME_TOKEN EXISTING_EVENT_SEQ <<< "$_py_session"
+    fi
+    unset _py_session
   fi
 fi
 

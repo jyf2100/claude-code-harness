@@ -33,6 +33,13 @@ Change history for claude-code-harness.
 - `skills/memory/references/cursor-mem-search.md` - Cursor連携メモリ検索リファレンス
 - `skills/setup/references/harness-mem.md` - Harness-Mem セットアップリファレンス
 - `skills/setup/references/localize-rules.md` - ルールローカライズリファレンス
+- **Codex 初回チェックフック**: `/codex-review` 初回使用時に `check-codex.sh` を自動実行（`once: true`）
+- **timeout/gtimeout 検出**: macOS ユーザー向けに `brew install coreutils` を案内
+
+### Fixed
+
+- **Codex レビュー指摘 22 件修正**: pretooluse-guard の JSON パース統合（5→1 jq call）、symlink セキュリティガード追加、session-monitor の `eval` 除去
+- **macOS 互換性**: 全ドキュメントの `timeout N codex exec` → `$TIMEOUT N codex exec` に置換（GNU coreutils 非依存化）
 
 ### Removed (archived)
 

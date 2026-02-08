@@ -144,14 +144,38 @@ check_work_mode() {
   fi
 
   WORK_MODE="true"
-  WORK_BYPASS_RM_RF=$(jq -r '.bypass_guards | contains(["rm_rf"])' "$active_file" 2>/dev/null || echo "false")
-  WORK_BYPASS_GIT_PUSH=$(jq -r '.bypass_guards | contains(["git_push"])' "$active_file" 2>/dev/null || echo "false")
+  # Performance: extract bypass_guards and codex_mode in one jq call to avoid re-reading
+  local _work_extras
+  _work_extras=$(jq -r '[
+    (if .bypass_guards | type == "array" then (.bypass_guards | contains(["rm_rf"])) else false end),
+    (if .bypass_guards | type == "array" then (.bypass_guards | contains(["git_push"])) else false end),
+    (.codex_mode // false)
+  ] | @tsv' "$active_file" 2>/dev/null)
+  if [ -n "$_work_extras" ]; then
+    IFS=$'\t' read -r WORK_BYPASS_RM_RF WORK_BYPASS_GIT_PUSH _work_codex_mode <<< "$_work_extras"
+    # Cache codex_mode for check_codex_mode to avoid re-parsing
+    WORK_CACHED_CODEX_MODE="${_work_codex_mode}"
+  else
+    WORK_BYPASS_RM_RF="false"
+    WORK_BYPASS_GIT_PUSH="false"
+  fi
 }
 
 # Codex モード検出関数（CWD 取得後に呼び出す）
 # work-active.json に codex_mode: true がある場合、Claude の Edit/Write をブロック
 # 前提: WORK_MODE が true かつ TTL が有効な場合のみ CODEX_MODE を設定
+# Performance: check_work_mode でキャッシュ済みの値を優先使用
 check_codex_mode() {
+  # Work モードが有効でない場合はスキップ（TTL 切れ等を考慮）
+  [ "$WORK_MODE" != "true" ] && return
+
+  # Use cached value from check_work_mode if available (avoids re-reading file)
+  if [ -n "${WORK_CACHED_CODEX_MODE:-}" ]; then
+    [ "$WORK_CACHED_CODEX_MODE" = "true" ] && CODEX_MODE="true"
+    return
+  fi
+
+  # Fallback: read file directly (for python3-only environments where jq cache wasn't set)
   local cwd_path="$1"
   local active_file="${cwd_path}/.claude/state/work-active.json"
 
@@ -162,16 +186,9 @@ check_codex_mode() {
 
   [ ! -f "$active_file" ] && return
 
-  # Work モードが有効でない場合はスキップ（TTL 切れ等を考慮）
-  [ "$WORK_MODE" != "true" ] && return
-
   local is_codex="false"
 
-  if command -v jq >/dev/null 2>&1; then
-    is_codex=$(jq -r '.codex_mode // false' "$active_file" 2>/dev/null || echo "false")
-  elif command -v python3 >/dev/null 2>&1; then
-    # jq がない場合は python3 でパース
-    # セキュリティ: ファイルパスは引数で渡す（RCE 防止）
+  if command -v python3 >/dev/null 2>&1; then
     is_codex=$(python3 -c '
 import json, sys
 try:
@@ -182,9 +199,6 @@ try:
 except:
     print("false")
 ' "$active_file" 2>/dev/null || echo "false")
-  else
-    echo "[Codex Mode] Warning: jq/python3 not found, codex_mode detection disabled" >&2
-    return
   fi
 
   [ "$is_codex" = "true" ] && CODEX_MODE="true"
@@ -345,37 +359,40 @@ COMMAND=""
 CWD=""
 
 if command -v jq >/dev/null 2>&1; then
-  TOOL_NAME="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
-  FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
-  COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
-  CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
-  SESSION_ID="$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
+  # Performance: extract all fields in one jq call instead of 5 separate invocations
+  _jq_parsed="$(echo "$INPUT" | jq -r '[
+    (.tool_name // ""),
+    (.tool_input.file_path // ""),
+    (.tool_input.command // ""),
+    (.cwd // ""),
+    (.session_id // "")
+  ] | @tsv' 2>/dev/null)"
+  if [ -n "$_jq_parsed" ]; then
+    IFS=$'\t' read -r TOOL_NAME FILE_PATH COMMAND CWD SESSION_ID <<< "$_jq_parsed"
+  fi
+  unset _jq_parsed
 elif command -v python3 >/dev/null 2>&1; then
-  # Security: avoid eval — extract each field individually via python3
-  _py_extract() {
-    echo "$INPUT" | python3 -c "
+  # Performance+Security: extract all fields in one python3 call (no eval)
+  _py_parsed="$(echo "$INPUT" | python3 -c "
 import json, sys
 try:
     data = json.load(sys.stdin)
 except Exception:
     data = {}
-key_path = sys.argv[1]
-obj = data
-for k in key_path.split('.'):
-    if isinstance(obj, dict):
-        obj = obj.get(k) or ''
-    else:
-        obj = ''
-        break
-print(obj if isinstance(obj, str) else '')
-" "$1" 2>/dev/null
-  }
-  TOOL_NAME="$(_py_extract 'tool_name')"
-  FILE_PATH="$(_py_extract 'tool_input.file_path')"
-  COMMAND="$(_py_extract 'tool_input.command')"
-  CWD="$(_py_extract 'cwd')"
-  SESSION_ID="$(_py_extract 'session_id')"
-  unset -f _py_extract
+def get_nested(d, path):
+    for k in path.split('.'):
+        if isinstance(d, dict):
+            d = d.get(k) or ''
+        else:
+            return ''
+    return d if isinstance(d, str) else ''
+fields = ['tool_name', 'tool_input.file_path', 'tool_input.command', 'cwd', 'session_id']
+print('\t'.join(get_nested(data, f) for f in fields))
+" 2>/dev/null)"
+  if [ -n "$_py_parsed" ]; then
+    IFS=$'\t' read -r TOOL_NAME FILE_PATH COMMAND CWD SESSION_ID <<< "$_py_parsed"
+  fi
+  unset _py_parsed
 fi
 
 [ -z "$TOOL_NAME" ] && exit 0
@@ -408,6 +425,10 @@ check_cost_control() {
   fi
 
   # cost-state.json がなければ初期化
+  # Security: refuse if state dir or file is a symlink (prevents symlink-based overwrites)
+  if [ -L "$STATE_DIR" ] || [ -L "$COST_STATE_FILE" ]; then
+    return 0
+  fi
   if [ ! -f "$COST_STATE_FILE" ]; then
     mkdir -p "$STATE_DIR" 2>/dev/null || true
     echo '{"total_tool_calls":0,"edit_calls":0,"bash_calls":0}' > "$COST_STATE_FILE"
