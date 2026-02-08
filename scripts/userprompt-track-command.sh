@@ -69,6 +69,11 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
 
   # Skill必須コマンドかチェック
   if echo "$COMMAND_NAME" | grep -qiE "^($SKILL_REQUIRED_COMMANDS)$"; then
+    # Permission hardening: prompt_preview contains user input,
+    # restrict file permissions to owner-only (rwx------/rw-------)
+    OLD_UMASK=$(umask)
+    umask 077
+
     # pending ディレクトリ作成
     mkdir -p "$PENDING_DIR"
 
@@ -81,6 +86,9 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
   "prompt_preview": "$(echo "$PROMPT" | head -c 200 | tr '\n' ' ' | sed 's/"/\\"/g')"
 }
 EOF
+
+    # Restore original umask
+    umask "$OLD_UMASK"
   fi
 fi
 

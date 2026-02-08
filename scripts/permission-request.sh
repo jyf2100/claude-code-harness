@@ -39,6 +39,38 @@ fi
 [ "$TOOL_NAME" != "Bash" ] && exit 0
 [ -z "$COMMAND" ] && exit 0
 
+# Retrieve CWD from hook input for allowlist lookups
+CWD=""
+if command -v jq >/dev/null 2>&1; then
+  CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
+elif command -v python3 >/dev/null 2>&1; then
+  CWD="$(echo "$INPUT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd",""))' 2>/dev/null)"
+fi
+
+# Check if package manager auto-approval is allowed for the current project.
+# Looks for .claude/config/allowed-pkg-managers.json in the project root.
+# Format: { "allowed": true }
+# If the file doesn't exist or allowed != true, npm/pnpm/yarn auto-approval is skipped.
+is_pkg_manager_allowed() {
+  local allowlist_file="${CWD:-.}/.claude/config/allowed-pkg-managers.json"
+  [ ! -f "$allowlist_file" ] && return 1
+
+  local allowed="false"
+  if command -v jq >/dev/null 2>&1; then
+    allowed=$(jq -r '.allowed // false' "$allowlist_file" 2>/dev/null || echo "false")
+  elif command -v python3 >/dev/null 2>&1; then
+    allowed=$(python3 -c '
+import json,sys
+try:
+    with open(sys.argv[1]) as f: data=json.load(f)
+    print("true" if data.get("allowed") is True else "false")
+except: print("false")
+' "$allowlist_file" 2>/dev/null || echo "false")
+  fi
+
+  [ "$allowed" = "true" ]
+}
+
 is_safe() {
   local cmd="$1"
 
@@ -51,16 +83,21 @@ is_safe() {
   fi
   echo "$cmd" | grep -Eq '[;&|<>`$]' && return 1
 
-  # Read-only git commands
+  # Read-only git commands (always safe, no allowlist needed)
   echo "$cmd" | grep -Eiq '^git[[:space:]]+(status|diff|log|branch|rev-parse|show|ls-files)([[:space:]]|$)' && return 0
 
-  # JS/TS test & verification commands
-  echo "$cmd" | grep -Eiq '^(npm|pnpm|yarn)[[:space:]]+(test|run[[:space:]]+(test|lint|typecheck|build)|lint|typecheck|build)([[:space:]]|$)' && return 0
+  # JS/TS test & verification commands — only auto-approve if allowlisted
+  # Rationale: package.json scripts can run arbitrary commands, so we require
+  # explicit opt-in via .claude/config/allowed-pkg-managers.json
+  if echo "$cmd" | grep -Eiq '^(npm|pnpm|yarn)[[:space:]]+(test|run[[:space:]]+(test|lint|typecheck|build|validate)|lint|typecheck|build)([[:space:]]|$)'; then
+    is_pkg_manager_allowed && return 0
+    return 1
+  fi
 
-  # Python tests
+  # Python tests (no package.json risk)
   echo "$cmd" | grep -Eiq '^(pytest|python[[:space:]]+-m[[:space:]]+pytest)([[:space:]]|$)' && return 0
 
-  # Go / Rust tests
+  # Go / Rust tests (no package.json risk)
   echo "$cmd" | grep -Eiq '^(go[[:space:]]+test|cargo[[:space:]]+test)([[:space:]]|$)' && return 0
 
   return 1

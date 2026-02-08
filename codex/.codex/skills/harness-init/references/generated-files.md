@@ -57,7 +57,7 @@
 
 ### 🚀 Next Steps
 
-- `/planning I want to create XXX` → Create plan
+- `/plan-with-agent I want to create XXX` → Create plan
 - `/work` → Execute tasks in Plans.md
 - `npm run dev` → Start dev server
 ```

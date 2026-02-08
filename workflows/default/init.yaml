@@ -1,13 +1,15 @@
 # /harness-init ワークフロー定義（旧名: init）
 # 新規プロジェクトまたは既存プロジェクトへのワークフロー追加
+# 実際の初期化ロジックは skills/harness-init/ が担当
 
 phase: init
 description: "プロジェクトを初期化し、開発ワークフローをセットアップする"
 
 steps:
   # Step 1: プロジェクト分析（3値判定）
+  # harness-init スキルの execution-flow.md 内でプロジェクト分析を実施
   - id: analyze-project
-    skill: project-analyzer
+    skill: harness-init
     input:
       files:
         - README.md
@@ -27,8 +29,9 @@ steps:
     mode: required
 
   # Step 1.5: 曖昧ケースの確認（ambiguous の場合のみ）
+  # harness-init スキルの対話フロー内で処理
   - id: clarify-project-type
-    skill: ask-project-type
+    skill: harness-init
     condition: "project_type == 'ambiguous'"
     input:
       context_from:
@@ -41,8 +44,9 @@ steps:
     mode: required
 
   # Step 2: 要件のヒアリング（新規プロジェクトの場合）
+  # harness-init スキルの対話フロー内で処理
   - id: init-requirements
-    skill: init-requirements
+    skill: harness-init
     condition: "project_type == 'new'"
     input:
       context_from:
@@ -56,8 +60,9 @@ steps:
     mode: required
 
   # Step 3: プロジェクトの生成（新規の場合）
+  # harness-init スキルのスキャフォールド機能で処理
   - id: scaffold-project
-    skill: project-scaffolder
+    skill: harness-init
     condition: "project_type == 'new'"
     input:
       variables:
@@ -72,8 +77,9 @@ steps:
     mode: required
 
   # Step 4: ワークフローファイルの生成
+  # harness-init スキルの generated-files.md で定義
   - id: generate-workflow-files
-    skill: generate-workflow-files
+    skill: harness-init
     input:
       templates:
         - templates/AGENTS.md.template
@@ -89,8 +95,9 @@ steps:
     mode: required
 
   # Step 4.5: メモリ（SSOT）の初期化
+  # memory スキルが担当
   - id: init-memory-ssot
-    skill: init-memory-ssot
+    skill: memory
     input:
       templates:
         - templates/memory/decisions.md.template
@@ -104,8 +111,9 @@ steps:
     mode: optional
 
   # Step 5: 計画のレビュー（オプション）
+  # planning スキルが担当
   - id: review-plan
-    skill: plan-review
+    skill: planning
     input:
       files:
         - Plans.md

@@ -223,6 +223,11 @@ PY
   fi
 }
 
+# Permission hardening: session.json contains resume_token,
+# restrict file permissions to owner-only (rw-------)
+OLD_UMASK=$(umask)
+umask 077
+
 if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
   # 既存セッションを更新（resume）
   if command -v jq >/dev/null 2>&1; then
@@ -260,6 +265,9 @@ if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
         .orchestration.retry_backoff_seconds = $orchestration_backoff' \
        "$STATE_FILE" > "$tmp_file" && mv "$tmp_file" "$STATE_FILE"
   fi
+
+  # Ensure resume_token file is owner-readable only (re-apply after update)
+  chmod 600 "$STATE_FILE" 2>/dev/null || true
 
   append_event "session.resume" "initialized" "$CURRENT_TIME" ""
 else
@@ -308,12 +316,18 @@ else
 }
 EOF
 
+  # Ensure resume_token file is owner-readable only
+  chmod 600 "$STATE_FILE" 2>/dev/null || true
+
   if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
     append_event "session.fork" "initialized" "$CURRENT_TIME" "{\"parent_session_id\":\"$EXISTING_SESSION_ID\"}"
   else
     append_event "session.start" "initialized" "$CURRENT_TIME" ""
   fi
 fi
+
+# Restore original umask
+umask "$OLD_UMASK"
 
 # Resume / Fork 情報（表示用）
 RESUME_INFO=""

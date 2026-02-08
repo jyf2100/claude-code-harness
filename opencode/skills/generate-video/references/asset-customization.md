@@ -576,7 +576,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 - **Asset Loader**: `scripts/load-assets.js`
 - **Default Backgrounds**: `assets/backgrounds/backgrounds.json`
 - **Default Sounds**: `assets/sounds/sounds.json`
-- **BackgroundLayer Component**: `remotion/components/BackgroundLayer.tsx`
+- **BackgroundLayer Component**: `remotion/src/components/BackgroundLayer.tsx`
 - **Plans.md**: Phase 7 - Asset Foundation
 
 ---

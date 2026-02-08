@@ -351,25 +351,31 @@ if command -v jq >/dev/null 2>&1; then
   CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
   SESSION_ID="$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
 elif command -v python3 >/dev/null 2>&1; then
-  eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null
-import json, shlex, sys
+  # Security: avoid eval — extract each field individually via python3
+  _py_extract() {
+    echo "$INPUT" | python3 -c "
+import json, sys
 try:
     data = json.load(sys.stdin)
 except Exception:
     data = {}
-tool_name = data.get("tool_name") or ""
-cwd = data.get("cwd") or ""
-session_id = data.get("session_id") or ""
-tool_input = data.get("tool_input") or {}
-file_path = tool_input.get("file_path") or ""
-command = tool_input.get("command") or ""
-print(f"TOOL_NAME={shlex.quote(tool_name)}")
-print(f"CWD={shlex.quote(cwd)}")
-print(f"SESSION_ID={shlex.quote(session_id)}")
-print(f"FILE_PATH={shlex.quote(file_path)}")
-print(f"COMMAND={shlex.quote(command)}")
-PY
-)"
+key_path = sys.argv[1]
+obj = data
+for k in key_path.split('.'):
+    if isinstance(obj, dict):
+        obj = obj.get(k) or ''
+    else:
+        obj = ''
+        break
+print(obj if isinstance(obj, str) else '')
+" "$1" 2>/dev/null
+  }
+  TOOL_NAME="$(_py_extract 'tool_name')"
+  FILE_PATH="$(_py_extract 'tool_input.file_path')"
+  COMMAND="$(_py_extract 'tool_input.command')"
+  CWD="$(_py_extract 'cwd')"
+  SESSION_ID="$(_py_extract 'session_id')"
+  unset -f _py_extract
 fi
 
 [ -z "$TOOL_NAME" ] && exit 0
@@ -604,6 +610,32 @@ is_path_traversal() {
   return 1
 }
 
+# Resolve symlinks and return the canonical (real) path.
+# Falls back to the input path if realpath is unavailable or the path doesn't exist yet.
+resolve_real_path() {
+  local p="$1"
+  local base_dir="${2:-}"
+
+  # If relative path and base_dir given, prepend it
+  if [ -n "$base_dir" ] && ! is_absolute_path "$p"; then
+    p="${base_dir}/${p}"
+  fi
+
+  # Try realpath (GNU/macOS) first, then readlink -f (Linux), then Python fallback
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$p" 2>/dev/null && return 0
+  fi
+  if command -v readlink >/dev/null 2>&1; then
+    readlink -f "$p" 2>/dev/null && return 0
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "$p" 2>/dev/null && return 0
+  fi
+
+  # Fallback: return normalized input
+  echo "$p"
+}
+
 is_protected_path() {
   local p="$1"
   case "$p" in
@@ -622,6 +654,35 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   if is_path_traversal "$FILE_PATH"; then
     emit_deny "$(msg deny_path_traversal "$FILE_PATH")"
     exit 0
+  fi
+
+  # ===== Symlink bypass protection =====
+  # Resolve the real path to prevent symlink-based bypasses of protected path checks.
+  # Example: attacker creates symlink "safe.txt -> ../../.env" to bypass is_protected_path.
+  RESOLVED_FILE_PATH="$(resolve_real_path "$FILE_PATH" "$CWD")"
+
+  # If the resolved path differs from the original, re-check for path traversal
+  if [ "$RESOLVED_FILE_PATH" != "$FILE_PATH" ]; then
+    # Check if symlink target points to a protected path
+    RESOLVED_REL_PATH="$RESOLVED_FILE_PATH"
+    if [ -n "$CWD" ]; then
+      RESOLVED_NORM_CWD="$(normalize_path "$CWD")"
+      RESOLVED_CWD_SLASH="${RESOLVED_NORM_CWD%/}/"
+      if [[ "$RESOLVED_FILE_PATH" == "$RESOLVED_CWD_SLASH"* ]]; then
+        RESOLVED_REL_PATH="${RESOLVED_FILE_PATH#$RESOLVED_CWD_SLASH}"
+      fi
+    fi
+    if is_protected_path "$RESOLVED_REL_PATH"; then
+      emit_deny "$(msg deny_protected_path "$FILE_PATH -> $RESOLVED_REL_PATH")"
+      exit 0
+    fi
+    # Check if symlink escapes project directory
+    if [ -n "$CWD" ] && is_absolute_path "$RESOLVED_FILE_PATH"; then
+      if ! is_path_under "$RESOLVED_FILE_PATH" "$CWD"; then
+        emit_deny "$(msg deny_path_traversal "$FILE_PATH -> $RESOLVED_FILE_PATH")"
+        exit 0
+      fi
+    fi
   fi
 
   # ===== Codex Mode: PM は Edit/Write 禁止（Plans.md は許可） =====

@@ -110,15 +110,14 @@ _harness_condition: "skills_gate.enabled"
 
 Skills Gate の有効/無効は `.claude/state/skills-config.json` で管理されます。
 
-```bash
-# 無効化（非推奨）
-/skills-update disable
+`.claude/state/skills-config.json` を直接編集するか、`/setup` スキルで再設定してください。
 
-# 有効化
-/skills-update enable
+```json
+// 無効化（非推奨）
+{ "skills_gate_enabled": false }
 
-# スキルの追加
-/skills-update add auth
+// スキルの追加
+{ "active_skills": ["impl", "auth"] }
 ```
 
 ---

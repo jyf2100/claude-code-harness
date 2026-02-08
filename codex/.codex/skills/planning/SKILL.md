@@ -35,7 +35,7 @@ Organizes ideas and requirements, converting them into executable tasks in Plans
 
 | Mode | Command | Description |
 |------|---------|-------------|
-| **Solo mode** | `/planning` | Claude Code alone: plan → execute → review |
+| **Solo mode** | `/plan-with-agent` | Claude Code alone: plan → execute → review |
 | **2-agent mode** | `/plan-with-cc` (Cursor) | Plan with Cursor → Execute with Claude Code |
 
 ## Feature Details

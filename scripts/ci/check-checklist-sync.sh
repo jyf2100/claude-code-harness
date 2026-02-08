@@ -76,9 +76,14 @@ compare_lists() {
     ERRORS=$((ERRORS + 1))
   fi
 
-  if [ -z "$missing_in_command" ] && [ -z "$missing_in_script" ]; then
-    local count=$(wc -l < "$script_checks" | tr -d ' ')
-    echo "  ✅ 同期済み ($count 項目)"
+  # 両方とも空の場合はスキップ（誤った合格を防止）
+  local script_count=$(wc -l < "$script_checks" | tr -d ' ')
+  local command_count=$(wc -l < "$command_checks" | tr -d ' ')
+
+  if [ "$script_count" -eq 0 ] && [ "$command_count" -eq 0 ]; then
+    echo "  ⚠️ スキップ: チェック項目が見つかりません（ファイル構成を確認してください）"
+  elif [ -z "$missing_in_command" ] && [ -z "$missing_in_script" ]; then
+    echo "  ✅ 同期済み ($script_count 項目)"
   fi
 
   rm -f "$script_checks" "$command_checks"
@@ -89,14 +94,20 @@ compare_lists() {
 # ================================
 
 # setup hub の検証（v2.19.0+ 2agent は setup に統合）
-if [ -f "$PLUGIN_ROOT/skills/setup/SKILL.md" ] && [ -f "$PLUGIN_ROOT/skills/setup/references/2agent-setup.md" ]; then
+SETUP_SKILL="$PLUGIN_ROOT/skills/setup/SKILL.md"
+SETUP_2AGENT_REF="$PLUGIN_ROOT/skills/setup/references/2agent-setup.md"
+
+if [ -f "$SETUP_SKILL" ] && [ -f "$SETUP_2AGENT_REF" ]; then
   echo "✓ setup スキルと 2agent-setup リファレンスが存在します"
-else
+elif [ -f "$SETUP_SKILL" ]; then
   echo "⚠️ setup/references/2agent-setup.md が見つかりません（統合後の構成を確認）"
+else
+  echo "⚠️ skills/setup/SKILL.md が見つかりません（スキルが未作成の可能性）"
 fi
 
 # Note: v2.17.0以降、コマンドはスキルに移行されました
 # チェックリスト同期は今後スキル単位で管理されます
+# チェック対象のスキルが見つからない場合は正常終了（空のチェックリストで失敗させない）
 
 # ================================
 # 結果サマリー

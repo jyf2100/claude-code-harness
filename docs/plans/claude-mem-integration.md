@@ -47,7 +47,7 @@ Claude-mem をハーネス仕様にカスタマイズするセットアップコ
 5. スキル統合設定（memory-integration.md 追加）
 6. 動作確認
 
-**ファイル:** `commands/optional/harness-mem.md`
+**ファイル:** `skills/memory/SKILL.md`（旧 `commands/optional/harness-mem.md` から移行）
 
 ### 2. `harness.json` モードファイル
 
@@ -82,7 +82,7 @@ Claude-mem をハーネス仕様にカスタマイズするセットアップコ
 3. decisions.md / patterns.md への昇格提案
 4. ユーザー確認後に SSOT 更新
 
-**ファイル:** `skills/optional/sync-ssot-from-memory/doc.md`
+**ファイル:** `skills/memory/references/sync-ssot-from-memory.md`
 
 ### 4. Memory Integration Rules
 
@@ -369,7 +369,6 @@ Step 6: 検証
 
 ## 関連ファイル
 
-- `/commands/optional/harness-mem.md` - セットアップコマンド
-- `/skills/optional/sync-ssot-from-memory/doc.md` - SSOT 同期スキル
-- `/.claude/rules/memory-integration.md` - メモリ統合ルール
+- `/skills/memory/SKILL.md` - メモリ管理スキル（旧 `/commands/optional/harness-mem.md`）
+- `/skills/memory/references/sync-ssot-from-memory.md` - SSOT 同期リファレンス
 - `/templates/rules/skills-gate.md.template` - スキルゲート更新

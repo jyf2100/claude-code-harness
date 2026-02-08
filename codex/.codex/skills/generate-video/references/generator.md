@@ -334,7 +334,7 @@ node scripts/merge-scenes.js out/video-20260202-001/
 ### intro テンプレート
 
 ```tsx
-// remotion/scenes/intro.tsx
+// remotion/src/scenes/intro.tsx
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { FadeIn } from "../components/FadeIn";
 
@@ -361,7 +361,7 @@ export const DURATION = 150; // 5秒 @ 30fps
 ### ui-demo テンプレート（Playwright連携）
 
 ```tsx
-// remotion/scenes/ui-demo.tsx
+// remotion/src/scenes/ui-demo.tsx
 import { AbsoluteFill, Img, Sequence } from "remotion";
 
 export const UIDemoScene: React.FC<{
@@ -385,7 +385,7 @@ export const UIDemoScene: React.FC<{
 ### cta テンプレート
 
 ```tsx
-// remotion/scenes/cta.tsx
+// remotion/src/scenes/cta.tsx
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 
 export const CTAScene: React.FC<{
@@ -499,7 +499,7 @@ const audioTimings = {
 ### シーン結合
 
 ```tsx
-// remotion/FullVideo.tsx
+// remotion/src/FullVideo.tsx
 import { Composition, Series } from "remotion";
 import { IntroScene } from "./scenes/intro";
 import { UIDemoScene } from "./scenes/ui-demo";

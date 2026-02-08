@@ -394,7 +394,12 @@ function main() {
   console.log('📁 Converting commands:');
   let commandCount = 0;
   if (fs.existsSync(COMMANDS_DIR)) {
-    commandCount = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
+    const commandEntries = fs.readdirSync(COMMANDS_DIR);
+    if (commandEntries.length === 0) {
+      console.log('  ⏭ commands/ is empty (migrated to skills in v2.17.0+)');
+    } else {
+      commandCount = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
+    }
   } else {
     console.log('  ⏭ commands/ not found (migrated to skills in v2.17.0+)');
   }

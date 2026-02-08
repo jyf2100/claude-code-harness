@@ -6,19 +6,19 @@
 
 ## Claude Code 側コマンド
 
-### /harness-init
+### /setup
 
-プロジェクトの初期セットアップ。
+プロジェクトの初期セットアップ（旧 `/harness-init`）。
 
 ```
-/harness-init
+/setup
 ```
 
 **生成されるファイル**:
 - Plans.md - タスク管理
 - AGENTS.md - 役割分担定義
 - CLAUDE.md - Claude Code 設定
-- .claude/commands/ - Cursor 連携コマンド
+- .claude/rules/ - プロジェクトルール
 
 ---
 

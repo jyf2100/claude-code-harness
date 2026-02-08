@@ -118,29 +118,29 @@ R1-R10 で検出されたが、consolidation スコープ外の pre-existing 問
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 5.1.1 | `pretooluse-guard.sh` symlink bypass 対策（realpath 検証追加） | |
-| 5.1.2 | `permission-request.sh:58` npm/pnpm/yarn 自動承認をリポジトリ別 allowlist 方式に変更 | |
-| 5.1.3 | `userprompt-track-command.sh:77` prompt_preview のパーミッション hardening (umask 077) | |
-| 5.1.4 | `session-monitor.sh:275` resume_token の chmod 600 + umask 077 | |
-| 5.1.5 | `pretooluse-guard.sh:354` eval を直接パース（jq/python）に置換 | |
+| 5.1.1 | `pretooluse-guard.sh` symlink bypass 対策（realpath 検証追加） | ✅ |
+| 5.1.2 | `permission-request.sh:58` npm/pnpm/yarn 自動承認をリポジトリ別 allowlist 方式に変更 | ✅ |
+| 5.1.3 | `userprompt-track-command.sh:77` prompt_preview のパーミッション hardening (umask 077) | ✅ |
+| 5.1.4 | `session-monitor.sh:275` resume_token の chmod 600 + umask 077 | ✅ |
+| 5.1.5 | `pretooluse-guard.sh:354` eval を直接パース（jq/python）に置換 | ✅ |
 
 ### 5.2 ドキュメント・リンク修正
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 5.2.1 | `docs/QUALITY_GUARD_DESIGN.md` broken SSOT link 修正 | |
-| 5.2.2 | `docs/PLAN_RULES_IMPROVEMENT.md` stale command refs 修正 | |
-| 5.2.3 | `docs/plans/claude-mem-integration.md` stale paths 修正 | |
-| 5.2.4 | `skills/workflow-guide/references/commands.md` path mismatch 修正 | |
-| 5.2.5 | templates 内の `/skills-update` 参照を削除または更新 | |
+| 5.2.1 | `docs/QUALITY_GUARD_DESIGN.md` broken SSOT link 修正 | ✅ |
+| 5.2.2 | `docs/PLAN_RULES_IMPROVEMENT.md` stale command refs 修正 | ✅ |
+| 5.2.3 | `docs/plans/claude-mem-integration.md` stale paths 修正 | ✅ |
+| 5.2.4 | `skills/workflow-guide/references/commands.md` path mismatch 修正 | ✅ |
+| 5.2.5 | templates 内の `/skills-update` 参照を削除または更新 | ✅ |
 
 ### 5.3 generate-video メンテナンス
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 5.3.1 | `agents/video-scene-generator.md` Remotion paths 更新 | |
-| 5.3.2 | `skills/generate-video/` references 内の Remotion paths 更新 | |
-| 5.3.3 | `generate-video/src/schemas/*.ts` z.any() → z.unknown() / proper unions に修正 | |
+| 5.3.1 | `agents/video-scene-generator.md` Remotion paths 更新 | ✅ |
+| 5.3.2 | `skills/generate-video/` references 内の Remotion paths 更新 | ✅ |
+| 5.3.3 | `generate-video/src/schemas/*.ts` z.any() → z.unknown() / proper unions に修正 | ✅ |
 
 ### 5.4 Architecture: Hook オーケストレーター
 
@@ -160,20 +160,20 @@ R1-R10 で検出されたが、consolidation スコープ外の pre-existing 問
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 5.6.1 | `check-checklist-sync.sh` empty gate logic 修正 | |
-| 5.6.2 | `workflows/default/init.yaml` project-analyzer 参照修正 | |
-| 5.6.3 | `build-opencode.js` commands/ 空ディレクトリ対応 | |
-| 5.6.4 | `harness-ui` command catalog 空対応（統合後） | |
-| 5.6.5 | `parse-work-flags.md` internal inconsistency 修正 | |
+| 5.6.1 | `check-checklist-sync.sh` empty gate logic 修正 | ✅ |
+| 5.6.2 | `workflows/default/init.yaml` project-analyzer 参照修正 | ✅ |
+| 5.6.3 | `build-opencode.js` commands/ 空ディレクトリ対応 | ✅ |
+| 5.6.4 | `harness-ui` command catalog 空対応（統合後） | ✅ |
+| 5.6.5 | `parse-work-flags.md` internal inconsistency 修正 | ✅ |
 
 ### 5.7 命名・ルーティング整理
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 5.7.1 | `/planning` → `/plan-with-agent` 完全統一（dual naming 解消） | |
-| 5.7.2 | `verify` skill の `user-invocable` 整合性確認 | |
-| 5.7.3 | setup と codex-review の Codex セットアップ重複整理 | |
-| 5.7.4 | `_archived/` 配下からの dangling references 削除 | |
+| 5.7.1 | `/planning` → `/plan-with-agent` 完全統一（dual naming 解消） | ✅ |
+| 5.7.2 | `verify` skill の `user-invocable` 整合性確認 | ✅ |
+| 5.7.3 | setup と codex-review の Codex セットアップ重複整理 | ✅ |
+| 5.7.4 | `_archived/` 配下からの dangling references 削除 | ✅ |
 
 ---
 

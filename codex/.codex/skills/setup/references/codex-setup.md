@@ -93,3 +93,10 @@ ls -la AGENTS.md
 - If `.codex/skills` or `.codex/rules` exists, the script creates a timestamp backup
 - `AGENTS.md` is backed up before overwrite
 - MCP template is optional and not overwritten if already present
+
+## Related: Codex MCP Review Integration
+
+Codex を Claude Code の MCP サーバーとして登録し、セカンドオピニオンレビューに使う場合は、codex-review スキルを参照:
+
+- [codex-mcp-setup.md](../../codex-review/references/codex-mcp-setup.md) - Codex MCP サーバー登録手順
+- [codex-review-integration.md](../../codex-review/references/codex-review-integration.md) - レビュー統合

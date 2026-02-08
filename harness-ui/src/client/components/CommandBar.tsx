@@ -90,12 +90,17 @@ export function CommandBar({ sessions, onSendCommand }: CommandBarProps) {
           className="command-select"
           value={selectedCommand}
           onChange={(e) => setSelectedCommand(e.target.value)}
+          disabled={commands.length === 0}
         >
-          {commands.map((cmd) => (
-            <option key={cmd.id} value={cmd.id}>
-              {cmd.name}
-            </option>
-          ))}
+          {commands.length === 0 ? (
+            <option value="">No commands (migrated to skills)</option>
+          ) : (
+            commands.map((cmd) => (
+              <option key={cmd.id} value={cmd.id}>
+                {cmd.name}
+              </option>
+            ))
+          )}
         </select>
 
         <select
