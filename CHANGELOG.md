@@ -4,6 +4,22 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.20.3] - 2026-02-10
+
+### Fixed
+
+- **Hook handler security hardening** (Codex review Round 1-3):
+  - Replace manual JSON string escaping with `jq -nc --arg` and `python3 json.dumps` for safe JSON construction
+  - Fix Python code injection vulnerability: pass data via `sys.argv`/`stdin` instead of triple-quote interpolation
+  - Fix `grep` failure under `set -euo pipefail` with `|| true`
+  - Use `grep -F` for fixed-string matching (avoid regex metacharacter issues)
+  - Add `chmod 700` on `.claude/state` directory
+  - Add `tostring` guard for description truncation type safety
+  - Add 5-second dedup for TeammateIdle events
+  - Add JSONL rotation (500 → 400 lines) to prevent unbounded growth
+
+---
+
 ## [2.20.2] - 2026-02-10
 
 ### Added
