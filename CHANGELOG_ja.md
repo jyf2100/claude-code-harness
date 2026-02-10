@@ -7,6 +7,23 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.20.4] - 2026-02-11
+
+### Fixed
+
+- **Codex MCP → CLI 移行（Phase 7 完了）**:
+  - `pretooluse-guard.sh`（4箇所）と `codex-worker-engine.sh`（1箇所）の `mcp__codex__codex` テキスト参照を `codex exec (CLI)` に置換
+  - `codex-review/SKILL.md` から MCP レガシー注記を削除
+  - `.claude/rules/codex-cli-only.md` ルールを追加（再発防止）
+  - PreToolUse フック failsafe を追加: `mcp__codex__*` ツール呼び出しを `emit_deny` + `msg()` パターンでローカライズメッセージ付き拒否
+  - opencode/codex ミラーの開発専用スキル（`test-*`, `x-promo`, `x-release-harness`）を `.gitignore` に追加
+
+### Security
+
+- **Codex MCP 二重防御**: 廃止済み MCP 使用に対する3層防御（テキスト修正 + フックブロック + ルールファイル）。Codex レビュー: Security A, Architect B
+
+---
+
 ## [2.20.3] - 2026-02-10
 
 ### Fixed
