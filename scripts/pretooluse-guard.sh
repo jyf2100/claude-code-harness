@@ -324,8 +324,9 @@ msg() {
       ask_git_push) echo "Confirm: git push requested ($arg)" ;;
       ask_rm_rf) echo "Confirm: rm -rf requested ($arg)" ;;
       deny_git_commit_no_review) echo "Blocked: Run /harness-review before committing. After review approval, run git commit again." ;;
-      deny_codex_mode) echo "[Codex Mode] Claude is the PM. Direct Edit/Write is prohibited. Delegate implementation to Codex Worker via mcp__codex__codex." ;;
-      deny_breezing_codex_mode) echo "[Breezing-Codex] Direct Edit/Write is prohibited in codex impl mode. Implementation must go through mcp__codex__codex." ;;
+      deny_codex_mode) echo "[Codex Mode] Claude is the PM. Direct Edit/Write is prohibited. Delegate implementation to Codex Worker via codex exec (CLI)." ;;
+      deny_breezing_codex_mode) echo "[Breezing-Codex] Direct Edit/Write is prohibited in codex impl mode. Implementation must go through codex exec (CLI)." ;;
+      deny_codex_mcp) echo "Blocked: Codex MCP is deprecated. Use 'codex exec' (Bash) instead. See .claude/rules/codex-cli-only.md" ;;
       *) echo "$key $arg" ;;
     esac
     return 0
@@ -340,8 +341,9 @@ msg() {
     ask_git_push) echo "確認: git push を実行しようとしています（command: $arg）" ;;
     ask_rm_rf) echo "確認: rm -rf を実行しようとしています（command: $arg）" ;;
     deny_git_commit_no_review) echo "ブロック: コミット前に /harness-review を実行してください。レビュー後、再度 git commit を実行できます。" ;;
-    deny_codex_mode) echo "[Codex Mode] --codex モードでは Claude は PM 役です。直接の Edit/Write は禁止されています。実装は mcp__codex__codex 経由で Codex Worker に委譲してください。" ;;
-    deny_breezing_codex_mode) echo "[Breezing-Codex] codex 実装モードでは直接の Edit/Write は禁止されています。実装は mcp__codex__codex 経由で行ってください。" ;;
+    deny_codex_mode) echo "[Codex Mode] --codex モードでは Claude は PM 役です。直接の Edit/Write は禁止されています。実装は codex exec (CLI) 経由で Codex Worker に委譲してください。" ;;
+    deny_breezing_codex_mode) echo "[Breezing-Codex] codex 実装モードでは直接の Edit/Write は禁止されています。実装は codex exec (CLI) 経由で行ってください。" ;;
+    deny_codex_mcp) echo "ブロック: Codex MCP は廃止されました。代わりに 'codex exec' (Bash) を使用してください。詳細: .claude/rules/codex-cli-only.md" ;;
     *) echo "$key $arg" ;;
   esac
 }
@@ -561,6 +563,13 @@ emit_deny() {
   emit_decision "deny" "$1"
 }
 emit_ask() { emit_decision "ask" "$1"; }
+
+# ===== Codex MCP ブロック（廃止済み） =====
+# MCP サーバーは削除済み。テキスト修正をすり抜けた場合のフェイルセーフ。
+if [[ "$TOOL_NAME" == mcp__codex__* ]]; then
+  emit_deny "$(msg deny_codex_mcp)"
+  exit 0
+fi
 
 # ===== コスト制御チェック実行 =====
 COST_CHECK_MSG=""

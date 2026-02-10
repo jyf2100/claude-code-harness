@@ -294,7 +294,7 @@ EOF
     log_info "検証情報を保存: $output_dir/verify-info.json"
     echo ""
     log_info "次のステップ:"
-    log_info "  1. Claude Code から mcp__codex__codex を呼び出す"
+    log_info "  1. Claude Code から codex exec を呼び出す"
     log_info "  2. 出力に AGENTS_SUMMARY 証跡があることを確認"
     log_info "  3. ハッシュが $AGENTS_HASH と一致することを確認"
     log_info "  4. 失敗時は最大 $MAX_RETRIES 回まで再試行"

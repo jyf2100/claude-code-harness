@@ -4,6 +4,23 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.20.4] - 2026-02-11
+
+### Fixed
+
+- **Codex MCP → CLI migration (Phase 7 completion)**:
+  - Replace all `mcp__codex__codex` text references with `codex exec (CLI)` in `pretooluse-guard.sh` (4 messages) and `codex-worker-engine.sh` (1 log message)
+  - Remove MCP legacy note from `codex-review/SKILL.md`
+  - Add `codex-cli-only.md` rule to `.claude/rules/` for prevention
+  - Add PreToolUse hook failsafe: deny `mcp__codex__*` tool calls with localized message via `emit_deny` + `msg()` pattern
+  - Add `.gitignore` patterns for opencode/codex mirror dev-only skills (`test-*`, `x-promo`, `x-release-harness`)
+
+### Security
+
+- **Codex MCP dual-defense**: Three-layer protection against deprecated MCP usage (text correction + hook block + rule file). Codex review: Security A, Architect B
+
+---
+
 ## [2.20.3] - 2026-02-10
 
 ### Fixed
