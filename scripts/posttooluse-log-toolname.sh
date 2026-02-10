@@ -133,12 +133,12 @@ FILE_PATH=""
 COMMAND=""
 
 if command -v jq >/dev/null 2>&1; then
-  TOOL_NAME="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
-  SESSION_ID="$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
-  FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
-  COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+  TOOL_NAME="$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+  SESSION_ID="$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)"
+  FILE_PATH="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+  COMMAND="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 elif command -v python3 >/dev/null 2>&1; then
-  eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null
+  eval "$(printf '%s' "$INPUT" | python3 -c '
 import json, shlex, sys
 try:
     data = json.load(sys.stdin)
@@ -153,8 +153,7 @@ print(f"TOOL_NAME={shlex.quote(tool_name)}")
 print(f"SESSION_ID={shlex.quote(session_id)}")
 print(f"FILE_PATH={shlex.quote(file_path)}")
 print(f"COMMAND={shlex.quote(command)}")
-PY
-)"
+' 2>/dev/null)"
 fi
 
 # tool_name が無ければスキップ
@@ -319,7 +318,7 @@ if [ "$TOOL_NAME" = "Skill" ]; then
     # スキル名を tool_input から取得
     SKILL_NAME=""
     if [ -n "$INPUT" ]; then
-      SKILL_NAME=$(echo "$INPUT" | jq -r '.tool_input.skill // "unknown"' 2>/dev/null)
+      SKILL_NAME=$(printf '%s' "$INPUT" | jq -r '.tool_input.skill // "unknown"' 2>/dev/null)
     fi
     
     # used 配列に追加

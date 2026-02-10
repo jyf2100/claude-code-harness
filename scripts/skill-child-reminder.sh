@@ -21,10 +21,10 @@ TOOL_NAME=""
 SKILL_NAME=""
 
 if command -v jq >/dev/null 2>&1; then
-  TOOL_NAME="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
-  SKILL_NAME="$(echo "$INPUT" | jq -r '.tool_input.skill // empty' 2>/dev/null)"
+  TOOL_NAME="$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+  SKILL_NAME="$(printf '%s' "$INPUT" | jq -r '.tool_input.skill // empty' 2>/dev/null)"
 elif command -v python3 >/dev/null 2>&1; then
-  eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null
+  eval "$(printf '%s' "$INPUT" | python3 -c '
 import json, shlex, sys
 try:
     data = json.load(sys.stdin)
@@ -35,8 +35,7 @@ tool_input = data.get("tool_input") or {}
 skill_name = tool_input.get("skill") or ""
 print(f"TOOL_NAME={shlex.quote(tool_name)}")
 print(f"SKILL_NAME={shlex.quote(skill_name)}")
-PY
-)"
+' 2>/dev/null)"
 fi
 
 # Skill ツール以外はスキップ

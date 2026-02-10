@@ -214,3 +214,44 @@ v2.20.1 の内容を v2.20.0 に統合し、リポジトリ品質を向上。
 
 - `/gogcli-ops` — 独立した外部ツール連携。統合先がない。使用頻度に応じて別途判断
 - `/deploy` — 高インパクト操作。明示的なコマンドとして維持（Codex も非表示に反対）
+
+---
+
+## Phase 8: Issue #40 — PostToolUse Hook 修正
+
+GitHub Issue #40: `posttooluse-tampering-detector.sh` の bash パーサーエラー修正 + 全スクリプト python3 フォールバック改善。
+
+### 8.1 tampering-detector 本体修正 (Phase 1+3+4)
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 8.1.1 | `set -euo pipefail` → `set +e` (他 PostToolUse スクリプトと統一) | cc:done |
+| 8.1.2 | 行39 `\|\| true` 削除 (syntax error 根本原因) | cc:done |
+| 8.1.3 | `echo \| grep -qE` → `[[ =~ ]]` (6箇所、パフォーマンス改善) | cc:done |
+| 8.1.4 | eval + shlex.quote 維持、python3 -c 方式に変更 (Reviewer 判断) | cc:done |
+| 8.1.5 | `echo -e` → `printf '%b'` (POSIX 準拠) | cc:done |
+| 8.1.6 | 警告メッセージのバイリンガル化 (日本語 + English) | cc:done |
+| 8.1.7 | jq パス: `echo "$INPUT"` → `printf '%s' "$INPUT"` | cc:done |
+
+### 8.2 python3 フォールバック修正 (Phase 2, 9スクリプト)
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 8.2.1 | `posttooluse-log-toolname.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.2 | `auto-test-runner.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.3 | `permission-request.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.4 | `skill-child-reminder.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.5 | `plans-watcher.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.6 | `auto-cleanup-hook.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.7 | `track-changes.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.8 | `posttooluse-security-review.sh` python3 -c 方式に変更 | cc:done |
+| 8.2.9 | `posttooluse-quality-pack.sh` python3 -c 方式に変更 | cc:done |
+
+### 8.3 検証 + ミラー同期 (Phase 5)
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 8.3.1 | `bash -n` 全修正スクリプト構文チェック | cc:done |
+| 8.3.2 | `./tests/validate-plugin.sh` 実行 | cc:done |
+| 8.3.3 | `./scripts/ci/check-consistency.sh` 実行 | cc:done |
+| 8.3.4 | ミラー同期確認 (.claude-plugin/hooks.json 等) | cc:done |

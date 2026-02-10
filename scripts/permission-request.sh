@@ -18,10 +18,10 @@ TOOL_NAME=""
 COMMAND=""
 
 if command -v jq >/dev/null 2>&1; then
-  TOOL_NAME="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
-  COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+  TOOL_NAME="$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+  COMMAND="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 elif command -v python3 >/dev/null 2>&1; then
-  eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null
+  eval "$(printf '%s' "$INPUT" | python3 -c '
 import json, shlex, sys
 try:
     data = json.load(sys.stdin)
@@ -32,8 +32,7 @@ tool_input = data.get("tool_input") or {}
 command = tool_input.get("command") or ""
 print(f"TOOL_NAME={shlex.quote(tool_name)}")
 print(f"COMMAND={shlex.quote(command)}")
-PY
-)"
+' 2>/dev/null)"
 fi
 
 # Edit/Write は bypassPermissions 相当で自動承認
@@ -49,9 +48,9 @@ fi
 # Retrieve CWD from hook input for allowlist lookups
 CWD=""
 if command -v jq >/dev/null 2>&1; then
-  CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
+  CWD="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
 elif command -v python3 >/dev/null 2>&1; then
-  CWD="$(echo "$INPUT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd",""))' 2>/dev/null)"
+  CWD="$(printf '%s' "$INPUT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd",""))' 2>/dev/null)"
 fi
 
 # Check if package manager auto-approval is allowed for the current project.

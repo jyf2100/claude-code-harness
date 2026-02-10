@@ -18,10 +18,10 @@ FILE_PATH=""
 CWD=""
 if [ -n "$INPUT" ]; then
   if command -v jq >/dev/null 2>&1; then
-    FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_response.filePath // empty' 2>/dev/null)"
-    CWD="$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
+    FILE_PATH="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_response.filePath // empty' 2>/dev/null)"
+    CWD="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
   elif command -v python3 >/dev/null 2>&1; then
-    eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null
+    eval "$(printf '%s' "$INPUT" | python3 -c '
 import json, shlex, sys
 try:
     data = json.load(sys.stdin)
@@ -33,8 +33,7 @@ tool_response = data.get("tool_response") or {}
 file_path = tool_input.get("file_path") or tool_response.get("filePath") or ""
 print(f"CWD_FROM_STDIN={shlex.quote(cwd)}")
 print(f"FILE_PATH_FROM_STDIN={shlex.quote(file_path)}")
-PY
-)"
+' 2>/dev/null)"
     FILE_PATH="${FILE_PATH_FROM_STDIN:-}"
     CWD="${CWD_FROM_STDIN:-}"
   fi

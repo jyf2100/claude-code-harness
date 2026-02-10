@@ -12,7 +12,7 @@
 # 出力: JSON形式で hookSpecificOutput.additionalContext に警告を出力
 #       → Claude Code が system-reminder として表示
 
-set -euo pipefail
+set +e
 
 # ===== 入力の取得 =====
 INPUT=""
@@ -30,13 +30,13 @@ NEW_STRING=""
 CONTENT=""
 
 if command -v jq >/dev/null 2>&1; then
-  TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null || true)
-  FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
-  OLD_STRING=$(echo "$INPUT" | jq -r '.tool_input.old_string // empty' 2>/dev/null || true)
-  NEW_STRING=$(echo "$INPUT" | jq -r '.tool_input.new_string // empty' 2>/dev/null || true)
-  CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // empty' 2>/dev/null || true)
+  TOOL_NAME=$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null || true)
+  FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
+  OLD_STRING=$(printf '%s' "$INPUT" | jq -r '.tool_input.old_string // empty' 2>/dev/null || true)
+  NEW_STRING=$(printf '%s' "$INPUT" | jq -r '.tool_input.new_string // empty' 2>/dev/null || true)
+  CONTENT=$(printf '%s' "$INPUT" | jq -r '.tool_input.content // empty' 2>/dev/null || true)
 elif command -v python3 >/dev/null 2>&1; then
-  eval "$(echo "$INPUT" | python3 - <<'PY' 2>/dev/null || true
+  eval "$(printf '%s' "$INPUT" | python3 -c '
 import json, shlex, sys
 try:
     data = json.load(sys.stdin)
@@ -53,8 +53,7 @@ print(f"FILE_PATH={shlex.quote(file_path)}")
 print(f"OLD_STRING={shlex.quote(old_string)}")
 print(f"NEW_STRING={shlex.quote(new_string)}")
 print(f"CONTENT={shlex.quote(content)}")
-PY
-)"
+' 2>/dev/null)"
 fi
 
 # Write/Edit 以外はスキップ
@@ -104,55 +103,55 @@ CHECK_CONTENT="${NEW_STRING}${CONTENT}"
 
 # テストファイルの改ざん検出
 if is_test_file "$FILE_PATH"; then
-  # skip 化検出
-  if echo "$CHECK_CONTENT" | grep -qE '\bit\.skip\s*\(|\bdescribe\.skip\s*\(|\btest\.skip\s*\(|\bxit\s*\(|\bxdescribe\s*\('; then
-    WARNINGS="${WARNINGS}⚠️ テストの skip 化を検出 (it.skip/describe.skip/xit)\n"
+  # skip 化検出 / Test skip detected
+  if [[ "$CHECK_CONTENT" =~ (^|[^a-zA-Z_])(it|describe|test)\.skip[[:space:]]*\(|(^|[^a-zA-Z_])xit[[:space:]]*\(|(^|[^a-zA-Z_])xdescribe[[:space:]]*\( ]]; then
+    WARNINGS="${WARNINGS}⚠️ Test skip detected / テストの skip 化を検出 (it.skip/describe.skip/xit)\n"
   fi
 
-  # .only 化検出（他のテストを無効化）
-  if echo "$CHECK_CONTENT" | grep -qE '\bit\.only\s*\(|\bdescribe\.only\s*\(|\btest\.only\s*\(|\bfit\s*\(|\bfdescribe\s*\('; then
-    WARNINGS="${WARNINGS}⚠️ テストの .only 化を検出（他のテストが実行されなくなります）\n"
+  # .only 化検出 / Test .only detected
+  if [[ "$CHECK_CONTENT" =~ (^|[^a-zA-Z_])(it|describe|test)\.only[[:space:]]*\(|(^|[^a-zA-Z_])fit[[:space:]]*\(|(^|[^a-zA-Z_])fdescribe[[:space:]]*\( ]]; then
+    WARNINGS="${WARNINGS}⚠️ Test .only detected / テストの .only 化を検出（他のテストが実行されなくなります）\n"
   fi
 
-  # eslint-disable 追加検出
-  if echo "$CHECK_CONTENT" | grep -qE 'eslint-disable|@ts-ignore|@ts-expect-error|@ts-nocheck'; then
-    WARNINGS="${WARNINGS}⚠️ lint/型チェック無効化コメントを検出\n"
+  # eslint-disable 追加検出 / Lint/type suppression detected
+  if [[ "$CHECK_CONTENT" =~ eslint-disable|@ts-ignore|@ts-expect-error|@ts-nocheck ]]; then
+    WARNINGS="${WARNINGS}⚠️ Lint/type suppression detected / lint/型チェック無効化コメントを検出\n"
   fi
 
-  # expect 削除検出（Edit の場合）
+  # expect 削除検出（Edit の場合）/ Assertion removal detected
   if [ -n "$OLD_STRING" ] && [ -n "$NEW_STRING" ]; then
-    OLD_EXPECTS=$(echo "$OLD_STRING" | grep -c 'expect\s*(' || true)
-    NEW_EXPECTS=$(echo "$NEW_STRING" | grep -c 'expect\s*(' || true)
+    OLD_EXPECTS=$(printf '%s' "$OLD_STRING" | grep -c 'expect\s*(' || true)
+    NEW_EXPECTS=$(printf '%s' "$NEW_STRING" | grep -c 'expect\s*(' || true)
     if [ "$OLD_EXPECTS" -gt 0 ] && [ "$NEW_EXPECTS" -lt "$OLD_EXPECTS" ]; then
-      WARNINGS="${WARNINGS}⚠️ アサーション削除を検出 (expect: ${OLD_EXPECTS} → ${NEW_EXPECTS})\n"
+      WARNINGS="${WARNINGS}⚠️ Assertion removal detected / アサーション削除を検出 (expect: ${OLD_EXPECTS} → ${NEW_EXPECTS})\n"
     fi
   fi
 
-  # assert 削除検出（Python）
+  # assert 削除検出（Python）/ Assertion removal detected
   if [ -n "$OLD_STRING" ] && [ -n "$NEW_STRING" ]; then
-    OLD_ASSERTS=$(echo "$OLD_STRING" | grep -cE '\bassert\b|self\.assert' || true)
-    NEW_ASSERTS=$(echo "$NEW_STRING" | grep -cE '\bassert\b|self\.assert' || true)
+    OLD_ASSERTS=$(printf '%s' "$OLD_STRING" | grep -cE '\bassert\b|self\.assert' || true)
+    NEW_ASSERTS=$(printf '%s' "$NEW_STRING" | grep -cE '\bassert\b|self\.assert' || true)
     if [ "$OLD_ASSERTS" -gt 0 ] && [ "$NEW_ASSERTS" -lt "$OLD_ASSERTS" ]; then
-      WARNINGS="${WARNINGS}⚠️ アサーション削除を検出 (assert: ${OLD_ASSERTS} → ${NEW_ASSERTS})\n"
+      WARNINGS="${WARNINGS}⚠️ Assertion removal detected / アサーション削除を検出 (assert: ${OLD_ASSERTS} → ${NEW_ASSERTS})\n"
     fi
   fi
 fi
 
 # 設定ファイルの緩和検出
 if is_config_file "$FILE_PATH"; then
-  # eslint ルール無効化
-  if echo "$CHECK_CONTENT" | grep -qE '"off"|: *0|"warn".*→.*"off"'; then
-    WARNINGS="${WARNINGS}⚠️ lint ルールの無効化を検出\n"
+  # eslint ルール無効化 / Lint rule disabled
+  if [[ "$CHECK_CONTENT" =~ \"off\"|:[[:space:]]*0|\"warn\".*→.*\"off\" ]]; then
+    WARNINGS="${WARNINGS}⚠️ Lint rule disabled / lint ルールの無効化を検出\n"
   fi
 
-  # CI continue-on-error
-  if echo "$CHECK_CONTENT" | grep -qE 'continue-on-error:\s*true'; then
-    WARNINGS="${WARNINGS}⚠️ CI の continue-on-error 追加を検出\n"
+  # CI continue-on-error / CI continue-on-error detected
+  if [[ "$CHECK_CONTENT" =~ continue-on-error:[[:space:]]*true ]]; then
+    WARNINGS="${WARNINGS}⚠️ CI continue-on-error detected / CI の continue-on-error 追加を検出\n"
   fi
 
-  # strict モードの緩和
-  if echo "$CHECK_CONTENT" | grep -qE '"strict"\s*:\s*false|"noImplicitAny"\s*:\s*false'; then
-    WARNINGS="${WARNINGS}⚠️ TypeScript strict モードの緩和を検出\n"
+  # strict モードの緩和 / TypeScript strict mode weakened
+  if [[ "$CHECK_CONTENT" =~ \"strict\"[[:space:]]*:[[:space:]]*false|\"noImplicitAny\"[[:space:]]*:[[:space:]]*false ]]; then
+    WARNINGS="${WARNINGS}⚠️ TypeScript strict mode weakened / TypeScript strict モードの緩和を検出\n"
   fi
 fi
 
@@ -165,20 +164,22 @@ LOG_FILE="$STATE_DIR/tampering.log"
 
 if [ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR" 2>/dev/null; then
   echo "[$(date -Iseconds 2>/dev/null || date '+%Y-%m-%dT%H:%M:%S')] FILE=$FILE_PATH TOOL=$TOOL_NAME" >> "$LOG_FILE" 2>/dev/null || true
-  echo -e "$WARNINGS" | sed 's/^/  /' >> "$LOG_FILE" 2>/dev/null || true
+  printf '%b' "$WARNINGS" | sed 's/^/  /' >> "$LOG_FILE" 2>/dev/null || true
 fi
 
 # ===== 警告を出力 =====
 # Claude が次のターンで見られるように additionalContext として出力
-WARNING_MSG="[Tampering Detector] テスト/設定ファイルの変更で以下のパターンを検出しました：
+WARNING_MSG="[Tampering Detector] Suspicious patterns detected in test/config file changes:
+[Tampering Detector] テスト/設定ファイルの変更で以下のパターンを検出しました：
 
-$(echo -e "$WARNINGS")
-ファイル: $FILE_PATH
+$(printf '%b' "$WARNINGS")
+File / ファイル: $FILE_PATH
 
+If this is an intentional change, no action is needed.
 これが意図的な変更であれば問題ありませんが、テスト改ざんの可能性があります。
 
-⚠️ テスト改ざん（skip化、アサーション削除）ではなく、実装の修正が正しい対応です。
-⚠️ 設定の緩和ではなく、コードの修正が正しい対応です。"
+⚠️ Fix the implementation, not the tests. / テスト改ざん（skip化、アサーション削除）ではなく、実装の修正が正しい対応です。
+⚠️ Fix the code, not the config. / 設定の緩和ではなく、コードの修正が正しい対応です。"
 
 # JSON 出力
 if command -v jq >/dev/null 2>&1; then
