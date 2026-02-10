@@ -11,6 +11,29 @@
 
 **特殊な点**: このプロジェクトは「ハーネス自身を使ってハーネスを改善する」自己参照的な構成です。
 
+## Claude Code 2.1.38+ 新機能活用ガイド
+
+Harness は Claude Code 2.1.38 の新機能をフル活用しています。
+
+| 機能 | 活用スキル | 用途 |
+|------|-----------|------|
+| **Task tool メトリクス** | parallel-workflows | サブエージェントのトークン/ツール/時間を集計 |
+| **`/debug` コマンド** | troubleshoot | 複雑なセッション問題の診断 |
+| **PDF ページ範囲** | notebookLM, harness-review | 大型ドキュメントの効率的な処理 |
+| **Git log フラグ** | harness-review, CI, release-harness | 構造化されたコミット分析 |
+| **OAuth 認証** | codex-review | DCR 非対応 MCP サーバーの設定 |
+| **68% メモリ最適化** | session-memory, session | `--resume` の積極的活用 |
+| **サブエージェント MCP** | task-worker | 並列実行時の MCP ツール共有 |
+| **Reduced Motion** | harness-ui | アクセシビリティ設定 |
+| **TeammateIdle/TaskCompleted Hook** | breezing | チーム監視の自動化 |
+| **Agent Memory (memory frontmatter)** | task-worker, code-reviewer | 永続的学習 |
+| **Fast mode (Opus 4.6)** | 全スキル | 高速出力モード |
+| **自動メモリ記録** | session-memory | セッション間知識の自動永続化 |
+| **スキルバジェットスケーリング** | 全スキル | コンテキスト窓の 2% に自動調整 |
+| **Task(agent_type) 制限** | agents/ | サブエージェント種類制限 |
+
+詳細は各スキルの SKILL.md を参照してください。
+
 ## 開発ルール
 
 ### コミットメッセージ
@@ -32,54 +55,17 @@
 
 変更時は `./scripts/sync-version.sh bump` を使用。
 
-### CHANGELOG 記載ルール（必須）
+### CHANGELOG 記載ルール
 
-**[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠**
+詳細: [.claude/rules/changelog.md](.claude/rules/changelog.md)
 
-各バージョンエントリには以下のセクションを使用:
+- [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠
+- セクション: Added / Changed / Deprecated / Removed / Fixed / Security
+- 大きな変更時は Before/After テーブルを追加
 
-```markdown
-## [X.Y.Z] - YYYY-MM-DD
+### 言語設定
 
-### Added
-- 新機能について
-
-### Changed
-- 既存機能の変更について
-
-### Deprecated
-- 間もなく削除される機能について
-
-### Removed
-- 削除された機能について
-
-### Fixed
-- バグ修正について
-
-### Security
-- 脆弱性に関する場合
-
-#### Before/After（大きな変更時のみ）
-
-| Before | After |
-|--------|-------|
-| 変更前の状態 | 変更後の状態 |
-```
-
-**セクション使い分け**:
-
-| セクション | 使うとき |
-|------------|----------|
-| Added | 完全に新しい機能を追加したとき |
-| Changed | 既存機能の動作や体験を変更したとき |
-| Deprecated | 将来削除予定の機能を告知するとき |
-| Removed | 機能やコマンドを削除したとき |
-| Fixed | バグや不具合を修正したとき |
-| Security | セキュリティ関連の修正をしたとき |
-
-**Before/After テーブル**: 大きな体験変化（コマンド廃止・統合、ワークフロー変更、破壊的変更）があるときのみ追加。軽微な修正では省略可。
-
-**バージョン比較リンク**: CHANGELOG.md 末尾に `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z` 形式で追加
+すべての応答は **日本語** で行うこと（`context: fork` スキル含む）。
 
 ### コードスタイル
 
@@ -132,16 +118,15 @@ skills/
 ├── impl/                  # 実装（機能追加、テスト作成）
 ├── harness-review/        # レビュー（品質、セキュリティ、パフォーマンス）
 ├── verify/                # 検証（ビルド、エラー復旧、修正適用）
-├── setup/                 # セットアップ（CLAUDE.md、Plans.md生成）
-├── 2agent/                # 2エージェント設定（PM連携、Cursor設定）
-├── memory/                # メモリ管理（SSOT、decisions.md、patterns.md）
+├── setup/                 # 統合セットアップ（プロジェクト初期化、ツール設定、2-Agent、harness-mem、Codex CLI、ルールローカライズ）
+├── memory/                # メモリ管理（SSOT、decisions.md、patterns.md、SSOT昇格、記憶検索）
+├── troubleshoot/          # 診断・修復（エラー、CI障害含む）
 ├── principles/            # 原則・ガイドライン（VibeCoder、差分編集）
 ├── auth/                  # 認証・決済（Clerk、Supabase、Stripe）
 ├── deploy/                # デプロイ（Vercel、Netlify、アナリティクス）
 ├── ui/                    # UI（コンポーネント、フィードバック）
 ├── handoff/               # ワークフロー（ハンドオフ、自動修正）
 ├── notebookLM/            # ドキュメント（NotebookLM、YAML）
-├── ci/                    # CI/CD（失敗分析、テスト修正）
 └── maintenance/           # メンテナンス（クリーンアップ）
 ```
 
@@ -166,26 +151,27 @@ skills/
 
 | カテゴリ | 用途 | トリガー例 |
 |---------|------|-----------|
+| work | タスク実装（スコープ自動判断、--codex 対応） | 「実装して」「全部やって」「/work」 |
+| breezing | Agent Teams で完全自動完走（--codex 対応） | 「チームで完走」「breezing」 |
 | impl | 実装、機能追加、テスト作成 | 「実装して」「機能追加」「コードを書いて」 |
 | harness-review | コードレビュー、品質チェック | 「レビューして」「セキュリティ」「パフォーマンス」 |
 | verify | ビルド検証、エラー復旧 | 「ビルド」「エラー復旧」「検証して」 |
-| setup | プロジェクト初期化、ファイル生成 | 「セットアップ」「CLAUDE.md」「初期化」 |
-| 2agent | 2エージェント運用設定 | 「2-Agent」「Cursor設定」「PM連携」 |
-| memory | SSOT管理、メモリ初期化 | 「SSOT」「decisions.md」「マージ」 |
+| setup | セットアップ統合ハブ（プロジェクト初期化、ツール設定、2-Agent、harness-mem、Codex CLI、ルールローカライズ） | 「セットアップ」「CLAUDE.md」「初期化」「CI setup」「2-Agent」「Cursor設定」「harness-mem」「codex-setup」 |
+| memory | SSOT管理、記憶検索、SSOT昇格、Cursor連携メモリ | 「SSOT」「decisions.md」「マージ」「SSOT昇格」「記憶検索」「claude-mem」 |
 | principles | 開発原則、ガイドライン | 「原則」「VibeCoder」「安全性」 |
 | auth | 認証、決済機能 | 「ログイン」「Clerk」「Stripe」「決済」 |
 | deploy | デプロイ、アナリティクス | 「デプロイ」「Vercel」「GA」 |
 | ui | UIコンポーネント生成 | 「コンポーネント」「ヒーロー」「フォーム」 |
 | handoff | ハンドオフ、自動修正 | 「ハンドオフ」「PMに報告」「自動修正」 |
 | notebookLM | ドキュメント生成 | 「ドキュメント」「NotebookLM」「スライド」 |
-| ci | CI/CD問題解決 | 「CIが落ちた」「テスト失敗」 |
+| troubleshoot | 診断と修復（CI障害含む） | 「動かない」「エラー」「CIが落ちた」 |
 | maintenance | ファイル整理 | 「整理して」「クリーンアップ」 |
 
 ## 開発フロー
 
 1. **計画**: `/plan-with-agent` でタスクを Plans.md に落とす
-2. **実装**: `/work` で Plans.md のタスクを実行
-3. **レビュー**: `/harness-review` で品質チェック
+2. **実装**: `/work` (Claude が実装) or `/breezing` (チームで完走)。両方 `--codex` 対応
+3. **レビュー**: 自動実行（手動は `/harness-review`）
 4. **検証**: `./tests/validate-plugin.sh` で構造検証
 
 ## テスト方法
@@ -211,7 +197,8 @@ claude --plugin-dir /path/to/claude-code-harness
 | コマンド | 用途 |
 |---------|------|
 | `/plan-with-agent` | 改善タスクを Plans.md に追加 |
-| `/work` | タスクを実装（並列実行対応） |
+| `/work` | タスクを実装（スコープ自動判断、--codex 対応） |
+| `/breezing` | Agent Teams でチーム並列完走（--codex 対応） |
 | `/harness-review` | 変更内容をレビュー |
 | `/validate` | プラグイン検証 |
 | `/remember` | 学習事項を記録 |
@@ -233,38 +220,12 @@ claude --plugin-dir /path/to/claude-code-harness
 
 ## テスト改ざん防止（品質保証）
 
-> 詳細: [D9: テスト改ざん防止の3層防御戦略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
+詳細: [D9: テスト改ざん防止の3層防御戦略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
 
-Coding Agent がテスト失敗時に「楽をする」傾向（テスト改ざん、lint 緩和、形骸化実装）を防ぐための仕組みです。
+| ルールファイル | 内容 |
+|---------------|------|
+| [test-quality.md](.claude/rules/test-quality.md) | テスト改ざん禁止パターン |
+| [implementation-quality.md](.claude/rules/implementation-quality.md) | 形骸化実装禁止パターン |
 
-### 3層防御戦略
-
-| 層 | 仕組み | 強制力 |
-|----|--------|--------|
-| 第1層: Rules | `.claude/rules/test-quality.md`, `implementation-quality.md` | 良心ベース（常時適用） |
-| 第2層: Skills | `impl`, `verify` スキルに品質ガードレール内蔵 | 文脈的強制（スキル使用時） |
-| 第3層: Hooks | PostToolUse で改ざんパターンを検出・警告 | 非ブロッキング検出（常時適用） |
-
-### 禁止パターン
-
-**テスト改ざん（test-quality.md）**:
-- `it.skip()`, `test.skip()` への変更
-- アサーションの削除・緩和
-- eslint-disable コメントの追加
-
-**形骸化実装（implementation-quality.md）**:
-- テスト期待値のハードコード
-- スタブ・モック・空実装
-- 特定入力のみ動作するコード
-
-### 困難な場合の対応フロー
-
-```
-1. 正直に報告（「この方法では実装が困難です」）
-2. 理由を説明（技術的制約、前提条件の不備）
-3. 選択肢を提示（代替案、段階的実装）
-4. ユーザーの判断を仰ぐ
-```
-
-> ⚠️ **絶対にしてはいけないこと**: テストを改ざんして「成功」を偽装すること
+> ⚠️ **絶対禁止**: テストを改ざんして「成功」を偽装すること
 
