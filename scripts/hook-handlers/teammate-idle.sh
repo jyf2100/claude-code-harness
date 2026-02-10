@@ -28,6 +28,18 @@ TIMELINE_FILE="${STATE_DIR}/breezing-timeline.jsonl"
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
+  chmod 700 "${STATE_DIR}" 2>/dev/null || true
+}
+
+# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+rotate_jsonl() {
+  local file="$1"
+  local _lines
+  _lines="$(wc -l < "${file}" 2>/dev/null)" || _lines=0
+  if [ "${_lines}" -gt 500 ] 2>/dev/null; then
+    tail -400 "${file}" > "${file}.tmp" 2>/dev/null && \
+      mv "${file}.tmp" "${file}" 2>/dev/null || true
+  fi
 }
 
 get_timestamp() {
@@ -51,8 +63,14 @@ TEAMMATE_NAME=""
 TEAM_NAME=""
 
 if command -v jq >/dev/null 2>&1; then
-  TEAMMATE_NAME="$(echo "${INPUT}" | jq -r '.teammate_name // .agent_name // ""' 2>/dev/null)"
-  TEAM_NAME="$(echo "${INPUT}" | jq -r '.team_name // ""' 2>/dev/null)"
+  _jq_parsed="$(echo "${INPUT}" | jq -r '[
+    (.teammate_name // .agent_name // ""),
+    (.team_name // "")
+  ] | @tsv' 2>/dev/null)"
+  if [ -n "${_jq_parsed}" ]; then
+    IFS=$'\t' read -r TEAMMATE_NAME TEAM_NAME <<< "${_jq_parsed}"
+  fi
+  unset _jq_parsed
 elif command -v python3 >/dev/null 2>&1; then
   _parsed="$(echo "${INPUT}" | python3 -c "
 import sys, json
@@ -68,16 +86,69 @@ except:
   TEAM_NAME="$(echo "${_parsed}" | tail -1)"
 fi
 
-# === タイムライン記録 ===
+# === 重複抑制（同一 teammate の 5 秒以内の idle をスキップ） ===
 ensure_state_dir
 
-# JSON 文字列内の特殊文字をエスケープ
-TEAMMATE_NAME_ESCAPED="${TEAMMATE_NAME//\"/\\\"}"
-TEAM_NAME_ESCAPED="${TEAM_NAME//\"/\\\"}"
+if [ -n "${TEAMMATE_NAME}" ] && [ -f "${TIMELINE_FILE}" ]; then
+  _last="$(grep -F '"teammate_idle"' "${TIMELINE_FILE}" 2>/dev/null | grep -F "\"${TEAMMATE_NAME}\"" 2>/dev/null | tail -1 || true)"
+  if [ -n "${_last}" ]; then
+    if command -v jq >/dev/null 2>&1; then
+      _ts="$(printf '%s' "${_last}" | jq -r '.timestamp // ""' 2>/dev/null || true)"
+    elif command -v python3 >/dev/null 2>&1; then
+      _ts="$(printf '%s' "${_last}" | python3 -c "
+import sys, json
+try: print(json.load(sys.stdin).get('timestamp',''))
+except: print('')
+" 2>/dev/null || true)"
+    else
+      _ts=""
+    fi
+    if [ -n "${_ts}" ] && command -v python3 >/dev/null 2>&1; then
+      _skip="$(python3 -c "
+import sys, datetime
+try:
+    ts = sys.argv[1]
+    dt = datetime.datetime.fromisoformat(ts.replace('Z','+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    print('skip' if (now - dt).total_seconds() < 5 else 'ok')
+except:
+    print('ok')
+" "${_ts}" 2>/dev/null || true)"
+      if [ "${_skip}" = "skip" ]; then
+        echo '{"decision":"approve","reason":"TeammateIdle dedup: skipped"}'
+        exit 0
+      fi
+    fi
+  fi
+fi
 
-log_entry="{\"event\":\"teammate_idle\",\"teammate\":\"${TEAMMATE_NAME_ESCAPED}\",\"team\":\"${TEAM_NAME_ESCAPED}\",\"timestamp\":\"$(get_timestamp)\"}"
+# === タイムライン記録（jq -nc で安全な JSON 構築） ===
+TS="$(get_timestamp)"
 
-echo "${log_entry}" >> "${TIMELINE_FILE}" 2>/dev/null || true
+if command -v jq >/dev/null 2>&1; then
+  log_entry="$(jq -nc \
+    --arg event "teammate_idle" \
+    --arg teammate "${TEAMMATE_NAME}" \
+    --arg team "${TEAM_NAME}" \
+    --arg timestamp "${TS}" \
+    '{event:$event, teammate:$teammate, team:$team, timestamp:$timestamp}')"
+else
+  # フォールバック: python3 で安全にエスケープ
+  log_entry="$(python3 -c "
+import json, sys
+print(json.dumps({
+    'event': 'teammate_idle',
+    'teammate': sys.argv[1],
+    'team': sys.argv[2],
+    'timestamp': sys.argv[3]
+}, ensure_ascii=False))
+" "${TEAMMATE_NAME}" "${TEAM_NAME}" "${TS}" 2>/dev/null)" || log_entry=""
+fi
+
+if [ -n "${log_entry}" ]; then
+  echo "${log_entry}" >> "${TIMELINE_FILE}" 2>/dev/null || true
+  rotate_jsonl "${TIMELINE_FILE}"
+fi
 
 # === レスポンス ===
 echo '{"decision":"approve","reason":"TeammateIdle tracked"}'
