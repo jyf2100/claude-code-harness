@@ -4,6 +4,19 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.20.5] - 2026-02-12
+
+### Fixed
+
+- **Breezing `--codex` subagent_type enforcement**: Fixed `--codex` flag being ignored during Implementer spawn
+  - Root cause: `execution-flow.md` Step 3 hardcoded `task-worker` with no `--codex` branch
+  - Added mandatory `impl_mode` branching to SKILL.md, execution-flow.md, and team-composition.md
+  - Added three "absolute prohibition" rules: codex mode must use `codex-implementer`, standard mode must use `task-worker`, codex mode Lead must not Write/Edit source
+  - Added explicit parallel spawn instruction: N Implementers spawned simultaneously (`N = min(independent_tasks, --parallel N, 3)`)
+  - Compaction Recovery now restores correct subagent_type based on `impl_mode`
+
+---
+
 ## [2.20.4] - 2026-02-11
 
 ### Fixed

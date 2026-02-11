@@ -7,6 +7,19 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.20.5] - 2026-02-12
+
+### Fixed
+
+- **Breezing `--codex` の subagent_type 選択を強制化**: `--codex` フラグが Implementer spawn 時に無視される問題を修正
+  - 根本原因: `execution-flow.md` の Step 3 が `task-worker` をハードコードし、`--codex` 分岐が存在しなかった
+  - SKILL.md、execution-flow.md、team-composition.md に `impl_mode` による必須分岐を追加
+  - 3つの「絶対禁止」ルールを追加: codex モードでは `codex-implementer` 必須、standard モードでは `task-worker` 必須、codex モードの Lead はソースコードの直接 Write/Edit 禁止
+  - 並列 spawn の明示指示を追加: N 個の Implementer を同時 spawn（`N = min(独立タスク数, --parallel N, 3)`）
+  - Compaction Recovery が `impl_mode` に基づき正しい subagent_type を復元するよう修正
+
+---
+
 ## [2.20.4] - 2026-02-11
 
 ### Fixed

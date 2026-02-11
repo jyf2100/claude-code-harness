@@ -36,15 +36,21 @@ Lead (Phase B: delegate mode) ─ 指揮のみ、コーディング禁止
 
 ### Implementer
 
+**subagent_type は `--codex` フラグで決定する（必須分岐）**:
+
+| 条件 | subagent_type | エージェント |
+|------|---------------|------------|
+| `--codex` **なし** (`impl_mode: "standard"`) | `claude-code-harness:task-worker` | Claude が直接コーディング |
+| `--codex` **あり** (`impl_mode: "codex"`) | `claude-code-harness:codex-implementer` | Codex CLI 経由で実装委託 |
+
 | 項目 | 設定 |
 |------|------|
-| **subagent_type** | `claude-code-harness:task-worker` |
 | **モデル** | sonnet |
-| **数** | 1〜3 (独立タスク数に基づく自動決定) |
-| **責務** | 実装、セルフレビュー、ビルド検証、テスト実行 |
-| **Skills** | impl, verify (エージェント定義で自動継承) |
+| **数** | 1〜3 (独立タスク数に基づく自動決定。**N 個を同時に spawn** すること) |
+| **責務** | (standard) 実装、セルフレビュー、ビルド検証、テスト実行 / (codex) Codex CLI 呼び出し、AGENTS_SUMMARY 検証、Quality Gates |
+| **Skills** | (standard) impl, verify / (codex) work, verify |
 | **Memory** | `project` スコープ (エージェント定義で自動有効化) |
-| **フロー** | task-worker エージェントと同等 |
+| **フロー** | (standard) task-worker エージェントと同等 / (codex) codex-implementer エージェントと同等 |
 
 ### Reviewer
 
