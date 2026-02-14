@@ -8,13 +8,17 @@ Change history for claude-code-harness.
 
 ### Fixed
 
+- **session-auto-broadcast.sh の hookEventName バリデーションエラー** (#41):
+  - `hookEventName` を `"AutoBroadcast"` → `"PostToolUse"` に修正（4箇所）
+  - `session-broadcast.sh` の `hookEventName` を `"Broadcast"` → `"PostToolUse"` に修正
+  - subprocess の stdout 汚染を防止（`>/dev/null` リダイレクト追加）
+  - `test-hook-event-names.sh` テスト追加（hookEventName 一貫性の回帰テスト）
 - **Stop hook "JSON validation failed" on every turn (#42)**: Replaced unreliable `type: "prompt"` hook with deterministic `type: "command"` hook (`stop-session-evaluator.sh`)
   - Root cause: prompt-type hook instructed the LLM to respond in JSON, but the model frequently returned natural language, causing repeated JSON parse errors
   - New command-based evaluator always outputs valid JSON, eliminating validation failures entirely
   - Both `hooks/hooks.json` and `.claude-plugin/hooks.json` updated in sync
 
 ---
-
 ## [2.20.5] - 2026-02-12
 
 ### Fixed
