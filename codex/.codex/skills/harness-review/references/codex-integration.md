@@ -1,6 +1,6 @@
 ---
 name: codex-integration
-description: "レビュースキルへの Codex セカンドオピニオン統合手順"
+description: "Codex 実行時に harness-review を Claude CLI（claude -p）へ委譲する手順"
 allowed-tools: ["Read", "Bash"]
 ---
 
@@ -199,11 +199,11 @@ Claude CLI 呼び出し ─┘
 
 **言い方**:
 - 「他の AI にも見てもらって」
-- 「Codex にもチェックさせて」
+- 「Claude CLI でダブルチェックして」
 - 「ダブルチェックして」
 
 **結果の見方**:
-- Claude と Codex で同じ指摘 → 確実に対応が必要
+- Codex 側と Claude 委譲で同じ指摘 → 確実に対応が必要
 - 片方だけの指摘 → 内容を確認して判断
 - 矛盾する指摘 → 両方の理由を確認
 ```
