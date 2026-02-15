@@ -67,7 +67,7 @@ Active experts:
 - Plan Reviewer
 - Scope Analyst
 
-Next `/harness-review` will delegate to Codex in parallel.
+Next `/harness-review` will delegate to Claude (`claude -p`) in parallel.
 ```
 
 ### Disable (`/codex-mode off`)
