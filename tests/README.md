@@ -16,6 +16,26 @@
 ./tests/validate-plugin.sh
 ```
 
+### Unified Memory 検証
+
+共通メモリdaemonの基本動作を検証します：
+
+```bash
+./tests/test-memory-daemon.sh
+```
+
+ゾンビプロセスが残らないかをループ検証します：
+
+```bash
+./tests/test-memory-daemon-zombie.sh 100
+```
+
+検索品質（hybrid ranking / privacy filter / API経路）を検証します：
+
+```bash
+./tests/test-memory-search-quality.sh
+```
+
 このテストは以下を確認します：
 
 1. **プラグイン構造**: plugin.jsonの存在と妥当性

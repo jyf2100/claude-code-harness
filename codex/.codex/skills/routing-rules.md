@@ -26,7 +26,7 @@
 - "Codex に作らせて"
 - "実装を依頼"
 
-### /work --codex (旧 codex-worker)
+### /work (Codex 既定, 旧 /work --codex)
 
 **目的**: Codex を実装エンジンとして使用
 
@@ -36,7 +36,18 @@
 - "Codex に作らせて"
 - "実装を依頼"
 
-**対応**: `/work --codex` で実行
+**対応**: `/work` で実行（`--codex` は互換エイリアス）
+
+### /work --claude
+
+**目的**: Codex が PM として調整し、Claude CLI に実装委譲
+
+**トリガーキーワード**:
+- "Claude に実装させて"
+- "Claude Worker"
+- "Claude で実装して"
+
+**対応**: `/work --claude` で実行
 
 ## ルーティング判定フロー（参考）
 

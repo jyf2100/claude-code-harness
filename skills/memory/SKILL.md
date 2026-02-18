@@ -3,7 +3,7 @@ name: memory
 description: "Manage SSOT, memory, and cross-tool memory search. Guardian of decisions.md and patterns.md. Use when user mentions memory, SSOT, decisions.md, patterns.md, merging, migration, SSOT promotion, sync memory, save learnings, memory search, claude-mem, past decisions, record this, or cursor-mem integration. Do NOT load for: implementation work, reviews, ad-hoc notes, or in-session logging."
 description-en: "Manage SSOT, memory, and cross-tool memory search. Guardian of decisions.md and patterns.md. Use when user mentions memory, SSOT, decisions.md, patterns.md, merging, migration, SSOT promotion, sync memory, save learnings, memory search, claude-mem, past decisions, record this, or cursor-mem integration. Do NOT load for: implementation work, reviews, ad-hoc notes, or in-session logging."
 description-ja: "SSOTと記憶を管理し、ツール横断の記憶検索を提供。decisions.mdとpatterns.mdの守護者です。Use when user mentions memory, SSOT, decisions.md, patterns.md, merging, migration, SSOT promotion, sync memory, save learnings, memory search, claude-mem, past decisions, record this, or cursor-mem integration. Do NOT load for: implementation work, reviews, ad-hoc notes, or in-session logging."
-allowed-tools: ["Read", "Write", "Edit", "Bash", "mcp__claude-mem__*"]
+allowed-tools: ["Read", "Write", "Edit", "Bash", "mcp__harness__harness_mem_*", "mcp__claude-mem__*"]
 argument-hint: "[ssot|sync|migrate|search|record]"
 context: fork
 ---
@@ -22,6 +22,14 @@ context: fork
 | **プロジェクト仕様同期** | See [references/sync-project-specs.md](references/sync-project-specs.md) |
 | **メモリ→SSOT昇格** | See [references/sync-ssot-from-memory.md](references/sync-ssot-from-memory.md) |
 | **記憶検索（Cursor連携）** | See [references/cursor-mem-search.md](references/cursor-mem-search.md) |
+
+## Unified Harness Memory（共通DB）
+
+Claude Code / Codex / OpenCode 共通の記録・検索は `harness_mem_*` MCP を優先する。
+
+- 検索: `harness_mem_search`, `harness_mem_timeline`, `harness_mem_get_observations`
+- 注入: `harness_mem_resume_pack`
+- 記録: `harness_mem_record_checkpoint`, `harness_mem_finalize_session`, `harness_mem_record_event`
 
 ## Claude Code 自動メモリとの関係（D22）
 

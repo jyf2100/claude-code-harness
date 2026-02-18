@@ -108,6 +108,23 @@ Phase 4: Auto-commit (unless --no-commit)
 Tip 表示
 ```
 
+## Unified Memory Gate（必須）
+
+`/work` 実行時は、以下の順序で Unified Harness Memory を必ず通す:
+
+1. 実装前: `harness_mem_resume_pack(project, session_id?, limit=5, include_private=false)`
+2. マイルストーン到達時（設計確定・大きな修正・方針転換）:
+   `harness_mem_record_checkpoint(session_id, title, content, tags?, privacy_tags?)`
+3. 実装完了時（handoff 前）:
+   `harness_mem_finalize_session(session_id, summary_mode="standard")`
+
+補足:
+- `session_id` は `$CLAUDE_SESSION_ID` → `.claude/state/session.json` の `.session_id` の順で取得する
+- `harness_mem_sessions_list(project, limit=1)` の先頭利用は read-only（resume確認）に限定し、`record_checkpoint` / `finalize_session` は明示 `session_id` が無い場合に失敗扱いとする
+- Codex では `notify` hook（after_agent）とこの手順を併用し、記録漏れを抑える
+- `.codex/history.jsonl` は daemon 側で自動インジェストされるため、手動追記不要
+- いずれかが失敗した場合は `harness_mem_health()` と `scripts/harness-memd doctor` で状態確認し、復旧後に同ステップを再実行する
+
 ## Auto-Iteration (4+ tasks or `all`)
 
 大量タスク時は自動反復ロジックが有効化:

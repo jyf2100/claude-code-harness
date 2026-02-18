@@ -8,6 +8,7 @@ Enables cross-client session communication between Claude Code, Codex, Cursor, a
 - **Session Communication**: Broadcast messages across different AI client sessions
 - **Workflow Tools**: Plan → Work → Review cycle accessible from any MCP client
 - **Status Sync**: Unified project status across all clients
+- **Unified Memory**: Cross-platform record/search/injection via `harness-memd`
 
 ## Installation
 
@@ -88,6 +89,21 @@ npm run build
 |------|-------------|
 | `harness_status` | Get project status |
 
+### Unified Memory
+
+| Tool | Description |
+|------|-------------|
+| `harness_mem_resume_pack` | Get resume context pack |
+| `harness_mem_search` | Hybrid lexical+vector memory search |
+| `harness_mem_timeline` | Timeline expansion around an observation |
+| `harness_mem_get_observations` | Get observations by ids |
+| `harness_mem_record_checkpoint` | Record checkpoint memory |
+| `harness_mem_finalize_session` | Finalize session summary |
+| `harness_mem_record_event` | Record normalized event envelope |
+| `harness_mem_health` | Check memory daemon health |
+| `harness_mem_admin_reindex_vectors` | Rebuild vector index from observations |
+| `harness_mem_admin_metrics` | Get memory coverage and queue metrics |
+
 ## Example: Cross-Client Workflow
 
 ```
@@ -139,7 +155,8 @@ mcp-server/
 │   └── tools/
 │       ├── session.ts     # Session communication tools
 │       ├── workflow.ts    # Workflow tools
-│       └── status.ts      # Status tools
+│       ├── status.ts      # Status tools
+│       └── memory.ts      # Unified memory tools
 ├── package.json
 ├── tsconfig.json
 └── README.md

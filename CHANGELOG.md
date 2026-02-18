@@ -4,6 +4,31 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.20.10] - 2026-02-18
+
+### What's Changed
+
+**Codex Harness now defaults to user-based installation, and Codex command execution is Codex-first with explicit `--claude` delegation.**
+
+| Before | After |
+|--------|-------|
+| Codex setup copied `.codex` per project by default | Setup defaults to user scope (`${CODEX_HOME:-~/.codex}`), with `--project` as opt-in |
+| `/work --codex` and `/breezing --codex` were primary for Codex execution | Codex is default engine; `--claude` explicitly delegates implementation |
+| Codex setup guidance was mixed between project/user scopes | README + setup references are aligned to user-based rollout (JP/EN) |
+
+### Changed
+
+- Updated Codex setup scripts (`scripts/setup-codex.sh`, `scripts/codex-setup-local.sh`) to install skills/rules to `${CODEX_HOME:-~/.codex}` by default.
+- Added explicit fallback mode `--project` for project-local deployment when needed.
+- Updated Codex distribution docs and setup references to user-based defaults in both English and Japanese.
+- Reworked Codex skill routing/docs so implementation intents resolve to Codex-first `/work`, with `--claude` for intentional delegation.
+- Aligned `/breezing` recovery/state docs (`impl_mode`) with Codex-first runtime semantics.
+
+### Internal
+
+- Synced release-related references and command docs to avoid setup drift between README, setup skill references, and Codex distribution docs.
+
+---
 ## [2.20.9] - 2026-02-15
 
 ### 🎯 What's Changed for You
@@ -729,6 +754,7 @@ Change history for claude-code-harness.
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
+[2.20.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.9...v2.20.10
 [2.20.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.8...v2.20.9
 [2.20.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.7...v2.20.8
 [2.20.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.6...v2.20.7

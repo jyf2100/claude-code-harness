@@ -7,6 +7,31 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.20.10] - 2026-02-18
+
+### 🎯 あなたにとって何が変わるか
+
+**Codex Harness がユーザーベース導入を標準化。Codex 実行は Codex-first となり、Claude 委譲は `--claude` で明示指定になりました。**
+
+| Before | After |
+|--------|-------|
+| Codex 設定はプロジェクトごとの `.codex` コピーが前提 | `${CODEX_HOME:-~/.codex}` へのユーザーベース導入が既定（`--project` は任意） |
+| Codex 実装は `--codex` 指定が主導線 | Codex が既定実装エンジン、`--claude` で明示委譲 |
+| Codex セットアップ文書に project/user スコープ混在 | README と setup リファレンスを日英でユーザーベースに統一 |
+
+### Changed
+
+- `scripts/setup-codex.sh` / `scripts/codex-setup-local.sh` を更新し、スキル・ルールの導入先を既定で `${CODEX_HOME:-~/.codex}` に変更。
+- 必要時のみプロジェクト導入できる `--project` フォールバックを追加。
+- Codex 配布ドキュメントと setup リファレンス（JP/EN）をユーザーベース既定に統一。
+- Codex スキルのルーティング/実行説明を再整理し、実装要求は Codex-first の `/work`、Claude 委譲は `--claude` で明示化。
+- `/breezing` の復旧・状態管理ドキュメント（`impl_mode`）を Codex-first 実行モデルに整合。
+
+### Internal
+
+- README・setup リファレンス・Codex 配布ドキュメント間の記述ずれを解消。
+
+---
 ## [2.20.9] - 2026-02-15
 
 ### 🎯 あなたにとって何が変わるか
@@ -579,6 +604,7 @@
 
 v2.9.x 以前の詳細は [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) を参照してください。
 
+[2.20.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.9...v2.20.10
 [2.20.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.8...v2.20.9
 [2.20.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.7...v2.20.8
 [2.20.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.6...v2.20.7

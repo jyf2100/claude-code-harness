@@ -13,6 +13,13 @@ cd your-project
 curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/setup-opencode.sh | bash
 ```
 
+Unified Memory まで一気に設定する場合:
+
+```bash
+cd your-project
+/path/to/claude-code-harness/scripts/harness-mem setup --platform opencode
+```
+
 ### 方法 2: Claude Code からセットアップ
 
 Claude Code を使っている場合は、コマンド一つでセットアップ：
@@ -48,6 +55,22 @@ npm run build
 # opencode.json をプロジェクトにコピーしてパスを調整
 cp claude-code-harness/opencode/opencode.json your-project/
 # opencode.json 内のパスを実際のパスに変更
+```
+
+Unified memory daemon（共通DB）も併用する場合:
+
+```bash
+# memory daemon 起動
+./scripts/harness-memd start
+
+# health 確認
+./scripts/harness-mem-client.sh health
+```
+
+または `harness-mem` で診断まで実行:
+
+```bash
+/path/to/claude-code-harness/scripts/harness-mem doctor --platform opencode --fix
 ```
 
 ---
@@ -106,6 +129,10 @@ MCP サーバー経由で以下のツールが利用可能です：
 | `harness_workflow_review` | コードレビュー |
 | `harness_session_broadcast` | セッション間通知 |
 | `harness_status` | 状態確認 |
+| `harness_mem_resume_pack` | 再開コンテキスト取得 |
+| `harness_mem_search` | 共通メモリ検索 |
+| `harness_mem_record_checkpoint` | チェックポイント記録 |
+| `harness_mem_finalize_session` | セッション確定 |
 
 ---
 
@@ -127,7 +154,7 @@ opencode
 ## 制限事項
 
 - Harness プラグインシステム（`.claude-plugin/`）は opencode では使用できません
-- フックは opencode 側で別途設定が必要です
+- memory hooks は `opencode/plugins/harness-memory/index.ts` で提供します（`chat.message` / `session.idle` / `session.compacted`）
 - `description-en` フィールドは自動削除されます
 
 ---

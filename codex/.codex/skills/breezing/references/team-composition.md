@@ -2,6 +2,10 @@
 
 Breezing の Agent Teams 構成と各ロールの spawn prompt テンプレート。
 
+> 互換性メモ（2026-02-18）:
+> Codex 実行時は Codex 実装が既定。`--claude` 指定時のみ Claude 実装に切り替える。
+> `--codex` は legacy alias として既定動作を維持する。
+
 ## Team 構成図
 
 ```
@@ -36,21 +40,21 @@ Lead (Phase B: delegate mode) ─ 指揮のみ、コーディング禁止
 
 ### Implementer
 
-**subagent_type は `--codex` フラグで決定する（必須分岐）**:
+**subagent_type は `--claude` フラグで決定する（必須分岐）**:
 
 | 条件 | subagent_type | エージェント |
 |------|---------------|------------|
-| `--codex` **なし** (`impl_mode: "standard"`) | `claude-code-harness:task-worker` | Claude が直接コーディング |
-| `--codex` **あり** (`impl_mode: "codex"`) | `claude-code-harness:codex-implementer` | Codex CLI 経由で実装委託 |
+| `--claude` **なし** (`impl_mode: "codex"`) | `claude-code-harness:codex-implementer` | Codex が直接コーディング |
+| `--claude` **あり** (`impl_mode: "claude"`) | `claude-code-harness:task-worker` | Claude CLI 経由で実装委託 |
 
 | 項目 | 設定 |
 |------|------|
 | **モデル** | sonnet |
 | **数** | 1〜3 (独立タスク数に基づく自動決定。**N 個を同時に spawn** すること) |
-| **責務** | (standard) 実装、セルフレビュー、ビルド検証、テスト実行 / (codex) Codex CLI 呼び出し、AGENTS_SUMMARY 検証、Quality Gates |
-| **Skills** | (standard) impl, verify / (codex) work, verify |
+| **責務** | (codex) 実装、セルフレビュー、ビルド検証、テスト実行 / (claude) Claude CLI 呼び出し、AGENTS_SUMMARY 検証、Quality Gates |
+| **Skills** | (codex) work, verify / (claude) impl, verify |
 | **Memory** | `project` スコープ (エージェント定義で自動有効化) |
-| **フロー** | (standard) task-worker エージェントと同等 / (codex) codex-implementer エージェントと同等 |
+| **フロー** | (codex) codex-implementer エージェントと同等 / (claude) task-worker エージェントと同等 |
 
 ### Reviewer
 
@@ -66,9 +70,10 @@ Lead (Phase B: delegate mode) ─ 指揮のみ、コーディング禁止
 
 ## Spawn Prompt テンプレート
 
-### Implementer Spawn Prompt
+### Implementer Spawn Prompt (--claude / task-worker 用)
 
 > **注**: `subagent_type: "claude-code-harness:task-worker"`, `mode: "bypassPermissions"` で spawn すること。
+> これは `--claude` 指定時のテンプレート。Codex 既定モードの Implementer は `codex-implementer` を使う。
 > Teammate はプロンプト表示不可のため、`bypassPermissions` がないと Bash 等が auto-deny される。
 > 安全性は PreToolUse hooks（pretooluse-guard）が独立レイヤーとして担保する。
 > エージェント定義 (`agents/task-worker.md`) の品質ガードレール、セルフレビューフロー、

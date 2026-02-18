@@ -229,3 +229,12 @@ out/
 
 # Absolute path remnants (accidentally created)
 /Users/
+
+# Keep unified memory MCP source file trackable
+!/mcp-server/
+/mcp-server/*
+!/mcp-server/src/
+/mcp-server/src/*
+!/mcp-server/src/tools/
+/mcp-server/src/tools/*
+!/mcp-server/src/tools/memory.ts

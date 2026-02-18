@@ -13,7 +13,7 @@
 
 ## Codex CLI の前提
 
-- Codex は `.codex/skills/<skill-name>/SKILL.md` を読み込み、`$skill-name` で明示呼び出しする
+- Codex は `${CODEX_HOME:-~/.codex}/skills/<skill-name>/SKILL.md`（ユーザーベース）と `.codex/skills/...`（プロジェクト上書き）を読み込み、`$skill-name` で明示呼び出しする
 - Codex は `AGENTS.override.md` を優先し、次に `AGENTS.md`、必要なら設定された fallback 名を参照する
 - Hooks は未対応のため、暫定ガードは `.codex/rules/*.rules` の `prefix_rule()` で行う
 
@@ -198,7 +198,7 @@ skills/
 ./scripts/ci/check-consistency.sh
 
 # Codex CLI での確認（手動）
-# - `.codex/skills` が読み込まれること
+# - `${CODEX_HOME:-~/.codex}/skills` または `.codex/skills` が読み込まれること
 # - `$work` や `$harness-review` が認識されること
 ```
 

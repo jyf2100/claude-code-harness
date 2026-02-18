@@ -27,9 +27,11 @@ AskUserQuestion で対話:
 | `3` | タスク3だけ | スキップ |
 | `3-6` | タスク3〜6 | スキップ |
 | `all` | 全未完了タスク | スキップ |
-| `--codex` | Codex エンジン（スコープは対話） | あり |
-| `--codex all` | Codex で全タスク | スキップ |
-| `--codex 3` | Codex でタスク3 | スキップ |
+| `--claude` | Claude エンジン（スコープは対話） | あり |
+| `--claude all` | Claude で全タスク | スキップ |
+| `--claude 3` | Claude でタスク3 | スキップ |
+| `--codex` | 互換エイリアス（Codex 既定） | あり |
+| `--codex all` | 互換エイリアス（Codex 既定） | スキップ |
 
 ## 自然言語対応
 

@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.20.9-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.20.10-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-45-orange.svg" alt="Skills">
@@ -73,21 +73,36 @@ That's it. Start with `/plan-with-agent`.
 
 ## Codex CLI Setup
 
-Use Codex CLI with Team Config (shared `.codex/`):
+Use Codex CLI with user-based Harness config (shared via `CODEX_HOME`):
 
-1. Copy `codex/.codex` into your project as `.codex`
-2. Copy `codex/AGENTS.md` into your project root as `AGENTS.md`
-3. Optional: copy `codex/.codex/config.toml` and set the MCP server path
+1. Install skills/rules to `${CODEX_HOME:-~/.codex}` (user scope)
+2. Optional: add project `AGENTS.md` only where needed
+3. Optional: install `${CODEX_HOME}/config.toml` MCP template
 
 Script setup:
 
 ```bash
-/path/to/claude-code-harness/scripts/setup-codex.sh
+/path/to/claude-code-harness/scripts/setup-codex.sh --user --skip-mcp
 ```
 
-Claude Code users can run `/setup codex` to apply it without leaving the session.
+Project-local fallback is still available:
+
+```bash
+/path/to/claude-code-harness/scripts/setup-codex.sh --project --skip-mcp
+```
+
+Claude Code users can run `/setup codex` to apply user-based setup without leaving the session.
 
 Use `$plan-with-agent`, `$work`, `$harness-review` to run the workflow.
+
+## Unified Memory Setup (Claude/Codex/OpenCode shared)
+
+```bash
+# from your project
+/path/to/claude-code-harness/scripts/harness-mem setup
+```
+
+This wires platform adapters, starts `harness-memd`, and runs smoke + search quality checks.
 
 ---
 
