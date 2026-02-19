@@ -137,6 +137,97 @@ else
   log_pass "Rules examples check skipped"
 fi
 
+# Test 1.6: codex multi-agent migration guardrails
+log_test "Codex multi-agent migration vocabulary checks"
+targets=(
+  "codex/.codex/skills/breezing"
+  "codex/.codex/skills/work"
+)
+forbidden=(
+  "delegate mode"
+  "TaskCreate"
+  "subagent_type"
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
+  ".claude/state"
+)
+
+forbidden_hit=false
+for pat in "${forbidden[@]}"; do
+  if rg -n --fixed-strings "$pat" "${targets[@]}" >/tmp/codex-forbidden.$$ 2>/dev/null; then
+    echo "  forbidden pattern found: $pat"
+    head -5 /tmp/codex-forbidden.$$ | sed 's/^/    /'
+    forbidden_hit=true
+  fi
+done
+rm -f /tmp/codex-forbidden.$$ || true
+
+if $forbidden_hit; then
+  log_fail "Forbidden legacy vocabulary remains in Codex skills"
+else
+  log_pass "No forbidden legacy vocabulary in Codex skills"
+fi
+
+log_test "Codex native multi-agent keywords present"
+required_keywords=(
+  "spawn_agent"
+  "wait"
+  "send_input"
+  "resume_agent"
+  "close_agent"
+)
+missing_keyword=false
+for kw in "${required_keywords[@]}"; do
+  if rg -q --fixed-strings "$kw" "${targets[@]}"; then
+    echo "  ok: $kw"
+  else
+    echo "  missing: $kw"
+    missing_keyword=true
+  fi
+done
+if $missing_keyword; then
+  log_fail "Missing codex native multi-agent keywords"
+else
+  log_pass "Codex native multi-agent keywords present"
+fi
+
+log_test "--claude review routing is fixed to Claude"
+claude_review_check=true
+if ! rg -q --fixed-strings '| `review_engine` | `codex` | `claude` |' "codex/.codex/skills/breezing/SKILL.md"; then
+  echo "  missing review_engine matrix in breezing/SKILL.md"
+  claude_review_check=false
+fi
+if ! rg -q --fixed-strings '| `review_engine` | `codex` | `claude` |' "codex/.codex/skills/work/SKILL.md"; then
+  echo "  missing review_engine matrix in work/SKILL.md"
+  claude_review_check=false
+fi
+if ! rg -q --fixed-strings -- "--claude + --codex-review" "codex/.codex/skills/breezing" "codex/.codex/skills/work"; then
+  echo "  missing conflict rule: --claude + --codex-review"
+  claude_review_check=false
+fi
+if $claude_review_check; then
+  log_pass "--claude review routing checks passed"
+else
+  log_fail "--claude review routing checks failed"
+fi
+
+log_test "codex/.codex/config.toml has multi_agent + harness roles"
+config_ok=true
+if ! rg -q --fixed-strings "multi_agent = true" "codex/.codex/config.toml"; then
+  echo "  missing: multi_agent = true"
+  config_ok=false
+fi
+for role in "implementer" "reviewer" "claude_implementer" "claude_reviewer"; do
+  if ! rg -q --fixed-strings "[agents.${role}]" "codex/.codex/config.toml"; then
+    echo "  missing: [agents.${role}]"
+    config_ok=false
+  fi
+done
+if $config_ok; then
+  log_pass "config.toml has required multi-agent defaults"
+else
+  log_fail "config.toml missing required multi-agent defaults"
+fi
+
 # Test 2: skills directory parity
 log_test "Skills parity by SKILL name"
 if [ -d "opencode/skills" ] && [ -d "codex/.codex/skills" ]; then
@@ -167,6 +258,13 @@ fi
 log_test "Each Codex skill has SKILL.md"
 missing_skill=false
 while IFS= read -r skill_dir; do
+  skill_name="$(basename "$skill_dir")"
+  case "$skill_name" in
+    _archived|harness-ui)
+      # distribution-excluded buckets are allowed without SKILL.md
+      continue
+      ;;
+  esac
   if [ ! -f "$skill_dir/SKILL.md" ]; then
     echo "  missing: $skill_dir/SKILL.md"
     missing_skill=true

@@ -191,6 +191,87 @@ setup_mcp_template() {
     fi
 }
 
+ensure_multi_agent_defaults() {
+    local target_root="$1"
+    local cfg="$target_root/config.toml"
+
+    mkdir -p "$target_root"
+
+    if [ ! -f "$cfg" ]; then
+        cat > "$cfg" <<'CFG'
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 8
+
+[agents.implementer]
+description = "Codex implementation worker for harness task execution"
+
+[agents.reviewer]
+description = "Codex reviewer worker for harness review and retake loops"
+
+[agents.claude_implementer]
+description = "Claude CLI delegated implementation worker (used when --claude)"
+
+[agents.claude_reviewer]
+description = "Claude CLI delegated reviewer worker (used when --claude)"
+CFG
+        log_ok "Created $cfg with multi_agent + harness role defaults"
+        return
+    fi
+
+    if ! grep -q '^[[:space:]]*multi_agent[[:space:]]*=' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[features]
+multi_agent = true
+CFG
+        log_ok "Enabled features.multi_agent in $cfg"
+    fi
+
+    if ! grep -q '^\[agents\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[agents]
+max_threads = 8
+CFG
+        log_ok "Added [agents] defaults to $cfg"
+    fi
+
+    if ! grep -q '^\[agents\.implementer\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[agents.implementer]
+description = "Codex implementation worker for harness task execution"
+CFG
+    fi
+
+    if ! grep -q '^\[agents\.reviewer\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[agents.reviewer]
+description = "Codex reviewer worker for harness review and retake loops"
+CFG
+    fi
+
+    if ! grep -q '^\[agents\.claude_implementer\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[agents.claude_implementer]
+description = "Claude CLI delegated implementation worker (used when --claude)"
+CFG
+    fi
+
+    if ! grep -q '^\[agents\.claude_reviewer\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[agents.claude_reviewer]
+description = "Claude CLI delegated reviewer worker (used when --claude)"
+CFG
+    fi
+}
+
 print_success() {
     local target_root="$1"
 
@@ -249,6 +330,7 @@ main() {
     fi
 
     setup_mcp_template "$target_root"
+    ensure_multi_agent_defaults "$target_root"
     print_success "$target_root"
 }
 
