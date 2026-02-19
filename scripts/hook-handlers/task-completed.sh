@@ -135,25 +135,52 @@ BREEZING_ACTIVE="${STATE_DIR}/breezing-active.json"
 
 # breezing セッションがアクティブな場合のみシグナルを生成
 if [ -f "${BREEZING_ACTIVE}" ]; then
-  # 完了タスク数をカウント
+  # breezing-active.json から現在バッチのタスク ID リストと合計タスク数を取得
+  TOTAL_TASKS=0
+  CURRENT_BATCH_IDS=""
+  if command -v jq >/dev/null 2>&1; then
+    # Progressive Batching: 現在の in_progress バッチから取得
+    _batch_info="$(jq -r '
+      (.batching.batches // [] | map(select(.status == "in_progress")) | .[0].task_ids // []) as $ids |
+      ($ids | length) as $len |
+      ($ids | join(",")) as $csv |
+      "\($len)\t\($csv)"
+    ' "${BREEZING_ACTIVE}" 2>/dev/null)" || _batch_info=""
+    if [ -n "${_batch_info}" ]; then
+      TOTAL_TASKS="$(echo "${_batch_info}" | cut -f1)"
+      CURRENT_BATCH_IDS="$(echo "${_batch_info}" | cut -f2)"
+    fi
+    # batching でない場合は plans_md_mapping のキー数で推定
+    if [ "${TOTAL_TASKS}" = "0" ] || [ "${TOTAL_TASKS}" = "null" ] || [ -z "${TOTAL_TASKS}" ]; then
+      TOTAL_TASKS="$(jq -r '.plans_md_mapping // {} | keys | length' "${BREEZING_ACTIVE}" 2>/dev/null)" || TOTAL_TASKS=0
+      # 非バッチモード: plans_md_mapping のキーをバッチ ID として使用
+      CURRENT_BATCH_IDS="$(jq -r '.plans_md_mapping // {} | keys | join(",")' "${BREEZING_ACTIVE}" 2>/dev/null)" || CURRENT_BATCH_IDS=""
+    fi
+    unset _batch_info
+  fi
+
+  # 現在バッチのタスクのみで完了数をカウント（前バッチの完了を除外）
   COMPLETED_COUNT=0
-  if [ -f "${TIMELINE_FILE}" ]; then
+  if [ -f "${TIMELINE_FILE}" ] && [ -n "${CURRENT_BATCH_IDS}" ]; then
+    # バッチ内の各タスク ID でタイムラインを検索し、マッチ数を合算
+    IFS=',' read -ra _batch_id_arr <<< "${CURRENT_BATCH_IDS}"
+    for _bid in "${_batch_id_arr[@]}"; do
+      _bid="$(echo "${_bid}" | tr -d '[:space:]')"
+      if [ -n "${_bid}" ]; then
+        _matches="$(grep -c "\"task_id\":\"${_bid}\"" "${TIMELINE_FILE}" 2>/dev/null)" || _matches=0
+        COMPLETED_COUNT=$(( COMPLETED_COUNT + _matches ))
+      fi
+    done
+    unset _batch_id_arr _bid _matches
+  elif [ -f "${TIMELINE_FILE}" ]; then
+    # フォールバック: バッチ ID が取得できない場合は全体カウント
     COMPLETED_COUNT="$(grep -c '"event":"task_completed"' "${TIMELINE_FILE}" 2>/dev/null)" || COMPLETED_COUNT=0
   fi
 
-  # breezing-active.json から合計タスク数を取得（batching 対応）
-  TOTAL_TASKS=0
-  if command -v jq >/dev/null 2>&1; then
-    TOTAL_TASKS="$(jq -r '.batching.batches // [] | map(select(.status == "in_progress")) | .[0].task_ids // [] | length' "${BREEZING_ACTIVE}" 2>/dev/null)" || TOTAL_TASKS=0
-    # batching でない場合は plans_md_mapping のキー数で推定
-    if [ "${TOTAL_TASKS}" = "0" ] || [ "${TOTAL_TASKS}" = "null" ]; then
-      TOTAL_TASKS="$(jq -r '.plans_md_mapping // {} | keys | length' "${BREEZING_ACTIVE}" 2>/dev/null)" || TOTAL_TASKS=0
-    fi
-  fi
-
   # 50% 完了シグナル: 部分レビュー推奨
+  # 切り上げ計算で閾値が早すぎるトリガーを防止
   if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null; then
-    HALF=$(( TOTAL_TASKS / 2 ))
+    HALF=$(( (TOTAL_TASKS + 1) / 2 ))
     if [ "${COMPLETED_COUNT}" -eq "${HALF}" ] && [ "${HALF}" -gt 1 ] 2>/dev/null; then
       SIGNAL_ENTRY=""
       if command -v jq >/dev/null 2>&1; then
@@ -170,7 +197,8 @@ if [ -f "${BREEZING_ACTIVE}" ]; then
     fi
 
     # 60% 完了シグナル: 次バッチ登録推奨（Progressive Batch 用）
-    SIXTY_PCT=$(( TOTAL_TASKS * 60 / 100 ))
+    # 切り上げ: (n * 60 + 99) / 100 で端数切り捨てによる早期トリガーを防止
+    SIXTY_PCT=$(( (TOTAL_TASKS * 60 + 99) / 100 ))
     if [ "${COMPLETED_COUNT}" -eq "${SIXTY_PCT}" ] && [ "${SIXTY_PCT}" -gt 0 ] 2>/dev/null; then
       BATCH_SIGNAL=""
       if command -v jq >/dev/null 2>&1; then
