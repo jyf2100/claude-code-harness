@@ -21,9 +21,12 @@ Phase A: Pre-delegate（通常フローに合流）
 | 条件 | Phase 0 起動 |
 |---|---|
 | `--discuss` フラグ指定 | 常に起動 |
-| タスク粒度バリデーション(V1〜V4)で warning 3+ | 自動起動を推奨（Lead 判断） |
-| タスク数 10+ | 自動起動を推奨（Lead 判断） |
-| フラグなし + 問題なし | スキップ（直接 Phase A へ） |
+| フラグなし | スキップ（直接 Phase A へ） |
+
+> **注**: Phase A の V1〜V4 バリデーションで多数の warning が見つかった場合、
+> Lead は「次回は `--discuss` の使用を推奨」とユーザーに提案できる。
+> ただし Phase 0 は Phase A の**前**に実行されるため、
+> V1〜V4 の結果を見てから Phase 0 に戻ることはできない。
 
 ## Team 構成（Phase 0 限定）
 
@@ -31,7 +34,7 @@ Phase A: Pre-delegate（通常フローに合流）
 Lead ─── 議論の調整、最終判断
   │
   ├── Planner (sonnet) ─── タスク分析・依存推定・粒度精査
-  │     subagent_type: claude-code-harness:project-analyzer
+  │     subagent_type: claude-code-harness:plan-analyst
   │     mode: "bypassPermissions"
   │
   └── Critic (sonnet) ─── Red Teaming・批判的検証
@@ -81,13 +84,23 @@ Planner → SendMessage → Lead:
   }
 ```
 
-### Round 2: Critic の批判的レビュー
+### Round 2: Critic の批判的レビュー + Planner ↔ Critic 直接対話
+
+**記事の知見**: Agent Teams の最大の強みは「Teammate 間の直接対話（intra-round discussion）」。
+Lead を仲介せず、Planner と Critic が直接やりとりして疑問点を解消する。
 
 ```text
 Lead → SendMessage → Critic:
   「Planner の分析結果を踏まえて、計画を批判的に検証してください。
-   Red Teaming チェックリスト（ゴール達成性・粒度・依存・並列化・リスク・代替案）
-   の各観点で問題を指摘してください。」
+   不明点は Planner に直接質問してください。」
+
+Critic → SendMessage → Planner:  ← Teammate 間直接対話
+  「タスク 4.2 が 4.1 の認証 API に依存するとのことですが、
+   4.2 は JWT 検証だけなので独立実装可能では？」
+
+Planner → SendMessage → Critic:  ← Teammate 間直接対話
+  「src/middleware.ts を確認したところ、4.1 で作成する loginHandler の
+   レスポンス型を 4.2 の JWT 検証が参照しています。依存は正当です。」
 
 Critic → SendMessage → Lead:
   {
@@ -113,8 +126,9 @@ Critic → SendMessage → Lead:
         "suggestion": "タスク 4.4 を独立化できないか検討"
       }
     ],
+    "planner_consultations": 1,
     "parallelism_score": "medium",
-    "summary": "概ね妥当だが、タスク 4.3 の具体化とテストタスクの追加が推奨"
+    "summary": "概ね妥当だが、タスク 4.3 の具体化とテストタスクの追加が推奨。依存関係は Planner と確認済み。"
   }
 ```
 
@@ -166,9 +180,11 @@ Phase 0 で得られた情報は Phase A に引き継ぐ:
 
 ```text
 Phase 0 → Phase A への引き継ぎ:
-  1. Planner の estimated_owns → Phase A Step 3 の owns 推定に活用
+  1. Planner の estimated_owns → Phase A Step 3 の owns 推定に活用（Glob 再検索を省略可能）
   2. Planner の proposed_dependencies → Phase A Step 3 の addBlockedBy に反映
-  3. Critic の findings → バリデーション済みとして V1〜V4 チェックをスキップ可能
+  3. Critic の findings → V1〜V4 バリデーションの参考情報（スキップはしない）
+     ※ Phase 0 は戦略/アーキテクチャ評価、V1〜V4 は技術的詳細チェック。
+       役割が異なるため、Phase 0 を経てもバリデーションは必ず実行する。
   4. 修正された Plans.md → Phase A の入力として使用
 ```
 
