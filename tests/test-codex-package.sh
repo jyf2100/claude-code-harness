@@ -228,6 +228,43 @@ else
   log_fail "config.toml missing required multi-agent defaults"
 fi
 
+# Test 1.7: setup scripts should not create duplicate skill listings
+log_test "Codex setup scripts guard against duplicate skill listings"
+scripts_ok=true
+setup_scripts=(
+  "scripts/setup-codex.sh"
+  "scripts/codex-setup-local.sh"
+)
+
+for script in "${setup_scripts[@]}"; do
+  if rg -q --fixed-strings '${target}.backup.' "$script"; then
+    echo "  legacy in-place backup naming remains: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings 'should_skip_sync_entry' "$script"; then
+    echo "  missing should_skip_sync_entry: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings 'cleanup_legacy_skill_entries' "$script"; then
+    echo "  missing cleanup_legacy_skill_entries: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings '_archived|*.backup.*' "$script"; then
+    echo "  missing legacy skip rule (_archived|*.backup.*): $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings '/backups/' "$script"; then
+    echo "  missing external backup root (/backups/): $script"
+    scripts_ok=false
+  fi
+done
+
+if $scripts_ok; then
+  log_pass "Setup script duplicate-skill guards are present"
+else
+  log_fail "Setup script duplicate-skill guards are missing"
+fi
+
 # Test 2: skills directory parity
 log_test "Skills parity by SKILL name"
 if [ -d "opencode/skills" ] && [ -d "codex/.codex/skills" ]; then

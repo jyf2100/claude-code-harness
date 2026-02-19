@@ -31,8 +31,23 @@ If you use Claude Code Harness, run:
 git clone https://github.com/Chachamaru127/claude-code-harness.git
 
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-mkdir -p "$CODEX_HOME/skills" "$CODEX_HOME/rules"
-cp -R claude-code-harness/codex/.codex/skills/* "$CODEX_HOME/skills/"
+BACKUP_ROOT="$CODEX_HOME/backups/manual-codex-setup"
+mkdir -p "$CODEX_HOME/skills" "$CODEX_HOME/rules" "$BACKUP_ROOT"
+
+# Prevent duplicate skill listings from legacy backup/archive directories.
+for legacy in "$CODEX_HOME/skills"/_archived "$CODEX_HOME/skills"/*.backup.*; do
+  [ -e "$legacy" ] || continue
+  mv "$legacy" "$BACKUP_ROOT/"
+done
+
+for entry in claude-code-harness/codex/.codex/skills/*; do
+  name="$(basename "$entry")"
+  case "$name" in
+    _archived|*.backup.*) continue ;;
+  esac
+  rm -rf "$CODEX_HOME/skills/$name"
+  cp -R "$entry" "$CODEX_HOME/skills/"
+done
 cp -R claude-code-harness/codex/.codex/rules/* "$CODEX_HOME/rules/"
 cp claude-code-harness/codex/.codex/config.toml "$CODEX_HOME/config.toml"
 ```
@@ -42,6 +57,7 @@ cp claude-code-harness/codex/.codex/config.toml "$CODEX_HOME/config.toml"
 - `features.multi_agent = true`
 - Harness role declarations are installed under `[agents.*]`
 - Setup scripts always ensure `multi_agent` + role defaults in target `config.toml`
+- Setup scripts keep backups in `$CODEX_HOME/backups/*` so Codex does not list old skills
 
 ## Runtime Behavior
 

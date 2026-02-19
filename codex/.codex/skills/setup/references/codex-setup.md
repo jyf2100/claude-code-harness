@@ -9,6 +9,7 @@ Setup project for Codex CLI compatibility.
 - `AGENTS.md` - Project instructions (project mode only)
 - Optional: `.codex/config.toml` (MCP template)
 - Required defaults: `features.multi_agent=true` and `[agents.*]` role declarations
+- Legacy cleanup: `_archived` and `*.backup.*` under skills are moved to backup directory
 
 ---
 
@@ -70,3 +71,8 @@ Codex CLI setup complete.
 ## State Path
 
 Use `${CODEX_HOME:-~/.codex}/state/harness/` for runtime state.
+
+## Duplicate Listing Guard
+
+- Setup scripts skip `_archived` and `*.backup.*` when syncing skills.
+- Existing legacy skill folders are moved to `${CODEX_HOME:-~/.codex}/backups/*` (or `.codex/backups/*` in project mode).

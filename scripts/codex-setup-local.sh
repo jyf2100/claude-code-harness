@@ -88,50 +88,85 @@ resolve_plugin_dir() {
 
 backup_path() {
   local target="$1"
+  local backup_root="$2"
   if [ -e "$target" ]; then
     local ts
+    local base
+    local dst
     ts=$(date +%Y%m%d%H%M%S)
-    mv "$target" "${target}.backup.${ts}"
-    echo "Backed up $target to ${target}.backup.${ts}"
+    base="$(basename "$target")"
+    mkdir -p "$backup_root"
+    dst="$backup_root/${base}.${ts}.$$"
+    mv "$target" "$dst"
+    echo "Backed up $target to $dst"
   fi
+}
+
+should_skip_sync_entry() {
+  local name="$1"
+  case "$name" in
+    _archived|*.backup.*)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+cleanup_legacy_skill_entries() {
+  local dst_dir="$1"
+  local backup_root="$2"
+  [ -d "$dst_dir" ] || return 0
+
+  local legacy_path
+  for legacy_path in "$dst_dir"/_archived "$dst_dir"/*.backup.*; do
+    [ -e "$legacy_path" ] || continue
+    backup_path "$legacy_path" "$backup_root"
+  done
 }
 
 sync_named_children() {
   local src_dir="$1"
   local dst_dir="$2"
   local label="$3"
+  local backup_root="$4"
 
   [ -d "$src_dir" ] || fail "$label source not found: $src_dir"
   mkdir -p "$dst_dir"
 
   local copied=0
+  local skipped=0
   local entry
   for entry in "$src_dir"/*; do
     [ -e "$entry" ] || continue
     local name
     name="$(basename "$entry")"
+    if should_skip_sync_entry "$name"; then
+      skipped=$((skipped + 1))
+      continue
+    fi
     local dst_path="$dst_dir/$name"
 
     if [ -e "$dst_path" ]; then
-      backup_path "$dst_path"
+      backup_path "$dst_path" "$backup_root"
     fi
 
     cp -R "$entry" "$dst_dir/"
     copied=$((copied + 1))
   done
 
-  echo "$label synced to $dst_dir ($copied items)"
+  echo "$label synced to $dst_dir ($copied items, $skipped skipped)"
 }
 
 copy_project_agents() {
   local plugin_dir="$1"
+  local backup_root="$2"
   local agents_src="$plugin_dir/codex/AGENTS.md"
   local agents_dst="$PROJECT_DIR/AGENTS.md"
 
   [ -f "$agents_src" ] || fail "codex/AGENTS.md not found in plugin source"
 
   if [ -f "$agents_dst" ]; then
-    backup_path "$agents_dst"
+    backup_path "$agents_dst" "$backup_root"
   fi
 
   cp "$agents_src" "$agents_dst"
@@ -250,19 +285,23 @@ fi
 echo "Using Harness plugin: $PLUGIN_DIR"
 
 target_root=""
+backup_root=""
 if [ "$TARGET_MODE" = "user" ]; then
   target_root="$CODEX_HOME_DIR"
+  backup_root="$CODEX_HOME_DIR/backups/codex-setup-local"
   echo "Install mode: user (target: $target_root)"
 else
   target_root="$PROJECT_DIR/.codex"
+  backup_root="$target_root/backups/codex-setup-local"
   echo "Install mode: project (target: $target_root)"
 fi
 
-sync_named_children "$PLUGIN_DIR/codex/.codex/skills" "$target_root/skills" "Skills"
-sync_named_children "$PLUGIN_DIR/codex/.codex/rules" "$target_root/rules" "Rules"
+cleanup_legacy_skill_entries "$target_root/skills" "$backup_root"
+sync_named_children "$PLUGIN_DIR/codex/.codex/skills" "$target_root/skills" "Skills" "$backup_root"
+sync_named_children "$PLUGIN_DIR/codex/.codex/rules" "$target_root/rules" "Rules" "$backup_root"
 
 if [ "$TARGET_MODE" = "project" ]; then
-  copy_project_agents "$PLUGIN_DIR"
+  copy_project_agents "$PLUGIN_DIR" "$backup_root"
 else
   echo "User mode: project AGENTS.md is unchanged"
 fi
@@ -271,6 +310,7 @@ setup_mcp_template "$PLUGIN_DIR" "$target_root"
 ensure_multi_agent_defaults "$target_root"
 
 echo "Codex CLI setup complete."
+echo "Backups are stored under: $backup_root (outside skill scan path)"
 if [ "$TARGET_MODE" = "user" ]; then
   echo "Restart Codex to reload user-level skills/rules if needed."
 fi
