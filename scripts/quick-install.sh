@@ -122,6 +122,9 @@ echo
 echo "  3. Create your first plan:"
 echo "     ${YELLOW}/plan-with-agent${NC}"
 echo
+echo "  Note: Default security permissions (deny/ask rules) are applied"
+echo "  automatically via plugin settings. No manual configuration needed."
+echo
 
 if [ "$WITH_DEV_TOOLS" = false ]; then
   echo "Optional: Install dev tools for advanced code intelligence:"

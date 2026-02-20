@@ -10,8 +10,55 @@
 | v2.9.24 | v2.1.6+ | v2.1.21+ | Setup hook, plansDirectory, context_window, セッション間通信 |
 | v2.14.9 | v2.1.6+ | v2.1.21+ | 4観点並列レビュー、auto-commit、OpenCode対応、MCP code intelligence |
 | **v2.20.6** | v2.1.1+ | **v2.1.41+** | Agent Teams Bedrock/Vertex/Foundry 修正、Hook stderr 表示修正、起動性能改善 |
+| **v2.21.0** | v2.1.1+ | **v2.1.49+** | Plugin settings.json、Worktree isolation、Background agents、ConfigChange hook、last_assistant_message |
 
 ## バージョン別機能対応
+
+### v2.1.49 (2026-02-21)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| Plugin settings.json（プラグイン同梱の settings.json） | **対応済み** | `.claude-plugin/settings.json` でセキュリティルール・MCP 権限を即時適用。init トークン削減・インストール直後から保護が有効 |
+| Worktree isolation（Task tool `isolation: "worktree"` パラメータ） | **対応済み** | `/breezing` の並列 Implementer に指定すると同一ファイル並列書き込みが安全化。`skills/breezing/references/guardrails-inheritance.md` 参照 |
+| Background agents（エージェント定義の `background: true`） | **対応済み** | `agents/video-scene-generator.md` に `background: true` 追加。非同期シーン生成が可能に |
+| ConfigChange hook（設定変更時に発火するライフサイクルフック） | **対応済み** | `hooks/hooks.json` に ConfigChange ハンドラ追加。設定変更を監査ログに記録 |
+| WASM memory fix | 有利 | WebAssembly ベースのツール（Rust/Go MCP 等）のメモリ問題修正。安定性向上 |
+
+### v2.1.47 (2026-02-19)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| `last_assistant_message` in Stop hook | **対応済み** | `scripts/stop-session-evaluator.sh` でセッション終了時の最終メッセージ品質評価に活用 |
+| Agent model field fix（カスタムエージェントの `model` フィールド継承修正） | **対応済み** | `video-scene-generator.md` 等の `model: sonnet` 指定が Teammate spawn 時に確実に反映されるように |
+| メモリトリミング（長期セッションのメモリ使用量最適化） | 有利 | `/breezing` 等の長時間チームセッションでのメモリ効率が改善 |
+| plan mode compaction fix | 有利 | `/planning` スキル使用中のセッション圧縮の安定性向上 |
+| 並列操作耐障害性向上 | 有利 | `/breezing` 並列 Implementer のネットワーク断等への耐性強化 |
+
+### v2.1.46 (2026-02-18)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| claude.ai MCP connectors | 将来対応 | Web 版 Claude から MCP サーバーへの接続。Harness の MCP 統合に将来活用可能 |
+
+### v2.1.45 (2026-02-17)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| **Sonnet 4.6**（最新モデル追加） | **重要** | `/breezing` の Implementer/Reviewer に Sonnet 4.6 (1M context) を利用可能。大規模コンテキスト処理に有利 |
+| enabledPlugins from `--add-dir`（追加ディレクトリのプラグイン有効化） | 有利 | モノレポ構成でのプラグイン読み込みが改善 |
+| Agent Teams on Bedrock/Vertex fix（追加修正） | **重要** | v2.1.41 に続く追加修正。Bedrock/Vertex/Foundry での `/breezing` 動作がさらに安定 |
+
+### v2.1.44 (2026-02-16)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| ENAMETOOLONG fix（長いファイルパスのエラー修正） | 有利 | 深いネスト構造の Harness スキルディレクトリでのエラーを防止 |
+
+### v2.1.43 (2026-02-15)
+
+| 機能 | Harness 対応 | 備考 |
+|------|-------------|------|
+| AWS auth timeout fix | 有利 | Bedrock 環境での認証タイムアウト修正。troubleshoot スキルの診断が改善 |
 
 ### v2.1.42 (2026-02-14)
 
@@ -194,6 +241,7 @@ cat /path/to/harness/VERSION
 
 ## 更新履歴
 
+- 2026-02-21: v2.1.43〜v2.1.49 対応追加（Plugin settings.json、Worktree isolation、Background agents、ConfigChange hook、last_assistant_message、Sonnet 4.6）。推奨バージョンを v2.1.49+ に引き上げ
 - 2026-02-14: v2.1.39〜v2.1.42 対応追加（Agent Teams モデルID修正、Hook stderr修正、起動性能改善）。推奨バージョンを v2.1.41+ に引き上げ
 - 2026-01-30: Harness v2.14.9 対応追加（4観点並列レビュー、auto-commit、OpenCode対応）
 - 2026-01-28: v2.1.21〜v2.1.22 対応追加（ファイル操作ツール優先、全角数字入力、セッション再開修正）

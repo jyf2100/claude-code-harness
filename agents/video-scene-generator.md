@@ -5,6 +5,7 @@ tools: [Read, Write, Edit, Bash, Grep, Glob]
 disallowedTools: [Task]
 model: sonnet
 color: magenta
+background: true
 skills:
   - generate-video
 ---

@@ -7,6 +7,32 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.21.1] - 2026-02-21
+
+### 🎯 あなたにとって何が変わるか
+
+**Harness をインストールした瞬間からセキュリティガードレールが有効になります — `/harness-init` は不要です。**
+
+| Before | After |
+|--------|-------|
+| セキュリティ設定（deny/ask ルール）の有効化には `/harness-init` の実行が必要だった | CC 2.1.49+ ではインストール直後から Plugin settings が自動適用される |
+| `stop-session-evaluator.sh` は入力を読まず常に `{"ok":true}` を返すだけだった | Stop ペイロードの `last_assistant_message` を読み取り、要約を `session.json` に記録するようになった |
+| 設定ファイル変更時のフックがなかった | 新しい `ConfigChange` フックが breezing アクティブ時に設定変更をタイムラインに記録 |
+
+### Added
+
+- **Plugin settings.json** (`.claude-plugin/settings.json`): プラグインと共に配布されるデフォルトのセキュリティ権限設定。`.env`・secrets・SSH 鍵・`sudo` の deny ルール、破壊的操作（`rm -r`・`git push --force`・`git reset --hard`）の ask ルールをインストール直後から適用（CC 2.1.49+）
+- **`ConfigChange` フック** (`scripts/hook-handlers/config-change.sh`): breezing アクティブ時に設定ファイルの変更を `breezing-timeline.jsonl` に記録。常に非ブロッキング
+- **`stop-session-evaluator.sh` での `last_assistant_message` 対応**: CC 2.1.47+ の Stop ペイロードを読み取り、メッセージの先頭 200 文字を `.claude/state/session.json` の `last_message_summary` に保存
+
+### Changed
+
+- **`quick-install.sh`**: デフォルトのセキュリティ設定が自動適用される旨の案内メッセージを追加
+- **`claude-settings.md` スキル**: CC 2.1.49+ では plugin settings が自動適用されるため、手動での `settings.json` 生成はプロジェクト固有の追加設定が必要な場合のみと注記を追加
+- **`settings.security.json.template`**: `_harness_version` を 2.21.0 に更新、plugin settings との役割分担を明記する `_harness_note` を追加
+
+---
+
 ## [2.20.13] - 2026-02-19
 
 ### 🎯 あなたにとって何が変わるか

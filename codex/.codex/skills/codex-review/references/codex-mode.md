@@ -20,7 +20,7 @@ Toggle Codex mode (parallel delegation to GPT experts) during reviews.
 | Mode | Reviewer | Characteristics |
 |------|----------|-----------------|
 | **Default** | Claude alone | Fast, no Codex required |
-| **Codex mode** | Claude (`claude -p`) | Parallel delegation to 9 experts |
+| **Codex mode** | Codex (GPT) | Parallel delegation to 9 experts |
 
 ### Codex Mode's 9 Experts
 
@@ -45,7 +45,7 @@ Toggle Codex mode (parallel delegation to GPT experts) during reviews.
 Current: **OFF** (default mode)
 
 Reviewer: Claude alone
-Claude CLI delegation: Configured
+Codex MCP: Configured
 
 Toggle: `/codex-mode on` to enable
 ```
@@ -67,7 +67,7 @@ Active experts:
 - Plan Reviewer
 - Scope Analyst
 
-Next `/harness-review` will delegate to Claude (`claude -p`) in parallel.
+Next `/harness-review` will delegate to Codex in parallel.
 ```
 
 ### Disable (`/codex-mode off`)

@@ -4,6 +4,32 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.21.1] - 2026-02-21
+
+### 🎯 What's Changed for You
+
+**Security guardrails now apply automatically from the moment you install Harness — no `/harness-init` required.**
+
+| Before | After |
+|--------|-------|
+| Security settings (deny/ask rules) required running `/harness-init` | Plugin settings applied automatically on install (CC 2.1.49+) |
+| `stop-session-evaluator.sh` always returned `{"ok":true}` without reading input | Hook now reads `last_assistant_message` from Stop payload and records a summary to `session.json` |
+| No hook for configuration file changes | New `ConfigChange` hook records config changes to breezing timeline when active |
+
+### Added
+
+- **Plugin settings.json** (`.claude-plugin/settings.json`): default security permissions distributed with the plugin. Deny rules for `.env`, secrets, SSH keys, and `sudo`; ask rules for destructive operations (`rm -r`, `git push --force`, `git reset --hard`) — active from install (CC 2.1.49+)
+- **`ConfigChange` hook** (`scripts/hook-handlers/config-change.sh`): records configuration file changes to `breezing-timeline.jsonl` when breezing is active; always non-blocking
+- **`last_assistant_message` support** in `stop-session-evaluator.sh`: reads CC 2.1.47+ Stop payload and stores a 200-char message summary to `.claude/state/session.json`
+
+### Changed
+
+- **`quick-install.sh`**: added note that default security permissions apply automatically — no manual configuration needed
+- **`claude-settings.md` skill**: added note that CC 2.1.49+ auto-applies plugin settings; manual `settings.json` generation only needed for project-specific additions
+- **`settings.security.json.template`**: updated `_harness_version` to 2.21.0 and added `_harness_note` clarifying role separation from plugin settings
+
+---
+
 ## [2.21.0] - 2026-02-20
 
 ### 🎯 What's Changed for You

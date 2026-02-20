@@ -99,6 +99,10 @@ https://code.claude.com/docs/ja/settings
 - 生成/更新先: `.claude/settings.json`
 - ポリシーテンプレ: `templates/claude/settings.security.json.template`
 
+> **CC 2.1.49+**: プラグインインストール直後から `.claude-plugin/settings.json` のデフォルトパーミッション（deny/ask）が自動適用されます。
+> 手動で `settings.json` を生成しなくても基本的なセキュリティ設定が有効になります。
+> プロジェクト固有の追加設定が必要な場合のみ、このスキルを実行してください。
+
 ---
 
 ## 実行手順（安全・非破壊）
