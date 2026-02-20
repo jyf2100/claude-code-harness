@@ -1,30 +1,41 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
-    "allow": [
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(bun:*)",
-      "Bash(pnpm:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)"
-    ],
     "deny": [
       "Bash(sudo:*)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(psql:*)",
+      "Bash(mysql:*)",
+      "Bash(mongod:*)",
+      "Bash(mongo:*)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./secrets/**)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
-      "Read(**/*id_rsa*)"
+      "Read(**/*id_rsa*)",
+      "Read(**/*id_ed25519*)",
+      "Read(**/.aws/**)",
+      "Read(**/.ssh/**)",
+      "Read(**/.npmrc)"
     ],
     "ask": [
       "Bash(rm -r:*)",
       "Bash(git reset --hard:*)",
       "Bash(git push -f:*)",
-      "Bash(git push --force:*)"
+      "Bash(git push --force:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git clean -fdx:*)",
+      "Bash(git clean -fx:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)",
+      "Bash(npm install:*)",
+      "Bash(npm exec:*)",
+      "Bash(npx:*)",
+      "Bash(bun install:*)",
+      "Bash(pnpm install:*)"
     ]
   }
 }

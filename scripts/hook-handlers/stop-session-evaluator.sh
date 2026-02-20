@@ -21,7 +21,12 @@ if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
+# detect_project_root が定義されているか確認してから呼び出す
+if declare -F detect_project_root > /dev/null 2>&1; then
+  PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
+else
+  PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
+fi
 
 STATE_FILE="${PROJECT_ROOT}/.claude/state/session.json"
 
@@ -31,24 +36,52 @@ if ! command -v jq &> /dev/null; then
   exit 0
 fi
 
-# stdin から Hook ペイロードを読み取る（タイムアウト付き）
+# ポータブル timeout 検出
+_TIMEOUT=""
+if command -v timeout > /dev/null 2>&1; then
+  _TIMEOUT="timeout"
+elif command -v gtimeout > /dev/null 2>&1; then
+  _TIMEOUT="gtimeout"
+fi
+
+# stdin から Hook ペイロードを読み取る（サイズ制限 + タイムアウト付き）
 PAYLOAD=""
 if [ -t 0 ]; then
   # stdin が TTY の場合はスキップ（テスト実行時等）
   :
 else
-  PAYLOAD=$(timeout 5 cat 2>/dev/null || true)
+  if [ -n "$_TIMEOUT" ]; then
+    PAYLOAD=$($_TIMEOUT 5 head -c 65536 2>/dev/null || true)
+  else
+    # timeout 未搭載: dd でバイト数上限を保証（POSIX 標準）
+    PAYLOAD=$(dd bs=65536 count=1 2>/dev/null || true)
+  fi
 fi
 
-# last_assistant_message を抽出して session.json に記録
+# last_assistant_message のメタデータを session.json に記録（内容はハッシュ化）
 if [ -n "$PAYLOAD" ] && [ -f "$STATE_FILE" ]; then
   LAST_MSG=$(echo "$PAYLOAD" | jq -r '.last_assistant_message // ""' 2>/dev/null || true)
   if [ -n "$LAST_MSG" ] && [ "$LAST_MSG" != "null" ]; then
-    # メッセージの先頭200文字を要約として記録
-    SUMMARY="${LAST_MSG:0:200}"
-    # session.json の last_message_summary フィールドを更新
-    TMP_FILE="${STATE_FILE}.tmp"
-    jq --arg summary "$SUMMARY" '.last_message_summary = $summary' "$STATE_FILE" > "$TMP_FILE" 2>/dev/null && mv "$TMP_FILE" "$STATE_FILE" || rm -f "$TMP_FILE"
+    # メッセージ長とハッシュのみ記録（平文内容は保存しない）
+    MSG_LENGTH=${#LAST_MSG}
+    # ポータブルハッシュ: shasum (macOS) / sha256sum (Linux) / fallback
+    if command -v shasum > /dev/null 2>&1; then
+      MSG_HASH=$(printf '%s' "$LAST_MSG" | shasum -a 256 | cut -c1-16)
+    elif command -v sha256sum > /dev/null 2>&1; then
+      MSG_HASH=$(printf '%s' "$LAST_MSG" | sha256sum | cut -c1-16)
+    else
+      MSG_HASH="no-hash"
+    fi
+    # atomic write: mktemp + mv
+    STATE_DIR="$(dirname "$STATE_FILE")"
+    TMP_FILE=$(mktemp "${STATE_DIR}/session.json.XXXXXX" 2>/dev/null || echo "")
+    if [ -n "$TMP_FILE" ]; then
+      trap 'rm -f "$TMP_FILE"' EXIT
+      jq --argjson len "$MSG_LENGTH" --arg hash "$MSG_HASH" \
+        '.last_message_length = $len | .last_message_hash = $hash' \
+        "$STATE_FILE" > "$TMP_FILE" 2>/dev/null && mv "$TMP_FILE" "$STATE_FILE" || rm -f "$TMP_FILE"
+      trap - EXIT
+    fi
   fi
 fi
 

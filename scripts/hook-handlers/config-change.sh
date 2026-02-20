@@ -18,7 +18,12 @@ if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
+# detect_project_root が定義されているか確認してから呼び出す
+if declare -F detect_project_root > /dev/null 2>&1; then
+  PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
+else
+  PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
+fi
 
 TIMELINE_FILE="${PROJECT_ROOT}/.claude/state/breezing-timeline.jsonl"
 BREEZING_STATE_FILE="${PROJECT_ROOT}/.claude/state/breezing.json"
@@ -38,10 +43,23 @@ if [ -f "$BREEZING_STATE_FILE" ]; then
   fi
 fi
 
-# stdin から Hook ペイロードを読み取る
+# ポータブル timeout 検出
+_TIMEOUT=""
+if command -v timeout > /dev/null 2>&1; then
+  _TIMEOUT="timeout"
+elif command -v gtimeout > /dev/null 2>&1; then
+  _TIMEOUT="gtimeout"
+fi
+
+# stdin から Hook ペイロードを読み取る（サイズ制限 + タイムアウト付き）
 PAYLOAD=""
 if [ ! -t 0 ]; then
-  PAYLOAD=$(timeout 5 cat 2>/dev/null || true)
+  if [ -n "$_TIMEOUT" ]; then
+    PAYLOAD=$($_TIMEOUT 5 head -c 65536 2>/dev/null || true)
+  else
+    # timeout 未搭載: dd でバイト数上限を保証（POSIX 標準）
+    PAYLOAD=$(dd bs=65536 count=1 2>/dev/null || true)
+  fi
 fi
 
 # breezing アクティブ時のみタイムラインに記録
@@ -49,7 +67,13 @@ if [ "$BREEZING_ACTIVE" = true ] && [ -n "$PAYLOAD" ]; then
   STATE_DIR="${PROJECT_ROOT}/.claude/state"
   mkdir -p "$STATE_DIR" 2>/dev/null || true
 
-  FILE_PATH=$(echo "$PAYLOAD" | jq -r '.file_path // "unknown"' 2>/dev/null || echo "unknown")
+  # file_path をリポジトリ相対パスに正規化（ユーザー名等を隠蔽）
+  RAW_PATH=$(echo "$PAYLOAD" | jq -r '.file_path // "unknown"' 2>/dev/null || echo "unknown")
+  if [ "$RAW_PATH" != "unknown" ] && [ -n "$PROJECT_ROOT" ]; then
+    FILE_PATH="${RAW_PATH#"$PROJECT_ROOT"/}"
+  else
+    FILE_PATH="$RAW_PATH"
+  fi
   CHANGE_TYPE=$(echo "$PAYLOAD" | jq -r '.change_type // "modified"' 2>/dev/null || echo "modified")
   TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
 
