@@ -7,6 +7,32 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.23.1] - 2026-02-22
+
+### 🎯 あなたにとって何が変わるか
+
+**Codex CLI セットアップがファイルを上書きせずマージするようになり、README のセットアップ手順も折りたたみブロックで見やすくなりました。**
+
+| Before | After |
+|--------|-------|
+| `setup-codex.sh` が同期のたびにコピー先の全ファイルを上書きしていた | マージ戦略: 新規ファイルは追加、既存ファイルはバックアップ後更新、ユーザー作成ファイルは保持 |
+| Codex CLI Setup が README のトップレベルセクションだった | 折りたたみ `<details>` ブロックに移動し、ステップバイステップのクイックスタートを追加 |
+| `config.toml` に 4 つのエージェント定義 | 9 エージェント: `task_worker`、`code_reviewer`、`codex_implementer`、`plan_analyst`、`plan_critic` を追加 |
+
+### Changed
+
+- **README (EN/JA)**: Codex CLI Setup セクションをトップレベルから折りたたみ `<details>` ブロックに移動。前提条件、3 ステップクイックスタート、フラグ一覧表を追加
+- **`setup-codex.sh`**: `sync_named_children()` を 3 ウェイマージ戦略で書き換え — 新規ファイルはコピー、既存ファイルはバックアップ後更新、コピー先のみのファイルは保持。ログ出力が `(N new, N updated, N preserved, N skipped)` 形式に
+- **`codex-setup-local.sh`**: 同じマージ戦略をプロジェクトローカル版セットアップスクリプトにも適用
+
+### Added
+
+- **`merge_dir_recursive()`** ヘルパー: 両セットアップスクリプトにバックアップ付き再帰的ディレクトリマージ機能を追加
+- **5 つの新 Codex エージェント定義**（`setup-codex.sh` の `config.toml` 生成）: `task_worker`、`code_reviewer`、`codex_implementer`、`plan_analyst`、`plan_critic`（Breezing ロール）
+- 冪等なエージェント注入: 既存の `config.toml` には不足しているエージェントエントリのみ追加（重複なし）
+
+---
+
 ## [2.23.0] - 2026-02-21
 
 ### 🎯 あなたにとって何が変わるか
