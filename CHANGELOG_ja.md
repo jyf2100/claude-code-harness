@@ -7,6 +7,28 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [2.23.2] - 2026-02-22
+
+### 🎯 あなたにとって何が変わるか
+
+**Codex スキルが完全にネイティブなマルチエージェント用語を使用するようになり、CI チェックが通るようになりました。`--claude` レビュールーティングも明示的に文書化されました。**
+
+| Before | After |
+|--------|-------|
+| Codex の breezing/work スキルに Claude Code 固有の用語（`delegate mode`、`TaskCreate`、`subagent_type` 等）が残存 | 82 箇所以上を Codex ネイティブ API の同等語句（`Phase B`、`spawn_agent`、`role` 等）に置換 |
+| Codex の breezing/work SKILL.md に `review_engine` マトリクスがなかった | `codex` / `claude` 列を含む `review_engine` 比較テーブルを追加 |
+| `--claude + --codex-review` のコンフリクトが未文書化 | 排他ルールを明記: 同時指定は実行前にエラー |
+| 状態ファイルが `.claude/state/` パスを参照 | `${CODEX_HOME:-~/.codex}/state/harness/` パスに統一 |
+| `opencode/` に古い breezing ファイルが残存 | `opencode/` を再ビルド — breezing を削除（開発専用スキル） |
+
+### Fixed
+
+- **Codex 用語マイグレーション**: `codex/.codex/skills/breezing/` と `codex/.codex/skills/work/` の 13 ファイルで 82 箇所以上のレガシー Claude Code 用語を置換 — `delegate mode` → `Phase B`、`TaskCreate` → `spawn_agent`、`subagent_type` → `role:`/`spawn_agent()`、`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` → `config.toml [features] multi_agent`、`.claude/state/` → `${CODEX_HOME}/state/harness/`
+- **`--claude` レビュールーティング**: `breezing/SKILL.md` と `work/SKILL.md` の両方に `review_engine` マトリクステーブルと `--claude + --codex-review` コンフリクトルールを追加
+- **OpenCode 同期**: `opencode/` を再ビルドして古い breezing ファイルと routing-rules.md を削除
+
+---
+
 ## [2.23.1] - 2026-02-22
 
 ### 🎯 あなたにとって何が変わるか
