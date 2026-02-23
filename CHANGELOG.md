@@ -6,12 +6,26 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+---
+
+## [2.23.6] - 2026-02-24
+
+### Added
+
+- **Auto-release workflow** (`release.yml`): Safety-net GitHub Release creation on `v*` tag push — prevents orphan tags if `release-har` is interrupted
+- **CHANGELOG format validation in CI**: ISO 8601 date format, `[Unreleased]` section presence, non-standard heading warnings
+- **Codex mirror sync check in CI**: `codex/.codex/skills/` ↔ `skills/` consistency validated in both `check-consistency.sh` and `opencode-compat.yml`
+- **Branch Policy in release-har**: Explicitly documents that main direct push is allowed for solo projects (force push remains prohibited)
+
 ### Changed
 
 - **CHANGELOG link definitions repaired**: All version compare links supplemented
 - **CHANGELOG_ja.md translation gaps filled**: 5 versions added (2.20.1, 2.17.6, 2.17.1, 2.17.0, 2.16.21)
 - **README version and count updated**: Badge version, skill count (41), agent count (11) updated to reflect reality
 - **CHANGELOG non-standard headings normalized**: `### Internal` → `### Changed` (Keep a Changelog compliant)
+- **Mirror compat workflow renamed**: `OpenCode Compatibility Check` → `Mirror Compatibility Check` (now covers both opencode and codex mirrors)
+- **AGENTS.md template updated**: Removed `main` direct push prohibition for solo projects; force push remains prohibited
+- **Tamper detection expanded** (`codex-worker-quality-gate.sh`): Python skip patterns, catch-all assertions, config relaxation detection
 
 ---
 
@@ -1026,6 +1040,7 @@ Change history for claude-code-harness.
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
+[2.23.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.5...v2.23.6
 [2.23.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.3...v2.23.5
 [2.23.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.2...v2.23.3
 [2.23.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.1...v2.23.2

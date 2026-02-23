@@ -29,6 +29,18 @@ Universal release automation skill. Works with any project.
 
 ---
 
+## Branch Policy
+
+**単独開発プロジェクトでは main への直接 push を許容する。**
+
+- CI が `push: branches: [main]` で全検証を実行するため、PR なしでも品質ゲートは機能する
+- `release.yml` が `v*` タグ push 時に GitHub Release の存在を保証するセーフティネットとして動作する
+- force push（`--force` / `--force-with-lease`）は禁止
+
+共同開発者がいるプロジェクトでは、PR 経由のマージに切り替えること。
+
+---
+
 ## Execution Flow
 
 ### Pre-flight: 事前チェック（必須）

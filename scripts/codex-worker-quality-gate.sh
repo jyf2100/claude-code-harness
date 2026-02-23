@@ -150,15 +150,29 @@ gate_test() {
     log_gate "Gate 3: テスト (test)"
 
     # 改ざん検出パターン（追加行用）
-    # Note: toBe(true/false) は正当な変更の可能性があるため、Critical ではなく Warning 扱い
+    # Critical: 明確な改ざん — テスト無効化パターン
     local tamper_critical_patterns=(
+        # JS/TS skip 化
         'it\.skip\s*\('
         'test\.skip\s*\('
         'describe\.skip\s*\('
+        'xit\s*\('
+        'xdescribe\s*\('
+        # .only 化（他テストが実行されなくなる）
+        '(it|test|describe)\.only\s*\('
+        'fit\s*\('
+        'fdescribe\s*\('
+        # Python skip 化
+        '@pytest\.mark\.skip'
+        '@unittest\.skip'
+        'self\.skipTest\s*\('
     )
-    # eslint-disable は Warning（正当な理由がある場合もある）
+    # Warning: 正当な理由がある場合もあるが要注意
     local tamper_warn_patterns=(
         'eslint-disable'
+        '@ts-ignore'
+        '@ts-expect-error'
+        '@ts-nocheck'
     )
 
     # 削除行用パターン（アサーション削除検出）
@@ -167,6 +181,7 @@ gate_test() {
         'assert\s*\('
         '\.should\s*\('
         '\.to\.\w+'
+        'self\.assert'
     )
 
     # 差分ベースの改ざん検出（デフォルトブランチからの全変更）
@@ -177,8 +192,9 @@ gate_test() {
 
     if [[ -n "$merge_base" ]]; then
         # 追加行の検出（+で始まる行、+++ ヘッダのみ除外）
+        # Python テストファイル（test_*.py, *_test.py）も対象に含む
         local added_lines
-        added_lines=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.spec.*' '*.test.*' 2>/dev/null | grep '^+' | grep -v '^+++ ' || echo "")
+        added_lines=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.spec.*' '*.test.*' '*.py' 2>/dev/null | grep '^+' | grep -v '^+++ ' || echo "")
 
         # Critical パターン検出（skip 系 - 明確な改ざん）
         for pattern in "${tamper_critical_patterns[@]}"; do
@@ -198,7 +214,7 @@ gate_test() {
 
         # 削除行の検出（-で始まる行）- テストファイルのみ
         local removed_lines
-        removed_lines=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '*.spec.*' '*.test.*' 2>/dev/null | grep '^-' | grep -v '^---' || echo "")
+        removed_lines=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '*.spec.*' '*.test.*' 'test_*.py' '*_test.py' 2>/dev/null | grep '^-' | grep -v '^---' || echo "")
 
         for pattern in "${tamper_remove_patterns[@]}"; do
             local removed_count
@@ -209,6 +225,42 @@ gate_test() {
                 return 2  # Critical: アサーション大量削除
             fi
         done
+
+        # Catch-all assertion 検出（常に成功する無意味なアサーション）
+        # expect(true).toBe(true), expect(1).toBe(1) 等
+        if echo "$added_lines" | grep -qE 'expect\((true|false|1|0|null|undefined)\)\.(toBe|toEqual|toStrictEqual)\((true|false|1|0|null|undefined)\)'; then
+            log_warn "要確認: catch-all assertion 検出（expect(true).toBe(true) 等）"
+        fi
+        # 定数に対する弱いアサーション: expect(false).toBeFalsy() 等
+        if echo "$added_lines" | grep -qE 'expect\((true|false|null|undefined|0)\)\.(toBeUndefined|toBeNull|toBeFalsy|toBeTruthy)\(\)'; then
+            log_warn "要確認: 定数に対する弱いアサーション検出"
+        fi
+
+        # タイムアウト値の大幅引き上げ検出（≥30000ms）
+        local timeout_hit
+        timeout_hit=$(echo "$added_lines" | grep -E 'jest\.setTimeout\(|jasmine\.DEFAULT_TIMEOUT_INTERVAL|[[:space:]]timeout[[:space:]]*:' | grep -oE '[0-9]+' | awk '$1 >= 30000 {found=1} END {print found+0}' 2>/dev/null || echo 0)
+        if [[ "${timeout_hit:-0}" -gt 0 ]]; then
+            log_warn "要確認: タイムアウト値の大幅引き上げ検出（≥30000ms）"
+        fi
+
+        # 設定ファイルの緩和検出（lint/CI/TypeScript strict）
+        local config_diff
+        config_diff=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '.eslintrc*' 'eslint.config.*' 'tsconfig.json' 'tsconfig.*.json' 'biome.json' 'jest.config.*' 'vitest.config.*' '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null | grep '^+' | grep -v '^+++ ' || echo "")
+        if [[ -n "$config_diff" ]]; then
+            # lint ルール無効化
+            if echo "$config_diff" | grep -qE '"off"|:[[:space:]]*0'; then
+                log_warn "要確認: 設定ファイルで lint ルール無効化を検出"
+            fi
+            # CI continue-on-error
+            if echo "$config_diff" | grep -qE 'continue-on-error:[[:space:]]*true'; then
+                log_warn "要確認: CI の continue-on-error 追加を検出"
+            fi
+            # TypeScript strict モード緩和
+            if echo "$config_diff" | grep -qE '"strict"[[:space:]]*:[[:space:]]*false|"noImplicitAny"[[:space:]]*:[[:space:]]*false'; then
+                echo '{"status": "critical", "details": "改ざん検出: TypeScript strict モードの緩和"}' > "$output_file"
+                return 2
+            fi
+        fi
     fi
 
     # テスト実行（パッケージマネージャ自動検出）

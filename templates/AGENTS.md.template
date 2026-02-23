@@ -139,9 +139,10 @@ chore: その他
 
 ### 共通の禁止事項
 
-- ❌ main ブランチへの直接プッシュ
-- ❌ force push
+- ❌ force push（`--force` / `--force-with-lease`）
 - ❌ 機密情報のコミット
+
+> **Note**: 単独開発プロジェクトでは main への直接 push を許容。CI が push to main で検証を実行するため品質ゲートは維持される。共同開発者がいる場合は PR 必須に切り替えること。
 
 ---
 

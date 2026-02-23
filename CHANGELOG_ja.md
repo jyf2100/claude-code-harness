@@ -9,12 +9,26 @@
 
 ## [Unreleased]
 
+---
+
+## [2.23.6] - 2026-02-24
+
+### Added
+
+- **自動リリースワークフロー** (`release.yml`): `v*` タグプッシュ時に GitHub Release を自動作成 — `release-har` 中断時の孤立タグ防止セーフティネット
+- **CI で CHANGELOG フォーマット検証**: ISO 8601 日付形式、`[Unreleased]` セクション存在、非標準見出しの警告
+- **CI で Codex ミラー同期チェック**: `codex/.codex/skills/` ↔ `skills/` の整合性を `check-consistency.sh` と `opencode-compat.yml` の両方で検証
+- **release-har に Branch Policy 追加**: 単独開発プロジェクトでは main 直接 push を許容（force push は禁止維持）
+
 ### Changed
 
 - **CHANGELOG リンク定義修復**: 全バージョンの compare リンクを補完
 - **CHANGELOG_ja.md 翻訳漏れ補完**: 5バージョン分のエントリを追加 (2.20.1, 2.17.6, 2.17.1, 2.17.0, 2.16.21)
 - **README バージョン・数値更新**: バッジのバージョン、スキル数 (41)、エージェント数 (11) を実態に反映
 - **CHANGELOG 非標準見出し正規化**: `### Internal` → `### Changed` に統合 (Keep a Changelog 準拠)
+- **ミラー互換ワークフロー改名**: `OpenCode Compatibility Check` → `Mirror Compatibility Check`（opencode + codex 両ミラーをカバー）
+- **AGENTS.md テンプレート更新**: 単独開発プロジェクトの `main` 直接 push 禁止を撤廃、force push は禁止維持
+- **改ざん検出拡充** (`codex-worker-quality-gate.sh`): Python skip パターン、catch-all アサーション、設定ファイル緩和の検出追加
 
 ---
 
@@ -1030,6 +1044,7 @@
 
 v2.9.x 以前の詳細は [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) を参照してください。
 
+[2.23.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.5...v2.23.6
 [2.23.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.3...v2.23.5
 [2.23.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.2...v2.23.3
 [2.23.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.1...v2.23.2
