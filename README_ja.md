@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.23.2-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.23.6-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-45-orange.svg" alt="Skills">
+  <img src="https://img.shields.io/badge/Skills-41-orange.svg" alt="Skills">
 </p>
 
 <p align="center">
@@ -148,7 +148,7 @@ Harness はフックでコードベースを保護:
 
 ---
 
-## 45スキル、設定不要
+## 41スキル、設定不要
 
 スキルはコンテキストに応じて自動ロード。スラッシュコマンドでも自然言語でも起動可能。
 
@@ -190,8 +190,8 @@ Harness はフックでコードベースを保護:
 
 ```
 claude-code-harness/
-├── skills/       # 45のスキル定義
-├── agents/       # 8つのサブエージェント（並列ワーカー）
+├── skills/       # 41のスキル定義
+├── agents/       # 11のサブエージェント（並列ワーカー）
 ├── hooks/        # セーフティ & オートメーション
 ├── scripts/      # ガードスクリプト
 └── templates/    # 生成テンプレート

@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.23.2-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.23.6-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-45-orange.svg" alt="Skills">
+  <img src="https://img.shields.io/badge/Skills-41-orange.svg" alt="Skills">
 </p>
 
 <p align="center">
@@ -148,7 +148,7 @@ Harness protects your codebase with hooks:
 
 ---
 
-## 45 Skills, Zero Config
+## 41 Skills, Zero Config
 
 Skills auto-load based on context. Use slash commands or natural language.
 
@@ -190,8 +190,8 @@ Skills auto-load based on context. Use slash commands or natural language.
 
 ```
 claude-code-harness/
-├── skills/       # 45 skill definitions
-├── agents/       # 8 sub-agents (parallel workers)
+├── skills/       # 41 skill definitions
+├── agents/       # 11 sub-agents (parallel workers)
 ├── hooks/        # Safety & automation
 ├── scripts/      # Guard scripts
 └── templates/    # Generation templates

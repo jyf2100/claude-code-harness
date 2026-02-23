@@ -7,6 +7,17 @@
 
 > **📝 記載ルール**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
+## [Unreleased]
+
+### Changed
+
+- **CHANGELOG リンク定義修復**: 全バージョンの compare リンクを補完
+- **CHANGELOG_ja.md 翻訳漏れ補完**: 5バージョン分のエントリを追加 (2.20.1, 2.17.6, 2.17.1, 2.17.0, 2.16.21)
+- **README バージョン・数値更新**: バッジのバージョン、スキル数 (41)、エージェント数 (11) を実態に反映
+- **CHANGELOG 非標準見出し正規化**: `### Internal` → `### Changed` に統合 (Keep a Changelog 準拠)
+
+---
+
 ## [2.23.5] - 2026-02-23
 
 ### 🎯 あなたにとって何が変わるか
@@ -261,14 +272,11 @@
 - Codex スキル文書の状態保存先を `${CODEX_HOME:-~/.codex}/state/harness/` に統一。
 - `--claude + --codex-review` の同時指定を開始前エラーとして明記。
 - Codex README と setup リファレンスを、マルチエージェント既定とロール宣言前提に整合。
+- `tests/test-codex-package.sh` と CI を強化し、旧語彙の再流入とマルチエージェント必須キーワード/設定欠落を検知可能に。
 
 ### Fixed
 
 - `work` / `breezing` の両方で、`--claude` 時のレビュー経路を Claude 固定として明示。
-
-### Internal
-
-- `tests/test-codex-package.sh` と CI を強化し、旧語彙の再流入とマルチエージェント必須キーワード/設定欠落を検知可能に。
 
 ---
 
@@ -306,9 +314,6 @@
 - Codex 配布ドキュメントと setup リファレンス（JP/EN）をユーザーベース既定に統一。
 - Codex スキルのルーティング/実行説明を再整理し、実装要求は Codex-first の `/work`、Claude 委譲は `--claude` で明示化。
 - `/breezing` の復旧・状態管理ドキュメント（`impl_mode`）を Codex-first 実行モデルに整合。
-
-### Internal
-
 - README・setup リファレンス・Codex 配布ドキュメント間の記述ずれを解消。
 
 ---
@@ -325,9 +330,6 @@
 ### Changed
 
 - Codex 側レビュー文書を更新し、レビュー モード説明・統合フロー・検出ガイダンスを `claude -p` 委譲前提に統一。
-
-### Internal
-
 - Codex レビュー関連ドキュメントの用語不整合を解消。
 
 ---
@@ -429,6 +431,19 @@
 
 ---
 
+## [2.20.1] - 2026-02-10
+
+### Fixed
+
+- **PostToolUse フック構文エラー**: `posttooluse-tampering-detector.sh` でヒアドック内の `|| true` がコマンド置換内にあることによる bash パースエラーを修正
+- **全フックの python3 フォールバック**: 全10フックスクリプトでヒアドック形式の python3 フォールバックを `python3 -c` に置換（stdin 競合の解消）
+- **POSIX 準拠**: 安全な入力パイプのため `echo` を `printf '%s'` に変更、`echo -e` を `printf '%b'` に変更
+- **パターンマッチング**: 6つのパターンチェックで `echo | grep -qE` を `[[ =~ ]]`（単語境界付き）に置換
+- **エラーハンドリング**: `set -euo pipefail` を `set +e` に変更（他の全 PostToolUse スクリプトと統一）
+- **バイリンガル警告**: フックスクリプトに英語・日本語両方の警告メッセージを追加
+
+---
+
 ## [2.20.0] - 2026-02-08
 
 ### 🎯 What's Changed for You
@@ -482,6 +497,39 @@
 
 ---
 
+## [2.19.0] - 2026-02-08
+
+### 🎯 あなたにとって何が変わるか
+
+**5つの実装コマンドを `/work` と `/breezing` の2つに統一。両方 `--codex` 対応。**
+
+| Before | After |
+|--------|-------|
+| `/work`, `/ultrawork`, `/breezing`, `/breezing-codex`, `/codex-worker` の5コマンド | `/work` と `/breezing` の2コマンドに統一 |
+| コマンドの使い分けが複雑 | `/work` = Claude 実装、`/breezing` = チーム完走 |
+| Codex は別コマンド (`/codex-worker`, `/breezing-codex`) | `--codex` フラグで統一切り替え |
+| スコープ指定方法がコマンドごとに異なる | 両コマンド共通の対話式スコープ確認 |
+
+### Changed
+
+- **`/work` 全面改修**: 対話式スコープ確認 + タスク数に応じた自動戦略選択
+  - 1タスク → 直接実装、2-3 → 並列、4+ → 自動反復（旧 ultrawork 統合）
+  - `--codex` フラグで Codex 実装委託モード
+  - 新リファレンス: scope-dialog.md, auto-iteration.md, codex-engine.md
+- **`/breezing` 更新**: `--codex` フラグ統合（旧 breezing-codex 吸収）
+  - 対話式スコープ確認の追加
+  - Codex Implementer 連携を codex-engine.md に集約
+- **pretooluse-guard.sh**: `ultrawork-active.json` → `work-active.json` に統一
+  - 後方互換: 旧ファイル名もフォールバックで検出
+
+### Removed
+
+- **ultrawork** スキル → `/work all` で同等機能（`skills/_archived/` に移動）
+- **breezing-codex** スキル → `/breezing --codex` で同等機能（`skills/_archived/` に移動）
+- **codex-worker** スキル → `/work --codex` で同等機能（`skills/_archived/` に移動）
+
+---
+
 ## [2.18.11] - 2026-02-06
 
 ### 🎯 What's Changed for You
@@ -511,9 +559,6 @@
   - 出力制限を 1500 → 2500 文字に緩和（十分な分析のため）
   - 終了条件を明確化（Critical/High = 0 で APPROVE）
   - 「重箱の隅つつき」問題を解消（Low/Medium のみは APPROVE）
-
-### Internal
-
 - エキスパートテンプレートの軽微な修正
 
 ---
@@ -544,7 +589,7 @@
 - **Codex ガード**: `.codex/rules/harness.rules` が安定してパースされ、`git clean -n` / `sudo -n true` のような安全コマンドで止まりにくくなりました（破壊的コマンドは prompt）。
 - **Claude ガード**: `templates/claude/settings.security.json.template` のパーミッション構文を修正し、破壊的操作のみ prompt するように見直しました。
 
-### Internal
+### Changed
 
 - **Codex パッケージテスト**: rules の例（match/not_match）検証を追加し、起動時のパース失敗を防止。
 
@@ -651,6 +696,41 @@
 
 ---
 
+## [2.17.6] - 2026-02-04
+
+### 🎯 あなたにとって何が変わるか
+
+**generate-video スキルが JSON Schema 駆動のハイブリッドアーキテクチャに進化、README も刷新されました**
+
+| Before | After |
+|--------|-------|
+| 動画生成の設定がコードに散在 | JSON Schema でシナリオを一元管理 |
+| README の構成が長大 | TL;DR: Ultrawork セクションで即座に始められる |
+| スキル説明が英語のみ | 28個のスキル description が日本語化 + ユーモア表現 |
+
+### Added
+
+- **generate-video JSON Schema アーキテクチャ** (#37)
+  - `scenario-schema.json` でシナリオ構造を厳密定義
+  - `validate-scenario.js` でセマンティック検証
+  - `template-registry.js` でテンプレート管理
+  - パストラバーサル攻撃対策を実装
+- **TL;DR: Ultrawork セクション**: README に「説明が長い？これだけ」セクション追加
+  - 日本語版にも「説明が長い？ならこれ: Ultrawork」として追加
+
+### Changed
+
+- **スキル description 日本語化**: 28個のスキルに日本語の説明とユーモア表現を追加
+- **README 構成整理**: Install → TL;DR → Core Loop の流れに最適化
+- **スキル数更新**: 42 → 45 スキル
+
+### Fixed
+
+- `validate-scenario.js`: セマンティックエラーフィルタリングのバグ修正
+- `TransitionWrapper.tsx`: `slideIn` → `slide_in` でスキーマ命名規則に統一
+
+---
+
 ## [2.17.3] - 2026-02-03
 
 ### 🎯 あなたにとって何が変わるか
@@ -706,9 +786,75 @@
   - `[ ]` → `[x]`, `cc:WIP` → `cc:done` に更新
   - タスクが見つからない場合はユーザーに確認
 
-### Internal
+### Changed
 
 - Codex Worker スクリプト品質改善（共通ライブラリ化、セキュリティ強化）
+
+---
+
+## [2.17.1] - 2026-02-03
+
+### Added
+
+- **Agent Trace**: AI が生成したコード編集をセッションコンテキストで可視化
+  - `emit-agent-trace.js`: PostToolUse フックが Edit/Write 操作を `.claude/state/agent-trace.jsonl` に記録
+  - `agent-trace-schema.json`: トレースレコードの JSON Schema (v0.1.0)
+  - Stop フックがセッション終了時にプロジェクト名・現在タスク・最近の編集を表示
+  - `sync-status` スキルが進捗確認に Agent Trace データを活用
+  - `session-memory` スキルがクロスセッションのコンテキストとして Agent Trace を読み取り
+
+### Changed
+
+- Stop フック（`session-summary.sh`）に Agent Trace 情報の表示を追加
+- VCS 情報取得を最適化: `git status --porcelain=2 -b -uno` の1回呼び出し + 5秒 TTL キャッシュ
+- リポジトリルート検出で git プロセスを起動しないように変更（ディレクトリツリーを上向きに探索）
+
+### Fixed
+
+- トレースファイル操作のセキュリティ強化（シンリンクチェック、パーミッション強制）
+- ロックファイルによるローテーション並行保護（O_CREAT|O_EXCL パターン）
+
+---
+
+## [2.17.0] - 2026-02-03
+
+### Added
+
+- **Codex Worker**: 実装タスクを OpenAI Codex に並列ワーカーとして委譲
+  - `codex-worker` スキルで単一タスクの委譲
+  - `ultrawork --codex` で git worktree を使った並列ワーカー実行
+  - 品質ゲート: 証拠検証、lint/型チェック、テスト、改ざん検知
+  - TTL とハートビートによるファイルロック機構
+  - タスク完了時の Plans.md 自動更新
+
+### Changed
+
+- `codex-worker` と `codex-review` スキルに明示的なルーティングルール（Do NOT Load For セクション）を追加
+- スキルの自動ロード精度向上のため description を改善
+
+### Fixed
+
+- シェルスクリプトのセキュリティ改善（jq インジェクション、git オプションインジェクション、値バリデーション）
+- grep パターンの POSIX 互換性（`\s` → `[[:space:]]`）
+- `set -e` コンテキスト内の算術演算
+
+### Changed
+
+- 5つのシェルスクリプトを追加: `codex-worker-setup.sh`, `codex-worker-engine.sh`, `codex-worker-lock.sh`, `codex-worker-quality-gate.sh`, `codex-worker-merge.sh`
+- 統合テストを追加: `tests/test-codex-worker.sh`
+- リファレンスドキュメントを追加: `skills/codex-worker/references/*.md`
+
+---
+
+## [2.16.21] - 2026-02-03
+
+### Changed
+
+- `ultrawork` の Codex Mode オプション（`--codex`, `--parallel`, `--worktree-base`）をデザインドラフトに移動
+  - これらの機能は計画中だが未実装
+  - ドキュメントに「(Design Draft / 未実装)」と明記
+- `skills/ultrawork/references/codex-mode.md` をデザインドラフトドキュメントとして追加
+- Codex Worker スクリプトとリファレンスを追加（未追跡、将来の実装向け）
 
 ---
 
@@ -718,7 +864,7 @@
 
 - `ultrawork` スキルに Options テーブルと Quick Reference 例を追加（`--codex`, `--parallel`, `--worktree-base`）
 
-### Internal
+### Changed
 
 - スキルルーティングルールを `skills/routing-rules.md` に一元化（SSOT パターン導入）
 - `codex-review` と `codex-worker` のルーティングを決定的に（文脈判定を排除）
@@ -749,7 +895,7 @@
 - 17スキルに使い方ヒント（`argument-hint`）を追加
 - セッション間通知機能（複数セッション連携時に便利）
 
-### Internal
+### Changed
 
 - CI/テスト/ドキュメントを Skills 移行後の構造に更新
 
@@ -780,7 +926,7 @@
 | 内部スキル (impl, verify) がメニューに表示 | 非表示に（ノイズ軽減） |
 | `dev-browser`, `docs`, `video` | `agent-browser`, `notebookLM`, `generate-video` に改名 |
 
-### Internal
+### Changed
 
 - README を VibeCoder 向けにリライト（トラブルシューティング・アンインストール追加）
 - CI スクリプトを Skills 構造に対応
@@ -884,12 +1030,14 @@
 
 v2.9.x 以前の詳細は [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) を参照してください。
 
+[2.23.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.3...v2.23.5
 [2.23.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.2...v2.23.3
 [2.23.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.1...v2.23.2
 [2.23.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.0...v2.23.1
 [2.23.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.22.0...v2.23.0
 [2.22.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.21.0...v2.22.0
 [2.21.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.13...v2.21.0
+[2.20.13]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.11...v2.20.13
 [2.20.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.10...v2.20.11
 [2.20.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.9...v2.20.10
 [2.20.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.8...v2.20.9
@@ -897,4 +1045,35 @@ v2.9.x 以前の詳細は [GitHub Releases](https://github.com/Chachamaru127/cla
 [2.20.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.6...v2.20.7
 [2.20.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.5...v2.20.6
 [2.20.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.4...v2.20.5
+[2.20.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.3...v2.20.4
+[2.20.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.2...v2.20.3
+[2.20.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.0...v2.20.2
+[2.20.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.11...v2.20.0
+[2.18.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.10...v2.18.11
+[2.18.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.7...v2.18.10
+[2.18.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.6...v2.18.7
+[2.18.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.5...v2.18.6
+[2.18.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.4...v2.18.5
+[2.18.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.2...v2.18.4
+[2.18.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.1...v2.18.2
+[2.18.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.0...v2.18.1
+[2.18.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.10...v2.18.0
+[2.17.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.9...v2.17.10
+[2.17.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.8...v2.17.9
+[2.17.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.3...v2.17.8
+[2.17.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.2...v2.17.3
+[2.17.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.20...v2.17.2
+[2.16.20]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.19...v2.16.20
+[2.16.19]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.17...v2.16.19
+[2.16.17]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.14...v2.16.17
+[2.16.14]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.11...v2.16.14
+[2.16.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.5...v2.16.11
+[2.16.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.0...v2.16.5
+[2.16.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.15.0...v2.16.0
+[2.15.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.0...v2.15.0
+[2.14.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.0...v2.14.0
+[2.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.12.0...v2.13.0
+[2.12.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...v2.12.0
+[2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...v2.11.0
+[2.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.24...v2.10.0
 [2.18.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.6...v2.18.7

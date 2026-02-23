@@ -4,6 +4,17 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [Unreleased]
+
+### Changed
+
+- **CHANGELOG link definitions repaired**: All version compare links supplemented
+- **CHANGELOG_ja.md translation gaps filled**: 5 versions added (2.20.1, 2.17.6, 2.17.1, 2.17.0, 2.16.21)
+- **README version and count updated**: Badge version, skill count (41), agent count (11) updated to reflect reality
+- **CHANGELOG non-standard headings normalized**: `### Internal` → `### Changed` (Keep a Changelog compliant)
+
+---
+
 ## [2.23.5] - 2026-02-23
 
 ### 🎯 What's Changed for You
@@ -258,14 +269,11 @@ Change history for claude-code-harness.
 - Standardized runtime state references to `${CODEX_HOME:-~/.codex}/state/harness/` across Codex skill docs.
 - Added explicit flag conflict rule: `--claude + --codex-review` fails before execution.
 - Updated Codex setup references and README to reflect native multi-agent defaults and role declarations.
+- Strengthened `tests/test-codex-package.sh` and CI to guard against legacy vocabulary regressions and enforce required multi-agent keywords/config defaults.
 
 ### Fixed
 
 - Fixed inconsistent review routing by making `--claude` mode explicitly require Claude reviewer routing in both `work` and `breezing`.
-
-### Internal
-
-- Strengthened `tests/test-codex-package.sh` and CI to guard against legacy vocabulary regressions and enforce required multi-agent keywords/config defaults.
 
 ---
 ## [2.20.11] - 2026-02-19
@@ -302,9 +310,6 @@ Change history for claude-code-harness.
 - Updated Codex distribution docs and setup references to user-based defaults in both English and Japanese.
 - Reworked Codex skill routing/docs so implementation intents resolve to Codex-first `/work`, with `--claude` for intentional delegation.
 - Aligned `/breezing` recovery/state docs (`impl_mode`) with Codex-first runtime semantics.
-
-### Internal
-
 - Synced release-related references and command docs to avoid setup drift between README, setup skill references, and Codex distribution docs.
 
 ---
@@ -321,9 +326,6 @@ Change history for claude-code-harness.
 ### Changed
 
 - Updated Codex-side review docs to align review mode wording, integration flow, and detection guidance around `claude -p` delegation.
-
-### Internal
-
 - Documentation consistency cleanup for Codex review-mode references.
 
 ---
@@ -557,9 +559,6 @@ Change history for claude-code-harness.
   - Output limit relaxed 1500 → 2500 chars for thorough analysis
   - Clear termination conditions (APPROVE when Critical/High = 0)
   - Fixed "nitpicking" issue (Low/Medium only → APPROVE)
-
-### Internal
-
 - Minor expert template fixes
 
 ---
@@ -590,7 +589,7 @@ Change history for claude-code-harness.
 - **Codex guardrails**: `harness.rules` now parses reliably and avoids prompting on safe commands (e.g. `git clean -n`, `sudo -n true`).
 - **Claude guardrails**: `templates/claude/settings.security.json.template` now uses valid permission syntax (`:*`) and prompts only on destructive variants.
 
-### Internal
+### Changed
 
 - **Codex package test**: Added rule example validation to prevent startup parse errors.
 
@@ -790,7 +789,7 @@ Change history for claude-code-harness.
   - `[ ]` → `[x]`, `cc:WIP` → `cc:done` に更新
   - タスクが見つからない場合はユーザーに確認
 
-### Internal
+### Changed
 
 - Codex Worker スクリプト品質改善（共通ライブラリ化、セキュリティ強化）
 
@@ -835,18 +834,15 @@ Change history for claude-code-harness.
 
 - Skills `codex-worker` and `codex-review` now have explicit routing rules (Do NOT Load For sections)
 - Improved skill description for better auto-loading accuracy
+- Added 5 shell scripts: `codex-worker-setup.sh`, `codex-worker-engine.sh`, `codex-worker-lock.sh`, `codex-worker-quality-gate.sh`, `codex-worker-merge.sh`
+- Added integration test: `tests/test-codex-worker.sh`
+- Added reference documentation: `skills/codex-worker/references/*.md`
 
 ### Fixed
 
 - Shell script security improvements (jq injection, git option injection, value validation)
 - POSIX compatibility for grep patterns (`\s` to `[[:space:]]`)
 - Arithmetic operation in `set -e` context
-
-### Internal
-
-- Added 5 shell scripts: `codex-worker-setup.sh`, `codex-worker-engine.sh`, `codex-worker-lock.sh`, `codex-worker-quality-gate.sh`, `codex-worker-merge.sh`
-- Added integration test: `tests/test-codex-worker.sh`
-- Added reference documentation: `skills/codex-worker/references/*.md`
 
 ---
 
@@ -857,9 +853,6 @@ Change history for claude-code-harness.
 - `ultrawork` Codex Mode options (`--codex`, `--parallel`, `--worktree-base`) moved to Design Draft
   - These features are planned but not yet implemented
   - Documentation now clearly marks them as "(Design Draft / 未実装)"
-
-### Internal
-
 - Added `skills/ultrawork/references/codex-mode.md` as design draft documentation
 - Added Codex Worker scripts and references (untracked, for future implementation)
 
@@ -867,7 +860,7 @@ Change history for claude-code-harness.
 
 ## [2.16.20] - 2026-02-03
 
-### Internal
+### Changed
 
 - Centralized skill routing rules to `skills/routing-rules.md` (SSOT pattern)
 - Made `codex-review` and `codex-worker` routing deterministic (removed context judgment)
@@ -898,7 +891,7 @@ Change history for claude-code-harness.
 - Usage hints (`argument-hint`) added to 17 skills
 - Inter-session notifications (useful for multi-session workflows)
 
-### Internal
+### Changed
 
 - Updated CI/tests/docs for Skills-only architecture
 
@@ -929,7 +922,7 @@ Change history for claude-code-harness.
 | Internal skills (impl, verify) in menu | Hidden (less noise) |
 | `dev-browser`, `docs`, `video` | Renamed to `agent-browser`, `notebookLM`, `generate-video` |
 
-### Internal
+### Changed
 
 - README rewritten for VibeCoders (added troubleshooting, uninstall)
 - CI scripts updated for Skills structure
@@ -1033,6 +1026,7 @@ Change history for claude-code-harness.
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
+[2.23.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.3...v2.23.5
 [2.23.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.2...v2.23.3
 [2.23.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.1...v2.23.2
 [2.23.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.0...v2.23.1
@@ -1047,10 +1041,41 @@ For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/c
 [2.20.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.6...v2.20.7
 [2.20.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.5...v2.20.6
 [2.20.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.4...v2.20.5
+[2.20.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.3...v2.20.4
+[2.20.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.2...v2.20.3
+[2.20.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.1...v2.20.2
+[2.20.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.20.0...v2.20.1
+[2.20.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.19.0...v2.20.0
+[2.19.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.11...v2.19.0
+[2.18.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.10...v2.18.11
+[2.18.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.7...v2.18.10
 [2.18.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.6...v2.18.7
 [2.18.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.5...v2.18.6
 [2.18.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.4...v2.18.5
 [2.18.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.2...v2.18.4
 [2.18.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.1...v2.18.2
 [2.18.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.18.0...v2.18.1
+[2.18.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.10...v2.18.0
+[2.17.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.9...v2.17.10
+[2.17.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.8...v2.17.9
+[2.17.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.6...v2.17.8
+[2.17.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.3...v2.17.6
+[2.17.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.2...v2.17.3
+[2.17.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.1...v2.17.2
+[2.17.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.0...v2.17.1
+[2.17.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.21...v2.17.0
+[2.16.21]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.20...v2.16.21
+[2.16.20]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.19...v2.16.20
+[2.16.19]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.17...v2.16.19
+[2.16.17]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.14...v2.16.17
+[2.16.14]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.11...v2.16.14
+[2.16.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.5...v2.16.11
+[2.16.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.16.0...v2.16.5
+[2.16.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.15.0...v2.16.0
+[2.15.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.14.0...v2.15.0
+[2.14.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.13.0...v2.14.0
+[2.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.12.0...v2.13.0
+[2.12.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.11.0...v2.12.0
+[2.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.10.0...v2.11.0
+[2.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.24...v2.10.0
 [2.18.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.17.10...v2.18.0
