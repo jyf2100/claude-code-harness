@@ -19,6 +19,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo "unknown")
 echo -e "\033[0;36m[claude-code-harness v${VERSION}]\033[0m Session initialized" >&2
 
+# ===== SIMPLE モード検出 =====
+SIMPLE_MODE="false"
+if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
+  # shellcheck source=./check-simple-mode.sh
+  source "$SCRIPT_DIR/check-simple-mode.sh"
+  if is_simple_mode; then
+    SIMPLE_MODE="true"
+    echo -e "\033[1;33m[WARNING]\033[0m CLAUDE_CODE_SIMPLE mode detected — skills/agents/memory disabled" >&2
+  fi
+fi
+
 # ===== stdin から JSON 入力を読み取り =====
 INPUT=""
 if [ -t 0 ]; then
@@ -284,6 +295,16 @@ fi
 # ===== 出力メッセージの構築 =====
 add_line "# [claude-code-harness] セッション初期化"
 add_line ""
+
+# SIMPLE モード警告（additionalContext にも出力 — check-simple-mode.sh の警告文を再利用）
+if [ "$SIMPLE_MODE" = "true" ]; then
+  add_line "⚠️ **CLAUDE_CODE_SIMPLE モード検出** (CC v2.1.50+)"
+  while IFS= read -r warning_line; do
+    add_line "$warning_line"
+  done <<< "$(simple_mode_warning ja)"
+  add_line ""
+fi
+
 add_line "${PLANS_INFO}"
 
 if [ -n "$SKILLS_INFO" ]; then

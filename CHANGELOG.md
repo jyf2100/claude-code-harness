@@ -8,6 +8,63 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.25.0] - 2026-02-24
+
+### 🎯 What's Changed for You
+
+**`CLAUDE_CODE_SIMPLE` モード（CC v2.1.50+）の影響を自動検出し、無効化される機能をユーザーに明示。サイレント障害を防止。**
+
+| Before | After |
+|--------|-------|
+| SIMPLE モードで 37 スキル・11 エージェントがサイレントに無効化 | SessionStart/Setup フックが自動検出し、ターミナル + additionalContext で警告表示 |
+| SIMPLE モードの影響範囲が不明（互換性マトリクスに 1 行のみ） | 専用ドキュメント `docs/SIMPLE_MODE_COMPATIBILITY.md` で全影響を網羅（スキル・エージェント・メモリ・ワークフロー） |
+| 防御コード・検出ロジックがゼロ | `scripts/check-simple-mode.sh` ユーティリティで一貫した検出・多言語警告メッセージ |
+| `/work`, `/breezing` 等が理由不明で動作しない | 「スキル無効」「エージェント無効」「フックのみ動作」の 3 分類で即座に状況把握可能 |
+
+### Added
+
+- **SIMPLE モード検出ユーティリティ** (`scripts/check-simple-mode.sh`): `is_simple_mode()` 関数と `simple_mode_warning()` 多言語メッセージ生成。全フック・スクリプトから source して使用可能
+- **SessionStart SIMPLE モード警告**: `scripts/session-init.sh` がセッション開始時に `CLAUDE_CODE_SIMPLE` 環境変数を検出し、stderr バナー + additionalContext で詳細警告を出力
+- **Setup hook SIMPLE モード警告**: `scripts/setup-hook.sh` が init/maintenance 時に SIMPLE モードを検出し、出力メッセージに警告を追加
+- **`docs/SIMPLE_MODE_COMPATIBILITY.md`**: SIMPLE モード完全ガイド — 影響サマリ表、動作/非動作の全リスト、37 スキル・11 エージェントの影響度分類、検出方法、ワークアラウンド、開発者向け拡張ガイド
+
+### Changed
+
+- **互換性マトリクス強化** (`docs/CLAUDE_CODE_COMPATIBILITY.md`):
+  - v2.1.50 SIMPLE モード行のステータスを「要注意」→「**対応済み**」に更新
+  - 非互換セクションに SIMPLE モードの詳細影響（37 スキル・11 エージェント・メモリ無効化）と検出方法を追記
+  - `SIMPLE_MODE_COMPATIBILITY.md` へのクロスリファレンスリンク追加
+
+---
+
+## [2.24.0] - 2026-02-24
+
+### 🎯 What's Changed for You
+
+**Claude Code v2.1.50〜v2.1.51 の新機能に対応。互換性マトリクス更新、メモリ安定性改善の恩恵、新 CLI コマンド活用。**
+
+| Before | After |
+|--------|-------|
+| 互換性マトリクスが v2.1.49 で止まっていた | v2.1.50〜v2.1.51 の全機能を文書化、推奨バージョンを v2.1.51+ に引き上げ |
+| WorktreeCreate/Remove hook が未知 | Breezing guardrails に将来対応として文書化 |
+| エージェント spawn 失敗時の診断手段が限定的 | `claude agents list` (CC 2.1.50+) を troubleshoot スキルに追加 |
+| バックグラウンドエージェント停止方法が未記載 | `Ctrl+F`（CC 2.1.49+）を breezing guardrails に追記、ESC 非推奨を明記 |
+
+### Added
+
+- **CC v2.1.50/v2.1.51 互換性マトリクス**: `docs/CLAUDE_CODE_COMPATIBILITY.md` に 17 項目追加（メモリリーク修正、完了タスク GC、WorktreeCreate/Remove hook、`claude agents` CLI、宣言的 worktree isolation、SIMPLE モード注意、remote-control 等）
+- **`claude agents` CLI 診断**: `skills/troubleshoot/SKILL.md` にエージェント診断セクション追加（CC 2.1.50+）
+- **WorktreeCreate/WorktreeRemove hook**: `skills/breezing/references/guardrails-inheritance.md` に将来対応として追記
+- **Ctrl+F キーバインド**: breezing guardrails にバックグラウンドエージェント停止方法を追記（CC 2.1.49+、ESC 非推奨）
+- **Feature Table 拡張**: `docs/CLAUDE-feature-table.md` に v2.1.50/v2.1.51 の 4 機能追加（メモリリーク修正、claude agents CLI、WorktreeCreate/Remove、remote-control）
+
+### Changed
+
+- **推奨 CC バージョン**: v2.1.49+ → **v2.1.51+** に引き上げ
+- **Feature Table タイトル**: 2.1.49+ → 2.1.51+ に更新
+
+---
+
 ## [2.23.6] - 2026-02-24
 
 ### Added
@@ -1040,6 +1097,8 @@ Change history for claude-code-harness.
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
+[2.25.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.24.0...v2.25.0
+[2.24.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.6...v2.24.0
 [2.23.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.5...v2.23.6
 [2.23.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.3...v2.23.5
 [2.23.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.23.2...v2.23.3
