@@ -32,6 +32,10 @@ Claude Code は強力だが、時に構造が必要になる。
 | `rm -rf` が警告なく実行される | 危険なコマンドをブロック |
 | 一度に1タスク | 並列ワーカー |
 
+<p align="center">
+  <img src="assets/readme-visuals-ja/before-after.svg" alt="Before/After 比較" width="720">
+</p>
+
 **3つのコマンド。1つのワークフロー。本番品質のコード。**
 
 ```mermaid
@@ -90,6 +94,10 @@ graph LR
     E --> F["自動コミット"]
 ```
 
+<p align="center">
+  <img src="assets/readme-visuals-ja/work-all-flow.svg" alt="/work all パイプライン" width="700">
+</p>
+
 | Before | After |
 |--------|-------|
 | `/plan-with-agent` → `/work` → `/harness-review` → `git commit` | `/work all` |
@@ -120,6 +128,10 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 
 各ワーカーが実装、セルフレビュー、報告を行う。
 
+<p align="center">
+  <img src="assets/readme-visuals-ja/parallel-workers.svg" alt="並列ワーカー" width="640">
+</p>
+
 ### 3. Review（レビュー）
 
 ```bash
@@ -146,6 +158,10 @@ Harness はフックでコードベースを保護:
 | `git status`, `npm test` | 自動許可 |
 | テスト改ざん | 警告をトリガー |
 
+<p align="center">
+  <img src="assets/readme-visuals-ja/safety-shield.svg" alt="セーフティシールド" width="600">
+</p>
+
 ---
 
 ## 41スキル、設定不要
@@ -159,6 +175,10 @@ Harness はフックでコードベースを保護:
 | 「ビルドエラーを直して」 | `verify` |
 | 「Stripe決済を追加して」 | `auth` |
 | 「Vercelにデプロイして」 | `deploy` |
+
+<p align="center">
+  <img src="assets/readme-visuals-ja/skills-ecosystem.svg" alt="スキルエコシステム" width="640">
+</p>
 
 ### 主要コマンド
 
@@ -211,6 +231,10 @@ claude-code-harness/
 /breezing --no-discuss all       # 計画レビューをスキップして即実装
 /breezing --codex all            # Codex エンジンに委託
 ```
+
+<p align="center">
+  <img src="assets/readme-visuals-ja/breezing-agents.svg" alt="Breezing エージェントチーム" width="640">
+</p>
 
 **Phase 0（計画議論）** がデフォルトで実行されます。Planner がタスクの品質を分析し、Critic が計画を批判的にチェック。あなたが承認してからコーディングが始まります。
 

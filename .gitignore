@@ -104,10 +104,13 @@ docs/claude-mem-japanese-setup.md
 
 # 開発用テストスキル
 skills/test-*/
+skills/zz-review-*/
+skills/zz-review-symlink
 opencode/skills/test-*/
 codex/.codex/skills/test-*/
 
 # 開発用スキル（非公開）
+skills/allow1/
 skills/x-promo/
 skills/x-release-harness/
 opencode/skills/x-promo/
@@ -232,6 +235,17 @@ out/
 
 # X post images (local only)
 /image/
+
+# README visual assets - development artifacts (not referenced in READMEs)
+/assets/harness-workflow.svg
+/assets/infographic-preview.html
+/assets/logo-candidates/
+/assets/readme-visuals/
+/assets/readme-visuals-en/preview.html
+/assets/readme-visuals-ja/preview.html
+/assets/.claude/
+/infographic-check.png
+/readme-visuals-all.png
 
 # VS Code workspace files
 *.code-workspace

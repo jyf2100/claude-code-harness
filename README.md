@@ -32,6 +32,10 @@ Claude Code is powerful—but sometimes it needs structure.
 | `rm -rf` runs without warning | Dangerous commands blocked |
 | One task at a time | Parallel workers |
 
+<p align="center">
+  <img src="assets/readme-visuals-en/before-after.svg" alt="Before/After comparison" width="720">
+</p>
+
 **Three commands. One workflow. Production-ready code.**
 
 ```mermaid
@@ -90,6 +94,10 @@ graph LR
     E --> F["Auto-Commit"]
 ```
 
+<p align="center">
+  <img src="assets/readme-visuals-en/work-all-flow.svg" alt="/work all pipeline" width="700">
+</p>
+
 | Before | After |
 |--------|-------|
 | `/plan-with-agent` → `/work` → `/harness-review` → `git commit` | `/work all` |
@@ -120,6 +128,10 @@ Harness creates `Plans.md` with clear acceptance criteria.
 
 Each worker implements, self-reviews, and reports.
 
+<p align="center">
+  <img src="assets/readme-visuals-en/parallel-workers.svg" alt="Parallel workers" width="640">
+</p>
+
 ### 3. Review
 
 ```bash
@@ -146,6 +158,10 @@ Harness protects your codebase with hooks:
 | `git status`, `npm test` | Auto-allowed |
 | Test tampering | Warning triggered |
 
+<p align="center">
+  <img src="assets/readme-visuals-en/safety-shield.svg" alt="Safety shield" width="600">
+</p>
+
 ---
 
 ## 41 Skills, Zero Config
@@ -159,6 +175,10 @@ Skills auto-load based on context. Use slash commands or natural language.
 | "fix the build error" | `verify` |
 | "add Stripe payments" | `auth` |
 | "deploy to Vercel" | `deploy` |
+
+<p align="center">
+  <img src="assets/readme-visuals-en/skills-ecosystem.svg" alt="Skills ecosystem" width="640">
+</p>
 
 ### Key Commands
 
@@ -211,6 +231,10 @@ Run entire task lists with autonomous agent teams:
 /breezing --no-discuss all       # Skip plan review, go straight to coding
 /breezing --codex all            # Delegate to Codex engine
 ```
+
+<p align="center">
+  <img src="assets/readme-visuals-en/breezing-agents.svg" alt="Breezing agent teams" width="640">
+</p>
 
 **Phase 0 (Planning Discussion)** runs by default—Planner analyzes task quality, Critic challenges the plan, then you approve before coding starts.
 
