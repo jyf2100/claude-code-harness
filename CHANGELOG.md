@@ -8,6 +8,34 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.26.0] - 2026-03-02
+
+### 🎯 What's Changed for You
+
+**Claude Code v2.1.63 integration: `/work` now auto-simplifies code after review, `/breezing` can delegate horizontal tasks to `/batch`, and HTTP hooks enable external service notifications.**
+
+| Before | After |
+|--------|-------|
+| `/work` flow: implement → review → commit | `/work` flow: implement → review → **auto-simplify** → commit |
+| Horizontal migration tasks handled manually | `/breezing` auto-detects and delegates to `/batch` |
+| Feature table covers up to v2.1.51 | Feature table covers up to v2.1.63 (27 features) |
+| Hooks only support `command` and `prompt` types | Hooks now support `http` type (POST to external services) |
+
+### Added
+
+- **Phase 3.5 Auto-Refinement in `/work`**: After review APPROVE, `/simplify` runs automatically to clean up code. `--deep-simplify` adds `code-simplifier` plugin. `--no-simplify` skips
+- **`/batch` delegation in `/breezing`**: Horizontal pattern detection (migrate/replace-all/add-to-all) auto-proposes `/batch` delegation for bulk changes
+- **HTTP hooks documentation** (`.claude/rules/hooks-editing.md`): `type: "http"` spec with field reference, response behavior, command-vs-http comparison table, and 3 sample templates (Slack, metrics, dashboard)
+- **7 new feature-table entries** (`docs/CLAUDE-feature-table.md`): `/simplify`, `/batch`, `code-simplifier` plugin, HTTP hooks, auto-memory worktree sharing, `/clear` skill cache reset, `ENABLE_CLAUDEAI_MCP_SERVERS`
+
+### Changed
+
+- **Version references**: `2.1.49+` → `2.1.63+` across CLAUDE.md and feature table
+- **Feature count**: 20 → 27 in CLAUDE.md and feature table
+- **`/breezing` guardrails**: Added auto-memory worktree sharing (v2.1.63) to inheritance table
+- **`troubleshoot` skill**: Added `/clear` cache reset to CC v2.1.63+ diagnostics
+- **`work-active.json` schema**: Added `simplify_mode: "default" | "deep" | "skip"` field
+
 ## [2.25.0] - 2026-02-24
 
 ### 🎯 What's Changed for You
