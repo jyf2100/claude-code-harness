@@ -1,123 +1,125 @@
-# Claude Code Harness — Plans.md
+# Claude Code Harness — Plans.md (v3 Rewrite Branch)
 
 作成日: 2026-03-02
-前回アーカイブ: Phase 13〜15 → `.claude/memory/archive/Plans-2026-03-02-pre-phase16.md`
+ブランチ: worktree-v3-full-rewrite
 
 ---
 
-## Phase 16: Claude Code v2.1.63 対応 — /simplify・/batch 統合 + インフラ更新
+## Phase 17: Harness v3 — フルリライト（アーキテクチャ再設計）
 
 作成日: 2026-03-02
-起点: Claude Code CHANGELOG v2.1.52〜v2.1.63 の全変更分析
-目的: ハーネスの対応バージョンを v2.1.51 → v2.1.63 に引き上げ、新機能を活用
+起点: 現行アーキテクチャの構造的限界に対する再設計議論
+目的: テスト可能・保守可能・拡張可能なアーキテクチャへの全面移行
 
-### 背景
+### 設計原則
 
-Claude Code v2.1.63 で追加された `/simplify`（3並列レビュー→自動修正）と `/batch`（大規模並列マイグレーション）の2つの bundled コマンドがハーネスの既存ワークフローと補完関係にある。加えて HTTP hooks、auto-memory の worktree 共有等のインフラ改善をハーネスに反映する。
-
-### 3つの「simplify」の関係
-
-| 名前 | 提供元 | アーキテクチャ | CLAUDE.md 参照 | 呼び出し方 |
-|------|--------|-------------|---------------|----------|
-| `/simplify` (bundled) | CC v2.1.63 組み込み | 3並列エージェント（Reuse/Quality/Efficiency） | する | Skill tool |
-| `code-simplifier` (プラグイン) | Anthropic 公式マーケットプレイス | 単一 Opus エージェント（Clarity/Consistency/Maintainability） | する | Task tool (`subagent_type: "code-simplifier:code-simplifier"`) |
-| `harness-review` | ハーネス | 4観点レビュー（指摘のみ、修正しない） | する | Skill tool |
-
-`/simplify` は `code-simplifier` にインスパイアされた進化版（Boris Cherny 時系列より）。両者は別実装で共存可能。
-
-### `/batch` と `/breezing` の棲み分け
-
-| 観点 | `/batch` | `/breezing` |
-|------|---------|------------|
-| 用途 | 横展開（同じ変更の大量適用） | 縦展開（異なるタスクの Plan→Work→Review） |
-| 入力 | 自然言語の指示 1 行 | Plans.md のタスクリスト |
-| レビュー | `/simplify` 自動適用 | 独立 Reviewer Teammate（三者分離） |
-| 出力 | 複数の PR（ユニットごと） | 1つの git commit |
-| 耐障害性 | なし | breezing-active.json + TaskList 二層永続化 |
-
-→ 競合ではなく補完。横展開タスクでは breezing Lead が `/batch` に委任する設計。
+1. **プラグインは薄い接着剤** — ロジックをBashに書かない。TypeScriptで型安全に
+2. **宣言的ルール** — ガードレールは条件→アクションのルールテーブル
+3. **状態は1箇所** — SQLite 1ファイルに統合。ファイル散在を排除
+4. **5動詞スキル** — plan / execute / review / release / setup
+5. **シンボリックリンク** — ミラーはrsyncではなくリンク
 
 ### 優先度マトリクス
 
-| 優先度 | Phase | 内容 | タスク数 |
-|--------|-------|------|---------|
-| **Required** | 16.1 | /work に Phase 3.5 Auto-Refinement 追加 | 5 |
-| **Required** | 16.2 | breezing に /batch 委任判断ロジック追加 | 3 |
-| **Required** | 16.3 | feature-table v2.1.63 更新 | 3 |
-| **Recommended** | 16.4 | hooks-editing.md に HTTP hooks 仕様追記 | 2 |
-| **Recommended** | 16.5 | CLAUDE.md + ドキュメント バージョン表記更新 | 3 |
-| Required | 16.6 | 検証 + 同期 | 3 |
+| 優先度 | Phase | 内容 | タスク数 | 依存 |
+|--------|-------|------|---------|------|
+| **Required** | 17.0 | v3ブランチ + TS基盤構築 | 5 | なし |
+| **Required** | 17.1 | ガードレールエンジン（Bash→TS） | 8 | 17.0 |
+| **Required** | 17.2 | SQLite状態管理 | 6 | 17.0 |
+| **Required** | 17.3 | スキル統合 42→5 + 拡張パック | 9 | 17.0 |
+| **Required** | 17.4 | ミラー廃止（rsync→symlink） | 4 | 17.3 |
+| **Recommended** | 17.5 | エージェント統合 11→3 | 5 | 17.3 |
+| **Recommended** | 17.6 | リポジトリ整理（80%ドキュメント削減） | 5 | なし |
+| **Required** | 17.7 | テスト + 検証 + カットオーバー | 6 | 17.1, 17.2, 17.3, 17.4 |
 
-合計: **19 タスク**
+合計: **48 タスク**
 
 ---
 
-### Phase 16.1: /work に Phase 3.5 Auto-Refinement 追加 [P1] [feature:quality]
-
-`/work` フローの Phase 3（Review APPROVE 後）と Phase 4（Auto-commit 前）の間に、自動コード洗練ステップを追加。
-
-**改訂後フロー**:
-```
-Phase 2: 実装 → Phase 3: harness-review APPROVE → Phase 3.5: Auto-Refinement → Phase 4: Auto-commit
-```
+### Phase 17.0: v3ブランチ + TypeScript基盤構築 [P1]
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 16.1.1 | `skills/work/SKILL.md` の Default Flow に Phase 3.5 Auto-Refinement を追加。デフォルト: `/simplify` 実行。`--deep-simplify`: `/simplify` 後に `code-simplifier` も実行。`--no-simplify`: スキップ | cc:完了 |
-| 16.1.2 | `skills/work/references/execution-flow.md` に Phase 3.5 の詳細手順を追記: Review APPROVE 後に `/simplify` を Skill tool で呼び出し → 変更があれば差分確認 → Phase 4 へ | cc:完了 |
-| 16.1.3 | `skills/work/references/auto-iteration.md` の Step 3.5 に `/simplify` 統合を反映: 全タスク完了時の harness-review 後に Auto-Refinement を実行 | cc:完了 |
-| 16.1.4 | Options テーブルに `--deep-simplify`（`/simplify` + `code-simplifier` 両方実行）と `--no-simplify`（スキップ）を追加 | cc:完了 |
-| 16.1.5 | `work-active.json` スキーマに `simplify_mode: "default" | "deep" | "skip"` フィールドを追加（Compaction 復元用） | cc:完了 |
+| 17.0.1 | v3ブランチ確認（worktree-v3-full-rewrite で作業中） | cc:完了 |
+| 17.0.2 | `core/` ディレクトリ作成。`package.json`（`better-sqlite3`, `tsx`, `vitest` を devDependencies）、`tsconfig.json`（strict, ESM, NodeNext）を配置 | cc:TODO |
+| 17.0.3 | `core/index.ts` エントリポイント作成。stdin JSON → パース → ルーティング → stdout JSON の基本パイプライン | cc:TODO |
+| 17.0.4 | `core/types.ts` 作成。`HookInput`, `HookResult`, `GuardRule`, `Signal`, `TaskFailure` の型定義 | cc:TODO |
+| 17.0.5 | CI（`.github/workflows/`）に `npm test`（vitest）ステップを追加 | cc:TODO |
 
-### Phase 16.2: breezing に /batch 委任判断ロジック追加 [P1]
-
-横展開パターン（「全ファイルの○○を変更」系タスク）を検出し、breezing Lead が `/batch` に委任する戦略を追加。
+### Phase 17.1: ガードレールエンジン — Bash→TypeScript [P1] [P]
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 16.2.1 | `skills/breezing/references/execution-flow.md` の Phase A に横展開パターン検出ロジックを追加: Plans.md タスクが「migrate」「replace all」「add ... to all」等のパターンを含み、かつ単一の均質な変更である場合に `/batch` 委任を提案 | cc:完了 |
-| 16.2.2 | `skills/breezing/references/execution-flow.md` に `/batch` 委任時の Phase B 代替フローを追記: Lead が `/batch <instruction>` を Skill tool で呼び出し → `/batch` が worktree + PR を自動処理 → Lead は PR リストを breezing-active.json に記録 → Phase C は PR マージ確認に変更 | cc:完了 |
-| 16.2.3 | `skills/breezing/SKILL.md` の Quick Reference と Feature Details に `/batch` 委任の説明を追加。`/batch` との関係性（横展開 vs 縦展開）を明記 | cc:完了 |
+| 17.1.1 | `core/guardrails/rules.ts` 作成。宣言的ルールテーブル。pretooluse-guard.sh の全ルール移植 | cc:TODO |
+| 17.1.2 | `core/guardrails/pre-tool.ts` 作成。`evaluate(input): HookResult` 関数 | cc:TODO |
+| 17.1.3 | `core/guardrails/tampering.ts` 作成。tampering-detector の全検出パターン移植 | cc:TODO |
+| 17.1.4 | `core/guardrails/post-tool.ts` 作成。9スクリプト → Promise.allSettled 統合 | cc:TODO |
+| 17.1.5 | `core/guardrails/permission.ts` 作成。permission-request.sh 移植 | cc:TODO |
+| 17.1.6 | `hooks/pre-tool.sh` 薄いシム作成（5行以内） | cc:TODO |
+| 17.1.7 | `hooks/post-tool.sh` 薄いシム作成 + hooks.json 差し替え | cc:TODO |
+| 17.1.8 | `core/guardrails/__tests__/rules.test.ts` 単体テスト（カバレッジ90%+） | cc:TODO |
 
-### Phase 16.3: feature-table v2.1.63 更新 [P1]
-
-| Task | 内容 | Status |
-|------|------|--------|
-| 16.3.1 | `docs/CLAUDE-feature-table.md` に v2.1.52〜v2.1.63 の新機能を追加: `/simplify`（Phase 3.5 統合）、`/batch`（breezing 委任）、`code-simplifier` プラグイン（`--deep-simplify`）、HTTP hooks、auto-memory worktree 共有、`/clear` スキルキャッシュリセット、`ENABLE_CLAUDEAI_MCP_SERVERS=false` | cc:完了 |
-| 16.3.2 | `docs/CLAUDE-feature-table.md` の既存行「メモリリーク修正 (v2.1.50)」を v2.1.63 まで拡大。15+ の修正を反映 | cc:完了 |
-| 16.3.3 | `CLAUDE.md` の Feature Table 要約（上位5機能）を更新: `/simplify` + `/batch` を追加 | cc:完了 |
-
-### Phase 16.4: hooks-editing.md に HTTP hooks 仕様追記 [P2]
+### Phase 17.2: SQLite状態管理 [P1] [P]
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 16.4.1 | `.claude/rules/hooks-editing.md` に HTTP hooks セクションを追加: `type: "http"` のフォーマット（`url`, `headers`, `allowedEnvVars`）、常に POST、2xx レスポンス仕様、command hook との差異表（ブロッキングは 2xx + JSON が必要、`async: true` 非対応、`/hooks` メニューから追加不可） | cc:完了 |
-| 16.4.2 | `.claude/rules/hooks-editing.md` に HTTP hooks サンプルテンプレートを追加: Slack 通知、メトリクス収集、外部ダッシュボード更新の3例 | cc:完了 |
+| 17.2.1 | `core/state/schema.ts` 作成。テーブル定義 | cc:TODO |
+| 17.2.2 | `core/state/store.ts` 作成。better-sqlite3 ラッパー | cc:TODO |
+| 17.2.3 | `core/state/migration.ts` 作成。JSON/JSONL→SQLite移行 | cc:TODO |
+| 17.2.4 | `core/state/__tests__/store.test.ts` 単体テスト | cc:TODO |
+| 17.2.5 | guardrails のJSONスタブをSQLiteストアに差し替え | cc:TODO |
+| 17.2.6 | `hooks/session.sh` + `core/engine/lifecycle.ts` 作成 | cc:TODO |
 
-### Phase 16.5: CLAUDE.md + ドキュメント バージョン表記更新 [P2]
-
-| Task | 内容 | Status |
-|------|------|--------|
-| 16.5.1 | `CLAUDE.md` のバージョン表記を `2.1.51+` → `2.1.63+` に更新 | cc:完了 |
-| 16.5.2 | `skills/breezing/references/guardrails-inheritance.md` に auto-memory worktree 共有の注記を追加（v2.1.63 で worktree エージェントがプロジェクト auto-memory にアクセス可能に） | cc:完了 |
-| 16.5.3 | `skills/troubleshoot/SKILL.md` の診断手順に「`/clear` でスキルキャッシュをリセット」を追加（v2.1.63 で `/clear` がキャッシュされたスキルもリセットする動作に変更） | cc:完了 |
-
-### Phase 16.6: 検証 + 同期
+### Phase 17.3: スキル統合 42→5 + 拡張パック分離 [P1]
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 16.6.1 | `./tests/validate-plugin.sh && ./scripts/ci/check-consistency.sh` で構造検証 | cc:完了 |
-| 16.6.2 | ミラー同期: `rsync -av --delete skills/ codex/.codex/skills/` + `opencode/skills/` | cc:完了 |
-| 16.6.3 | CHANGELOG.md + CHANGELOG_ja.md エントリ追加 + バージョンバンプ | cc:完了 |
+| 17.3.1 | `skills-v3/plan/SKILL.md` 作成（planning + plans-management + sync-status 統合） | cc:TODO |
+| 17.3.2 | `skills-v3/execute/SKILL.md` 作成（work + impl + breezing + parallel + ci 統合） | cc:TODO |
+| 17.3.3 | `skills-v3/review/SKILL.md` 作成（harness-review + codex-review + verify + troubleshoot 統合） | cc:TODO |
+| 17.3.4 | `skills-v3/release/SKILL.md` 作成（release-har + x-release-harness + handoff 統合） | cc:TODO |
+| 17.3.5 | `skills-v3/setup/SKILL.md` 作成（setup + harness-init + harness-update + maintenance 統合） | cc:TODO |
+| 17.3.6 | `skills-v3/extensions/` に拡張パック移動（auth, crud, ui 等 11スキル） | cc:TODO |
+| 17.3.7 | `core/engine/lifecycle.ts` 作成（session系5スキル吸収） | cc:TODO |
+| 17.3.8 | `skills-v3/routing-rules.md` 作成（5エントリ） | cc:TODO |
+| 17.3.9 | CLAUDE.md にガイダンス統合（vibecoder-guide, workflow-guide, principles） | cc:TODO |
 
-検証: /work SKILL.md の Phase 3.5 記述整合 / breezing の /batch 委任フロー整合 / feature-table 全行の正確性 / hooks-editing.md の HTTP hooks サンプル構文 / バージョン表記の一貫性 / validate-plugin + check-consistency 全パス
+### Phase 17.4: ミラー廃止 — rsync→シンボリックリンク [P1]
 
-対象外: session-memory と auto-memory の関係（D22 で解決済み）/ command hooks から HTTP hooks への移行（既存フックは command 型を維持）/ `/simplify` のカスタマイズ（bundled のためバイナリ内蔵、変更不可）
+| Task | 内容 | Status |
+|------|------|--------|
+| 17.4.1 | `codex/.codex/skills/` → シンボリックリンクに置換 | cc:TODO |
+| 17.4.2 | `opencode/skills/`, `.opencode/skills/` → シンボリックリンクに置換 | cc:TODO |
+| 17.4.3 | `check-consistency.sh` のミラーチェック → symlink チェックに更新 | cc:TODO |
+| 17.4.4 | rsync 参照をすべて削除・更新 | cc:TODO |
 
-リスク評価:
+### Phase 17.5: エージェント統合 11→3 [P2]
 
-| リスク | 深刻度 | 軽減策 |
-|--------|--------|--------|
-| `/simplify` がサブエージェント内で呼べない可能性 | 中 | Phase 3.5 は Lead が直接呼ぶ設計（task-worker 内ではなく） |
-| `code-simplifier` プラグイン未インストール環境 | 低 | `--deep-simplify` はオプション。未インストール時はスキップ + 案内表示 |
-| `/batch` が Plans.md を認識しない | 低 | breezing Lead がタスク内容を自然言語に変換して `/batch` に渡す |
+| Task | 内容 | Status |
+|------|------|--------|
+| 17.5.1 | `agents-v3/worker.md` 作成（task-worker + codex-implementer + error-recovery 統合） | cc:TODO |
+| 17.5.2 | `agents-v3/reviewer.md` 作成（code-reviewer + plan-critic + plan-analyst 統合） | cc:TODO |
+| 17.5.3 | `agents-v3/scaffolder.md` 作成（project-analyzer + project-scaffolder + project-state-updater 統合） | cc:TODO |
+| 17.5.4 | team-composition.md を3エージェント構成に更新 | cc:TODO |
+| 17.5.5 | `.claude/agent-memory/` を3エージェントに再編 | cc:TODO |
+
+### Phase 17.6: リポジトリ整理 [P2] [P]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 17.6.1 | `commands/` ディレクトリ全体を削除 | cc:完了 |
+| 17.6.2 | `docs/` を精選（残す4件、アーカイブ、削除） | cc:完了 |
+| 17.6.3 | `CHANGELOG_ja.md` を削除（英語版に一本化） | cc:完了 |
+| 17.6.4 | `benchmarks/evals-v2/`, `evals-v3/` を削除 | cc:完了 |
+| 17.6.5 | プラグイン外コード分離（app, frontend, remotion 等） | cc:TODO |
+
+### Phase 17.7: テスト・検証・カットオーバー [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 17.7.1 | `core/guardrails/__tests__/integration.test.ts` E2Eテスト | cc:TODO |
+| 17.7.2 | `core/state/__tests__/migration.test.ts` 移行テスト | cc:TODO |
+| 17.7.3 | `tests/validate-plugin-v3.sh` v3バリデータ | cc:TODO |
+| 17.7.4 | breezing-bench v2 vs v3 比較ベンチマーク | cc:TODO |
+| 17.7.5 | VERSION 3.0.0 バンプ + CHANGELOG + plugin.json | cc:TODO |
+| 17.7.6 | main マージ + GitHub Release | cc:TODO |
