@@ -15,9 +15,9 @@ Automates the claude-code-harness release process.
 
 ## Quick Reference
 
-- "**Release a new harness version**" -> `/release-harness`
-- "**Bump patch version**" -> `/release-harness patch`
-- "**Create a minor release**" -> `/release-harness minor`
+- "**Release a new harness version**" -> `/harness-release`
+- "**Bump patch version**" -> `/harness-release patch`
+- "**Create a minor release**" -> `/harness-release minor`
 
 ---
 
