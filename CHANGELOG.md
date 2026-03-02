@@ -8,6 +8,49 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.0.0] - 2026-03-02
+
+### 🎯 What's Changed for You
+
+**Harness v3: Full architectural rewrite — 42 skills unified to 5 verbs, 11 agents consolidated to 3, TypeScript engine replaces Bash guardrails, SQLite replaces scattered JSON state files.**
+
+| Before | After |
+|--------|-------|
+| 42 skills spread across multiple dirs | 5 verb skills: `plan` / `execute` / `review` / `release` / `setup` |
+| 11 agents with overlapping responsibilities | 3 agents: `worker` / `reviewer` / `scaffolder` |
+| Bash scripts for guardrails (pretooluse-guard.sh etc.) | TypeScript engine in `core/` (strict, ESM, NodeNext) |
+| JSON/JSONL state files scattered across dirs | SQLite single-file state via `better-sqlite3` |
+| rsync-based mirror sync for codex/opencode | Symlink-based mirror (zero sync overhead) |
+| No session lifecycle management | `core/engine/lifecycle.ts` unifies session-init/control/state/memory |
+
+### Added
+
+- **`core/` TypeScript engine**: Strict ESM module (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `NodeNext`). Includes guardrails, state, and engine subsystems
+- **`core/src/guardrails/`**: Rules engine (R01-R09), pre-tool/post-tool/permission/tampering detection — all ported from Bash to TypeScript
+- **`core/src/state/`**: SQLite state management via `better-sqlite3` with schema, store, and JSON→SQLite migration
+- **`core/src/engine/lifecycle.ts`**: Session lifecycle — `initSession`, `transitionSession`, `finalizeSession`, `forkSession`, `resumeSession`
+- **`skills-v3/`**: 5 verb skills with unified SKILL.md + references/
+- **`agents-v3/`**: 3 consolidated agent definitions + team-composition.md
+- **`tests/validate-plugin-v3.sh`**: v3 structural validator (6 checks, 34 assertions)
+- **Symlink mirrors**: `codex/.codex/skills/` and `opencode/skills/` 5-verb dirs now symlinks to `skills-v3/`
+- **`skills-v3/routing-rules.md`**: Trigger/exclusion keywords per skill verb
+
+### Changed
+
+- **Skills**: 42 → 5 (plan/execute/review/release/setup). Legacy `skills/` retained for backwards compatibility
+- **Agents**: 11 → 3 (worker/reviewer/scaffolder). Legacy `agents/` retained for backwards compatibility
+- **Hooks shims**: `hooks/pre-tool.sh`, `hooks/post-tool.sh`, `hooks/session.sh` now delegate to `core/src/index.ts`
+- **`check-consistency.sh`**: Mirror check updated from rsync diff to symlink validation
+- **CLAUDE.md**: Compact v3 version; architecture details moved to `.claude/rules/v3-architecture.md`
+
+### Removed
+
+- rsync-based mirror sync (replaced by symlinks)
+- Standalone Bash guardrail scripts (replaced by `core/src/guardrails/`)
+- Scattered JSON/JSONL state files (replaced by SQLite)
+
+---
+
 ## [2.26.1] - 2026-03-02
 
 ### Added
