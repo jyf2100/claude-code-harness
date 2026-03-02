@@ -50,23 +50,23 @@
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 17.1.1 | `core/guardrails/rules.ts` 作成。宣言的ルールテーブル。pretooluse-guard.sh の全ルール移植 | cc:TODO |
-| 17.1.2 | `core/guardrails/pre-tool.ts` 作成。`evaluate(input): HookResult` 関数 | cc:TODO |
-| 17.1.3 | `core/guardrails/tampering.ts` 作成。tampering-detector の全検出パターン移植 | cc:TODO |
-| 17.1.4 | `core/guardrails/post-tool.ts` 作成。9スクリプト → Promise.allSettled 統合 | cc:TODO |
-| 17.1.5 | `core/guardrails/permission.ts` 作成。permission-request.sh 移植 | cc:TODO |
-| 17.1.6 | `hooks/pre-tool.sh` 薄いシム作成（5行以内） | cc:TODO |
+| 17.1.1 | `core/guardrails/rules.ts` 作成。宣言的ルールテーブル。pretooluse-guard.sh の全ルール移植 | cc:完了 |
+| 17.1.2 | `core/guardrails/pre-tool.ts` 作成。`evaluate(input): HookResult` 関数 | cc:完了 |
+| 17.1.3 | `core/guardrails/tampering.ts` 作成。tampering-detector の全検出パターン移植 | cc:完了 |
+| 17.1.4 | `core/guardrails/post-tool.ts` 作成。9スクリプト → Promise.allSettled 統合 | cc:完了 |
+| 17.1.5 | `core/guardrails/permission.ts` 作成。permission-request.sh 移植 | cc:完了 |
+| 17.1.6 | `hooks/pre-tool.sh` 薄いシム作成（5行以内） | cc:完了 |
 | 17.1.7 | `hooks/post-tool.sh` 薄いシム作成 + hooks.json 差し替え | cc:TODO |
-| 17.1.8 | `core/guardrails/__tests__/rules.test.ts` 単体テスト（カバレッジ90%+） | cc:TODO |
+| 17.1.8 | `core/guardrails/__tests__/rules.test.ts` 単体テスト（カバレッジ90%+） | cc:完了 |
 
 ### Phase 17.2: SQLite状態管理 [P1] [P]
 
 | Task | 内容 | Status |
 |------|------|--------|
-| 17.2.1 | `core/state/schema.ts` 作成。テーブル定義 | cc:TODO |
-| 17.2.2 | `core/state/store.ts` 作成。better-sqlite3 ラッパー | cc:TODO |
+| 17.2.1 | `core/state/schema.ts` 作成。テーブル定義 | cc:完了 |
+| 17.2.2 | `core/state/store.ts` 作成。better-sqlite3 ラッパー | cc:完了 |
 | 17.2.3 | `core/state/migration.ts` 作成。JSON/JSONL→SQLite移行 | cc:TODO |
-| 17.2.4 | `core/state/__tests__/store.test.ts` 単体テスト | cc:TODO |
+| 17.2.4 | `core/state/__tests__/store.test.ts` 単体テスト | cc:完了 |
 | 17.2.5 | guardrails のJSONスタブをSQLiteストアに差し替え | cc:TODO |
 | 17.2.6 | `hooks/session.sh` + `core/engine/lifecycle.ts` 作成 | cc:TODO |
 
@@ -75,10 +75,10 @@
 | Task | 内容 | Status |
 |------|------|--------|
 | 17.3.1 | `skills-v3/plan/SKILL.md` 作成（planning + plans-management + sync-status 統合） | cc:完了 |
-| 17.3.2 | `skills-v3/execute/SKILL.md` 作成（work + impl + breezing + parallel + ci 統合） | cc:TODO |
-| 17.3.3 | `skills-v3/review/SKILL.md` 作成（harness-review + codex-review + verify + troubleshoot 統合） | cc:TODO |
-| 17.3.4 | `skills-v3/release/SKILL.md` 作成（release-har + x-release-harness + handoff 統合） | cc:TODO |
-| 17.3.5 | `skills-v3/setup/SKILL.md` 作成（setup + harness-init + harness-update + maintenance 統合） | cc:TODO |
+| 17.3.2 | `skills-v3/execute/SKILL.md` 作成（work + impl + breezing + parallel + ci 統合） | cc:完了 |
+| 17.3.3 | `skills-v3/review/SKILL.md` 作成（harness-review + codex-review + verify + troubleshoot 統合） | cc:完了 |
+| 17.3.4 | `skills-v3/release/SKILL.md` 作成（release-har + x-release-harness + handoff 統合） | cc:完了 |
+| 17.3.5 | `skills-v3/setup/SKILL.md` 作成（setup + harness-init + harness-update + maintenance 統合） | cc:完了 |
 | 17.3.6 | `skills-v3/extensions/` に拡張パック移動（auth, crud, ui 等 11スキル） | cc:TODO |
 | 17.3.7 | `core/engine/lifecycle.ts` 作成（session系5スキル吸収） | cc:TODO |
 | 17.3.8 | `skills-v3/routing-rules.md` 作成（5エントリ） | cc:TODO |
