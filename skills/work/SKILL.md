@@ -1,8 +1,8 @@
 ---
 name: work
-description: "DEPRECATED: Merged into /work-harness. Use /work-harness instead."
-description-ja: "非推奨: /work-harness に統合されました。/work-harness を使ってください。"
+description: "DEPRECATED: Merged into /harness-work. Use /harness-work instead."
+description-ja: "非推奨: /harness-work に統合されました。/harness-work を使ってください。"
 ---
 
-> This skill has been merged into **/work-harness** in Harness v3.
-> Please use `/work-harness` instead.
+> This skill has been merged into **/harness-work** in Harness v3.
+> Please use `/harness-work` instead.

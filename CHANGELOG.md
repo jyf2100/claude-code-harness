@@ -815,7 +815,7 @@ Change history for claude-code-harness.
   - **AgentTrace v0.3.0**: Task tool metrics (tokenCount, toolUses, duration) in `docs/AGENT_TRACE_SCHEMA.md`
   - **`/debug` command integration**: troubleshoot skill now routes to `/debug` for complex session issues
   - **PDF page range reading**: notebookLM and harness-review support `pages` parameter for large documents
-  - **Git log extended flags**: harness-review, CI, release-harness use `--format`, `--raw`, `--cherry-pick`
+  - **Git log extended flags**: harness-review, CI, harness-release use `--format`, `--raw`, `--cherry-pick`
   - **OAuth `--client-id/--client-secret`**: codex-mcp-setup.md documents DCR-incompatible MCP setup
   - **68% memory optimization**: session-memory and session skills document `--resume` benefits
   - **Subagent MCP access**: task-worker and codex-worker document MCP tool sharing (bugfix in CC 2.1.30)
@@ -834,7 +834,7 @@ Change history for claude-code-harness.
 ### Changed
 
 - **context: fork added**: deploy/generate-video/memory/verify skills now use isolated context
-- **release → release-harness**: Renamed to avoid conflict with Claude Code built-in command
+- **release → harness-release**: Renamed to avoid conflict with Claude Code built-in command
 
 ---
 

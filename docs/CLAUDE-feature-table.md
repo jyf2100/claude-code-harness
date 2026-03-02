@@ -10,7 +10,7 @@
 | **Task tool メトリクス** | parallel-workflows | サブエージェントのトークン/ツール/時間を集計 |
 | **`/debug` コマンド** | troubleshoot | 複雑なセッション問題の診断 |
 | **PDF ページ範囲** | notebookLM, harness-review | 大型ドキュメントの効率的な処理 |
-| **Git log フラグ** | harness-review, CI, release-harness | 構造化されたコミット分析 |
+| **Git log フラグ** | harness-review, CI, harness-release | 構造化されたコミット分析 |
 | **OAuth 認証** | codex-review | DCR 非対応 MCP サーバーの設定 |
 | **68% メモリ最適化** | session-memory, session | `--resume` の積極的活用 |
 | **サブエージェント MCP** | task-worker | 並列実行時の MCP ツール共有 |

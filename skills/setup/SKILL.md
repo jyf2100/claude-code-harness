@@ -1,8 +1,8 @@
 ---
 name: setup
-description: "DEPRECATED: Merged into /setup-harness. Use /setup-harness instead."
-description-ja: "非推奨: /setup-harness に統合されました。/setup-harness を使ってください。"
+description: "DEPRECATED: Merged into /harness-setup. Use /harness-setup instead."
+description-ja: "非推奨: /harness-setup に統合されました。/harness-setup を使ってください。"
 ---
 
-> This skill has been merged into **/setup-harness** in Harness v3.
-> Please use `/setup-harness` instead.
+> This skill has been merged into **/harness-setup** in Harness v3.
+> Please use `/harness-setup` instead.

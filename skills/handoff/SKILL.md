@@ -1,8 +1,8 @@
 ---
 name: handoff
-description: "DEPRECATED: Merged into /release-harness. Use /release-harness instead."
-description-ja: "非推奨: /release-harness に統合されました。/release-harness を使ってください。"
+description: "DEPRECATED: Merged into /harness-release. Use /harness-release instead."
+description-ja: "非推奨: /harness-release に統合されました。/harness-release を使ってください。"
 ---
 
-> This skill has been merged into **/release-harness** in Harness v3.
-> Please use `/release-harness` instead.
+> This skill has been merged into **/harness-release** in Harness v3.
+> Please use `/harness-release` instead.

@@ -188,12 +188,12 @@ v3 unifies 42 skills into **5 verb skills**. Auto-load by context. Slash command
 
 | Command | What It Does | Legacy Redirect |
 |---------|--------------|-----------------|
-| `/plan-harness` | Ideas → `Plans.md` | `/plan-with-agent`, `/planning` |
-| `/work-harness` | Parallel implementation | `/work`, `/breezing`, `/impl` |
-| `/work-harness all` | Plan → Implement → Review → Commit | `/work all` |
-| `/review-harness` | 4-perspective code review | `/harness-review`, `/verify` |
-| `/release-harness` | CHANGELOG, tag, GitHub Release | `/release-har`, `/handoff` |
-| `/setup-harness` | Initialize project | `/harness-init`, `/setup` |
+| `/harness-plan` | Ideas → `Plans.md` | `/plan-with-agent`, `/planning` |
+| `/harness-work` | Parallel implementation | `/work`, `/breezing`, `/impl` |
+| `/harness-work all` | Plan → Implement → Review → Commit | `/work all` |
+| `/harness-review` | 4-perspective code review | `/harness-review`, `/verify` |
+| `/harness-release` | CHANGELOG, tag, GitHub Release | `/release-har`, `/handoff` |
+| `/harness-setup` | Initialize project | `/harness-init`, `/setup` |
 | `/memory` | Manage SSOT files | — |
 
 ---
