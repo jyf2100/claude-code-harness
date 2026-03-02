@@ -120,6 +120,6 @@
 | 17.7.1 | `core/guardrails/__tests__/integration.test.ts` E2Eテスト | cc:完了 |
 | 17.7.2 | `core/state/__tests__/migration.test.ts` 移行テスト | cc:完了 |
 | 17.7.3 | `tests/validate-plugin-v3.sh` v3バリデータ | cc:完了 |
-| 17.7.4 | breezing-bench v2 vs v3 比較ベンチマーク | cc:TODO |
+| 17.7.4 | breezing-bench v2 vs v3 比較ベンチマーク | cc:完了 |
 | 17.7.5 | VERSION 3.0.0 バンプ + CHANGELOG + plugin.json | cc:完了 |
 | 17.7.6 | main マージ + GitHub Release | cc:TODO |
