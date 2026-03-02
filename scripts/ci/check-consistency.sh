@@ -322,37 +322,44 @@ else
 fi
 
 # ================================
-# 10. Codex ミラー同期チェック
+# 10. v3 スキル Symlink チェック
 # ================================
 echo ""
-echo "🔄 [10/11] Codex ミラー同期チェック..."
+echo "🔗 [10/11] v3 スキル Symlink チェック..."
 
+V3_SKILLS_DIR="$PLUGIN_ROOT/skills-v3"
 CODEX_MIRROR="$PLUGIN_ROOT/codex/.codex/skills"
-SKILLS_DIR="$PLUGIN_ROOT/skills"
+OPENCODE_MIRROR="$PLUGIN_ROOT/opencode/skills"
 MIRROR_ISSUES=0
 
-if [ -d "$CODEX_MIRROR" ] && [ -d "$SKILLS_DIR" ]; then
-  # diff で差分を検出（存在するファイルのみ比較）
-  MIRROR_DIFF=$(diff -rq "$SKILLS_DIR" "$CODEX_MIRROR" 2>/dev/null \
-    | grep -v ".DS_Store" \
-    | grep -v "__pycache__" \
-    | head -10 || true)
+# v3 コアスキル（5動詞）の symlink チェック
+V3_CORE_SKILLS="plan execute review release setup"
 
-  if [ -n "$MIRROR_DIFF" ]; then
-    echo "  ❌ codex/.codex/skills/ が skills/ と同期されていません"
-    echo "$MIRROR_DIFF" | head -5 | sed 's/^/      /'
-    echo "      → 修正: rsync -av --delete skills/ codex/.codex/skills/"
-    MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
-  else
-    echo "  ✅ codex/.codex/skills/ は skills/ と同期済み"
-  fi
+if [ -d "$V3_SKILLS_DIR" ]; then
+  for skill in $V3_CORE_SKILLS; do
+    # codex/.codex/skills/ のチェック
+    if [ -d "$CODEX_MIRROR" ]; then
+      link="$CODEX_MIRROR/$skill"
+      if [ -L "$link" ]; then
+        echo "  ✅ codex: $skill → $(readlink "$link")"
+      else
+        echo "  ❌ codex: $skill が symlink ではありません"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+      fi
+    fi
+    # opencode/skills/ のチェック
+    if [ -d "$OPENCODE_MIRROR" ]; then
+      link="$OPENCODE_MIRROR/$skill"
+      if [ -L "$link" ]; then
+        echo "  ✅ opencode: $skill → $(readlink "$link")"
+      else
+        echo "  ❌ opencode: $skill が symlink ではありません"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+      fi
+    fi
+  done
 else
-  if [ ! -d "$CODEX_MIRROR" ]; then
-    echo "  ⚠️ codex/.codex/skills/ が存在しません（スキップ）"
-  fi
-  if [ ! -d "$SKILLS_DIR" ]; then
-    echo "  ⚠️ skills/ が存在しません（スキップ）"
-  fi
+  echo "  ⚠️ skills-v3/ が存在しません（スキップ）"
 fi
 
 if [ $MIRROR_ISSUES -gt 0 ]; then

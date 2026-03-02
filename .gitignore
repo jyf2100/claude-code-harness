@@ -193,6 +193,10 @@ out/
 *.webm
 *.gif
 
+# Core engine (v3)
+/core/node_modules/
+/core/dist/
+
 # Skills - node_modules and generated files
 **/skills/**/node_modules/
 **/skills/**/coverage/
