@@ -3,11 +3,11 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|Bash",
+        "matcher": "Write|Edit|MultiEdit|Bash|Read",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" pretooluse-guard",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool.sh\"",
             "timeout": 30
           }
         ]
@@ -205,6 +205,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-tool.sh\"",
+            "timeout": 30
+          }
+        ]
+      },
       {
         "matcher": "*",
         "hooks": [

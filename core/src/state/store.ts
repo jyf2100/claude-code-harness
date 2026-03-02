@@ -329,6 +329,28 @@ export class HarnessStore {
   }
 
   // ============================================================
+  // schema_meta キー/バリュー管理
+  // ============================================================
+
+  /** schema_meta テーブルから値を取得する（存在しない場合は null） */
+  getMeta(key: string): string | null {
+    const row = this.db
+      .prepare<[string], { value: string }>("SELECT value FROM schema_meta WHERE key = ?")
+      .get(key);
+    return row?.value ?? null;
+  }
+
+  /** schema_meta テーブルに値を保存する（upsert） */
+  setMeta(key: string, value: string): void {
+    this.db
+      .prepare<[string, string]>(
+        `INSERT INTO schema_meta(key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+      )
+      .run(key, value);
+  }
+
+  // ============================================================
   // クローズ
   // ============================================================
 
