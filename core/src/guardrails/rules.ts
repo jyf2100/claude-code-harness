@@ -40,12 +40,13 @@ function isUnderProjectRoot(filePath: string, projectRoot: string): boolean {
   return filePath.startsWith(root) || filePath === projectRoot;
 }
 
-/** Bash コマンド文字列から危険パターンを検出 */
+/** Bash コマンド文字列から危険な rm -rf パターンを検出 */
 function hasDangerousRmRf(command: string): boolean {
-  return /\brm\s+(?:[^|;&]*\s+)?-[rf]{1,2}r?f?\s+(?:\/|~|\$HOME)/.test(command) ||
-    /\brm\s+-rf\b/.test(command) ||
-    /\brm\s+-fr\b/.test(command) ||
-    /\brm\s+--recursive\b/.test(command);
+  // -rf または -fr フラグを含む rm コマンドを検出
+  // 注意: rm -f（-r なし）は対象外
+  if (/\brm\s+(?:[^\s]*\s+)*-(?=[^-]*r)[rf]+\b/.test(command)) return true;
+  if (/\brm\s+--recursive\b/.test(command)) return true;
+  return false;
 }
 
 /** git push --force パターンを検出 */
@@ -108,12 +109,15 @@ export const GUARD_RULES: readonly GuardRule[] = [
       const command = ctx.input.tool_input["command"];
       if (typeof command !== "string") return null;
       // echo > .env, tee .git/config 等を検出
+      // '>>' / '>' の後にスペースを挟んで保護パスが続くパターンも検出
       const writePatterns = [
-        /(?:>|>>|tee\s+)\S*\.env\b/,
-        /(?:>|>>|tee\s+)\S*\.git\//,
-        /(?:>|>>|tee\s+)\S*id_rsa\b/,
-        /(?:>|>>|tee\s+)\S*\.pem\b/,
-        /(?:>|>>|tee\s+)\S*\.key\b/,
+        /(?:>>?|tee)\s+\S*\.env\b/,
+        /(?:>>?|tee)\s+\S*\.env\./,
+        /(?:>>?|tee)\s+\S*\.git\//,
+        /(?:>>?|tee)\s+\S*id_rsa\b/,
+        /(?:>>?|tee)\s+\S*id_ed25519\b/,
+        /(?:>>?|tee)\s+\S*\.pem\b/,
+        /(?:>>?|tee)\s+\S*\.key\b/,
       ];
       if (!writePatterns.some((p) => p.test(command))) return null;
       return {
@@ -188,6 +192,10 @@ export const GUARD_RULES: readonly GuardRule[] = [
     id: "R07:codex-mode-no-write",
     toolPattern: /^(?:Write|Edit|MultiEdit)$/,
     evaluate(ctx: RuleContext): HookResult | null {
+      // Write / Edit / MultiEdit のみ対象（Bash は除外）
+      if (!["Write", "Edit", "MultiEdit"].includes(ctx.input.tool_name)) {
+        return null;
+      }
       if (!ctx.codexMode) return null;
       return {
         decision: "deny",
