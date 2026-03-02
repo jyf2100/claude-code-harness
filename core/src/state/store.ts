@@ -7,9 +7,13 @@
  * 同期 API（better-sqlite3 の特性）を活用し、単純で堅牢な実装とする。
  */
 
-import Database from "better-sqlite3";
+import { createRequire } from "node:module";
 import { ALL_DDL, SCHEMA_VERSION, CREATE_SCHEMA_META } from "./schema.js";
 import type { Signal, SessionState, TaskFailure } from "../types.js";
+
+// ESM から CommonJS ネイティブアドオンを読み込む標準パターン
+const require = createRequire(import.meta.url);
+const Database = require("better-sqlite3") as typeof import("better-sqlite3").default;
 
 // ============================================================
 // 型定義

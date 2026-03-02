@@ -5,9 +5,12 @@
  * better-sqlite3 を使った実際の SQLite DB（メモリ内）で各メソッドを検証する。
  */
 
+import { createRequire } from "node:module";
 import { beforeEach, afterEach, describe, it, expect } from "vitest";
-import Database from "better-sqlite3";
 import { HarnessStore } from "../store.js";
+
+const require = createRequire(import.meta.url);
+const Database = require("better-sqlite3") as typeof import("better-sqlite3").default;
 
 // テスト用に HarnessStore のサブクラスを作り、メモリ DB を使う
 // HarnessStore のコンストラクタはファイルパスを受け取るが、
