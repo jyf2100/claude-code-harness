@@ -63,7 +63,7 @@ done
 echo ""
 echo "🎯 [2/6] 5動詞スキルチェック..."
 
-V3_SKILLS=(plan execute review release setup)
+V3_SKILLS=(harness-plan harness-work harness-review harness-release harness-setup)
 
 for skill in "${V3_SKILLS[@]}"; do
   skill_dir="$PLUGIN_ROOT/skills-v3/$skill"

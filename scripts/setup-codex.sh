@@ -5,7 +5,7 @@
 # Setup Harness for Codex CLI.
 #
 # Usage:
-#   ./scripts/setup-codex.sh [--user|--project] [--with-mcp|--skip-mcp]
+#   ./scripts/setup-codex.sh [--user|--project]
 #
 
 set -euo pipefail
@@ -17,7 +17,6 @@ TEMP_DIR=$(mktemp -d)
 PROJECT_DIR=$(pwd)
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
 TARGET_MODE="user"
-WITH_MCP="auto"
 
 cleanup() {
     rm -rf "$TEMP_DIR"
@@ -31,15 +30,11 @@ log_err() { echo "[ERR]  $1" >&2; }
 
 usage() {
     cat <<USAGE
-Usage: $0 [--user|--project] [--with-mcp|--skip-mcp]
+Usage: $0 [--user|--project]
 
 Modes:
   --user      Install to CODEX_HOME (default: $CODEX_HOME_DIR)
   --project   Install to current project (.codex/ + AGENTS.md)
-
-MCP:
-  --with-mcp  Copy config.toml template to target root
-  --skip-mcp  Do not copy config.toml template
 USAGE
 }
 
@@ -51,12 +46,6 @@ parse_args() {
                 ;;
             --project)
                 TARGET_MODE="project"
-                ;;
-            --with-mcp)
-                WITH_MCP=true
-                ;;
-            --skip-mcp)
-                WITH_MCP=false
                 ;;
             -h|--help)
                 usage
@@ -319,40 +308,6 @@ resolve_backup_root() {
     fi
 }
 
-setup_mcp_template() {
-    local target_root="$1"
-
-    if [ "$WITH_MCP" = "auto" ]; then
-        echo ""
-        echo "Setup MCP server config template? (optional)"
-        read -r -p "Setup MCP template? (y/N): " setup_mcp_answer
-        if [[ "$setup_mcp_answer" =~ ^[Yy]$ ]]; then
-            WITH_MCP=true
-        else
-            WITH_MCP=false
-        fi
-    fi
-
-    [ "$WITH_MCP" = true ] || return 0
-
-    local src="$TEMP_DIR/harness/codex/.codex/config.toml"
-    local dst="$target_root/config.toml"
-
-    if [ -f "$dst" ]; then
-        log_warn "$dst already exists, skipping"
-        return
-    fi
-
-    if [ -f "$src" ]; then
-        mkdir -p "$target_root"
-        cp "$src" "$dst"
-        log_ok "config.toml copied to $dst"
-        log_warn "Edit config.toml to set the correct MCP server/notify paths"
-    else
-        log_warn "codex/.codex/config.toml not found in Harness"
-    fi
-}
-
 ensure_multi_agent_defaults() {
     local target_root="$1"
     local cfg="$target_root/config.toml"
@@ -505,8 +460,6 @@ print_success() {
     echo "  $target_root/skills/  - Harness skills"
     echo "  $target_root/rules/   - Guardrails"
     echo "  $backup_root/ - Setup backups (outside skill scan path)"
-    [ -f "$target_root/config.toml" ] && echo "  $target_root/config.toml - MCP template"
-
     if [ "$TARGET_MODE" = "project" ]; then
         echo "  $PROJECT_DIR/AGENTS.md - Project instructions"
     else
@@ -552,7 +505,6 @@ main() {
         log_info "User mode: project AGENTS.md is unchanged"
     fi
 
-    setup_mcp_template "$target_root"
     ensure_multi_agent_defaults "$target_root"
     print_success "$target_root" "$backup_root"
 }

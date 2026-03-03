@@ -327,7 +327,7 @@ allowed-tools: ["Read"]
 ---
 EOF
 
-CLAUDE_PLUGIN_ROOT="$project_root" bash "$project_root/scripts/codex-setup-local.sh" --user --skip-mcp >/dev/null
+CLAUDE_PLUGIN_ROOT="$project_root" bash "$project_root/scripts/codex-setup-local.sh" --user >/dev/null
 
 test -f "$CODEX_HOME/skills/planning/SKILL.md"
 if [ -d "$CODEX_HOME/skills/plan-with-agent" ]; then

@@ -104,14 +104,13 @@ fi
 echo ""
 echo "📋 [4/11] スキル定義の期待ファイル構成..."
 
-# update-2agent-files の REQUIRED_FILES とテンプレートの同期
-# 2agent は setup hub に統合済み（skills/_archived/2agent/）
-# 代わりに setup/references/2agent-setup.md を確認
-SETUP_2AGENT="$PLUGIN_ROOT/skills/setup/references/2agent-setup.md"
-if [ -f "$SETUP_2AGENT" ]; then
-  echo "  ✅ setup/references/2agent-setup.md が存在"
+# 2agent 設定は harness-setup (v3) に統合済み
+# skills-v3/harness-setup/SKILL.md の存在を確認
+SETUP_V3="$PLUGIN_ROOT/skills-v3/harness-setup/SKILL.md"
+if [ -f "$SETUP_V3" ]; then
+  echo "  ✅ skills-v3/harness-setup/SKILL.md が存在（2agent 設定を包含）"
 else
-  echo "  ❌ setup/references/2agent-setup.md が見つかりません"
+  echo "  ❌ skills-v3/harness-setup/SKILL.md が見つかりません"
   ERRORS=$((ERRORS + 1))
 fi
 
@@ -332,8 +331,8 @@ CODEX_MIRROR="$PLUGIN_ROOT/codex/.codex/skills"
 OPENCODE_MIRROR="$PLUGIN_ROOT/opencode/skills"
 MIRROR_ISSUES=0
 
-# v3 コアスキル（5動詞）の symlink チェック
-V3_CORE_SKILLS="plan execute review release setup"
+# v3 コアスキル（5動詞 harness- prefix）の symlink チェック
+V3_CORE_SKILLS="harness-plan harness-work harness-review harness-release harness-setup"
 
 if [ -d "$V3_SKILLS_DIR" ]; then
   for skill in $V3_CORE_SKILLS; do

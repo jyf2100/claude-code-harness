@@ -97,3 +97,34 @@ Task tool で subagent_type="worker" を指定
   "escalation_reason": "エスカレーション理由（失敗時のみ）"
 }
 ```
+
+## Codex Environment Notes
+
+Codex CLI 環境（`codex exec`）では以下の機能が非互換。
+
+### memory frontmatter
+
+```yaml
+memory: project  # Claude Code 専用。Codex では無視される
+```
+
+Codex 環境での代替:
+- INSTRUCTIONS.md（プロジェクトルート）に学習内容を記載
+- config.toml の `[notify] after_agent` でセッション終了時にメモリ書き出し
+
+### skills フィールド
+
+```yaml
+skills:
+  - execute  # Claude Code の skills/ ディレクトリ参照。Codex では非互換
+  - review
+```
+
+Codex 環境での代替:
+- `$skill-name` 構文で Codex スキルを呼び出す（例: `$execute`）
+- スキルは `~/.codex/skills/` または `.codex/skills/` に配置
+
+### Task ツール
+
+Worker の `disallowedTools: [Task]` は Claude Code の制約。
+Codex 環境では Task ツール自体が存在しないため、Plans.md を直接 Read/Edit して状態管理する。

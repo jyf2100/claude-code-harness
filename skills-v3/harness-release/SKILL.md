@@ -7,7 +7,7 @@ argument-hint: "[patch|minor|major|--dry-run|--announce]"
 context: fork
 ---
 
-# Release Skill (v3)
+# Harness Release (v3)
 
 Harness v3 の統合リリーススキル。
 以下の旧スキルを統合:

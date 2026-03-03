@@ -49,10 +49,12 @@ trap 'rm -f "${TMP_OUT}" "${TMP_LEARNING}"' EXIT
 echo "[codex-exec-wrapper] codex exec 実行中（timeout=${TIMEOUT_SEC}s）..." >&2
 
 EXIT_CODE=0
+# stdin 経由でプロンプトを渡す（ARG_MAX 超過を回避）
+# "-" は codex exec の公式 stdin 入力指定
 if [ -n "${TIMEOUT}" ]; then
-  ${TIMEOUT} "${TIMEOUT_SEC}" codex exec "$(cat "${PROMPT_FILE}")" > "${TMP_OUT}" 2>/dev/null || EXIT_CODE=$?
+  cat "${PROMPT_FILE}" | ${TIMEOUT} "${TIMEOUT_SEC}" codex exec - -a never -s workspace-write > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 else
-  codex exec "$(cat "${PROMPT_FILE}")" > "${TMP_OUT}" 2>/dev/null || EXIT_CODE=$?
+  cat "${PROMPT_FILE}" | codex exec - -a never -s workspace-write > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 fi
 
 # タイムアウト（exit 124）の場合もログを出力
@@ -61,6 +63,8 @@ if [ "${EXIT_CODE}" -eq 124 ]; then
 fi
 
 # === 後処理: [HARNESS-LEARNING] マーカー行の抽出 ===
+# NOTE: Codex CLI の --output-schema オプションで構造化 JSON 出力が可能。
+# マーカー grep 方式から --output-schema 方式への移行は将来検討（要スキーマ定義）。
 # stdout から `[HARNESS-LEARNING]` で始まる行のみを抽出してマーカーを除去
 LEARNING_COUNT=0
 if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then

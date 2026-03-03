@@ -23,19 +23,38 @@
 
 ## Why Harness?
 
-Claude Code is powerful—but sometimes it needs structure.
-
-| Without Harness | With Harness |
-|-----------------|--------------|
-| Jumps into code immediately | Plans first, then executes |
-| Reviews only when asked | Auto-reviews every change |
-| Forgets past decisions | SSOT files preserve context |
-| `rm -rf` runs without warning | Dangerous commands blocked |
-| One task at a time | Parallel workers |
+Claude Code is powerful—but without structure, it can be unpredictable.
 
 <p align="center">
-  <img src="assets/readme-visuals-en/before-after.svg" alt="Before/After comparison" width="720">
+  <img src="assets/readme-visuals-en/generated/hero-comparison.png" alt="Without vs With Harness" width="720">
 </p>
+
+<table>
+<tr>
+<td width="50%">
+
+### Without Harness
+
+- Jumps into code immediately
+- Reviews only when asked
+- Forgets past decisions
+- `rm -rf` runs without warning
+- One task at a time
+
+</td>
+<td width="50%">
+
+### With Harness
+
+- **Plans first**, then executes
+- **Auto-reviews** every change
+- **SSOT files** preserve context
+- Dangerous commands **blocked**
+- **Parallel workers** simultaneously
+
+</td>
+</tr>
+</table>
 
 **Three commands. One workflow. Production-ready code.**
 
@@ -108,7 +127,11 @@ graph LR
 
 ---
 
-## The Core Loop (Details)
+## The Core Loop
+
+<p align="center">
+  <img src="assets/readme-visuals-en/generated/core-loop.png" alt="Plan → Work → Review cycle" width="560">
+</p>
 
 ### 1. Plan
 
@@ -150,6 +173,10 @@ Each worker implements, self-reviews, and reports.
 
 ## Safety First
 
+<p align="center">
+  <img src="assets/readme-visuals-en/generated/safety-guardrails.png" alt="Safety Protection System" width="640">
+</p>
+
 Harness v3 protects your codebase with a **TypeScript guardrail engine** (`core/`) — 9 declarative rules (R01–R09), compiled and type-checked:
 
 | Rule | Protected | Action |
@@ -162,23 +189,21 @@ Harness v3 protects your codebase with a **TypeScript guardrail engine** (`core/
 | Post | `it.skip`, assertion tampering | **Warning** |
 | Perm | `git status`, `npm test` | **Auto-allow** |
 
-<p align="center">
-  <img src="assets/readme-visuals-en/safety-shield.svg" alt="Safety shield" width="600">
-</p>
-
 ---
 
 ## 5 Verb Skills, Zero Config
 
 v3 unifies 42 skills into **5 verb skills**. Auto-load by context. Slash commands or natural language.
 
-| Verb | What It Does | Legacy Equivalent |
-|------|-------------|-------------------|
-| `plan` | Ideas → Plans.md | planning, plans-management, sync-status |
-| `execute` | Parallel implementation | work, breezing, impl |
-| `review` | 4-perspective code review | harness-review, codex-review |
-| `release` | CHANGELOG, tag, GitHub Release | release-har, handoff |
-| `setup` | Project init & tool config | setup, harness-init |
+<table>
+<tr>
+<td align="center" width="20%"><h3>/plan</h3>Ideas → Plans.md</td>
+<td align="center" width="20%"><h3>/work</h3>Parallel implementation</td>
+<td align="center" width="20%"><h3>/review</h3>4-angle code review</td>
+<td align="center" width="20%"><h3>/release</h3>Tag + GitHub Release</td>
+<td align="center" width="20%"><h3>/setup</h3>Project init & config</td>
+</tr>
+</table>
 
 <p align="center">
   <img src="assets/readme-visuals-en/skills-ecosystem.svg" alt="Skills ecosystem" width="640">
@@ -285,7 +310,7 @@ git clone https://github.com/Chachamaru127/claude-code-harness.git
 cd claude-code-harness
 
 # 2. Install skills/rules to user scope (~/.codex)
-./scripts/setup-codex.sh --user --skip-mcp
+./scripts/setup-codex.sh --user
 
 # 3. Go to your project and start working
 cd /path/to/your-project
@@ -298,8 +323,6 @@ Once inside Codex, use `$plan-with-agent`, `$work`, `$breezing`, and `$harness-r
 |------|-------------|
 | `--user` | Install to `~/.codex` (shared across projects, default) |
 | `--project` | Install to `.codex/` in current directory |
-| `--with-mcp` | Copy `config.toml` MCP template |
-| `--skip-mcp` | Skip MCP template (recommended) |
 
 > Claude Code users can run `/setup codex` inside a session instead.
 

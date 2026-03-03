@@ -6,7 +6,7 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "T
 argument-hint: "[create|add|update|sync|--ci]"
 ---
 
-# Plan Skill (v3)
+# Harness Plan (v3)
 
 Harness v3 の統合プランニングスキル。
 以下の3つの旧スキルを統合:

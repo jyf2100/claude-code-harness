@@ -5,7 +5,7 @@
 # Copy Codex CLI templates from the installed Harness plugin.
 #
 # Usage:
-#   ./scripts/codex-setup-local.sh [--user|--project] [--with-mcp|--skip-mcp]
+#   ./scripts/codex-setup-local.sh [--user|--project]
 #
 set -euo pipefail
 IFS=$'\n\t'
@@ -13,17 +13,10 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(pwd)"
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
-WITH_MCP="auto"
 TARGET_MODE="user"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --with-mcp)
-      WITH_MCP=true
-      ;;
-    --skip-mcp)
-      WITH_MCP=false
-      ;;
     --user)
       TARGET_MODE="user"
       ;;
@@ -32,7 +25,7 @@ while [ $# -gt 0 ]; do
       ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--user|--project] [--with-mcp|--skip-mcp]" >&2
+      echo "Usage: $0 [--user|--project]" >&2
       exit 1
       ;;
   esac
@@ -291,30 +284,6 @@ copy_project_agents() {
   echo "AGENTS.md copied to project root"
 }
 
-setup_mcp_template() {
-  local plugin_dir="$1"
-  local target_root="$2"
-
-  [ "$WITH_MCP" = true ] || return 0
-
-  local src="$plugin_dir/codex/.codex/config.toml"
-  local dst="$target_root/config.toml"
-
-  if [ -f "$dst" ]; then
-    echo "Warning: $dst already exists, skipping"
-    return 0
-  fi
-
-  if [ -f "$src" ]; then
-    mkdir -p "$target_root"
-    cp "$src" "$dst"
-    echo "config.toml copied to: $dst"
-    echo "Edit MCP server/notify paths for your environment"
-  else
-    echo "Warning: codex/.codex/config.toml not found in plugin source"
-  fi
-}
-
 ensure_multi_agent_defaults() {
   local target_root="$1"
   local cfg="$target_root/config.toml"
@@ -425,7 +394,6 @@ else
   echo "User mode: project AGENTS.md is unchanged"
 fi
 
-setup_mcp_template "$PLUGIN_DIR" "$target_root"
 ensure_multi_agent_defaults "$target_root"
 
 echo "Codex CLI setup complete."

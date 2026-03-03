@@ -11,13 +11,19 @@ Codex の呼び出しには **必ず `codex exec` (Bash)** を使用すること
 ## 正しい呼び出し方
 
 ```bash
-# 基本
-$TIMEOUT 120 codex exec "$(cat /tmp/codex-prompt.md)" 2>/dev/null
+# 基本（stdin 方式 + 一意テンポラリファイル）
+CODEX_PROMPT=$(mktemp /tmp/codex-prompt-XXXXXX.md)
+# タスク内容を書き出し
+cat "$CODEX_PROMPT" | $TIMEOUT 120 codex exec - -a never -s workspace-write 2>>/tmp/harness-codex-$$.log
+rm -f "$CODEX_PROMPT"
 
 # 並列実行
-$TIMEOUT 120 codex exec "$(cat /tmp/prompt1.md)" > /tmp/out1.txt 2>/dev/null &
-$TIMEOUT 120 codex exec "$(cat /tmp/prompt2.md)" > /tmp/out2.txt 2>/dev/null &
+PROMPT1=$(mktemp /tmp/codex-prompt-XXXXXX.md)
+PROMPT2=$(mktemp /tmp/codex-prompt-XXXXXX.md)
+cat "$PROMPT1" | $TIMEOUT 120 codex exec - -a never -s workspace-write > /tmp/out1-$$.txt 2>>/tmp/harness-codex-$$.log &
+cat "$PROMPT2" | $TIMEOUT 120 codex exec - -a never -s workspace-write > /tmp/out2-$$.txt 2>>/tmp/harness-codex-$$.log &
 wait
+rm -f "$PROMPT1" "$PROMPT2"
 ```
 
 ## timeout の取得

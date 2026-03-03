@@ -123,3 +123,71 @@
 | 17.7.4 | breezing-bench v2 vs v3 比較ベンチマーク | cc:完了 |
 | 17.7.5 | VERSION 3.0.0 バンプ + CHANGELOG + plugin.json | cc:完了 |
 | 17.7.6 | main マージ + GitHub Release | cc:完了 |
+
+---
+
+## Phase 18: Codex CLI 0.107.0 対応 + README ビジュアル改善
+
+作成日: 2026-03-03
+起点: Codex CLI 0.107.0 リリース（2026-03-02）+ README 訴求力向上要件
+目的: Codex CLI 上での Harness 使用時の互換性・安全性を確保し、README の視覚的訴求力を向上
+
+### 背景
+
+- Codex CLI が 0.104.0 → 0.107.0 に更新（thread forking, 設定可能メモリ, sandbox 強化）
+- Harness の Codex 統合コード（`codex/.codex/`, `scripts/codex/`, `setup-codex.sh`）に廃止済み MCP 残骸・並列競合リスクあり
+- README に Nano Banana Pro 生成画像を追加し、機能差分の直感的理解を向上
+
+### Phase 18.0: README ビジュアル改善 [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.0.1 | Nano Banana Pro で3枚の画像生成（hero-comparison, core-loop, safety-guardrails） | cc:完了 |
+| 18.0.2 | README.md にブランド T&M に沿った画像配置 + セクション構造改善 | cc:完了 |
+| 18.0.3 | ロゴファイル `docs/images/claude-harness-logo-with-text.png` 修復 | cc:完了 |
+
+### Phase 18.1: MCP 残骸除去（High） [P1] [P]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.1.1 | `codex/.codex/config.toml` から `[mcp_servers.harness]` セクション削除 | cc:完了 |
+| 18.1.2 | `scripts/setup-codex.sh` から `--with-mcp` フラグ + `setup_mcp_template()` 関数を削除 | cc:完了 |
+| 18.1.3 | `scripts/codex-worker-engine.sh` の `mcp-params.json` → `codex-exec-params.json` にリネーム | cc:完了 |
+| 18.1.R1 | `scripts/codex-setup-local.sh` の MCP 残骸除去（Reviewer 指摘） | cc:完了 |
+| 18.1.R2 | `--skip-mcp` 残存参照の一掃（README, codex/README, tests） | cc:完了 |
+
+### Phase 18.2: 並列実行安全性（High） [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.2.1 | `skills-v3/harness-work/SKILL.md` の `/tmp/codex-prompt.md` 固定パス → `mktemp` 一意パスに変更 | cc:完了 |
+| 18.2.2 | `codex exec` 呼び出しに `-a never -s workspace-write` フラグ明示（正式フラグ名に修正） | cc:完了 |
+| 18.2.3 | `2>/dev/null` のエラー握りつぶし → ログファイルへのリダイレクト（`2>>/tmp/harness-codex-$$.log`） | cc:完了 |
+| 18.2.R1 | `codex-cli-only.md` と README の固定パス・旧フラグ名修正（Reviewer 指摘） | cc:完了 |
+
+### Phase 18.3: Codex 環境での Harness スキル互換性（Medium） [P2]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.3.1 | `skills-v3/harness-review/SKILL.md` に Codex 環境での代替フロー記載（Task ツール非対応時のフォールバック） | cc:完了 |
+| 18.3.2 | `agents-v3/team-composition.md` に Codex 環境の注記追加（`bypassPermissions` → `-a never`） | cc:完了 |
+| 18.3.3 | `codex/.codex/config.toml` に `[notify]` セクション追加（after_agent → メモリブリッジ接続） | cc:完了 |
+| 18.3.4 | `codex/.codex/config.toml` の reviewer エージェントに Read-only sandbox 制限追加 | cc:完了 |
+
+### Phase 18.4: Codex 0.107.0 新機能活用（Medium） [P2]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.4.1 | Thread forking 活用検討: 時期尚早（`codex exec fork` は未実装、Issue #11750 提案段階） | cc:完了 |
+| 18.4.2 | 設定可能メモリ: `memory: project` の Codex 側マッピング定義を team-composition.md に記載 | cc:完了 |
+| 18.4.3 | stdin パイプ方式に改善（`cat file \| codex exec -`）、`--input-file` は存在せず | cc:完了 |
+
+### Phase 18.5: 品質改善（Low） [P3]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 18.5.1 | `codex-exec-wrapper.sh` の構造化出力調査: `--output-schema` 将来移行可能、現状マーカー方式維持 | cc:完了 |
+| 18.5.2 | `worker.md` に Codex 環境での `memory`/`skills` フィールドの非互換に関する注記追加 | cc:完了 |
+| 18.5.3 | `codex/.codex/skills/` の CLAUDE.md ノイズ化対策（.codexignore 追加 + ルート CLAUDE.md 削除） | cc:完了 |
+| 18.5.4 | README_ja.md にも同等のビジュアル改善を反映 | cc:完了 |
+| 18.5.5 | CHANGELOG.md に Phase 18 の変更を追記（[3.1.0] - 2026-03-03） | cc:完了 |

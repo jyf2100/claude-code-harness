@@ -7,7 +7,7 @@ argument-hint: "[code|plan|scope]"
 context: fork
 ---
 
-# Review Skill (v3)
+# Harness Review (v3)
 
 Harness v3 の統合レビュースキル。
 以下の旧スキルを統合:
@@ -106,6 +106,29 @@ git diff HEAD~1 -- <changed_files>
 | セキュリティ脆弱性 | 即座に REQUEST_CHANGES |
 | テスト改ざん疑い | 警告 + 修正要求 |
 | force push 試み | 拒否 + 代替案提示 |
+
+## Codex Environment
+
+Codex CLI 環境（`CODEX_CLI=1`）では一部ツールが利用不可のため、以下のフォールバックを使用する。
+
+| 通常環境 | Codex フォールバック |
+|---------|-------------------|
+| `TaskList` でタスク一覧取得 | Plans.md を `Read` して WIP/TODO タスクを確認 |
+| `TaskUpdate` でステータス更新 | Plans.md のマーカーを `Edit` で直接更新（例: `cc:WIP` → `cc:完了`） |
+| レビュー結果を Task に書き込み | レビュー結果を stdout に出力 |
+
+### 検出方法
+
+```bash
+if [ "${CODEX_CLI:-}" = "1" ]; then
+  # Codex 環境: Plans.md ベースのフォールバック
+fi
+```
+
+### Codex 環境でのレビュー出力
+
+Task ツール非対応のため、レビュー結果は標準出力にマークダウン形式で出力する。
+Lead エージェントまたはユーザーが結果を読み取り、次のアクションを判断する。
 
 ## 関連スキル
 

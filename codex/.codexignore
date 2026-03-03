@@ -1,0 +1,3 @@
+# Codex ignore patterns
+# Prevent claude-mem auto-generated CLAUDE.md files from polluting skill scan
+.codex/skills/**/CLAUDE.md

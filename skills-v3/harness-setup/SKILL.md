@@ -6,7 +6,7 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 argument-hint: "[init|ci|codex|harness-mem|symlinks|agents|localize]"
 ---
 
-# Setup Skill (v3)
+# Harness Setup (v3)
 
 Harness v3 の統合セットアップスキル。
 以下の旧スキルを統合:

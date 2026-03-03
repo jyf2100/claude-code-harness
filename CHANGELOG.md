@@ -8,6 +8,27 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.1.0] - 2026-03-03
+
+### Changed
+- **MCP 残骸除去**: config.toml, setup-codex.sh, codex-setup-local.sh から MCP サーバー参照を完全削除
+- **codex exec フラグ正規化**: --approval-policy → -a (--ask-for-approval)、--sandbox → -s に統一
+- **プロンプト渡し方式改善**: "$(cat file)" → stdin パイプ (`cat file | codex exec -`) に変更（ARG_MAX 対策）
+- **codex-worker-engine.sh**: mcp-params.json → codex-exec-params.json にリネーム
+
+### Added
+- **Codex 環境フォールバック**: harness-review に Task ツール非対応時の Plans.md 直接操作パターン追加
+- **Codex 環境注記**: team-composition.md, worker.md に Codex CLI 固有の制約と代替手段を記載
+- **config.toml 拡充**: [notify] セクション（after_agent メモリブリッジ）、reviewer Read-only sandbox
+- **.codexignore**: CLAUDE.md ノイズ化防止パターン追加
+
+### Fixed
+- **/tmp/codex-prompt.md 固定パス**: mktemp 一意パスに変更（並列実行時の競合防止）
+- **2>/dev/null エラー握りつぶし**: ログファイルリダイレクトに変更（デバッグ可能に）
+- **README/README_ja.md**: ビジュアル改善（hero-comparison, core-loop, safety-guardrails 画像追加）
+
+---
+
 ## [3.0.0] - 2026-03-02
 
 ### 🎯 What's Changed for You

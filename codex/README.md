@@ -8,13 +8,13 @@ Codex CLI compatible distribution of Claude Code Harness.
 
 ```bash
 # Default: install to CODEX_HOME (user-based)
-/path/to/claude-code-harness/scripts/setup-codex.sh --user --skip-mcp
+/path/to/claude-code-harness/scripts/setup-codex.sh --user
 ```
 
 Project-local install is still available:
 
 ```bash
-/path/to/claude-code-harness/scripts/setup-codex.sh --project --skip-mcp
+/path/to/claude-code-harness/scripts/setup-codex.sh --project
 ```
 
 ### Option 1.5: Claude Code (in-session)

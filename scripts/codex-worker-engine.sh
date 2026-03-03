@@ -225,7 +225,7 @@ verify_agents_summary() {
     fi
 }
 
-# Codex Worker 呼び出し（MCP 経由）
+# Codex Worker 呼び出し（CLI 経由）
 invoke_codex_worker() {
     local base_instructions
     local prompt
@@ -256,7 +256,7 @@ invoke_codex_worker() {
 
     log_step "Codex Worker を呼び出し中..."
 
-    # 注: 実際の MCP 呼び出しは Claude Code 内から行う
+    # 注: 実際の codex exec 呼び出しは Claude Code 内から行う
     # このスクリプトは base-instructions と prompt の生成を担当
     # 出力をファイルに保存して Claude Code が読み取る
 
@@ -278,7 +278,7 @@ invoke_codex_worker() {
             "cwd": $cwd,
             "approval-policy": $approval_policy,
             "sandbox": $sandbox
-        }' > "$output_dir/mcp-params.json"
+        }' > "$output_dir/codex-exec-params.json"
 
     # 検証用情報を保存（注: agents_hash は含めない - セキュリティ上の理由）
     # Worker が AGENTS.md を実際に読んで証跡を出力することを強制するため
@@ -290,7 +290,7 @@ invoke_codex_worker() {
 }
 EOF
 
-    log_info "MCP パラメータを保存: $output_dir/mcp-params.json"
+    log_info "Codex CLI パラメータを保存: $output_dir/codex-exec-params.json"
     log_info "検証情報を保存: $output_dir/verify-info.json"
     echo ""
     log_info "次のステップ:"

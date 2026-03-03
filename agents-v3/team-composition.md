@@ -116,3 +116,101 @@ Teammate は UI なしでバックグラウンド実行されるため、
 2. spawn prompt で行動範囲を明示
 3. PreToolUse hooks がガードレールを維持
 4. Lead が常に監視
+
+## Codex CLI Environment
+
+Codex CLI 環境では Agent Teams（Task/SendMessage/spawn）が利用できない。
+以下の制約と代替パターンを理解した上で運用すること。
+
+### 主要な制約
+
+| Claude Code 機能 | Codex CLI 対応 |
+|----------------|--------------|
+| Agent Teams（並列 spawn） | 非対応 |
+| `mode: "bypassPermissions"` | `approval_policy: never` で代替 |
+| Task ツール | 非対応（Plans.md で代替） |
+| SendMessage | 非対応（stdout で代替） |
+| PreToolUse hooks | config.toml の sandbox で代替 |
+
+### 代替パターン: codex exec 逐次実行
+
+Agent Teams の代わりに `codex exec` を逐次呼び出す:
+
+```bash
+# Worker 相当（実装タスク）
+echo "タスク内容" | codex exec - -a never -s workspace-write
+
+# Reviewer 相当（Read-only レビュー）
+echo "レビュー内容" | codex exec - -a never -s read-only
+```
+
+### 並列実行（Bash レベル）
+
+```bash
+echo "タスク A" | codex exec - -a never -s workspace-write > /tmp/out-a.txt 2>>/tmp/harness-codex-$$.log &
+echo "タスク B" | codex exec - -a never -s workspace-write > /tmp/out-b.txt 2>>/tmp/harness-codex-$$.log &
+wait
+```
+
+依存のないタスクは Bash の `&` + `wait` で並列化可能。
+ただし同一ファイルへの並列書き込みは避けること。
+
+### Thread Forking 活用可能性（調査: 2026-03）
+
+Codex 0.107+ は `codex fork` / `/fork` でスレッドを分岐できるが、
+**TUI 専用**であり `codex exec` からの非対話的 fork は未実装。
+
+- [GitHub Issue #11750](https://github.com/openai/codex/issues/11750) で `codex exec fork` が提案段階
+- 現状ワークアラウンド: PTY 経由で fork → `codex exec resume <id>` だが脆弱で ~6s のオーバーヘッド
+- **結論**: breezing ワーカーの fork-thread 方式への移行は**時期尚早**。
+  `codex exec fork` が安定リリースされるまでは現行の独立プロセス方式を維持する。
+
+### codex exec フラグ正式名称
+
+| Harness 旧記法 | 正式フラグ | 値 |
+|---|---|---|
+| `--approval-policy never` | `--ask-for-approval never` (`-a never`) | `untrusted` / `on-request` / `never` |
+| `--sandbox workspace-write` | `--sandbox workspace-write` (`-s`) | `read-only` / `workspace-write` / `danger-full-access` |
+
+> **注意**: `--approval-policy` は非公式エイリアス。公式ドキュメントでは `--ask-for-approval` (`-a`)。
+
+### プロンプト渡し方式
+
+- `--input-file` オプションは**存在しない**
+- stdin 渡し: `cat file.md | codex exec -` が公式サポート
+- 現行の `codex exec "$(cat file)"` はシェル引数上限（ARG_MAX）に注意。大きなプロンプトは stdin 方式が安全
+
+### 設定可能メモリ — memory: project の Codex 側マッピング（調査: 2026-03）
+
+Claude Code の `memory: project`（エージェントメモリ）に相当する Codex 側の仕組み:
+
+| Claude Code | Codex CLI | 備考 |
+|---|---|---|
+| `memory: project` MEMORY.md | `AGENTS.md` 階層（global → project → subdir） | 永続的な指示・学習を記述 |
+| agent-memory ディレクトリ | `agents.<name>.config_file` | エージェント別の設定ファイル |
+| spawn prompt | `AGENTS.override.md` | 一時的なオーバーライド |
+| セッション履歴 | `history.persistence: save-all` | `history.jsonl` に保存 |
+| コンテキスト圧縮 | `model_auto_compact_token_limit` | 自動コンパクション |
+
+**config.toml のメモリ関連キー**:
+
+```toml
+# メモリ・履歴
+history.persistence = "save-all"   # "save-all" | "none"
+# history.max_bytes = 1048576      # 履歴ファイル上限（省略時: 無制限）
+
+# プロジェクトドキュメント
+project_doc_max_bytes = 32768      # AGENTS.md の読み込み上限（デフォルト: 32KiB）
+# project_doc_fallback_filenames = ["TEAM_GUIDE.md", ".agents.md"]
+
+# エージェント
+# agents.worker.config_file = ".codex/agents/worker.toml"
+# agents.worker.description = "Implementation agent"
+# agents.max_depth = 1
+# agents.max_threads = 3
+```
+
+**Harness での活用方針**:
+- `.codex/AGENTS.md` にプロジェクト固有の学習・規約を集約
+- `codex-learnings.md` の内容を定期的に AGENTS.md に昇格（SSOT 維持）
+- `agents.<name>.config_file` でワーカー・レビュアーの個別設定を分離（将来対応）

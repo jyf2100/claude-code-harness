@@ -7,36 +7,36 @@
 >
 > **重要**: 各スキルの description と本文の「Do NOT Load For」テーブルは完全一致している必要があります。
 
-## Codex 関連スキル
+## Codex 関連ルーティング
 
-### codex-review
+### harness-review (Codex レビュー機能を包含)
 
-**目的**: Codex CLI (`codex exec`) でセカンドオピニオンレビューを提供
+**目的**: Codex CLI (`codex exec`) でセカンドオピニオンレビューを提供（v3 で `codex-review` から統合）
 
 **トリガーキーワード**（description から引用）:
-- "Codex レビュー"
-- "セカンドオピニオン"
-- "Codex の意見"
-- "Codex でレビュー"
-- "Codex セットアップ"
+- "review", "code review", "plan review"
+- "scope analysis", "security", "performance"
+- "quality checks", "PRs", "diffs"
+- "/harness-review"
 
 **除外キーワード**（description から引用）:
-- "Codex に実装させて"
-- "Codex Worker"
-- "Codex に作らせて"
-- "実装を依頼"
+- "implementation", "new features", "bug fixes"
+- "setup", "release"
 
-### /work --codex (旧 codex-worker)
+### harness-work --codex (Codex 実装機能を包含)
 
-**目的**: Codex を実装エンジンとして使用
+**目的**: Codex を実装エンジンとして使用（v3 で統合）
 
 **トリガーキーワード**:
-- "Codex に実装させて"
-- "Codex Worker"
-- "Codex に作らせて"
-- "実装を依頼"
+- "implement", "execute", "/work"
+- "breezing", "team run"
+- "--codex", "--parallel"
 
-**対応**: `/work --codex` で実行
+**除外キーワード**（description から引用）:
+- "planning", "code review", "release"
+- "setup", "initialization"
+
+**対応**: `/harness-work --codex` で実行
 
 ## ルーティング判定フロー（参考）
 

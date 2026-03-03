@@ -6,7 +6,7 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id] [--breezing]"
 ---
 
-# Execute Skill (v3)
+# Harness Work (v3)
 
 Harness v3 の統合実行スキル。
 以下の旧スキルを統合:
@@ -21,12 +21,32 @@ Harness v3 の統合実行スキル。
 
 | ユーザー入力 | モード | 動作 |
 |------------|--------|------|
-| `/execute` | solo | スコープ確認 → 実装 |
-| `/execute all` | solo | 全未完了タスクを即実行 |
+| `/execute` | **auto** | タスク数で自動判定（下記参照） |
+| `/execute all` | **auto** | 全未完了タスクを自動モードで実行 |
 | `/execute 3` | solo | タスク3だけ即実行 |
-| `/execute --parallel 5` | solo-parallel | 5ワーカーで並列実行 |
-| `/execute --codex` | codex | Codex CLI に委託 |
-| `/execute --breezing` | team | Agent Teams でチーム実行 |
+| `/execute --parallel 5` | parallel | 5ワーカーで並列実行（強制） |
+| `/execute --codex` | codex | Codex CLI に委託（明示時のみ） |
+| `/execute --breezing` | breezing | Agent Teams でチーム実行（強制） |
+
+## Auto Mode Detection（フラグなし時の自動判定）
+
+明示的なモードフラグ（`--parallel`, `--breezing`, `--codex`）がない場合、
+対象タスク数に応じて最適なモードを自動選択する:
+
+| 対象タスク数 | 自動選択モード | 理由 |
+|-------------|---------------|------|
+| **1 件** | Solo | オーバーヘッド最小。直接実装が最速 |
+| **2〜3 件** | Parallel（Task tool） | Worker 分離のメリットが出始める閾値 |
+| **4 件以上** | Breezing（Agent Teams） | Lead 調整 + Worker 並列 + Reviewer 独立の三者分離が効果的 |
+
+### ルール
+
+1. **明示フラグは常にオートモードを上書き**する
+   - `--parallel N` → Parallel モード（タスク数に関係なく）
+   - `--breezing` → Breezing モード（タスク数に関係なく）
+   - `--codex` → Codex モード（タスク数に関係なく）
+2. **`--codex` は明示時のみ発動**。Codex CLI が未インストールの環境があるため、自動選択しない
+3. `--codex` は他モードと組み合わせ可能: `--codex --breezing` → Codex + Breezing
 
 ## オプション
 
@@ -36,7 +56,7 @@ Harness v3 の統合実行スキル。
 | `N` or `N-M` | タスク番号/範囲指定 | - |
 | `--parallel N` | 並列ワーカー数 | auto |
 | `--sequential` | 直列実行強制 | - |
-| `--codex` | Codex CLI で実装委託 | false |
+| `--codex` | Codex CLI で実装委託（明示時のみ、自動選択しない） | false |
 | `--no-commit` | 自動コミット抑制 | false |
 | `--resume <id\|latest>` | 前回セッション再開 | - |
 | `--breezing` | Agent Teams でチーム実行 | false |
@@ -47,14 +67,18 @@ Harness v3 の統合実行スキル。
 ```
 /execute
 どこまでやりますか?
-1) 次のタスク（推奨）: Plans.md の次の未完了タスク
-2) 全部: 残りのタスクをすべて完了
-3) 番号指定: タスク番号を入力（例: 3, 5-7）
+1) 次のタスク: Plans.md の次の未完了タスク → Solo で実行
+2) 全部（推奨）: 残りのタスクをすべて完了 → タスク数で自動モード選択
+3) 番号指定: タスク番号を入力（例: 3, 5-7）→ 件数で自動モード選択
 ```
+
+引数ありなら即実行（対話スキップ）:
+- `/execute all` → 全タスク、自動モード選択
+- `/execute 3-6` → 4件なので Breezing 自動選択
 
 ## 実行モード詳細
 
-### Solo モード（デフォルト）
+### Solo モード（1 件時の自動選択）
 
 1. Plans.md を読み込み、対象タスクを特定
 2. タスクを `cc:WIP` に更新
@@ -63,22 +87,28 @@ Harness v3 の統合実行スキル。
 5. `git commit` で自動コミット（`--no-commit` で省略可）
 6. タスクを `cc:完了` に更新
 
-### Parallel モード（`--parallel N`）
+### Parallel モード（2〜3 件時の自動選択 / `--parallel N` で強制）
 
 `[P]` マーク付きタスクを N ワーカーで並列実行。
+`--parallel N` で明示指定した場合は、タスク数に関係なくこのモードを使用。
 同一ファイルへの書き込みが競合する場合は git worktree で分離。
 
-### Codex モード（`--codex`）
+### Codex モード（`--codex` 明示時のみ）
 
 ```bash
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
-$TIMEOUT 120 codex exec "$(cat /tmp/codex-prompt.md)" 2>/dev/null
+CODEX_PROMPT=$(mktemp /tmp/codex-prompt-XXXXXX.md)
+# タスク内容を一意なテンポラリファイルに書き出し
+# stdin 経由で渡す（"-" は公式 stdin 指定。ARG_MAX 超過を回避）
+cat "$CODEX_PROMPT" | $TIMEOUT 120 codex exec - -a never -s workspace-write 2>>/tmp/harness-codex-$$.log
+rm -f "$CODEX_PROMPT"
 ```
 
-タスク内容を `/tmp/codex-prompt.md` に書き出してから Codex CLI に委託。
+タスク内容を一意なテンポラリファイルに書き出し、stdin 経由で Codex CLI に委託。
+並列実行時もパスが衝突せず、大きなプロンプトも ARG_MAX に制約されない。
 結果を検証し、品質基準を満たさない場合は自力で修正。
 
-### Breezing モード（`--breezing`）
+### Breezing モード（4 件以上で自動選択 / `--breezing` で強制）
 
 Agent Teams（Worker + Reviewer）でチーム実行。
 
