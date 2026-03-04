@@ -80,6 +80,21 @@ if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
   bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
 fi
 
+# ===== Step 1.5: Symlink 健全性チェック（Windows 互換） =====
+# Windows の git clone で symlink が壊れる問題を自動修復
+SYMLINK_INFO=""
+if [ -f "$SCRIPT_DIR/fix-symlinks.sh" ]; then
+  FIX_RESULT=$(bash "$SCRIPT_DIR/fix-symlinks.sh" 2>/dev/null || echo '{"fixed":0}')
+  if command -v jq >/dev/null 2>&1; then
+    SYMLINK_FIXED=$(echo "$FIX_RESULT" | jq -r '.fixed // 0' 2>/dev/null)
+    if [ "$SYMLINK_FIXED" -gt 0 ] 2>/dev/null; then
+      SYMLINK_DETAILS=$(echo "$FIX_RESULT" | jq -r '.details | join(", ")' 2>/dev/null)
+      SYMLINK_INFO="🔧 Symlink 自動修復: ${SYMLINK_FIXED} 件修復 (${SYMLINK_DETAILS})"
+      echo -e "\033[1;33m[FIX]\033[0m Broken symlinks repaired: ${SYMLINK_FIXED} skills" >&2
+    fi
+  fi
+fi
+
 # ===== Step 2: Skills Gate 初期化 =====
 # Resolve to git repository root for consistency with other hooks
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
@@ -321,6 +336,10 @@ fi
 
 if [ -n "$OLD_HOOKS_INFO" ]; then
   add_line "${OLD_HOOKS_INFO}"
+fi
+
+if [ -n "$SYMLINK_INFO" ]; then
+  add_line "${SYMLINK_INFO}"
 fi
 
 add_line ""
