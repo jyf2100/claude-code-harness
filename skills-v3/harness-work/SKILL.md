@@ -77,6 +77,28 @@ Harness v3 の統合実行スキル。
 - `/execute all` → 全タスク、自動モード選択
 - `/execute 3-6` → 4件なので Breezing 自動選択
 
+## Effort レベル制御（v2.1.68+）
+
+Claude Code v2.1.68 で Opus 4.6 は **medium effort** がデフォルト。
+複雑なタスクには `ultrathink` キーワードで high effort を有効化する。
+
+### 多要素スコアリング
+
+タスク着手時に以下のスコアを合算し、**閾値 3 以上**で ultrathink を注入:
+
+| 要素 | 条件 | スコア |
+|------|------|--------|
+| ファイル数 | 変更対象 4 ファイル以上 | +1 |
+| ディレクトリ | core/, guardrails/, security/ を含む | +1 |
+| キーワード | architecture, security, design, migration を含む | +1 |
+| 失敗履歴 | agent memory に同タスクの失敗記録あり | +2 |
+| 明示指定 | PM テンプレートに ultrathink 記載あり | +3（自動採用） |
+
+### 注入方法
+
+スコア ≥ 3 の場合、Worker spawn prompt の冒頭に `ultrathink` を追加。
+breezing モードでも同じロジックが適用される（harness-work が一本化して管理）。
+
 ## 実行モード詳細
 
 ### Solo モード（1 件時の自動選択）

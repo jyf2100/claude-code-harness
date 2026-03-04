@@ -429,6 +429,23 @@ Project files (Plans.md, SSOT files) remain unchanged.
 
 ---
 
+## Claude Code 2.1.68+ Features
+
+Harness leverages the latest Claude Code features out of the box.
+
+| Feature | Skill | Purpose |
+|---------|-------|---------|
+| **Agent Memory** | task-worker, code-reviewer | Persistent learning across sessions |
+| **TeammateIdle/TaskCompleted Hook** | breezing | Automated team monitoring |
+| **Worktree isolation** | breezing | Safe parallel writes to the same file |
+| **HTTP hooks** | hooks | JSON POST to Slack, dashboards, metrics |
+| **Effort levels + ultrathink** | harness-work | Auto-injects ultrathink for complex tasks |
+| **WorktreeCreate/Remove hook** | breezing | Worktree lifecycle auto-setup and cleanup |
+
+Full list (29 features): [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
+
+---
+
 ## Documentation
 
 | Resource | Description |

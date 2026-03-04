@@ -19,6 +19,12 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" pretooluse-inbox-check",
             "timeout": 10
+          },
+          {
+            "type": "agent",
+            "prompt": "Review the following code change for quality issues. Check if the change: (1) introduces hardcoded secrets or credentials, (2) leaves TODO/FIXME stubs without implementation, (3) has obvious security vulnerabilities (SQL injection, XSS, command injection). If any issue is found, return JSON with permissionDecision: 'deny' and permissionDecisionReason explaining the issue. If the change looks acceptable, return nothing (exit 0). Input: $ARGUMENTS",
+            "model": "haiku",
+            "timeout": 30
           }
         ]
       },
@@ -86,6 +92,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/session-env-setup.sh\"",
+            "timeout": 10,
+            "once": true
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" session-init",
             "timeout": 30,
             "once": true
@@ -101,6 +113,12 @@
       {
         "matcher": "resume",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/session-env-setup.sh\"",
+            "timeout": 10,
+            "once": true
+          },
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" session-resume",
@@ -160,12 +178,40 @@
         ]
       }
     ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/worktree-create",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/worktree-remove",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/pre-compact-save.js\"",
+            "timeout": 30
+          },
+          {
+            "type": "agent",
+            "prompt": "Check Plans.md for tasks with status 'cc:WIP' before the context window is compacted. If any WIP tasks exist, include a warning in systemMessage: 'Warning: Compacting context with WIP tasks in progress: [list task IDs and titles]. Key context about these tasks may be lost after compaction. Consider completing or checkpointing them first.' If no WIP tasks, return nothing. Input: $ARGUMENTS",
+            "model": "haiku",
             "timeout": 30
           }
         ]
@@ -211,6 +257,17 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-tool.sh\"",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Perform a lightweight code review on the file that was just written/edited. Check for: (1) hardcoded secrets or API keys, (2) TODO/FIXME stubs left without implementation, (3) obvious security issues. This is a non-blocking advisory check. If issues found, include them in systemMessage. Input: $ARGUMENTS",
+            "model": "haiku",
             "timeout": 30
           }
         ]
@@ -268,6 +325,17 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" todo-sync",
             "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|Bash|Task",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:9090/metrics/hook",
+            "timeout": 5,
+            "headers": { "X-Source": "claude-code-harness", "X-Event": "PostToolUse" }
           }
         ]
       },
@@ -340,6 +408,12 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/stop-session-evaluator",
+            "timeout": 30
+          },
+          {
+            "type": "agent",
+            "prompt": "Check if there are incomplete tasks before allowing session to stop. Read the Plans.md file and look for tasks with status 'cc:WIP'. If any WIP tasks exist, return JSON: {\"decision\": \"block\", \"reason\": \"WIP tasks remain: [list task numbers]. Consider completing them or marking as blocked before stopping.\"}. If no WIP tasks, return nothing (allow stop). Input: $ARGUMENTS",
+            "model": "haiku",
             "timeout": 30
           }
         ]

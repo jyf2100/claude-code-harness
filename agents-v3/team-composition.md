@@ -214,3 +214,19 @@ project_doc_max_bytes = 32768      # AGENTS.md の読み込み上限（デフォ
 - `.codex/AGENTS.md` にプロジェクト固有の学習・規約を集約
 - `codex-learnings.md` の内容を定期的に AGENTS.md に昇格（SSOT 維持）
 - `agents.<name>.config_file` でワーカー・レビュアーの個別設定を分離（将来対応）
+
+## v2.1.68 Effort レベル変更の影響
+
+### 変更点
+- Opus 4.6 が **medium effort** デフォルトに変更（v2.1.68）
+- `ultrathink` キーワードで high effort を有効化（1ターン限定）
+- Opus 4 / 4.1 が first-party API から削除（Opus 4.6 に自動移行）
+
+### チームへの影響
+- Worker（`model: sonnet`）: Sonnet は effort レベルの影響を受けない。変更なし
+- Reviewer（`model: sonnet`）: 同上。変更なし
+- Lead（Opus 使用時）: medium effort がデフォルト。複雑なタスク調整時は ultrathink を使用
+- Codex Worker: effort 制御は Claude Code 固有。Codex CLI では適用外
+
+### Effort 注入パターン
+Lead が Worker/Reviewer を spawn する際、タスクの複雑度スコアに基づいて spawn prompt の冒頭に `ultrathink` を追加する。詳細は `skills-v3/harness-work/SKILL.md` の「Effort レベル制御」セクションを参照。

@@ -433,6 +433,23 @@ AI による編集操作を自動追跡：
 
 ---
 
+## Claude Code 2.1.68+ 対応機能
+
+Harness は最新の Claude Code 機能をすぐに活用できます。
+
+| 機能 | スキル | 用途 |
+|------|--------|------|
+| **Agent Memory** | task-worker, code-reviewer | セッション間の永続的な学習 |
+| **TeammateIdle/TaskCompleted Hook** | breezing | チームの自動監視 |
+| **Worktree 分離** | breezing | 同一ファイルへの並列書き込みを安全化 |
+| **HTTP hooks** | hooks | Slack・ダッシュボード・メトリクスへの JSON POST |
+| **Effort levels + ultrathink** | harness-work | 複雑なタスクに ultrathink を自動注入 |
+| **WorktreeCreate/Remove hook** | breezing | Worktree ライフサイクルの自動セットアップ・クリーンアップ |
+
+全機能一覧（29件）: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
+
+---
+
 ## ドキュメント
 
 | リソース | 説明 |

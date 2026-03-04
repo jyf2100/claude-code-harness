@@ -11,6 +11,13 @@ skills:
   - review
 ---
 
+## Effort 制御（v2.1.68+）
+
+- **デフォルト**: medium effort（Opus 4.6 の標準動作）
+- **ultrathink 適用時**: Lead がスコアリングで判定し、spawn prompt に注入
+- **自動適用ケース**: アーキテクチャ変更、セキュリティ関連、失敗リトライ時
+- **Codex 環境**: effort 制御は Claude Code 固有。Codex CLI では適用外
+
 # Worker Agent (v3)
 
 Harness v3 の統合ワーカーエージェント。

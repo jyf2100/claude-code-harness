@@ -8,6 +8,43 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.3.0] - 2026-03-05
+
+### 🎯 What's Changed for You
+
+**Claude Code 2.1.68 full compatibility: Opus 4.6 medium effort with ultrathink auto-injection, agent hooks for LLM-powered code quality guards, and worktree lifecycle automation.**
+
+| Before | After |
+|--------|-------|
+| All tasks ran at default effort level | Multi-element scoring auto-injects `ultrathink` for complex tasks (≥3 score) |
+| Code quality guards were regex/rule-based only | Agent hooks (type: "agent") use LLM to detect secrets, TODO stubs, security issues |
+| Worktree setup/cleanup was manual | WorktreeCreate/Remove hooks auto-initialize state and clean up temp files |
+| Hook types: command, prompt (Stop only), http | 4 hook types: command, prompt (all events), http, agent |
+| No session environment persistence | CLAUDE_ENV_FILE sets HARNESS_VERSION, EFFORT_DEFAULT, BREEZING_SESSION_ID |
+
+### Added
+- **Effort level control (v2.1.68)**: Multi-element scoring (file count + directory + keywords + failure history) for ultrathink auto-injection
+- **Agent hooks**: 3 LLM-powered hooks — PreToolUse quality guard, Stop WIP guard, PostToolUse async review (model: haiku)
+- **WorktreeCreate/Remove hooks**: Auto-setup `.claude/state/worktree-info.json` and cleanup temp files on worktree lifecycle
+- **session-env-setup.sh**: Persists HARNESS_VERSION, HARNESS_EFFORT_DEFAULT, HARNESS_BREEZING_SESSION_ID via CLAUDE_ENV_FILE
+- **PreCompact agent hook**: Warns when WIP tasks remain in Plans.md before context compaction
+- **PostToolUse HTTP hook**: Metrics collection template (localhost:9090) for external monitoring
+- **D27**: Effort level multi-element scoring decision recorded in decisions.md
+
+### Changed
+- **hooks-editing.md**: Updated from 3 hook types to 4 (added agent type); prompt type corrected to all-events support
+- **CLAUDE.md Feature Table**: Updated from 2.1.63+ to 2.1.68+ with 3 new feature rows
+- **docs/CLAUDE-feature-table.md**: 3 new features added, 2 "future" items updated to "implemented"
+- **worker.md / reviewer.md / team-composition.md**: Added effort control sections
+- **harness-work SKILL.md**: Added effort level scoring and ultrathink injection logic
+- **opencode PM templates**: Added ultrathink keywords for high-effort task requests
+
+### Fixed
+- **hooks-editing.md**: Removed incorrect restriction that prompt hooks were Stop/SubagentStop only (now all events)
+- **Feature Table**: Removed dead reference to `guardrails-inheritance.md`
+
+---
+
 ## [3.2.0] - 2026-03-04
 
 ### 🎯 What's Changed for You

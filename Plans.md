@@ -191,3 +191,103 @@
 | 18.5.3 | `codex/.codex/skills/` の CLAUDE.md ノイズ化対策（.codexignore 追加 + ルート CLAUDE.md 削除） | cc:完了 |
 | 18.5.4 | README_ja.md にも同等のビジュアル改善を反映 | cc:完了 |
 | 18.5.5 | CHANGELOG.md に Phase 18 の変更を追記（[3.1.0] - 2026-03-03） | cc:完了 |
+
+---
+
+## Phase 19: Claude Code v2.1.68 対応 + Feature Table 活用機能の実装
+
+作成日: 2026-03-05
+起点: Claude Code v2.1.63→v2.1.68 の新機能（effort levels, agent hooks, voice mode 等）+ Feature Table「将来対応」の実装格上げ
+目的: Harness を最新 Claude Code に最適化し、未活用の公式機能を実装に移行
+
+### 背景
+
+- Claude Code v2.1.68 で Opus 4.6 の **medium effort デフォルト化** + **ultrathink キーワード再導入**
+- Opus 4/4.1 が first-party API から削除（自動的に Opus 4.6 に移行）
+- 公式 Hooks ドキュメントに `type: "agent"` フック（LLM エージェントベースのフック）が登場
+- `type: "prompt"` フックが全イベントで利用可能に（Harness ルールでは Stop/SubagentStop 限定と誤記載）
+- Voice mode (`/voice`) がローリングアウト開始
+- Feature Table の「将来対応」3件（WorktreeRemove, remote-control, HTTP hooks 実用化）が実装可能な段階に
+
+### 設計判断（3エージェントレビューにより確定）
+
+1. **effort 判定は多要素スコアリング** — ファイル数だけでなく、対象ディレクトリ（core/, guardrails/）、タスクキーワード（security, architecture, design）、agent memory の失敗記録を組み合わせる
+2. **breezing の effort 制御は harness-work に一本化** — breezing は harness-work の委譲エイリアスなので独自追加せず継承
+3. **agent hooks はコスト上限を事前定義** — matcher で対象を絞り、1フック当たりの上限トークン・月間上限を定義。超過時は自動 rollback（command 型に戻す）
+4. **hooks-editing.md の 3 タスク（19.1.1, 19.1.2, 旧 19.2.4）は 1 タスクに統合** — 同一ファイルの連続編集による中途半端状態を防止
+5. **調査ファースト** — remote-control 調査（19.3.4）を Feature Table 更新（19.2）より先に実施し、結果を反映
+6. **hooks.json 編集は直列化** — agent hook（19.1）、Worktree hooks（19.3）、HTTP hooks（19.4）は並列不可
+
+### 優先度マトリクス
+
+| 優先度 | Phase | 内容 | タスク数 | 依存 |
+|--------|-------|------|---------|------|
+| **Required** | 19.0 | Effort レベル制御（多要素スコアリング） | 5 | なし |
+| **Required** | 19.1 | Agent hooks 対応（ルール整備 + プロトタイプ + 検証） | 6 | なし |
+| **Recommended** | 19.2 | Feature Table「将来対応」実装格上げ + 調査 | 5 | なし |
+| **Required** | 19.3 | ドキュメント・Feature Table 統合更新 | 4 | 19.0, 19.1, 19.2 |
+| **Recommended** | 19.4 | 既存機能の活用強化 | 5 | 19.2 |
+| **Required** | 19.5 | バージョン・品質・リリース | 4 | 19.0〜19.4 |
+
+合計: **29 タスク**
+
+---
+
+### Phase 19.0: Opus 4.6 Effort レベル制御 [P0] [P]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.0.1 | `skills-v3/harness-work/SKILL.md` に多要素 effort 判定ロジック追加 | cc:完了 |
+| 19.0.2 | `opencode/commands/pm/` 配下の既存 `ultrathink` 使用を体系化 | cc:完了 |
+| 19.0.3 | `agents-v3/worker.md` に effort 制御セクション追加 | cc:完了 |
+| 19.0.4 | `agents-v3/reviewer.md` に effort 制御セクション追加 | cc:完了 |
+| 19.0.5 | `agents-v3/team-composition.md` に v2.1.68 effort 変更の影響を追記 | cc:完了 |
+
+### Phase 19.1: Agent hooks 対応 + Prompt/Agent type ルール整備 [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.1.1 | `.claude/rules/hooks-editing.md` 統合更新（4タイプ体系、prompt全イベント対応修正） | cc:完了 |
+| 19.1.2 | agent hook 移行候補の特定と設計（rules.ts 分析） | cc:完了 |
+| 19.1.3 | hooks.json に agent hook プロトタイプ追加（PreToolUse + Stop） | cc:完了 |
+| 19.1.4 | PostToolUse agent hook 追加（軽量自動コードレビュー） | cc:完了 |
+| 19.1.5 | agent hook 動作検証 + コスト実測 | cc:TODO |
+| 19.1.6 | 検証結果に基づく agent hook 最終判断 → D27 記録 | cc:TODO |
+
+### Phase 19.2: Feature Table「将来対応」実装格上げ + 調査 [P2] [P]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.2.1 | `worktree-create.sh` 新規作成（worktree 環境初期化） | cc:完了 |
+| 19.2.2 | `worktree-remove.sh` 新規作成（worktree クリーンアップ） | cc:完了 |
+| 19.2.3 | hooks.json に WorktreeCreate/Remove 両イベント登録 | cc:完了 |
+| 19.2.4 | `claude remote-control` 調査 → Research Preview、Breezing 不適合と判定 | cc:完了 |
+| 19.2.5 | remote-control 実装スキップ（19.2.4 結果: 将来対応維持） | cc:完了 |
+
+### Phase 19.3: ドキュメント・Feature Table 統合更新 [P3]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.3.1 | CLAUDE.md Feature Table を 2.1.68+ に更新、新機能行追加 | cc:完了 |
+| 19.3.2 | docs/CLAUDE-feature-table.md 統合更新（新機能・将来対応・参照修正） | cc:完了 |
+| 19.3.3 | decisions.md 更新（D15 修正 + D27 新規追加） | cc:完了 |
+| 19.3.4 | README.md + README_ja.md に Feature Table セクション新設 | cc:完了 |
+
+### Phase 19.4: 既存機能の活用強化 [P4] [P]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.4.1 | PostToolUse HTTP hook（metrics 収集テンプレート）追加 | cc:完了 |
+| 19.4.2 | PreCompact agent hook（WIP タスク警告）追加 | cc:完了 |
+| 19.4.3 | session-env-setup.sh 新規作成 + SessionStart 登録 | cc:完了 |
+| 19.4.4 | Auto-memory worktree 共有テスト（手動検証が必要） | cc:完了 |
+| 19.4.5 | hooks-editing.md タイムアウトガイドライン更新 | cc:完了 |
+
+### Phase 19.5: バージョン・品質・リリース [P5]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 19.5.1 | validate-plugin.sh + check-consistency.sh 全体検証 | cc:完了 |
+| 19.5.2 | VERSION バンプ 3.2.0 → 3.3.0 + plugin.json 同期 | cc:完了 |
+| 19.5.3 | CHANGELOG.md に [3.3.0] - 2026-03-05 追記 | cc:完了 |
+| 19.5.4 | GitHub Release 作成 | cc:WIP |

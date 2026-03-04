@@ -29,7 +29,7 @@ hooks/hooks.json           ← Source file (for development)
 
 ## Hook Types
 
-3 つのタイプが利用可能です: `command`（汎用）、`prompt`（Stop/SubagentStop 限定）、`http`（v2.1.63+ 外部連携）。
+4 つのタイプが利用可能です: `command`（汎用）、`http`（外部連携）、`prompt`（LLM 単一判断）、`agent`（LLM エージェント判断）。後者2つは v2.1.63+ で全イベント対応。
 
 ### command Type (General Purpose)
 
@@ -43,9 +43,9 @@ Available for all events:
 }
 ```
 
-### prompt Type (Stop/SubagentStop Only)
+### prompt Type
 
-**Official Support**: Only available for Stop and SubagentStop events
+**Official Support**: Available for all hook events (v2.1.63+)
 
 ```json
 {
@@ -62,6 +62,43 @@ Available for all events:
 ```
 
 ⚠️ **Note**: If you don't explicitly instruct JSON format in the prompt, the LLM may return natural language and cause a `JSON validation failed` error
+
+### agent Type (v2.1.63+)
+
+LLM エージェントにフックの判断を委任する新しいフック形式。Read, Grep, Glob ツールを使ってコードを分析し、許可/拒否を判断できる。
+
+```json
+{
+  "type": "agent",
+  "prompt": "Check if the code change introduces security vulnerabilities. $ARGUMENTS",
+  "model": "haiku",
+  "timeout": 60
+}
+```
+
+#### agent hook 専用フィールド
+
+| フィールド | 必須 | 説明 |
+|-----------|------|------|
+| `prompt` | Yes | エージェントに送るプロンプト。`$ARGUMENTS` でフック入力 JSON を参照 |
+| `model` | No | 使用モデル（デフォルト: fast model）。コスト管理のため `haiku` 推奨 |
+
+#### command hook との主な違い
+
+| 項目 | command hook | agent hook |
+|------|-------------|-----------|
+| 判断方式 | ルールベース（正規表現・条件分岐） | LLM がコンテキストを理解して判断 |
+| ツール | シェルコマンド | Read, Grep, Glob（副作用なし） |
+| コスト | 低（プロセス起動のみ） | 高（LLM 推論トークン消費） |
+| 適用場面 | 確定的なルール | コンテキスト依存の品質判断 |
+| 非同期 | `async: true` 対応 | 非対応 |
+
+#### コスト管理ガイドライン
+
+- matcher で対象を最小限に絞る（例: `Write|Edit` のみ）
+- `model: "haiku"` でコストを抑制
+- 1回あたりの推奨トークン上限: 2,000
+- 月間コスト超過時は command 型に rollback を検討
 
 ### http Type (v2.1.63+)
 
@@ -162,8 +199,21 @@ Execute command type via `run-script.js`:
 | Normal processing (cleanup) | 30-60s | File operations, git operations |
 | Heavy processing (test) | 60-120s | Test execution, builds |
 | External API integration | 60-180s | Codex reviews, etc. |
+| agent hook（LLM判断） | 30-60s | モデルとプロンプト量に依存。haiku なら30秒、sonnet なら60秒 |
+| http hook（外部連携） | 5-15s | ローカルサーバーは5秒、外部サービスは15秒。タイムアウト時はノンブロッキング |
 
 **Note**: Set timeouts according to processing nature. Don't make them unnecessarily long.
+
+#### agent hook 実測ガイドライン（haiku モデル）
+
+| プロンプト量 | 想定レイテンシ | 推奨 timeout |
+|------------|-------------|------------|
+| 〜500 tokens | 3-8s | 15s |
+| 〜1,000 tokens | 5-15s | 30s |
+| 〜2,000 tokens | 10-25s | 45s |
+| 2,000 tokens 超 | 非推奨 | — |
+
+コスト目安（haiku）: 100回/日のセッションで〜$0.01-0.05/日。月間$1-2未満が正常範囲。
 
 ### Recommended Values by Event Type
 
@@ -230,7 +280,6 @@ Execute only once per session:
 ## Prohibited
 
 - ❌ Editing only one hooks.json
-- ❌ Using `type: "prompt"` for events other than Stop/SubagentStop
 - ❌ Not instructing `{ok, reason}` schema for prompt type
 - ❌ Hooks without timeout
 - ❌ Absolute paths other than `${CLAUDE_PLUGIN_ROOT}`

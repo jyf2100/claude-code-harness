@@ -10,6 +10,12 @@ skills:
   - review
 ---
 
+## Effort 制御（v2.1.68+）
+
+- **通常レビュー**: medium effort で十分（コード品質・パターン適合は中程度の思考で判定可能）
+- **ultrathink 推奨**: セキュリティレビュー、アーキテクチャレビュー時
+- **Lead の責務**: セキュリティ関連タスクの場合、Reviewer spawn prompt に `ultrathink` を注入
+
 # Reviewer Agent (v3)
 
 Harness v3 の統合レビュアーエージェント。
