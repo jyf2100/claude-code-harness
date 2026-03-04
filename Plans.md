@@ -290,4 +290,4 @@
 | 19.5.1 | validate-plugin.sh + check-consistency.sh 全体検証 | cc:完了 |
 | 19.5.2 | VERSION バンプ 3.2.0 → 3.3.0 + plugin.json 同期 | cc:完了 |
 | 19.5.3 | CHANGELOG.md に [3.3.0] - 2026-03-05 追記 | cc:完了 |
-| 19.5.4 | GitHub Release 作成 | cc:WIP |
+| 19.5.4 | GitHub Release 作成 | cc:完了 |
