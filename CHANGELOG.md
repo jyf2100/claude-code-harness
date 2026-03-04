@@ -8,6 +8,32 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.2.0] - 2026-03-04
+
+### 🎯 What's Changed for You
+
+**TDD is now enabled by default for all tasks, and Windows users get automatic symlink repair on session start.**
+
+| Before | After |
+|--------|-------|
+| TDD only active with `[feature:tdd]` marker (opt-in) | TDD active by default; skip with `[skip:tdd]` (opt-out) |
+| Windows users: v3 skills not recognized (broken symlinks) | Auto-detected and repaired on session start |
+| Worker had no TDD phase in execution flow | TDD phase (Red→Green) integrated into Worker and Solo mode |
+
+### Added
+- **TDD-by-default**: TDD is now opt-out (`[skip:tdd]`) instead of opt-in (`[feature:tdd]`). All WIP tasks get TDD reminders unless explicitly skipped
+- **`--no-tdd` option**: Skip TDD phase in `/harness-work` execution
+- **Windows symlink auto-repair**: `fix-symlinks.sh` detects broken symlinks from Windows git clone and replaces them with directory copies
+- **Session-init Step 1.5**: Symlink health check runs automatically before skill discovery
+
+### Changed
+- **tdd-order-check.sh**: `has_tdd_wip_task()` split into `has_active_wip_task()` + `is_tdd_skipped()` for clearer logic
+- **harness-plan create.md**: Step 5.5 inverted from "TDD adoption criteria" to "TDD skip criteria"
+- **worker.md**: Execution flow expanded from 10 to 12 steps with TDD judgment and Red phase
+- **harness-work SKILL.md**: Solo mode expanded from 6 to 7 steps with TDD phase
+
+---
+
 ## [3.1.0] - 2026-03-03
 
 ### 🎯 What's Changed for You
