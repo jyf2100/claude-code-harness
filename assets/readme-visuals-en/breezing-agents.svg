@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" fill="none">
   <defs>
     <filter id="shBze"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#94a3b8" flood-opacity="0.12"/></filter>
-    <filter id="glBze"><feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <radialGradient id="tGle" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.04"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="0" stop-color="#F7931A" stop-opacity="0.04"/><stop offset="1" stop-color="#F7931A" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="640" height="260" rx="12" fill="#ffffff"/>
@@ -14,14 +13,14 @@
   <g filter="url(#shBze)" transform="translate(20, 30)">
     <rect x="0" y="0" width="180" height="200" rx="10" fill="#fafafa" stroke="#e2e8f0" stroke-width="1"/>
     <text x="90" y="20" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="1">PHASE 0</text>
-    <text x="90" y="36" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="11" font-weight="700" fill="#7c3aed">Plan Discussion</text>
+    <text x="90" y="36" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="11" font-weight="700" fill="#F7931A">Plan Discussion</text>
 
     <!-- Planner -->
     <g transform="translate(36, 68)">
-      <circle cx="0" cy="0" r="20" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1"/>
-      <circle cx="0" cy="-5" r="5" fill="none" stroke="#7c3aed" stroke-width="1"/>
-      <path d="M-8 6 Q-8 2 0 0 Q8 2 8 6" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.5"/>
-      <text x="0" y="28" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="8" fill="#7c3aed">Planner</text>
+      <circle cx="0" cy="0" r="20" fill="#FFF7ED" stroke="#FDBA74" stroke-width="1"/>
+      <circle cx="0" cy="-5" r="5" fill="none" stroke="#F7931A" stroke-width="1"/>
+      <path d="M-8 6 Q-8 2 0 0 Q8 2 8 6" fill="none" stroke="#F7931A" stroke-width="1" opacity="0.5"/>
+      <text x="0" y="28" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="8" fill="#F7931A">Planner</text>
     </g>
 
     <!-- Critic -->
@@ -34,10 +33,10 @@
 
     <!-- Discussion -->
     <g opacity="0.5">
-      <path d="M56 62 L120 62" stroke="#7c3aed" stroke-width="0.8"/>
+      <path d="M56 62 L120 62" stroke="#F7931A" stroke-width="0.8"/>
       <path d="M120 74 L56 74" stroke="#dc2626" stroke-width="0.8"/>
-      <rect x="62" y="50" width="56" height="14" rx="3" fill="#f5f3ff" stroke="#ede9fe" stroke-width="0.5"/>
-      <text x="90" y="60" text-anchor="middle" font-family="monospace" font-size="6" fill="#7c3aed">Scope OK?</text>
+      <rect x="62" y="50" width="56" height="14" rx="3" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.5"/>
+      <text x="90" y="60" text-anchor="middle" font-family="monospace" font-size="6" fill="#F7931A">Scope OK?</text>
       <rect x="62" y="76" width="56" height="14" rx="3" fill="#fef2f2" stroke="#fecaca" stroke-width="0.5"/>
       <text x="90" y="86" text-anchor="middle" font-family="monospace" font-size="6" fill="#dc2626">Risk found</text>
     </g>
@@ -53,64 +52,64 @@
   </g>
 
   <!-- Arrow Phase 0 -> 1 -->
-  <g filter="url(#glBze)">
-    <path d="M200 130 L234 130" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
-    <polygon points="232,126 240,130 232,134" fill="#7c3aed" opacity="0.5"/>
+  <g>
+    <path d="M200 130 L234 130" stroke="#F7931A" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
+    <polygon points="232,126 240,130 232,134" fill="#F7931A" opacity="0.5"/>
   </g>
 
   <!-- Phase 1 -->
   <g filter="url(#shBze)" transform="translate(242, 30)">
     <rect x="0" y="0" width="180" height="200" rx="10" fill="#fafafa" stroke="#e2e8f0" stroke-width="1"/>
     <text x="90" y="20" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="1">PHASE 1</text>
-    <text x="90" y="36" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="11" font-weight="700" fill="#2563eb">Parallel Work</text>
+    <text x="90" y="36" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="11" font-weight="700" fill="#EA580C">Parallel Work</text>
 
     <!-- Lead -->
     <g transform="translate(90, 64)">
-      <circle cx="0" cy="0" r="16" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-      <text x="0" y="4" text-anchor="middle" font-size="8" font-weight="700" fill="#2563eb">L</text>
-      <text x="0" y="24" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="7" fill="#2563eb">Lead</text>
+      <circle cx="0" cy="0" r="16" fill="#FFF7ED" stroke="#FDBA74" stroke-width="1"/>
+      <text x="0" y="4" text-anchor="middle" font-size="8" font-weight="700" fill="#F7931A">L</text>
+      <text x="0" y="24" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="7" fill="#F7931A">Lead</text>
     </g>
 
     <!-- Fan out -->
     <g opacity="0.4">
-      <line x1="80" y1="80" x2="30" y2="110" stroke="#2563eb" stroke-width="0.6" stroke-dasharray="2 2"/>
-      <line x1="90" y1="82" x2="90" y2="110" stroke="#2563eb" stroke-width="0.6" stroke-dasharray="2 2"/>
-      <line x1="100" y1="80" x2="150" y2="110" stroke="#2563eb" stroke-width="0.6" stroke-dasharray="2 2"/>
+      <line x1="80" y1="80" x2="30" y2="110" stroke="#F7931A" stroke-width="0.6" stroke-dasharray="2 2"/>
+      <line x1="90" y1="82" x2="90" y2="110" stroke="#F7931A" stroke-width="0.6" stroke-dasharray="2 2"/>
+      <line x1="100" y1="80" x2="150" y2="110" stroke="#F7931A" stroke-width="0.6" stroke-dasharray="2 2"/>
     </g>
 
     <!-- Workers -->
     <g transform="translate(30, 124)">
-      <circle cx="0" cy="0" r="12" fill="#eef2ff" stroke="#c7d2fe" stroke-width="0.8"/>
-      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#4f46e5">W1</text>
+      <circle cx="0" cy="0" r="12" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.8"/>
+      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#F7931A">W1</text>
       <text x="0" y="18" text-anchor="middle" font-family="monospace" font-size="6" fill="#94a3b8">Task 1</text>
     </g>
     <g transform="translate(90, 124)">
-      <circle cx="0" cy="0" r="12" fill="#eef2ff" stroke="#c7d2fe" stroke-width="0.8"/>
-      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#4f46e5">W2</text>
+      <circle cx="0" cy="0" r="12" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.8"/>
+      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#EA580C">W2</text>
       <text x="0" y="18" text-anchor="middle" font-family="monospace" font-size="6" fill="#94a3b8">Task 2</text>
     </g>
     <g transform="translate(150, 124)">
-      <circle cx="0" cy="0" r="12" fill="#eef2ff" stroke="#c7d2fe" stroke-width="0.8"/>
-      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#4f46e5">W3</text>
+      <circle cx="0" cy="0" r="12" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.8"/>
+      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#D97706">W3</text>
       <text x="0" y="18" text-anchor="middle" font-family="monospace" font-size="6" fill="#94a3b8">Task 3</text>
     </g>
 
     <!-- Reviewer -->
     <g transform="translate(90, 176)">
-      <circle cx="0" cy="0" r="12" fill="#f0fdfa" stroke="#99f6e4" stroke-width="0.8"/>
-      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#0d9488">R</text>
+      <circle cx="0" cy="0" r="12" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.8"/>
+      <text x="0" y="3" text-anchor="middle" font-size="7" font-weight="600" fill="#B45309">R</text>
     </g>
     <g opacity="0.3">
-      <line x1="30" y1="138" x2="82" y2="168" stroke="#0d9488" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <line x1="90" y1="138" x2="90" y2="164" stroke="#0d9488" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <line x1="150" y1="138" x2="98" y2="168" stroke="#0d9488" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <line x1="30" y1="138" x2="82" y2="168" stroke="#B45309" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <line x1="90" y1="138" x2="90" y2="164" stroke="#B45309" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <line x1="150" y1="138" x2="98" y2="168" stroke="#B45309" stroke-width="0.5" stroke-dasharray="2 2"/>
     </g>
   </g>
 
   <!-- Arrow Phase 1 -> Result -->
-  <g filter="url(#glBze)">
-    <path d="M422 130 L456 130" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
-    <polygon points="454,126 462,130 454,134" fill="#0891b2" opacity="0.5"/>
+  <g>
+    <path d="M422 130 L456 130" stroke="#F7931A" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
+    <polygon points="454,126 462,130 454,134" fill="#F7931A" opacity="0.5"/>
   </g>
 
   <!-- Result -->
@@ -126,5 +125,5 @@
   </g>
 
   <!-- Bottom -->
-  <text x="320" y="252" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="10" fill="#64748b"><tspan font-family="monospace" fill="#7c3aed">/breezing all</tspan><tspan> — Autonomous agent teams from plan to production</tspan></text>
+  <text x="320" y="252" text-anchor="middle" font-family="-apple-system, 'Hiragino Sans', sans-serif" font-size="10" fill="#64748b"><tspan font-family="monospace" fill="#F7931A">/breezing all</tspan><tspan> — Autonomous agent teams from plan to production</tspan></text>
 </svg>

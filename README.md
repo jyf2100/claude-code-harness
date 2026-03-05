@@ -29,33 +29,6 @@ Claude Code is powerful—but without structure, it can be unpredictable.
   <img src="assets/readme-visuals-en/generated/hero-comparison.svg" alt="Without vs With Harness" width="720">
 </p>
 
-<table>
-<tr>
-<td width="50%">
-
-### Without Harness
-
-- Jumps into code immediately
-- Reviews only when asked
-- Forgets past decisions
-- `rm -rf` runs without warning
-- One task at a time
-
-</td>
-<td width="50%">
-
-### With Harness
-
-- **Plans first**, then executes
-- **Auto-reviews** every change
-- **SSOT files** preserve context
-- Dangerous commands **blocked**
-- **Parallel workers** simultaneously
-
-</td>
-</tr>
-</table>
-
 **Three commands. One workflow. Production-ready code.**
 
 ```mermaid
@@ -105,15 +78,6 @@ That's it. Start with `/plan-with-agent`.
 
 **One command. Harness does the rest.** Plan → Parallel Implementation → Review → Commit.
 
-```mermaid
-graph LR
-    A["/work all"] --> B["Generate Plan"]
-    B --> C["Parallel Implementation"]
-    C --> D["Self-Review"]
-    D --> E["Quality Gate"]
-    E --> F["Auto-Commit"]
-```
-
 <p align="center">
   <img src="assets/readme-visuals-en/work-all-flow.svg" alt="/work all pipeline" width="700">
 </p>
@@ -161,6 +125,10 @@ Each worker implements, self-reviews, and reports.
 ```bash
 /harness-review
 ```
+
+<p align="center">
+  <img src="assets/readme-visuals-en/review-perspectives.svg" alt="4-perspective review" width="640">
+</p>
 
 | Perspective | Focus |
 |-------------|-------|

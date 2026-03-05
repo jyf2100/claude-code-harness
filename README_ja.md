@@ -26,35 +26,8 @@
 Claude Code は強力だが、時に構造が必要になる。
 
 <p align="center">
-  <img src="assets/readme-visuals-en/generated/hero-comparison.svg" alt="ハーネスなし vs ハーネスあり" width="720">
+  <img src="assets/readme-visuals-ja/generated/hero-comparison.svg" alt="ハーネスなし vs ハーネスあり" width="720">
 </p>
-
-<table>
-<tr>
-<td width="50%">
-
-### ハーネスなし
-
-- すぐにコードを書き始める
-- 頼まれたときだけレビュー
-- 過去の決定を忘れる
-- `rm -rf` が警告なく実行される
-- 一度に1タスク
-
-</td>
-<td width="50%">
-
-### ハーネスあり
-
-- **まず計画**、それから実行
-- 全ての変更を**自動レビュー**
-- **SSOT ファイル**でコンテキストを保持
-- 危険なコマンドを**ブロック**
-- **並列ワーカー**で同時実行
-
-</td>
-</tr>
-</table>
 
 **3つのコマンド。1つのワークフロー。本番品質のコード。**
 
@@ -105,15 +78,6 @@ claude
 
 **このひと言で、Harness が全部やる。** 計画 → 並列実装 → レビュー → コミット。
 
-```mermaid
-graph LR
-    A["/work all"] --> B["計画生成"]
-    B --> C["並列実装"]
-    C --> D["セルフレビュー"]
-    D --> E["品質チェック"]
-    E --> F["自動コミット"]
-```
-
 <p align="center">
   <img src="assets/readme-visuals-ja/work-all-flow.svg" alt="/work all パイプライン" width="700">
 </p>
@@ -130,7 +94,7 @@ graph LR
 ## コアループ（詳細）
 
 <p align="center">
-  <img src="assets/readme-visuals-en/generated/core-loop.svg" alt="Plan → Work → Review サイクル" width="560">
+  <img src="assets/readme-visuals-ja/generated/core-loop.svg" alt="Plan → Work → Review サイクル" width="560">
 </p>
 
 ### 1. Plan（計画）
@@ -162,6 +126,10 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 /harness-review
 ```
 
+<p align="center">
+  <img src="assets/readme-visuals-ja/review-perspectives.svg" alt="4視点レビュー" width="640">
+</p>
+
 | 視点 | 焦点 |
 |------|------|
 | Security | 脆弱性、インジェクション、認証 |
@@ -174,7 +142,7 @@ Harness が明確な受入条件付きの `Plans.md` を作成。
 ## セーフティファースト
 
 <p align="center">
-  <img src="assets/readme-visuals-en/generated/safety-guardrails.svg" alt="安全保護システム" width="640">
+  <img src="assets/readme-visuals-ja/generated/safety-guardrails.svg" alt="安全保護システム" width="640">
 </p>
 
 Harness v3 は **TypeScript ガードレールエンジン**（`core/`）でコードベースを保護 — 9つの宣言的ルール（R01–R09）、コンパイル済み＆型チェック済み:
