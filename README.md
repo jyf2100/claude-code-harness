@@ -403,18 +403,18 @@ Harness leverages the latest Claude Code features out of the box.
 
 | Feature | Skill | Purpose |
 |---------|-------|---------|
-| **Agent Memory** | task-worker, code-reviewer | Persistent learning across sessions |
+| **Agent Memory** | harness-work, harness-review | Persistent learning across sessions |
 | **TeammateIdle/TaskCompleted Hook** | breezing | Automated team monitoring |
 | **Worktree isolation** | breezing | Safe parallel writes to the same file |
 | **HTTP hooks** | hooks | JSON POST to Slack, dashboards, metrics |
 | **Effort levels + ultrathink** | harness-work | Auto-injects ultrathink for complex tasks |
 | **Agent hooks** | hooks | LLM-powered code quality guards (secrets, TODO stubs, security) |
-| **`${CLAUDE_SKILL_DIR}` variable** | all skills | Stable references to skill-local docs |
+| **`${CLAUDE_SKILL_DIR}` variable** | all harness-* skills | Stable references to skill-local docs |
 | **InstructionsLoaded hook** | hooks | Pre-session instruction-load tracking |
 | **`agent_id` / `agent_type` fields** | hooks, breezing | Robust teammate identity and role guard |
 | **`{"continue": false}` teammate response** | breezing | Auto-stop when all assigned tasks are complete |
-| **`/reload-plugins`** | all skills | Apply skill/hook edits immediately |
-| **`includeGitInstructions: false`** | work, breezing | Lower token cost on git-light tasks |
+| **`/reload-plugins`** | all harness-* skills | Apply skill/hook edits immediately |
+| **`includeGitInstructions: false`** | harness-work, breezing | Lower token cost on git-light tasks |
 | **WorktreeCreate/Remove hook** | breezing | Worktree lifecycle auto-setup and cleanup |
 
 Full list: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)

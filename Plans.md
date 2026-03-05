@@ -372,6 +372,7 @@
 | 20.2.3 | モデル参照の確認: Sonnet 4.5 → 4.6 自動マイグレーションに関する注記追加（既に参照は更新済みだが、ドキュメント上で明記） | cc:完了 |
 | 20.2.4 | `includeGitInstructions: false` 設定の活用検討・ドキュメント化。Breezing Worker で git instructions 不要なケースを特定 | cc:完了 |
 | 20.2.5 | `.claude/memory/decisions.md` 更新: D29 として 2.1.69 対応の設計判断を記録 | cc:完了 |
+| 20.2.6 | `README.md` / `README_ja.md` の「Claude Code 2.1.69+ Features」表で Skills 列の旧表記（task-worker/work/all skills）を現行の `harness-*` 系に更新 | cc:完了 |
 
 ### Phase 20.3: Breezing・Plugin・チーム構成更新 [P3]
 
@@ -392,3 +393,4 @@
 | 20.4.2 | VERSION バンプ + plugin.json 同期（3.3.1 → 3.4.0） | cc:完了 |
 | 20.4.3 | CHANGELOG.md に [3.4.0] - 2026-03-06 追記 | cc:完了 |
 | 20.4.4 | GitHub Release 作成 + X 告知文生成（前セッションで作成済みの画像を活用） | cc:完了 |
+| 20.4.5 | README/README_ja の 2.1.69+ Skills 表記修正をパッチリリース（3.4.1）として反映（version/changelog/tag/release） | cc:完了 |

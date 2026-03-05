@@ -407,18 +407,18 @@ Harness は最新の Claude Code 機能をすぐに活用できます。
 
 | 機能 | スキル | 用途 |
 |------|--------|------|
-| **Agent Memory** | task-worker, code-reviewer | セッション間の永続的な学習 |
+| **Agent Memory** | harness-work, harness-review | セッション間の永続的な学習 |
 | **TeammateIdle/TaskCompleted Hook** | breezing | チームの自動監視 |
 | **Worktree 分離** | breezing | 同一ファイルへの並列書き込みを安全化 |
 | **HTTP hooks** | hooks | Slack・ダッシュボード・メトリクスへの JSON POST |
 | **Effort levels + ultrathink** | harness-work | 複雑なタスクに ultrathink を自動注入 |
 | **Agent hooks** | hooks | LLM によるコード品質ガード（secrets・TODO スタブ・セキュリティ） |
-| **`${CLAUDE_SKILL_DIR}` 変数** | 全スキル | スキル内参照の実行環境依存を排除 |
+| **`${CLAUDE_SKILL_DIR}` 変数** | 全 harness-* スキル | スキル内参照の実行環境依存を排除 |
 | **InstructionsLoaded hook** | hooks | セッション前の instructions 読み込み追跡 |
 | **`agent_id` / `agent_type` フィールド** | hooks, breezing | teammate 識別とロールガードを安定化 |
 | **`{"continue": false}` teammate 応答** | breezing | 担当タスク完了時の自動停止 |
-| **`/reload-plugins`** | 全スキル | スキル/フック編集を即時反映 |
-| **`includeGitInstructions: false`** | work, breezing | git 指示が不要なタスクでトークン削減 |
+| **`/reload-plugins`** | 全 harness-* スキル | スキル/フック編集を即時反映 |
+| **`includeGitInstructions: false`** | harness-work, breezing | git 指示が不要なタスクでトークン削減 |
 | **WorktreeCreate/Remove hook** | breezing | Worktree ライフサイクルの自動セットアップ・クリーンアップ |
 
 全機能一覧: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
