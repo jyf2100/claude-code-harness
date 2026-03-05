@@ -316,6 +316,8 @@ ensure_multi_agent_defaults() {
 
     if [ ! -f "$cfg" ]; then
         cat > "$cfg" <<'CFG'
+# Codex Team Config (Codex CLI 0.110.0+)
+
 [features]
 multi_agent = true
 
@@ -327,12 +329,14 @@ description = "Codex implementation worker for harness task execution"
 
 [agents.reviewer]
 description = "Codex reviewer worker for harness review and retake loops"
+sandbox = "workspace-read-only"
 
 [agents.task_worker]
 description = "Standard Breezing implementer (impl_mode: standard). Implements tasks, runs self-review, build, and tests."
 
 [agents.code_reviewer]
 description = "Breezing reviewer. Performs independent code review with harness-review 4-point assessment. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
+sandbox = "workspace-read-only"
 
 [agents.codex_implementer]
 description = "Codex Breezing implementer (impl_mode: codex, used with --codex flag). Invokes Codex CLI, verifies AGENTS_SUMMARY, enforces Quality Gates."
@@ -342,12 +346,21 @@ description = "Claude CLI delegated implementation worker (used when --claude)"
 
 [agents.claude_reviewer]
 description = "Claude CLI delegated reviewer worker (used when --claude)"
+sandbox = "workspace-read-only"
 
 [agents.plan_analyst]
 description = "Phase 0 planning analyst: analyzes task granularity, estimates owns files, proposes dependencies, and evaluates risk. Read-only access to codebase."
+sandbox = "workspace-read-only"
 
 [agents.plan_critic]
 description = "Phase 0 plan critic: red-teaming review of task decomposition. Checks goal coverage, granularity, dependency accuracy, parallelism, and risk. Read-only access."
+sandbox = "workspace-read-only"
+
+[memories]
+no_memories_if_mcp_or_web_search = false
+
+[notify]
+after_agent = "echo '[HARNESS-LEARNING] Session completed' >> .claude/state/session-log.txt"
 CFG
         log_ok "Created $cfg with multi_agent + harness role defaults"
         return
@@ -384,6 +397,7 @@ CFG
 
 [agents.reviewer]
 description = "Codex reviewer worker for harness review and retake loops"
+sandbox = "workspace-read-only"
 CFG
     fi
 
@@ -400,6 +414,7 @@ CFG
 
 [agents.claude_reviewer]
 description = "Claude CLI delegated reviewer worker (used when --claude)"
+sandbox = "workspace-read-only"
 CFG
     fi
 
@@ -416,6 +431,7 @@ CFG
 
 [agents.code_reviewer]
 description = "Breezing reviewer. Performs independent code review with harness-review 4-point assessment. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
+sandbox = "workspace-read-only"
 CFG
     fi
 
@@ -432,6 +448,7 @@ CFG
 
 [agents.plan_analyst]
 description = "Phase 0 planning analyst: analyzes task granularity, estimates owns files, proposes dependencies, and evaluates risk. Read-only access to codebase."
+sandbox = "workspace-read-only"
 CFG
     fi
 
@@ -440,7 +457,28 @@ CFG
 
 [agents.plan_critic]
 description = "Phase 0 plan critic: red-teaming review of task decomposition. Checks goal coverage, granularity, dependency accuracy, parallelism, and risk. Read-only access."
+sandbox = "workspace-read-only"
 CFG
+    fi
+
+    # [memories] section (0.110.0+)
+    if ! grep -q '^\[memories\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[memories]
+no_memories_if_mcp_or_web_search = false
+CFG
+        log_ok "Added [memories] defaults to $cfg"
+    fi
+
+    # [notify] section
+    if ! grep -q '^\[notify\]' "$cfg"; then
+        cat >> "$cfg" <<'CFG'
+
+[notify]
+after_agent = "echo '[HARNESS-LEARNING] Session completed' >> .claude/state/session-log.txt"
+CFG
+        log_ok "Added [notify] defaults to $cfg"
     fi
 }
 

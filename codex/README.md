@@ -4,7 +4,46 @@ Codex CLI compatible distribution of Claude Code Harness.
 
 ## Setup
 
-### Option 1: Script (recommended, user-based)
+### Option 0: Path-based loading (recommended, Codex 0.110.0+)
+
+No file copy needed. Add skill paths directly to `config.toml`:
+
+```bash
+git clone https://github.com/Chachamaru127/claude-code-harness.git
+
+# Add to ~/.codex/config.toml (or .codex/config.toml for project-local):
+cat >> "${CODEX_HOME:-$HOME/.codex}/config.toml" <<TOML
+
+# Harness skills (path-based, no copy needed)
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-work"
+enabled = true
+
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-plan"
+enabled = true
+
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-review"
+enabled = true
+
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-release"
+enabled = true
+
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-setup"
+enabled = true
+
+[[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/breezing"
+enabled = true
+TOML
+```
+
+This loads skills directly from the cloned repo — `git pull` updates them in place.
+
+### Option 1: Script (full install, user-based)
 
 ```bash
 # Default: install to CODEX_HOME (user-based)
