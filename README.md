@@ -33,9 +33,9 @@ Claude Code is powerful—but without structure, it can be unpredictable.
 
 ```mermaid
 graph LR
-    A[Your Idea] --> B["/plan-with-agent"]
+    A[Your Idea] --> B["/harness-plan"]
     B --> C["Plans.md"]
-    C --> D["/work"]
+    C --> D["/harness-work"]
     D --> E["Code + Self-Review"]
     E --> F["/harness-review"]
     F --> G["Ship It"]
@@ -61,10 +61,10 @@ claude
 /plugin install claude-code-harness@claude-code-harness-marketplace
 
 # Initialize your project
-/harness-init
+/harness-setup
 ```
 
-That's it. Start with `/plan-with-agent`.
+That's it. Start with `/harness-plan`.
 
 ---
 
@@ -73,7 +73,7 @@ That's it. Start with `/plan-with-agent`.
 **Don't want to read all this?** Just type:
 
 ```
-/work all
+/harness-work all
 ```
 
 **One command. Harness does the rest.** Plan → Parallel Implementation → Review → Commit.
@@ -84,7 +84,7 @@ That's it. Start with `/plan-with-agent`.
 
 | Before | After |
 |--------|-------|
-| `/plan-with-agent` → `/work` → `/harness-review` → `git commit` | `/work all` |
+| `/harness-plan` → `/harness-work` → `/harness-review` → `git commit` | `/harness-work all` |
 | 4 commands | **1** |
 
 > ⚠️ **Experimental**: Once you approve the plan, Claude runs to completion. Quality gate blocks commit if issues found.
@@ -100,7 +100,7 @@ That's it. Start with `/plan-with-agent`.
 ### 1. Plan
 
 ```bash
-/plan-with-agent
+/harness-plan
 ```
 
 > "I want a login form with email validation"
@@ -110,8 +110,8 @@ Harness creates `Plans.md` with clear acceptance criteria.
 ### 2. Work
 
 ```bash
-/work              # Auto-detect parallelism
-/work --parallel 5 # 5 workers simultaneously
+/harness-work              # Auto-detect parallelism
+/harness-work --parallel 5 # 5 workers simultaneously
 ```
 
 Each worker implements, self-reviews, and reports.
@@ -228,9 +228,9 @@ claude-code-harness/
 Run entire task lists with autonomous agent teams:
 
 ```bash
-/breezing all                    # Plan review + parallel implementation
-/breezing --no-discuss all       # Skip plan review, go straight to coding
-/breezing --codex all            # Delegate to Codex engine
+/harness-work breezing all                    # Plan review + parallel implementation
+/harness-work breezing --no-discuss all       # Skip plan review, go straight to coding
+/harness-work breezing --codex all            # Delegate to Codex engine
 ```
 
 <p align="center">
@@ -256,7 +256,7 @@ Run entire task lists with autonomous agent teams:
 Delegate implementation tasks to OpenAI Codex in parallel:
 
 ```bash
-/work --codex implement these 5 API endpoints
+/harness-work --codex implement these 5 API endpoints
 ```
 
 Codex implements → Self-reviews → Reports back. Works alongside Claude Code workers.
@@ -285,7 +285,7 @@ cd /path/to/your-project
 codex
 ```
 
-Once inside Codex, use `$plan-with-agent`, `$work`, `$breezing`, and `$harness-review`.
+Once inside Codex, use `$harness-plan`, `$harness-work`, `$breezing`, and `$harness-review`.
 
 | Flag | Description |
 |------|-------------|
@@ -302,7 +302,7 @@ Once inside Codex, use `$plan-with-agent`, `$work`, `$breezing`, and `$harness-r
 Use Cursor as PM, Claude Code as implementer.
 
 ```bash
-/handoff       # Report to Cursor PM
+/harness-release handoff  # Report to Cursor PM
 ```
 
 Plans.md syncs between both.
@@ -315,7 +315,7 @@ Plans.md syncs between both.
 Add OpenAI Codex for second opinions:
 
 ```bash
-/harness-review  # 4 perspectives + Codex CLI
+/harness-review --codex  # 4 perspectives + Codex CLI
 ```
 
 Codex selects 4 relevant experts from 16 specialist types via `codex exec`.
@@ -379,7 +379,7 @@ No setup required—enabled by default.
 
 | Issue | Solution |
 |-------|----------|
-| Command not found | Run `/harness-init` first |
+| Command not found | Run `/harness-setup` first |
 | Plugin not loading | Clear cache: `rm -rf ~/.claude/plugins/cache/claude-code-harness-marketplace/` and restart |
 | Hooks not working | Ensure Node.js 18+ is installed |
 
