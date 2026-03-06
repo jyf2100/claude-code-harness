@@ -37,6 +37,10 @@ We do **not** maintain a full version-by-version support matrix in the README. T
 - Hook shims in [`hooks/`](../hooks)
 - Packaging and mirror checks enforced by CI
 
+## Windows Checkout Note
+
+On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*` command skills are therefore shipped as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/` so they still appear in command lists after checkout. Session start repair still handles broken extension links inside `skills-v3/extensions/`.
+
 ## What Requires Extra Validation
 
 These flows are supported, but they depend on extra tools or environment setup and should be verified in your own environment:

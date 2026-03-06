@@ -522,3 +522,21 @@
 | 22.0.12 | README 冒頭の Hero / Why Harness を磨き、導入価値が一目で伝わるコピーと SVG に整理する | cc:完了 |
 | 22.0.13 | README 比較節の凡例ズレを解消し、SVG ベースの見せ方に合わせて導入文を整理する | cc:完了 |
 | 22.0.14 | evidence runner の終了コード取得バグを修正し、failure/success full の判定が実結果と一致するようにする | cc:完了 |
+
+---
+
+## Phase 23: Windows command reflection fix
+
+### 完了条件
+
+1. Windows の `core.symlinks=false` 環境でも `harness-plan` / `harness-work` / `harness-review` / `harness-release` / `harness-setup` が command 一覧に出る前提の repo 構成になっている
+2. `skills/` / `codex/.codex/skills/` / `opencode/skills/` の公開 5 skill が symlink 破損で見えなくならず、ソース skill と同期確認できる
+3. README / compatibility docs / validation scripts が新しい mirror 運用を前提に更新されている
+
+### Phase 23.0: Windows 入口修正 [P0] [bugfix]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 23.0.1 | 公開 5 skill の配布形を symlink 依存から外し、Windows checkout でも command 一覧に出る mirror 構成へ移行 | cc:完了 |
+| 23.0.2 | `check-consistency` / `validate-plugin-v3` / 必要な package tests を mirror 内容一致前提へ更新 | cc:完了 |
+| 23.0.3 | README / compatibility docs に Windows 向けの短い説明と復旧不要になった点を反映 | cc:完了 |

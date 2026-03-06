@@ -88,12 +88,13 @@ for skill in "${V3_SKILLS[@]}"; do
 done
 
 # ============================================================
-# [3] Symlink チェック
+# [3] Public mirror bundle チェック
 # ============================================================
 echo ""
-echo "🔗 [3/6] Symlink チェック..."
+echo "📦 [3/6] Public mirror bundle チェック..."
 
 MIRRORS=(
+  "skills"
   "codex/.codex/skills"
   "opencode/skills"
 )
@@ -105,12 +106,23 @@ for mirror_dir in "${MIRRORS[@]}"; do
   fi
 
   for skill in "${V3_SKILLS[@]}"; do
-    link="$PLUGIN_ROOT/$mirror_dir/$skill"
-    if [ -L "$link" ]; then
-      target=$(readlink "$link")
-      pass_test "$mirror_dir/$skill → $target"
+    source_dir="$PLUGIN_ROOT/skills-v3/$skill"
+    mirror_path="$PLUGIN_ROOT/$mirror_dir/$skill"
+
+    if [ ! -d "$mirror_path" ]; then
+      fail_test "$mirror_dir/$skill (ディレクトリなし)"
+      continue
+    fi
+
+    if [ -L "$mirror_path" ]; then
+      fail_test "$mirror_dir/$skill (symlink のまま)"
+      continue
+    fi
+
+    if diff -qr "$source_dir" "$mirror_path" >/dev/null 2>&1; then
+      pass_test "$mirror_dir/$skill (skills-v3/$skill と同期)"
     else
-      fail_test "$mirror_dir/$skill (symlink でない)"
+      fail_test "$mirror_dir/$skill (skills-v3/$skill と差分あり)"
     fi
   done
 done

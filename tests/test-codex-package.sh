@@ -162,6 +162,15 @@ else
   log_fail "Missing path-based core skills"
 fi
 
+log_test "Public v3 skill mirrors stay in sync"
+if ./scripts/sync-v3-skill-mirrors.sh --check >/tmp/codex-skill-mirrors.$$ 2>&1; then
+  log_pass "Public skill mirrors match skills-v3"
+else
+  cat /tmp/codex-skill-mirrors.$$ | sed 's/^/  /'
+  log_fail "Public skill mirrors drifted from skills-v3"
+fi
+rm -f /tmp/codex-skill-mirrors.$$ || true
+
 log_test "Non-breezing Codex skills are CLI-only"
 cli_only_targets=(
   "codex/.codex/skills/harness-work/SKILL.md"

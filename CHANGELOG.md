@@ -6,6 +6,9 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+- Windows checkout with `core.symlinks=false` no longer hides `harness-*` command skills before SessionStart runs. Public skill bundles are mirrored as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/`.
+
 ---
 
 ## [3.4.2] - 2026-03-06

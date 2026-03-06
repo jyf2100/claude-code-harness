@@ -1,10 +1,10 @@
 #!/bin/bash
 # fix-symlinks.sh
-# Windows 環境で壊れた symlink を検出し、実体コピーで自動修復する
+# Windows 環境で壊れた symlink / plain-text link projection を検出し、実体コピーで自動修復する
 #
 # 用途: session-init.sh から呼び出し
 # 動作:
-#   - skills/ 内の v3 スキル symlink が通常ファイルになっている場合（Windows git clone）
+#   - skills/ 内の公開 harness-* skill が通常ファイルになっている場合（古い Windows checkout）
 #   - skills-v3/ から実体コピーで置き換える
 #   - 修復件数を stdout に出力（JSON 形式）
 #
@@ -19,7 +19,7 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SKILLS_DIR="$PLUGIN_ROOT/skills"
 SKILLS_V3_DIR="$PLUGIN_ROOT/skills-v3"
 
-# v3 スキル一覧（skills/ → skills-v3/ の symlink）
+# 公開 5 skill 一覧（skills/ mirror bundle）
 V3_SKILLS=("harness-plan" "harness-work" "harness-review" "harness-setup" "harness-release")
 
 FIXED=0
@@ -36,7 +36,7 @@ for skill in "${V3_SKILLS[@]}"; do
     continue
   fi
 
-  # 壊れた symlink: 通常ファイルとして存在（Windows git clone で発生）
+  # 壊れた plain-text link: 通常ファイルとして存在（Windows git clone で発生）
   if [ -f "$skill_path" ]; then
     # 修復元が存在するか確認
     if [ -d "$source_path" ]; then

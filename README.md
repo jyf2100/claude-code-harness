@@ -408,6 +408,7 @@ Skill packs can teach a prompt. Harness also enforces behavior at runtime.
 | Issue | Solution |
 |-------|----------|
 | Command not found | Run `/harness-setup` first |
+| `harness-*` commands missing on Windows | Update or reinstall the plugin. Public command skills now ship as real directories, so `core.symlinks=false` no longer hides them. |
 | Plugin not loading | Clear cache: `rm -rf ~/.claude/plugins/cache/claude-code-harness-marketplace/` and restart |
 | Hooks not working | Ensure Node.js 18+ is installed |
 

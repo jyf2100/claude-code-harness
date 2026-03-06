@@ -324,41 +324,54 @@ else
 fi
 
 # ================================
-# 10. v3 スキル Symlink チェック
+# 10. v3 スキル Mirror チェック
 # ================================
 echo ""
-echo "🔗 [10/12] v3 スキル Symlink チェック..."
+echo "📦 [10/12] v3 スキル Mirror チェック..."
 
 V3_SKILLS_DIR="$PLUGIN_ROOT/skills-v3"
+CLAUDE_MIRROR="$PLUGIN_ROOT/skills"
 CODEX_MIRROR="$PLUGIN_ROOT/codex/.codex/skills"
 OPENCODE_MIRROR="$PLUGIN_ROOT/opencode/skills"
 MIRROR_ISSUES=0
 
-# v3 コアスキル（5動詞 harness- prefix）の symlink チェック
+# v3 コアスキル（5動詞 harness- prefix）の mirror チェック
 V3_CORE_SKILLS="harness-plan harness-work harness-review harness-release harness-setup"
 
 if [ -d "$V3_SKILLS_DIR" ]; then
   for skill in $V3_CORE_SKILLS; do
-    # codex/.codex/skills/ のチェック
-    if [ -d "$CODEX_MIRROR" ]; then
-      link="$CODEX_MIRROR/$skill"
-      if [ -L "$link" ]; then
-        echo "  ✅ codex: $skill → $(readlink "$link")"
+    src="$V3_SKILLS_DIR/$skill"
+    for mirror_name in claude codex opencode; do
+      case "$mirror_name" in
+        claude) mirror_root="$CLAUDE_MIRROR" ;;
+        codex) mirror_root="$CODEX_MIRROR" ;;
+        opencode) mirror_root="$OPENCODE_MIRROR" ;;
+      esac
+
+      if [ ! -d "$mirror_root" ]; then
+        continue
+      fi
+
+      mirror_path="$mirror_root/$skill"
+      if [ ! -d "$mirror_path" ]; then
+        echo "  ❌ $mirror_name: $skill がディレクトリとして存在しません"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+        continue
+      fi
+
+      if [ -L "$mirror_path" ]; then
+        echo "  ❌ $mirror_name: $skill が symlink のままです"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+        continue
+      fi
+
+      if diff -qr "$src" "$mirror_path" >/dev/null 2>&1; then
+        echo "  ✅ $mirror_name: $skill mirror is in sync"
       else
-        echo "  ❌ codex: $skill が symlink ではありません"
+        echo "  ❌ $mirror_name: $skill mirror が skills-v3 と不一致"
         MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
       fi
-    fi
-    # opencode/skills/ のチェック
-    if [ -d "$OPENCODE_MIRROR" ]; then
-      link="$OPENCODE_MIRROR/$skill"
-      if [ -L "$link" ]; then
-        echo "  ✅ opencode: $skill → $(readlink "$link")"
-      else
-        echo "  ❌ opencode: $skill が symlink ではありません"
-        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
-      fi
-    fi
+    done
   done
 else
   echo "  ⚠️ skills-v3/ が存在しません（スキップ）"
