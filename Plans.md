@@ -580,3 +580,6 @@
 | 24.3.2 | VERSION バンプ 3.4.2 → 3.5.0 + plugin.json 同期 + CHANGELOG 追記 | cc:完了 |
 | 24.3.R1 | `post-tool-failure.sh` に `.claude/state` symlink 防御を追加（Reviewer 指摘） | cc:完了 |
 | 24.3.R2 | `CHANGELOG.md` の非標準見出しを Keep a Changelog 形式へ正規化（Reviewer 指摘） | cc:完了 |
+| 24.3.R3 | `setup-codex.sh` の stale `[notify]` 追記を削除し、現行 Codex 起動エラーを防ぐ | cc:完了 |
+| 24.3.R4 | `codex/README.md` と Codex package test を「実際に効く更新導線」に合わせて更新 | cc:完了 |
+| 24.3.R5 | `zz-review-*` の invalid SKILL を Codex/OpenCode 配布物と `~/.codex/skills` から除去し、起動 warning を防ぐ | cc:完了 |

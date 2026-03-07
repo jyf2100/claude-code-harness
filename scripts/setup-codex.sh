@@ -358,9 +358,6 @@ sandbox = "workspace-read-only"
 
 [memories]
 no_memories_if_mcp_or_web_search = false
-
-[notify]
-after_agent = "echo '[HARNESS-LEARNING] Session completed' >> .claude/state/session-log.txt"
 CFG
         log_ok "Created $cfg with multi_agent + harness role defaults"
         return
@@ -471,15 +468,6 @@ CFG
         log_ok "Added [memories] defaults to $cfg"
     fi
 
-    # [notify] section
-    if ! grep -q '^\[notify\]' "$cfg"; then
-        cat >> "$cfg" <<'CFG'
-
-[notify]
-after_agent = "echo '[HARNESS-LEARNING] Session completed' >> .claude/state/session-log.txt"
-CFG
-        log_ok "Added [notify] defaults to $cfg"
-    fi
 }
 
 print_success() {

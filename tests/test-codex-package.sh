@@ -162,6 +162,20 @@ else
   log_fail "Missing path-based core skills"
 fi
 
+log_test "Shipped Codex/OpenCode skills have required description frontmatter"
+skill_frontmatter_ok=true
+while IFS= read -r skill_file; do
+  if ! rg -q '^description:' "$skill_file"; then
+    echo "  missing description: $skill_file"
+    skill_frontmatter_ok=false
+  fi
+done < <(find codex/.codex/skills opencode/skills -name SKILL.md | sort)
+if $skill_frontmatter_ok; then
+  log_pass "All shipped skill bundles have description frontmatter"
+else
+  log_fail "Some shipped skill bundles are invalid for Codex skill loading"
+fi
+
 log_test "Public v3 skill mirrors stay in sync"
 if ./scripts/sync-v3-skill-mirrors.sh --check >/tmp/codex-skill-mirrors.$$ 2>&1; then
   log_pass "Public skill mirrors match skills-v3"
@@ -285,6 +299,32 @@ if $scripts_ok; then
   log_pass "Setup script duplicate-skill guards are present"
 else
   log_fail "Setup script duplicate-skill guards are missing"
+fi
+
+# Test 1.7b: setup-codex should not inject stale notify config
+log_test "setup-codex.sh avoids stale notify config"
+if rg -q '^\[notify\]' "scripts/setup-codex.sh"; then
+  echo "  stale [notify] section remains in scripts/setup-codex.sh"
+  log_fail "setup-codex.sh still injects invalid notify config"
+else
+  log_pass "setup-codex.sh does not inject stale notify config"
+fi
+
+# Test 1.7c: codex README should document the reliable update path
+log_test "codex README documents the reliable user update path"
+readme_update_path_ok=true
+if ! rg -q --fixed-strings 'Option 1: Script (recommended, user-based)' "codex/README.md"; then
+  echo "  missing recommended script wording"
+  readme_update_path_ok=false
+fi
+if ! rg -q --fixed-strings 'rerun the same script to sync `~/.codex/skills`' "codex/README.md"; then
+  echo "  missing rerun update guidance"
+  readme_update_path_ok=false
+fi
+if $readme_update_path_ok; then
+  log_pass "codex README points users to the reliable update path"
+else
+  log_fail "codex README update-path guidance is incomplete"
 fi
 
 # Test 1.8: codex-setup-local should cleanup duplicate frontmatter names

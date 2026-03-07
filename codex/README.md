@@ -4,7 +4,7 @@ Codex CLI compatible distribution of Claude Code Harness.
 
 ## Setup
 
-### Option 0: Path-based loading (recommended, Codex 0.110.0+)
+### Option 0: Path-based loading (experimental; verify on your Codex build)
 
 No file copy needed. Add skill paths directly to `config.toml`:
 
@@ -41,14 +41,18 @@ enabled = true
 TOML
 ```
 
-This loads skills directly from the cloned repo — `git pull` updates them in place.
+If your Codex build picks up `[[skills.config]]`, `git pull` updates them in place.
+Because support can drift by Codex build, verify this on a fresh Codex process before using it as the only onboarding path for end users.
 
-### Option 1: Script (full install, user-based)
+### Option 1: Script (recommended, user-based)
 
 ```bash
 # Default: install to CODEX_HOME (user-based)
 /path/to/claude-code-harness/scripts/setup-codex.sh --user
 ```
+
+This is the reliable default for end users today.
+After updating Harness, rerun the same script to sync `~/.codex/skills` to the latest `harness-*` bundle.
 
 Project-local install is still available:
 
