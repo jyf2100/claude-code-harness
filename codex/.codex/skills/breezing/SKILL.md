@@ -84,6 +84,77 @@ Phase B: Delegate（Worker 実装 + Reviewer レビュー）
 Phase C: Post-delegate（統合検証 + Plans.md 更新 + commit）
 ```
 
+### Phase 0: Planning Discussion（構造化 3 問チェック）
+
+全タスク実行前に、以下の 3 問で計画の健全性を確認する。
+`--no-discuss` 指定時は全スキップ。
+
+**Q1. スコープ確認**:
+> 「{{N}} 件のタスクを実行します。スコープは適切ですか？」
+
+多すぎる場合は優先度（Required > Recommended > Optional）で絞り込みを提案。
+
+**Q2. 依存関係確認**（Plans.md に Depends カラムがある場合のみ）:
+> 「タスク {{X}} は {{Y}} に依存しています。実行順序は合っていますか？」
+
+Depends カラムを読み取り、依存チェーンを表示。循環依存があればエラー。
+
+**Q3. リスクフラグ**（`[needs-spike]` タスクがある場合のみ）:
+> 「タスク {{Z}} は [needs-spike] です。先に spike しますか？」
+
+spike 未完了の `[needs-spike]` タスクがある場合、spike を先行実行するか確認。
+
+3 問とも問題なければ、Phase A に進む（合計 30 秒で完了する設計）。
+
+### 依存グラフに基づくタスク割り当て
+
+Plans.md に Depends カラムがある場合（v2 フォーマット）、以下の順序でタスクを Worker に割り当てる:
+
+1. **Depends が `-` のタスク**を最初に全て並列で Worker に割り当て
+2. 依存元タスクが `cc:完了` になったら、そのタスクに依存していたタスクを次の Worker に割り当て
+3. 全タスクが完了するまで繰り返す
+
+Depends カラムがない場合（v1 フォーマット）は、従来通り `[P]` マーカーと記述順序で割り当てる。
+
+## Active Monitoring with /loop (v2.1.71+)
+
+`/loop` コマンドで Cron 風の定期実行が可能。Breezing セッション中のタスク進捗監視に活用する。
+
+```bash
+/loop 5m /sync-status    # 5分ごとにタスク進捗をチェック
+/loop 10m check stale    # 10分ごとに停滞タスクを検出
+```
+
+### TeammateIdle との使い分け
+
+| 方式 | 発火タイミング | 用途 |
+|------|---------------|------|
+| `TeammateIdle` hook | Teammate がアイドル状態になった時（受動的） | 次タスクの即時割り当て |
+| `/loop` | 指定間隔で定期実行（能動的） | 全体進捗の俯瞰・停滞検出 |
+
+TeammateIdle は個別 Teammate の空き検出、`/loop` はチーム全体の定期ヘルスチェックとして併用する。
+
+## Background Agent (v2.1.71+)
+
+v2.1.71 で出力パスが完了通知に含まれるようになり、Background Agent が安全に利用可能になった。
+
+### 使用例
+
+長時間実行タスク（大規模リファクタリング、全ファイルマイグレーション等）を Background Agent に委任:
+
+```
+Task tool で run_in_background: true を指定
+→ エージェントがバックグラウンドで実行
+→ 完了通知に出力ファイルパスが含まれる
+→ 圧縮後でも結果を回収可能
+```
+
+### 注意事項
+
+- Background Agent はコンテキスト圧縮の影響を受けるため、結果は出力パス経由で回収する
+- 短時間で完了するタスクには通常の Task tool（フォアグラウンド）を推奨
+- `/loop` と組み合わせて Background Agent の完了状態を定期チェックすると効果的
+
 ## Related Skills
 
 - `/harness-work` — 単一タスクからチーム実行まで（本体）

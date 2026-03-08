@@ -1,6 +1,29 @@
-# sync サブコマンド — 進捗同期フロー
+---
+name: harness-sync
+description: "Progress sync between Plans.md and actual implementation. Detects drift, updates markers, runs retrospective. Use when user mentions: /harness-sync, /sync-status, sync progress, where am I, check progress, what's done. Do NOT load for: planning, implementation, review, or release."
+description-ja: "Plans.md と実装の進捗同期。差分検出・マーカー更新・レトロスペクティブを実行。以下で起動: /harness-sync、/sync-status、進捗確認、今どこ、どこまで終わった。プランニング・実装・レビュー・リリースには使わない。"
+allowed-tools: ["Read", "Edit", "Bash", "Grep", "Glob"]
+argument-hint: "[--no-retro]"
+---
 
-実装状況と Plans.md を照合し、差分を検出・更新する。
+# Harness Sync
+
+Plans.md と実装状況を照合し、差分を検出・更新する。
+旧 `sync-status` および `harness-plan sync` サブコマンドの独立版。
+
+## Quick Reference
+
+| ユーザー入力 | 動作 |
+|------------|------|
+| `/harness-sync` | 進捗同期 + レトロスペクティブ（デフォルト ON） |
+| `/harness-sync --no-retro` | 進捗同期のみ（レトロスキップ） |
+| "今どこ？" / "進捗確認" | 同上 |
+
+## オプション
+
+| オプション | 説明 | デフォルト |
+|----------|------|----------|
+| `--no-retro` | レトロスペクティブをスキップ | false（デフォルトで実行） |
 
 ## Step 0: Plans.md 検証
 
@@ -103,7 +126,7 @@ Plans.md 更新が必要です
 **優先 1**: {{タスク}}
 - 理由: {{依頼中 / アンブロック待ち}}
 
-**推奨**: /execute, /review
+**推奨**: /harness-work, /harness-review
 ```
 
 ## 異常検知
@@ -117,7 +140,7 @@ Plans.md 更新が必要です
 
 ## Step 6: レトロスペクティブ（デフォルト ON）
 
-`sync` 実行時、`cc:完了` タスクが 1 件以上あれば自動的に振り返りを実行する。
+`cc:完了` タスクが 1 件以上あれば自動的に振り返りを実行する。
 `--no-retro` で明示的にスキップ可能。
 
 ### Step R1: 完了タスク収集
@@ -167,3 +190,9 @@ git diff --stat HEAD~10
 
 振り返り結果を harness-mem に記録し、次回の `create` 時に参照できるようにする。
 記録先: `.claude/agent-memory/` 配下の該当エージェントメモリ。
+
+## 関連スキル
+
+- `harness-plan` — 計画作成・タスク管理
+- `harness-work` — タスク実装
+- `harness-review` — コードレビュー

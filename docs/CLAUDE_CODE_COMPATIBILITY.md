@@ -6,7 +6,7 @@ Last updated: 2026-03-07
 
 - Claude Code: `v2.1+`
 - Node.js: `18+`
-- Plugin version: `3.5.0`
+- Plugin version: `3.6.0`
 
 ## Latest Verified Snapshot
 

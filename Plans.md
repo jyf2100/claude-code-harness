@@ -583,3 +583,89 @@
 | 24.3.R3 | `setup-codex.sh` の stale `[notify]` 追記を削除し、現行 Codex 起動エラーを防ぐ | cc:完了 |
 | 24.3.R4 | `codex/README.md` と Codex package test を「実際に効く更新導線」に合わせて更新 | cc:完了 |
 | 24.3.R5 | `zz-review-*` の invalid SKILL を Codex/OpenCode 配布物と `~/.codex/skills` から除去し、起動 warning を防ぐ | cc:完了 |
+
+---
+
+## Phase 25: ソロモード PM フレームワーク強化
+
+作成日: 2026-03-08
+起点: pm-skills (phuryn/pm-skills) との比較分析 — ソロモードでの PM 思考フレームワーク欠如を特定
+目的: ソロモード（Claude Code 単独運用）で PM 不在を補う「構造化された自問機構」を既存スキルに埋め込む
+
+### 背景
+
+- ハーネスは 2-Agent（Cursor PM + Claude Code Worker）前提で設計されたため、ソロモードでは PM 側の思考フレームワークが薄い
+- pm-skills は 65 スキル / 36 チェーンワークフローで PM の思考構造化（Discovery, Strategy, Execution）をカバー
+- ハーネスの強み（Evals 必須化、Plans.md マーカー、ガードレール）と pm-skills の強み（フレームワーク適用、段階的チェックポイント）は補完関係
+- 新規スキル/コマンドは作らず、全て既存スキルの拡張として実装する
+
+### 完了条件
+
+1. harness-plan create の優先度判定が Impact × Risk の 2 軸マトリクスになっている
+2. Plans.md テーブルに DoD カラムが追加され、create 時に自動生成される
+3. harness-review の Plan Review に Value 軸が追加されている
+4. harness-plan sync にレトロスペクティブ機能が統合されている
+5. breezing の Phase 0 に構造化 3 問チェックが定義されている
+6. harness-work Solo フローにタスク背景確認ステップが追加されている
+7. Plans.md テーブルに Depends カラムが追加され、breezing が依存グラフを活用できる
+
+### 優先度マトリクス
+
+| 優先度 | Phase | 内容 | タスク数 | 依存 |
+|--------|-------|------|---------|------|
+| **Required** | 25.0 | Plans.md フォーマット拡張（DoD + Depends カラム） | 3 | なし |
+| **Required** | 25.1 | harness-plan create 強化（2 軸マトリクス + DoD 自動生成） | 3 | 25.0 |
+| **Required** | 25.2 | harness-review Plan Review 拡張（Value 軸） | 2 | なし |
+| **Recommended** | 25.3 | harness-plan sync レトロ機能 | 2 | なし |
+| **Recommended** | 25.4 | breezing Phase 0 構造化 + harness-work Solo 背景確認 | 3 | 25.0 |
+| **Required** | 25.5 | 統合検証・バージョン・リリース | 3 | 25.0〜25.4 |
+
+合計: **16 タスク**
+
+---
+
+### Phase 25.0: Plans.md フォーマット拡張 [P0]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.0.1 | `harness-plan/references/create.md` の Plans.md 生成テンプレート（Step 6）を `| Task | 内容 | DoD | Depends | Status |` の 5 カラムに拡張 | テンプレートが 5 カラム形式になっている | - | cc:完了 |
+| 25.0.2 | `harness-plan/references/sync.md` の差分検出ロジックを 5 カラム形式に対応させる（3 カラム Plans.md との後方互換を維持） | 旧 3 カラム Plans.md でもエラーなく動作する | 25.0.1 | cc:完了 |
+| 25.0.3 | `harness-plan/SKILL.md` の Plans.md フォーマット規約セクションを 5 カラムに更新し、DoD / Depends の記法ガイドを追記 | SKILL.md 内のフォーマット規約が新テンプレートと一致 | 25.0.1 | cc:完了 |
+
+### Phase 25.1: harness-plan create 強化 [P1]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.1.1 | `harness-plan/references/create.md` の Step 5 を 2 軸マトリクス（Impact × Risk）に拡張。高 Impact × 高 Risk のタスクに `[needs-spike]` マーカーを自動付与し、spike タスクを自動生成 | Step 5 が 2 軸で評価され、高リスクタスクに spike が付く | 25.0.1 | cc:完了 |
+| 25.1.2 | `harness-plan/references/create.md` の Step 6 で DoD カラムをタスク内容から自動推論して生成するロジックを追加 | 生成された Plans.md の全タスクに DoD が埋まっている | 25.0.1 | cc:完了 |
+| 25.1.3 | `harness-plan/references/create.md` の Step 6 で Depends カラムをフェーズ内の依存関係から自動推論して生成するロジックを追加 | 依存のないタスクは `-`、依存ありは タスク番号が入る | 25.0.1 | cc:完了 |
+
+### Phase 25.2: harness-review Plan Review 拡張 [P2] [P]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.2.1 | `harness-review/SKILL.md` の Plan Review フローに Value 軸を追加（5 軸目: ユーザー課題との紐付き、代替手段の検討、Elephant 検出） | Plan Review が 5 軸（Clarity / Feasibility / Dependencies / Acceptance / Value）で評価される | - | cc:完了 |
+| 25.2.2 | `harness-review/SKILL.md` の Plan Review で DoD カラム・Depends カラムの品質チェックを追加（空欄検出、検証不能な DoD の警告） | DoD 未記入タスクが警告される | - | cc:完了 |
+
+### Phase 25.3: harness-plan sync レトロ機能 [P3] [P]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.3.1 | `harness-plan/references/sync.md` に `--retro` フラグ対応を追加。完了タスクの振り返り（見積もり精度、ブロック原因パターン、スコープ変動）を出力 | `sync --retro` で振り返りサマリーが表示される | - | cc:完了 |
+| 25.3.2 | `harness-plan/SKILL.md` の argument-hint と sync サブコマンド説明に `--retro` を追記 | SKILL.md に --retro の説明がある | 25.3.1 | cc:完了 |
+
+### Phase 25.4: breezing Phase 0 構造化 + harness-work Solo 背景確認 [P4]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.4.1 | `breezing/SKILL.md` の Phase 0: Planning Discussion に構造化 3 問チェック（スコープ確認、依存関係確認、リスクフラグ）を定義 | Phase 0 に 3 つの具体的チェック項目がある | 25.0.1 | cc:完了 |
+| 25.4.2 | `harness-work/SKILL.md` の Solo フロー Step 1 と Step 2 の間に Step 1.5（タスク背景 30 秒確認）を追加。目的と影響範囲を推論表示し、自信がない場合のみ 1 問確認 | Solo フローに背景確認ステップが存在する | - | cc:完了 |
+| 25.4.3 | `breezing/SKILL.md` の Phase 0 で Depends カラムを読み取り、依存グラフに基づくタスク割り当て順序を自動決定するロジックを追加 | Depends が空のタスクから先に Worker に割り当てられる | 25.0.1 | cc:完了 |
+
+### Phase 25.5: 統合検証・バージョン・リリース [P5]
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 25.5.1 | `./tests/validate-plugin.sh` + `./scripts/ci/check-consistency.sh` 全体検証 | 全検証パス | 25.0〜25.4 | cc:完了 |
+| 25.5.2 | VERSION バンプ + plugin.json 同期 + CHANGELOG 追記 | バージョンが同期されている | 25.5.1 | cc:完了 |
+| 25.5.3 | GitHub Release 作成 | リリースが公開されている | 25.5.2 | cc:TODO |

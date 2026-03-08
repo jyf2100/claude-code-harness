@@ -8,6 +8,46 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.6.0] - 2026-03-08
+
+### 🎯 What's Changed for You
+
+**Solo mode PM framework: structured self-questioning built into every skill. Impact×Risk planning, DoD/Depends columns, Value-axis reviews, and retrospectives — no new commands, just smarter existing ones.**
+
+| Before | After |
+|--------|-------|
+| Plans.md had 3 columns (Task, Content, Status) | Plans.md has 5 columns (+DoD, +Depends); v1 format dropped |
+| Priority was 1-axis (Required/Recommended/Optional) | 2-axis Impact×Risk matrix with automatic `[needs-spike]` for high-risk items |
+| Plan Review checked 4 axes (Clarity/Feasibility/Dependencies/Acceptance) | 5 axes (+Value: user problem fit, alternative analysis, Elephant detection) |
+| No retrospective capability | `sync` auto-runs retro when completed tasks exist (`--no-retro` to skip) |
+| Breezing Phase 0 was undefined | Structured 3-question pre-flight check (scope, dependencies, risk flags) |
+| Solo mode jumped straight to implementation | Step 1.5 background confirmation (purpose + impact scope inference) |
+| Task dependencies were implicit in Japanese text | Explicit `Depends` column enables dependency-graph-based task assignment |
+
+---
+
+### Added
+- **Plans.md v2 format**: 5-column table with DoD (Definition of Done) and Depends columns
+- **DoD auto-inference**: `harness-plan create` generates testable completion criteria from task keywords
+- **Depends auto-inference**: Automatic dependency detection (DB→API→UI→Test ordering)
+- **`[needs-spike]` marker**: High Impact × High Risk tasks get auto-generated spike (tech validation) tasks
+- **Plan Review Value axis**: 5th review axis checking user problem fit, alternatives, and Elephant detection
+- **DoD/Depends quality checks**: Empty DoD warnings, untestable DoD suggestions, circular dependency detection
+- **Retrospective (default ON)**: `sync` auto-runs retro when `cc:完了` tasks ≥ 1; `--no-retro` to skip
+- **Breezing Phase 0 structured check**: 3-question pre-flight (scope confirmation, dependency validation, risk flags)
+- **Solo Step 1.5**: 30-second background confirmation inferring task purpose and impact scope
+- **Dependency-graph task assignment**: Breezing assigns Depends=`-` tasks first, chains dependents on completion
+
+### Changed
+- **harness-plan create Step 5**: Upgraded from 1-axis to Impact×Risk 2-axis priority matrix
+- **harness-plan SKILL.md**: Plans.md format specification updated to v2 with DoD/Depends guide
+- **harness-plan sync**: v1 (3-column) format support removed; Plans.md is always 5-column
+- **harness-review Plan Review**: Expanded from 4-axis to 5-axis evaluation
+- **harness-work Solo flow**: Added Step 1.5 between task identification and WIP marking
+- **breezing Flow Summary**: Phase 0 now has concrete check items instead of undefined discussion
+
+---
+
 ## [3.5.0] - 2026-03-07
 
 ### 🎯 What's Changed for You

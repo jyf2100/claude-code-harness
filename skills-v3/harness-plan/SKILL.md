@@ -3,7 +3,7 @@ name: harness-plan
 description: "Unified planning skill for Harness v3. Handles task planning, Plans.md management, and progress sync. Use when user mentions: create a plan, add tasks, update Plans.md, mark complete, check progress, sync status, where am I, /harness-plan, /sync-status. Do NOT load for: implementation, code review, or release tasks."
 description-ja: "Harness v3 統合プランニングスキル。タスク計画・Plans.md管理・進捗同期を担当。以下のフレーズで起動: 計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認、/harness-plan、/sync-status。実装・レビュー・リリースには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "Task"]
-argument-hint: "[create|add|update|sync|--ci]"
+argument-hint: "[create|add|update|sync|sync --no-retro|--ci]"
 ---
 
 # Harness Plan (v3)
@@ -82,13 +82,21 @@ See [references/sync.md](${CLAUDE_SKILL_DIR}/references/sync.md)
 
 **フロー**:
 1. Plans.md の現状取得
-2. git status / git log から実装状況取得
-3. エージェントトレース確認（`.claude/state/agent-trace.jsonl`）
-4. Plans.md と実装の差分検出
-5. 未更新マーカーの自動修正提案
-6. 次のアクション提示
+2. Plans.md フォーマット検出（v1: 3 カラム / v2: 5 カラム）
+3. git status / git log から実装状況取得
+4. エージェントトレース確認（`.claude/state/agent-trace.jsonl`）
+5. Plans.md と実装の差分検出
+6. 未更新マーカーの自動修正提案
+7. 次のアクション提示
+
+**レトロスペクティブ**（デフォルト ON）:
+`cc:完了` タスクが 1 件以上あれば自動的に振り返りを実行する。
+見積もり精度、ブロック原因パターン、スコープ変動を分析し、学びを記録。
+`sync --no-retro` で明示的にスキップ可能。
 
 ## Plans.md フォーマット規約
+
+### フォーマット
 
 ```markdown
 # [プロジェクト名] Plans.md
@@ -99,12 +107,16 @@ See [references/sync.md](${CLAUDE_SKILL_DIR}/references/sync.md)
 
 ## Phase N: フェーズ名
 
-| Task | 内容 | Status |
-|------|------|--------|
-| N.1  | 説明 | cc:TODO |
-| N.2  | 説明 | cc:WIP |
-| N.3  | 説明 | cc:完了 |
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| N.1  | 説明 | テスト通過 | - | cc:TODO |
+| N.2  | 説明 | lint エラー 0 | N.1 | cc:WIP |
+| N.3  | 説明 | マイグレーション実行可能 | N.1, N.2 | cc:完了 |
 ```
+
+**DoD（Definition of Done）**: 検証可能な完了条件を 1 行で記述。「いい感じ」「ちゃんと動く」は禁止。Yes/No で判定できる形にする。
+
+**Depends**: タスク間の依存関係。`-`（依存なし）、タスク番号（`N.1`）、カンマ区切り（`N.1, N.2`）、フェーズ依存（`Phase N`）。
 
 ### マーカー一覧
 
