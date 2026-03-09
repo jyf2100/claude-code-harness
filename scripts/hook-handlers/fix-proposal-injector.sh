@@ -106,8 +106,9 @@ if selector:
         if selector in {row.get("source_task_id"), row.get("fix_task_id")}:
             selected = row
             break
-
-if selected is None:
+    if selected is None:
+        sys.exit(2)
+else:
     selected = candidates[0]
 
 print(json.dumps(selected, ensure_ascii=False))
@@ -272,7 +273,15 @@ if [ -n "${ACTION}" ] && [ -z "${TARGET_ID}" ] && [ "${PENDING_COUNT}" != "1" ];
   exit 0
 fi
 
-PROPOSAL_JSON="$(select_proposal_json "${TARGET_ID}")"
+SELECT_STATUS=0
+PROPOSAL_JSON="$(select_proposal_json "${TARGET_ID}")" || SELECT_STATUS=$?
+
+if [ "${SELECT_STATUS}" -eq 2 ] && [ -n "${TARGET_ID}" ]; then
+  emit_system_message "⚠️ 指定された fix proposal が見つかりません: ${TARGET_ID}"
+  exit 0
+fi
+
+[ "${SELECT_STATUS}" -ne 0 ] && exit 0
 [ -z "${PROPOSAL_JSON}" ] && exit 0
 
 if command -v jq >/dev/null 2>&1; then

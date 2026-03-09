@@ -90,6 +90,22 @@ grep -q '"source_task_id":"26.0.2"' "${TMP_DIR}/.claude/state/pending-fix-propos
   exit 1
 }
 
+missing_target_output="$(printf '%s' '{"prompt":"approve fix 99.9.9"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
+echo "${missing_target_output}" | grep -q '指定された fix proposal が見つかりません' || {
+  echo "missing target approval should be rejected"
+  exit 1
+}
+
+grep -q '"source_task_id":"26.0.2"' "${TMP_DIR}/.claude/state/pending-fix-proposals.jsonl" || {
+  echo "missing target approval should not consume proposals"
+  exit 1
+}
+
+if grep -q '| 99.9.9.fix |' "${TMP_DIR}/Plans.md" || grep -q '| 26.0.2.fix |' "${TMP_DIR}/Plans.md"; then
+  echo "missing target approval should not modify Plans.md"
+  exit 1
+fi
+
 cat > "${TMP_DIR}/.claude/state/test-result.json" <<'EOF'
 {
   "status": "failed",
