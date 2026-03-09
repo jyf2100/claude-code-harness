@@ -10,64 +10,123 @@ Change history for claude-code-harness.
 
 ## [3.7.1] - 2026-03-09
 
-### 🎯 What's Changed for You
+### テーマ: チーム実行の安全性向上
 
-**Auto Mode preparation and agent definition modernization for CC 2.1.71+. Worker/Reviewer agents now use per-agent hooks and worktree isolation, and `--auto-mode` flag prepares for the safer permission model launching March 12.**
-
-| Before | After |
-|--------|-------|
-| Agent type mismatch: breezing used `general-purpose`, team-composition used `claude-code-harness:worker` | Unified to `claude-code-harness:worker` / `claude-code-harness:reviewer` everywhere |
-| No way to opt into Auto Mode | `--auto-mode` flag on `/breezing` and `/harness-work --breezing` |
-| Worker/Reviewer had no per-agent hooks | Worker: PreToolUse guard, Reviewer: Stop log via frontmatter hooks |
-| Worker had no worktree isolation in definition | `isolation: worktree` added for automatic parallel write safety |
+**Breezing（Agent Teams）の実行基盤を3つの観点から強化: エージェント型名の統一、Auto Mode への段階的移行準備、Worker の Worktree 隔離。**
 
 ---
 
-### Added
-- **`--auto-mode` flag**: Opt-in to Auto Mode for `/breezing` and `/harness-work --breezing`. 3-phase migration plan (Phase 0→1→2)
-- **Per-agent hooks in agents-v3**: Worker gets `PreToolUse` Write/Edit guard, Reviewer gets `Stop` completion log
-- **`isolation: worktree` in Worker**: Automatic git worktree creation for parallel Worker instances
-- **Feature Table entries**: Per-agent hooks, Agent `isolation: worktree`, Auto Mode migration plan documented
+#### 1. エージェント定義の統一
 
-### Changed
-- **breezing SKILL.md**: Team Composition table uses `claude-code-harness:worker`/`reviewer` instead of `general-purpose`
-- **team-composition.md**: Auto Mode section expanded with activation method, migration phases, and Phase 1 verification items
-- **CLAUDE.md / Feature Table**: 3 new entries added to Feature Table
+**今まで**: Worker や Reviewer のエージェント型名がファイルごとにバラバラでした。`breezing/SKILL.md` では `general-purpose`、`team-composition.md` では `claude-code-harness:worker` と書かれており、per-agent hooks（エージェント種別ごとのガードレール）が正しく発火しない問題がありました。
+
+**今後**: 全ファイルで `claude-code-harness:worker` / `claude-code-harness:reviewer` に統一。Worker 専用の PreToolUse ガード（Write/Edit 時のチェック）と Reviewer 専用の Stop ログ（完了時の記録）が確実に適用されます。
+
+#### 2. Auto Mode への準備（`--auto-mode`）
+
+**今まで**: Breezing では Worker がバックグラウンド実行のため許可プロンプトを表示できず、`bypassPermissions`（全権限スキップ）を使っていました。動くけれど「全権限をスキップ」するため、意図しないファイル書き換えや危険なコマンドも素通りするリスクがありました。
+
+**今後**: Claude Code 2.1.71+ の Auto Mode に対応する `--auto-mode` フラグを追加。Auto Mode は許可リスト方式で「定義済みの安全な操作だけを自動承認」し、危険な操作（`rm -rf`、`git push --force` 等）はブロックします。3段階で移行します:
+
+- Phase 0（現在）: `--auto-mode` はオプトイン
+- Phase 1（検証後）: `--auto-mode` をデフォルトに
+- Phase 2（安定後）: `bypassPermissions` を廃止
+
+```bash
+/breezing --auto-mode              # Auto Mode で実行
+/harness-work --breezing --auto-mode
+```
+
+#### 3. Worker の Worktree 隔離
+
+**今まで**: 複数の Worker を並列実行したとき、同じファイルを2つの Worker が同時に編集すると競合が発生していました。Lead が「同じファイルを触るタスクは同じ Worker に割り当てる」ルールで回避していましたが、完璧ではありませんでした。
+
+**今後**: Worker エージェント定義に `isolation: worktree` を追加。各 Worker は自動的に git worktree（独立した作業ディレクトリ）で動作するため、同じファイルを編集しても物理的に別ディレクトリなので衝突しません。完了後に Lead がマージします。
 
 ---
 
 ## [3.7.0] - 2026-03-08
 
-### 🎯 What's Changed for You
+### テーマ: 状態中心アーキテクチャへの転換
 
-**State-centric architecture shift inspired by masao theory. Failed tasks auto-generate fix tickets, snapshots capture session state, artifact hashes link commits to Plans.md, and progress feeds keep you informed during breezing.**
-
-| Before | After |
-|--------|-------|
-| Failed CI/test after `cc:完了` required manual re-planning | Auto-generates fix task in Plans.md (semi-auto: approve/reject) |
-| No way to capture session state for later resumption | `/harness-sync --snapshot` saves progress to `.claude/state/snapshots/` |
-| Task completion had no commit traceability | `cc:完了 [a1b2c3d]` links tasks to commit hashes |
-| Breezing ran silently — no progress visibility | `📊 Progress: Task N/M 完了` displayed per task completion |
-| Plans.md phases had no stated purpose | Optional `Purpose:` line per phase in v3 format |
+**まさお理論（マクロハーネス・ミクロハーネス・Project OS）を適用し、「会話が切れても作業が途切れない」仕組みを5つの機能で構築しました。**
 
 ---
 
-### Added
-- **Failure auto-re-ticketing**: When tests/CI fail after `cc:完了`, auto-generates `.fix` task in Plans.md with failure category and DoD (D30)
-- **`/harness-sync --snapshot`**: Captures progress state (task counts, recent commits, recent files) as timestamped JSON; diff comparison with previous snapshot
-- **Artifact hash**: `cc:完了 [a1b2c3d]` format auto-links task completion to commit hash in harness-work Solo Step 7
-- **Progress Feed**: Breezing Lead outputs `📊 Progress: Task N/M 完了 — "subject"` per Worker task completion
-- **TaskCompleted hook progress**: `task-completed.sh` outputs progress summary via systemMessage
-- **Plans.md v3 format**: Optional `Purpose:` line per Phase + standardized Artifact hash notation (D31)
+#### 1. 失敗タスクの自動再チケット化
 
-### Changed
-- **harness-work Solo flow**: Step 7 now includes commit hash retrieval; Step 8 added for failure auto-re-planning
-- **harness-work Breezing flow**: Worker completion format updated to `cc:完了 [hash]`
-- **harness-sync**: Added `--snapshot` option and argument-hint updated
-- **harness-plan create**: Step 5.7 added with v3 format spec; Step 6 template includes optional Purpose line
-- **harness-plan sync**: Diff detection supports `cc:完了 [hash]` format with backward compatibility
-- **breezing SKILL.md**: Progress Feed section added after Flow Summary
-- **decisions.md**: D30 (failure auto-re-ticketing), D31 (Plans.md v3 format design) recorded
+**今まで**: タスク実装後にテスト/CI が失敗すると、最大3回リトライして止まるだけでした。止まった後は「何が原因だったか」を自分で調べ、Plans.md に手動で修正タスクを追加し、再度 `/work` を実行する必要がありました。
+
+**今後**: 3回失敗で止まるとき、Harness が失敗原因を分類（`assertion_error`、`import_error` 等）し、修正タスク案を自動生成します。承認すると Plans.md に `.fix` タスクとして自動追加されます。
+
+```
+失敗原因分析:
+  カテゴリ: assertion_error
+  修正タスク案: 26.1.1.fix — getByStatus の戻り値を修正
+  DoD: npm test が全パスすること
+
+Plans.md に追加しますか？ [yes/no]
+```
+
+将来的には、提案採用率80%以上で全自動化に昇格する計画です（D30）。
+
+#### 2. セッションスナップショット（`/harness-sync --snapshot`）
+
+**今まで**: セッションが切れた後の再開時、Plans.md を読み、git log を見て、自分で状況を把握する必要がありました。この「状況把握」に毎回時間がかかり、WIP タスクの進捗は Plans.md からは読み取れませんでした。
+
+**今後**: `/harness-sync --snapshot` で、その瞬間の進捗を JSON に保存できます。次のセッション開始時に前回のスナップショットと自動比較されます。
+
+```
+スナップショット差分:
+
+| 指標       | 前回 (03/08 22:00) | 今回       | 変化     |
+|-----------|-------------------|-----------|---------|
+| 完了タスク  | 8/16              | 13/16     | +5      |
+| WIP タスク  | 2                 | 0         | -2      |
+| TODO タスク | 6                 | 3         | -3      |
+```
+
+作業の「セーブポイント」のようなものです。
+
+#### 3. Artifact Hash（タスクとコミットの紐付け）
+
+**今まで**: Plans.md のタスクが `cc:完了` になっても、どのコミットで完了したか追跡できませんでした。「このタスクで何を変えたか」を知るには git log を手作業でたどる必要がありました。
+
+**今後**: タスク完了時に、直近のコミットハッシュ（7文字短縮形）が Status に自動付与されます。
+
+```markdown
+| Task | 内容              | Status              |
+|------|-------------------|---------------------|
+| 26.1 | snapshot 機能追加  | cc:完了 [a1b2c3d]  |  ← 自動付与
+```
+
+`git show a1b2c3d` で、そのタスクの変更内容をいつでも確認できます。hash なしの `cc:完了` も引き続き有効（後方互換）。
+
+#### 4. Progress Feed（Breezing 中の進捗表示）
+
+**今まで**: `/breezing` で全タスクを並列実行するとき、完了するまでターミナルに進捗が表示されませんでした。10個以上のタスクがある場合、「今何個目が終わったか」がまったく見えず不安でした。
+
+**今後**: Worker がタスクを完了するたびに、Lead が1行のプログレスサマリーを出力します。
+
+```
+📊 Progress: Task 1/16 完了 — "harness-work に失敗再チケット化を追加"
+📊 Progress: Task 2/16 完了 — "harness-sync に --snapshot を追加"
+📊 Progress: Task 3/16 完了 — "breezing にプログレスフィードを追加"
+```
+
+TaskCompleted hook の `systemMessage` も連動して進捗情報を出力します。
+
+#### 5. Plans.md の Purpose 行
+
+**今まで**: Phase ヘッダーには名前とタグだけ。「このフェーズの目的は何か」は本文を読まないと分かりませんでした。
+
+**今後**: Phase ヘッダーの直後に、任意で `Purpose:` 行を1行追加できます。書かなくてもOK（強制ではありません）。ユーザーがフェーズの目的を述べた場合にのみ自動記載されます。
+
+```markdown
+### Phase 26.0: 失敗→再チケット化フロー [P0]
+
+Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の一手を提案」へ転換
+```
 
 ---
 

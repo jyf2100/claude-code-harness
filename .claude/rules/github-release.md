@@ -56,19 +56,52 @@ Generated with [Claude Code](https://claude.com/claude-code)
 
 ### Language
 
-- **English required** for all release notes
-- Use `Before / After` format with table
-- Keep descriptions concise and user-focused
+- **GitHub Release**: English required（公開リポジトリのため）
+- **CHANGELOG.md**: **日本語**で詳細な Before/After 形式（後述）
+- Keep descriptions user-focused
+
+## CHANGELOG フォーマット（日本語・詳細 Before/After）
+
+CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述する:
+
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### テーマ: [変更全体を一言で]
+
+**[ユーザーにとっての価値を1〜2文で]**
+
+---
+
+#### 1. [機能名]
+
+**今まで**: [旧動作。ユーザーが体験していた不便を具体的に描写]
+
+**今後**: [新動作。何が解決するか + 具体例]
+
+```出力例やコマンド例```
+
+#### 2. [次の機能名]
+
+**今まで**: ...
+**今後**: ...
+```
+
+**書き方ルール**:
+- 各機能を `#### N. 機能名` で独立セクションにする
+- 「今まで」は**課題描写**（「〜する必要がありました」形式）
+- 「今後」は**解決の具体像**（コマンド例・出力例を含める）
+- 長くてOK。読みやすさが最優先
+- テクニカル詳細（ファイル名、ステップ番号）は「今後」の補足として最小限に
 
 ## Prohibited
 
-- No skipping the Before / After table
-- No skipping the footer
+- No skipping the Before / After (CHANGELOG) or Before / After table (GitHub Release)
+- No skipping the footer (GitHub Release)
 - No technical-only descriptions (user perspective required)
 - No bare change lists without value explanation
-- No Japanese in release notes
 
-## Good Example
+## Good Example (GitHub Release — English)
 
 ```markdown
 ## What's Changed
@@ -81,6 +114,18 @@ Generated with [Claude Code](https://claude.com/claude-code)
 |--------|-------|
 | `/work` executes tasks one at a time | `/work --full --parallel 3` runs in parallel |
 | Reviews required separate manual step | Each task-worker self-reviews autonomously |
+```
+
+## Good Example (CHANGELOG — Japanese)
+
+```markdown
+#### 1. 失敗タスクの自動再チケット化
+
+**今まで**: テスト/CI が失敗すると3回リトライして止まるだけでした。
+止まった後は「何が原因だったか」を自分で調べ、Plans.md に手動で修正タスクを追加する必要がありました。
+
+**今後**: 3回失敗で止まるとき、Harness が失敗原因を分類し、修正タスク案を自動生成します。
+承認すると Plans.md に `.fix` タスクとして自動追加されます。
 ```
 
 ## Bad Example
