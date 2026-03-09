@@ -6,6 +6,10 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+---
+
+## [3.7.1] - 2026-03-09
+
 ### 🎯 What's Changed for You
 
 **Auto Mode preparation and agent definition modernization for CC 2.1.71+. Worker/Reviewer agents now use per-agent hooks and worktree isolation, and `--auto-mode` flag prepares for the safer permission model launching March 12.**
