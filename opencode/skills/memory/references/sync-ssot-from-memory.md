@@ -1,6 +1,6 @@
 # Sync SSOT from Memory Reference
 
-Promote important observations recorded in memory systems (Claude-mem or Serena) to the project's SSOT:
+Promote important observations recorded in memory systems (Harness Memory or Serena) to the project's SSOT:
 `.claude/memory/decisions.md` and `.claude/memory/patterns.md`.
 
 ---
@@ -18,7 +18,7 @@ Promote important observations recorded in memory systems (Claude-mem or Serena)
 
 | System | Detection | How to Get Observations |
 |--------|-----------|------------------------|
-| **Claude-mem** | `~/.claude-mem/settings.json` | `mem-search` skill |
+| **Harness Memory** | `harness_mem_*` MCP available | `harness_mem_search` / `harness_mem_timeline` |
 | **Serena** | `.serena/memories/` | `mcp__serena__read_memory` |
 
 Auto-detected at execution, using available system.
@@ -28,9 +28,9 @@ Auto-detected at execution, using available system.
 ## Step 0: Memory System Detection
 
 ```bash
-# Claude-mem check
-if [ -f "$HOME/.claude-mem/settings.json" ]; then
-  MEMORY_SYSTEM="claude-mem"
+# Harness Memory check
+if command -v harness_mem_search >/dev/null 2>&1; then
+  MEMORY_SYSTEM="harness-mem"
 fi
 
 # Serena check
@@ -45,7 +45,7 @@ fi
 
 ## Step 1: Extract SSOT Promotion Candidates
 
-**For Claude-mem**:
+**For Harness Memory**:
 ```
 mem-search: type:decision
 mem-search: type:discovery concepts:pattern

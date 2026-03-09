@@ -23,7 +23,7 @@ Harness v3 の統合セットアップスキル。
 | `/setup init` | 新規プロジェクト初期化（CLAUDE.md + Plans.md + hooks）|
 | `/setup ci` | CI/CD パイプライン設定 |
 | `/setup codex` | Codex CLI インストール・設定 |
-| `/setup harness-mem` | claude-mem 統合・メモリ設定 |
+| `/setup harness-mem` | harness-mem 統合・メモリ設定 |
 | `/setup mirrors` | skills-v3/ → 公開 mirror bundle 更新 |
 | `/setup agents` | agents-v3/ エージェント設定 |
 | `/setup localize` | CLAUDE.md ルールのローカライズ |
@@ -90,7 +90,7 @@ $TIMEOUT 120 codex exec "$(cat /tmp/prompt.md)" 2>/dev/null
 
 ### harness-mem — メモリ設定
 
-claude-mem 統合を設定する。
+Unified Harness Memory の設定を行う。
 
 ```bash
 # メモリディレクトリ作成

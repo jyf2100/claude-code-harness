@@ -346,7 +346,7 @@ function copyDirectoryRecursive(src, dest) {
 
   // 除外するディレクトリ/ファイルパターン
   const excludePatterns = [
-    'CLAUDE.md',           // claude-mem の自動生成ファイル
+    'CLAUDE.md',           // 自動生成されるメモリコンテキスト
     'node_modules',        // npm 依存関係
     'coverage',            // テストカバレッジ
     '.claude',             // Claude セッション状態

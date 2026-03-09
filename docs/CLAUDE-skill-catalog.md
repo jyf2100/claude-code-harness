@@ -57,7 +57,7 @@ skills/
 | harness-review | コードレビュー、品質チェック | 「レビューして」「セキュリティ」「パフォーマンス」 |
 | verify | ビルド検証、エラー復旧 | 「ビルド」「エラー復旧」「検証して」 |
 | setup | セットアップ統合ハブ（プロジェクト初期化、ツール設定、2-Agent、harness-mem、Codex CLI、ルールローカライズ） | 「セットアップ」「CLAUDE.md」「初期化」「CI setup」「2-Agent」「Cursor設定」「harness-mem」「codex-setup」 |
-| memory | SSOT管理、記憶検索、SSOT昇格、Cursor連携メモリ | 「SSOT」「decisions.md」「マージ」「SSOT昇格」「記憶検索」「claude-mem」 |
+| memory | SSOT管理、記憶検索、SSOT昇格、Cursor連携メモリ | 「SSOT」「decisions.md」「マージ」「SSOT昇格」「記憶検索」「harness-mem」 |
 | principles | 開発原則、ガイドライン | 「原則」「VibeCoder」「安全性」 |
 | auth | 認証、決済機能 | 「ログイン」「Clerk」「Stripe」「決済」 |
 | deploy | デプロイ、アナリティクス | 「デプロイ」「Vercel」「GA」 |

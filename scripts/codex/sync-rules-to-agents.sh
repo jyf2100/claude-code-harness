@@ -30,12 +30,12 @@ for arg in "$@"; do
 done
 
 # ===== ルールファイル一覧取得 =====
-# CLAUDE.md は claude-mem コンテキストのみのため除外
+# CLAUDE.md は自動生成のメモリコンテキストのみのため除外
 RULE_FILES=()
 while IFS= read -r f; do
   basename_f="$(basename "$f")"
   case "$basename_f" in
-    CLAUDE.md) continue ;;  # claude-mem context ファイルは除外
+    CLAUDE.md) continue ;;  # memory context ファイルは除外
     *.md) RULE_FILES+=("$f") ;;
   esac
 done < <(find "$RULES_DIR" -maxdepth 1 -name "*.md" | sort)

@@ -64,48 +64,12 @@ fi
 
 整理が必要な場合は提案を表示（作業には影響しない）。
 
-### Step 0.5: Claude-mem 文脈確認（オプション）
+### Step 0.5: 旧ローカルメモリ互換の扱い（任意）
 
-Claude-mem が有効な場合、過去の文脈を自動表示：
+現在の標準は Step 0.7 の Unified Harness Memory です。
+旧ローカルメモリ互換の確認は原則不要で、特別な移行確認が必要な場合だけ個別に参照します。
 
-```bash
-# Claude-mem の状態チェック
-if [ -f "$HOME/.claude-mem/settings.json" ]; then
-  mode=$(cat ~/.claude-mem/settings.json | grep -o '"CLAUDE_MEM_MODE"[^,}]*' | cut -d'"' -f4)
-  if [ "$mode" = "harness" ] || [ "$mode" = "harness--ja" ]; then
-    echo "📚 Claude-mem (harness モード) が有効です"
-  fi
-fi
-```
-
-**Claude-mem 有効時に表示する内容**:
-
-1. **過去のガードレール発動**:
-   - `mem-search` で `guard` タイプの観測を検索
-   - 「このプロジェクトでは過去 N 回テスト改ざんを防止」
-
-2. **直近の作業サマリー**:
-   - 最新のセッションサマリーを表示
-   - 「前回: Feature X の設計完了」
-
-3. **継続タスクの提案**:
-   - Plans.md と組み合わせて次のアクションを提案
-
-```markdown
-## 📚 過去の文脈（Claude-mem）
-
-**ガードレール履歴**:
-- テスト改ざん防止: 2回
-
-**前回のセッション**:
-- Feature X 設計完了
-- RBAC 採用を決定
-
-**💡 継続推奨**: Plans.md の「Feature X 実装」から開始
-```
-
-> **注**: Claude-mem が未設定の場合、このステップはスキップされます。
-> Unified Harness Memory（Step 0.7）を使う場合、このステップは重複回避のため省略してよい。
+> **注**: 通常運用ではこのステップをスキップし、共通DB の Resume Pack を唯一の再開導線として扱います。
 
 ### Step 0.7: Unified Harness Memory Resume Pack（必須）
 
