@@ -51,7 +51,7 @@ case "$TOOL_NAME" in
     if [ -n "$SKILL_NAME" ]; then
       # Extract base skill name (e.g., "impl" from "claude-code-harness:impl")
       BASE_NAME=$(echo "$SKILL_NAME" | sed 's/.*://')
-      node "$RECORD_USAGE" skill "$BASE_NAME" 2>/dev/null || true
+      node "$RECORD_USAGE" skill "$BASE_NAME" >/dev/null 2>&1 || true
 
       # Create session flag for SSOT sync execution (memory skill or legacy sync-ssot-from-memory)
       # This flag is checked by auto-cleanup-hook.sh before Plans.md cleanup
@@ -76,7 +76,7 @@ case "$TOOL_NAME" in
     if [ -n "$CMD_NAME" ]; then
       # Remove leading slash if present
       BASE_NAME=$(echo "$CMD_NAME" | sed 's/^\///')
-      node "$RECORD_USAGE" command "$BASE_NAME" 2>/dev/null || true
+      node "$RECORD_USAGE" command "$BASE_NAME" >/dev/null 2>&1 || true
 
       # Create session flag for SSOT sync execution (same as Skill branch)
       # This handles /sync-ssot-from-memory, /memory sync, and qualified names
@@ -99,7 +99,7 @@ case "$TOOL_NAME" in
     # Extract agent type from tool input
     AGENT_TYPE=$(echo "$TOOL_INPUT" | jq -r '.subagent_type // empty' 2>/dev/null || echo "")
     if [ -n "$AGENT_TYPE" ]; then
-      node "$RECORD_USAGE" agent "$AGENT_TYPE" 2>/dev/null || true
+      node "$RECORD_USAGE" agent "$AGENT_TYPE" >/dev/null 2>&1 || true
     fi
     ;;
 esac

@@ -51,6 +51,14 @@ add_line() {
   OUTPUT="${OUTPUT}$1\n"
 }
 
+count_matches() {
+  local pattern="$1"
+  local file="$2"
+  local count
+  count="$(grep -c "$pattern" "$file" 2>/dev/null || true)"
+  printf '%s' "${count:-0}"
+}
+
 # ===== セッション復元ロジック =====
 RESTORED="false"
 RESTORED_SESSION_ID=""
@@ -179,8 +187,8 @@ rm -f "${STATE_DIR}/.ultrawork-review-warned" 2>/dev/null || true
 # ===== Plans.md チェック =====
 PLANS_INFO=""
 if [ -f "Plans.md" ]; then
-  wip_count=$(grep -c "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null || echo "0")
-  todo_count=$(grep -c "cc:TODO" Plans.md 2>/dev/null || echo "0")
+  wip_count="$(count_matches "cc:WIP\\|pm:依頼中\\|cursor:依頼中" "Plans.md")"
+  todo_count="$(count_matches "cc:TODO" "Plans.md")"
   PLANS_INFO="📄 Plans.md: 進行中 ${wip_count} / 未着手 ${todo_count}"
 else
   PLANS_INFO="📄 Plans.md: 未検出"

@@ -583,7 +583,7 @@ emit_deny() {
   # Record hook blocking event (non-blocking, fire-and-forget)
   local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   if [ -x "$SCRIPT_DIR/record-usage.js" ] && command -v node >/dev/null 2>&1; then
-    node "$SCRIPT_DIR/record-usage.js" hook pretooluse-guard --blocked 2>/dev/null &
+    node "$SCRIPT_DIR/record-usage.js" hook pretooluse-guard --blocked >/dev/null 2>&1 &
   fi
   emit_decision "deny" "$1"
 }

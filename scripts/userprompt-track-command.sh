@@ -64,7 +64,7 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
 
   # コマンド使用を記録
   if [ -f "$RECORD_USAGE" ] && [ -n "$COMMAND_NAME" ]; then
-    node "$RECORD_USAGE" command "$COMMAND_NAME" 2>/dev/null || true
+    node "$RECORD_USAGE" command "$COMMAND_NAME" >/dev/null 2>&1 || true
   fi
 
   # Skill必須コマンドかチェック

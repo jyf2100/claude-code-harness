@@ -69,7 +69,7 @@ fi
 
 # ===== Hook 使用状況記録 =====
 if [ -x "$SCRIPT_DIR/record-usage.js" ] && command -v node >/dev/null 2>&1; then
-  node "$SCRIPT_DIR/record-usage.js" hook session-init 2>/dev/null &
+  node "$SCRIPT_DIR/record-usage.js" hook session-init >/dev/null 2>&1 &
 fi
 
 # 出力メッセージを蓄積する変数
@@ -77,6 +77,14 @@ OUTPUT=""
 
 add_line() {
   OUTPUT="${OUTPUT}$1\n"
+}
+
+count_matches() {
+  local pattern="$1"
+  local file="$2"
+  local count
+  count="$(grep -c "$pattern" "$file" 2>/dev/null || true)"
+  printf '%s' "${count:-0}"
 }
 
 # ===== Step 1: プラグインキャッシュ同期 =====
@@ -208,8 +216,8 @@ fi
 
 PLANS_INFO=""
 if [ -f "$PLANS_PATH" ]; then
-  wip_count=$(grep -c "cc:WIP\|pm:依頼中\|cursor:依頼中" "$PLANS_PATH" 2>/dev/null || echo "0")
-  todo_count=$(grep -c "cc:TODO" "$PLANS_PATH" 2>/dev/null || echo "0")
+  wip_count="$(count_matches "cc:WIP\\|pm:依頼中\\|cursor:依頼中" "$PLANS_PATH")"
+  todo_count="$(count_matches "cc:TODO" "$PLANS_PATH")"
 
   PLANS_INFO="📄 Plans.md: 進行中 ${wip_count} / 未着手 ${todo_count}"
 else

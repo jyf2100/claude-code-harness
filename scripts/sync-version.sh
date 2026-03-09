@@ -78,9 +78,9 @@ sync_optional_files() {
     for readme in "${README_FILES[@]}"; do
         if [ -f "$readme" ]; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                sed -i '' -E "s|\\[!\\[Version: [0-9]+\\.[0-9]+\\.[0-9]+\\]\\(https://img\\.shields\\.io/badge/version-[0-9]+\\.[0-9]+\\.[0-9]+-blue\\.svg\\)\\]\\(VERSION\\)|[![Version: ${version}](https://img.shields.io/badge/version-${version}-blue.svg)](VERSION)|" "$readme" || true
+                sed -i '' -E "s|https://img\\.shields\\.io/badge/version-[0-9]+\\.[0-9]+\\.[0-9]+-blue\\.svg|https://img.shields.io/badge/version-${version}-blue.svg|g" "$readme" || true
             else
-                sed -i -E "s|\\[!\\[Version: [0-9]+\\.[0-9]+\\.[0-9]+\\]\\(https://img\\.shields\\.io/badge/version-[0-9]+\\.[0-9]+\\.[0-9]+-blue\\.svg\\)\\]\\(VERSION\\)|[![Version: ${version}](https://img.shields.io/badge/version-${version}-blue.svg)](VERSION)|" "$readme" || true
+                sed -i -E "s|https://img\\.shields\\.io/badge/version-[0-9]+\\.[0-9]+\\.[0-9]+-blue\\.svg|https://img.shields.io/badge/version-${version}-blue.svg|g" "$readme" || true
             fi
         fi
     done

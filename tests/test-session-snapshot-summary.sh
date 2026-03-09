@@ -34,6 +34,23 @@ EOF
 
 init_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-init.sh")"
 resume_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-resume.sh")"
+init_context="$(printf '%s' "${init_output}" | jq -r '.hookSpecificOutput.additionalContext')"
+resume_context="$(printf '%s' "${resume_output}" | jq -r '.hookSpecificOutput.additionalContext')"
+
+if echo "${init_output}" | grep -q '\[record-usage\]'; then
+  echo "session-init stdout should not include record-usage noise"
+  exit 1
+fi
+
+if echo "${init_context}" | grep -qx '0'; then
+  echo "session-init additionalContext should not contain standalone zero lines"
+  exit 1
+fi
+
+if echo "${resume_context}" | grep -qx '0'; then
+  echo "session-resume additionalContext should not contain standalone zero lines"
+  exit 1
+fi
 
 echo "${init_output}" | grep -q '最新 snapshot' || {
   echo "session-init output missing latest snapshot summary"
@@ -47,6 +64,15 @@ echo "${resume_output}" | grep -q '前回比' || {
 
 rm -f "${TMP_DIR}/.claude/state/snapshots/"progress-*.json
 quiet_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-init.sh")"
+quiet_context="$(printf '%s' "${quiet_output}" | jq -r '.hookSpecificOutput.additionalContext')"
+if echo "${quiet_output}" | grep -q '\[record-usage\]'; then
+  echo "session-init quiet output should not include record-usage noise"
+  exit 1
+fi
+if echo "${quiet_context}" | grep -qx '0'; then
+  echo "session-init quiet additionalContext should not contain standalone zero lines"
+  exit 1
+fi
 if echo "${quiet_output}" | grep -q '最新 snapshot'; then
   echo "session-init should skip snapshot summary when no snapshot exists"
   exit 1
