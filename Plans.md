@@ -15,6 +15,17 @@
 
 ---
 
+## Maintenance: v3.9.0 release redo
+
+作成日: 2026-03-11
+目的: 新バージョンを切らずに v3.9.0 を正式 release としてやり直し、README / CHANGELOG / tag / GitHub Release を一致させる
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M4 | CHANGELOG の未公開版番表記を整理し、v3.9.0 の tag と GitHub Release を作成して release 整合を回復する | README 英日・VERSION・plugin.json・CHANGELOG・tag・GitHub Release が v3.9.0 で一致している | - | cc:完了 [7618428c] |
+
+---
+
 ## Maintenance: Claude-mem MCP 削除
 
 作成日: 2026-03-08
