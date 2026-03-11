@@ -1,6 +1,6 @@
-# Claude Code 2.1.71+ 新機能活用ガイド（完全版）
+# Claude Code 2.1.72+ 新機能活用ガイド（完全版）
 
-> **概要**: Harness が活用する Claude Code 2.1.71+ の全機能一覧。
+> **概要**: Harness が活用する Claude Code 2.1.72+ の全機能一覧。
 > CLAUDE.md の Feature Table の完全版（詳細説明付き）。
 
 ## 機能一覧
@@ -48,7 +48,7 @@
 | **`/reload-plugins` (v2.1.69)** | 全スキル | スキル・フック編集後の即時反映 |
 | **`includeGitInstructions: false` (v2.1.69)** | work, breezing | git 指示が不要な場面のトークン削減 |
 | **`git-subdir` plugin source (v2.1.69)** | setup, release | サブディレクトリ管理された plugin source に対応 |
-| **Auto Mode (Research Preview, 2026-03-12〜)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。3 フェーズ移行計画で段階導入 |
+| **Auto Mode (Research Preview, staged rollout)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。RP 開始後に段階検証を予定 (2026-03-12〜) |
 | **Per-agent hooks (v2.1.69+)** | agents-v3/ | エージェント定義の frontmatter に `hooks` フィールドを追加。Worker に PreToolUse ガード、Reviewer に Stop ログを設定 |
 | **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Worker エージェント定義に `isolation: worktree` を追加。並列書き込み時の自動 worktree 分離 |
 | **Compaction 画像保持 (v2.1.70)** | notebookLM, harness-review | サマリーリクエストで画像を保持。プロンプトキャッシュ再利用改善 |
@@ -62,6 +62,28 @@
 | **`--print` チームエージェント hang 修正 (v2.1.71)** | CI 連携 | `--print` モードでのチームエージェント hang を修正 |
 | **Plugin インストール並列実行修正 (v2.1.71)** | breezing | 複数インスタンス時のプラグイン状態安定化 |
 | **Marketplace 改善 (v2.1.71)** | setup | @ref パーサー修正、update merge conflict 修正、MCP server 重複排除、/plugin uninstall が settings.local.json 使用 |
+| **Subagent `background` フィールド (v2.1.71+)** | breezing, parallel-workflows | エージェント定義に `background: true` を追加。常にバックグラウンドタスクとして実行 |
+| **Subagent `local` メモリスコープ (v2.1.71+)** | agents-v3/ | `memory: local` で `.claude/agent-memory-local/` に保存。VCS にコミットしない機密性の高い学習を分離 |
+| **Agent Teams 実験フラグ (v2.1.71+)** | breezing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数で Agent Teams を有効化。公式ドキュメント化済み |
+| **`/agents` コマンド (v2.1.71+)** | troubleshoot, setup | エージェントの対話的管理UI。作成・編集・削除・一覧を GUI で操作 |
+| **Desktop Scheduled Tasks (v2.1.71+)** | harness-work | `~/.claude/scheduled-tasks/<task-name>/SKILL.md` 形式で定期タスクを定義。Desktop アプリから管理 |
+| **`CronCreate/CronList/CronDelete` ツール (v2.1.71+)** | breezing, harness-work | `/loop` の内部ツール。セッション内での定期タスク作成・管理 |
+| **`CLAUDE_CODE_DISABLE_CRON` 環境変数 (v2.1.71+)** | setup | `=1` で Cron スケジューラを無効化。セキュリティポリシーで定期実行を制限する環境向け |
+| **`--agents` CLI フラグ (v2.1.71+)** | breezing, CI | JSON でセッションレベルのエージェント定義を渡す。ディスクに保存されない一時的なエージェント構成 |
+| **`ExitWorktree` ツール (v2.1.72)** | breezing, harness-work | プログラム的に worktree セッションを離脱するツール |
+| **Effort levels 簡素化 (v2.1.72)** | harness-work | `max` 廃止、`low/medium/high` の3段階 + `○ ◐ ●` シンボル。`/effort auto` でデフォルトリセット |
+| **Agent tool `model` パラメータ復活 (v2.1.72)** | breezing | per-invocation model override が再度利用可能に |
+| **`/plan` description 引数 (v2.1.72)** | harness-plan | `/plan fix the auth bug` のように説明付きでプランモードに入れる |
+| **並列ツール呼び出し修正 (v2.1.72)** | breezing, harness-work | Read/WebFetch/Glob 失敗が sibling 呼び出しをキャンセルしなくなった（Bash エラーのみカスケード） |
+| **Worktree isolation 修正 (v2.1.72)** | breezing | Task resume 時の cwd 復元、background 通知に worktreePath を含む |
+| **`/clear` バックグラウンドエージェント保持 (v2.1.72)** | breezing | `/clear` はフォアグラウンドタスクのみ停止。バックグラウンドエージェントは存続 |
+| **Hooks 修正群 (v2.1.72)** | hooks | transcript_path 修正、PostToolUse ダブル表示修正、async hooks stdin 修正、skill hooks 二重発火修正 |
+| **HTML コメント非表示 (v2.1.72)** | 全スキル | CLAUDE.md の `<!-- -->` が自動注入時に非表示。Read ツールでは引き続き可視 |
+| **Bash auto-approval 追加 (v2.1.72)** | guardrails | `lsof`, `pgrep`, `tput`, `ss`, `fd`, `fdfind` が許可リストに追加 |
+| **プロンプトキャッシュ修正 (v2.1.72)** | 全スキル | SDK `query()` のキャッシュ無効化修正。入力トークンコスト最大 12 倍削減 |
+| **Output Styles (v2.1.72+)** | 全スキル | `.claude/output-styles/` にカスタム出力スタイルを定義。`harness-ops` で Plan/Work/Review の構造化出力を提供 |
+| **`permissionMode` in agent frontmatter (v2.1.72+)** | agents-v3/ | エージェント定義 YAML に `permissionMode` を明示宣言。spawn 時の `mode` 指定が不要に |
+| **Agent Teams 公式ベストプラクティス (v2.1.72+)** | breezing | 5-6 tasks/teammate ガイドライン、`teammateMode` 設定、plan approval パターンを team-composition に反映 |
 
 ## 機能詳細
 
@@ -398,19 +420,248 @@ Harness では Worker エージェントに `isolation: worktree` を追加。
 
 ### Auto Mode 段階移行計画
 
-Auto Mode は CC Research Preview として 2026-03-12 に開始予定。
+Auto Mode は CC Research Preview として 2026-03-12 に開始。
 Harness は 3 フェーズで段階的に移行する:
 
 | フェーズ | 期間 | デフォルト | `--auto-mode` |
 |---------|------|-----------|---------------|
-| Phase 0 (現在) | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
-| Phase 1 (RP 開始) | 2026-03-12〜 | `bypassPermissions` | `autoMode` に切替 |
-| Phase 2 (検証完了後) | TBD | `autoMode` | — |
+| Phase 0 | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
+| **Phase 0 (pre-RP)** | **RP 開始前** | `bypassPermissions` | 未対応（フラグ無視） |
+| **Phase 1 (RP 開始後)** | **2026-03-12〜** | `bypassPermissions` | Auto Mode を検証 |
+| Phase 2 (検証完了後) | TBD | TBD | 採用可否を再判定 |
 
 Phase 1 検証項目:
 1. PreToolUse / PostToolUse hooks が Auto Mode でも発火するか
 2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
 3. トークンコスト増の実測
+
+### Subagent `background` フィールド
+
+エージェント定義の frontmatter に `background: true` を追加すると、そのエージェントは常にバックグラウンドタスクとして実行される。
+明示的に `run_in_background: true` を指定しなくても、Agent tool 経由で起動するたびにバックグラウンド実行となる。
+
+```yaml
+---
+name: long-running-analyzer
+background: true
+---
+```
+
+Harness では `breezing` の Worker spawn 時に検討可能だが、現状は Lead が明示的に `run_in_background` を制御しているため、追加適用は Phase 2 以降で検討する。
+
+### Subagent `local` メモリスコープ
+
+`memory: local` は `.claude/agent-memory-local/<name>/` に保存され、`.gitignore` に追加すべきパス。
+`project` との違い:
+
+| スコープ | パス | VCS コミット | ユースケース |
+|---------|------|-------------|------------|
+| `user` | `~/.claude/agent-memory/<name>/` | 対象外 | 全プロジェクト共通の学習 |
+| `project` | `.claude/agent-memory/<name>/` | 共有可能 | チーム共有のプロジェクト知識 |
+| `local` | `.claude/agent-memory-local/<name>/` | 非推奨 | 個人固有・機密性の高い学習 |
+
+Harness では Worker/Reviewer ともに `memory: project` を使用中。`local` は個人的なデバッグパターンの記録に適するが、チーム共有を優先するため現行設定を維持。
+
+### Agent Teams 実験フラグ
+
+Agent Teams は実験的機能として `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数で有効化される。
+settings.json 経由でも設定可能:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Harness の `breezing` スキルは Agent Teams 機能を前提としているため、
+セットアップ時にこの環境変数が設定されていることを確認する検証ステップを追加。
+
+### Desktop Scheduled Tasks
+
+Desktop アプリの Scheduled Tasks は `~/.claude/scheduled-tasks/<task-name>/SKILL.md` に保存される。
+YAML frontmatter で `name` と `description` を定義し、本文にプロンプトを記述する。
+
+スケジュール設定（頻度・時刻・フォルダ）は Desktop アプリの UI から管理。
+`/harness-work` や `/harness-review` を定期実行する用途に活用可能。
+
+### `/agents` コマンド
+
+エージェントの対話的管理インターフェース。以下の操作が可能:
+- 利用可能な全エージェントの一覧表示（built-in, user, project, plugin）
+- ガイド付きまたは Claude 生成によるエージェント作成
+- 既存エージェントの設定・ツールアクセス編集
+- カスタムエージェントの削除
+
+CLI からの非対話的な一覧表示: `claude agents`
+
+### `--agents` CLI フラグ
+
+セッション起動時に JSON でエージェント定義を渡す。ディスクに保存されない一時的な構成:
+
+```bash
+claude --agents '{
+  "quick-reviewer": {
+    "description": "Quick code review",
+    "prompt": "Review for critical issues only",
+    "tools": ["Read", "Grep", "Glob"],
+    "model": "haiku"
+  }
+}'
+```
+
+CI/CD パイプラインでの一時的なエージェント注入に有用。
+
+### `ExitWorktree` ツール (v2.1.72)
+
+CC 2.1.72 で `ExitWorktree` ツールが追加された。`EnterWorktree` で作成された worktree セッションからプログラム的に離脱できる。
+従来は worktree セッション終了時のプロンプトで手動選択するしかなかったが、エージェントが実装完了後に自動で worktree を離脱できるようになった。
+
+Harness での活用:
+- `breezing` の Worker が `isolation: worktree` で作業完了後、`ExitWorktree` で明示的に worktree を閉じる
+- worktree クリーンアップの確実性が向上（変更がない場合は自動削除される既存動作と組み合わせ可能）
+
+### Effort levels 簡素化 (v2.1.72)
+
+CC 2.1.72 で effort レベルが `low/medium/high` の3段階に簡素化された。`max` レベルが廃止され、表示シンボルが `○ ◐ ●` に統一された。`/effort auto` でデフォルト（medium）にリセット可能。
+
+Harness への影響:
+- `ultrathink` キーワードによる high effort 注入は引き続き有効（変更なし）
+- harness-work のスコアリングロジックに変更は不要（ultrathink → high effort の対応が維持）
+- ドキュメント上の `max` への言及を `high` に統一
+
+### Agent tool `model` パラメータ復活 (v2.1.72)
+
+CC 2.1.72 で Agent tool の `model` パラメータが復活した。per-invocation でモデルを指定してサブエージェントを起動できる。
+エージェント定義の `model` フィールドとは別に、spawn 時に一時的なモデル指定が可能。
+
+Harness での活用余地:
+- 軽量タスク（ドキュメント更新、フォーマット修正等）には `model: "haiku"` で spawn してコスト削減
+- セキュリティレビューやアーキテクチャ変更には `model: "opus"` で spawn して品質最大化
+- 現状は Worker/Reviewer とも `model: sonnet` で固定。Lead がタスク特性に応じて動的にモデルを切り替える実装は Phase 2 以降で検討
+
+### `/plan` description 引数 (v2.1.72)
+
+CC 2.1.72 で `/plan` コマンドがオプションの description 引数を受け付けるようになった。
+`/plan fix the auth bug` のように、説明付きで即座にプランモードに入れる。
+
+Harness での活用:
+- `harness-plan` スキルの `create` サブコマンドと補完的に使用可能
+- ユーザーが簡易にプランモードに入りたい場合のショートカットとして案内
+
+### 並列ツール呼び出し修正 (v2.1.72)
+
+CC 2.1.72 で並列ツール呼び出し時の重要なバグが修正された。
+以前は Read, WebFetch, Glob のいずれかが失敗すると、並列実行中の sibling 呼び出しもキャンセルされていた。
+修正後は Bash エラーのみがカスケードし、他のツールの失敗は独立して処理される。
+
+Harness への影響:
+- `breezing` や `harness-work` でファイル読み込みと Web 検索を並列実行する際の安定性が向上
+- 存在しないファイルの Read が他の正常な Read をキャンセルする問題が解消
+- Worker エージェントの探索フェーズでの信頼性改善
+
+### Worktree isolation 修正 (v2.1.72)
+
+CC 2.1.72 で worktree isolation に関する2つのバグが修正された:
+
+1. **Task resume の cwd 復元**: `resume` パラメータで再開したタスクが worktree の作業ディレクトリを正しく復元するようになった
+2. **Background 通知の worktreePath**: バックグラウンドタスクの完了通知に `worktreePath` フィールドが含まれるようになった
+
+Harness への影響:
+- `breezing` の Worker が `isolation: worktree` で作業し、Lead が結果を回収する際の信頼性が向上
+- `run_in_background: true` で spawn した Worker の完了通知から worktree パスを取得可能に
+
+### `/clear` バックグラウンドエージェント保持 (v2.1.72)
+
+CC 2.1.72 で `/clear` の動作が変更された。フォアグラウンドのタスクのみ停止し、バックグラウンドで実行中のエージェントや Bash タスクは影響を受けなくなった。
+
+Harness への影響:
+- `breezing` のチーム実行中にユーザーが `/clear` してもバックグラウンド Worker が存続
+- Lead が `/clear` でコンテキストを整理しても、実行中のタスクが中断されないため安全性向上
+
+### Hooks 修正群 (v2.1.72)
+
+CC 2.1.72 で複数のフック関連バグが修正された:
+
+1. **transcript_path**: `--resume` / `--fork` セッションでの `transcript_path` が正しく設定されるようになった
+2. **PostToolUse ブロック理由の二重表示**: PostToolUse フックがブロックした際の理由メッセージが2回表示される問題が修正
+3. **async hooks の stdin**: 非同期フックが stdin を正しく受信するようになった
+4. **skill hooks 二重発火**: スキルフックが1イベントにつき2回発火する問題が修正
+
+Harness への影響:
+- `pre-tool.sh` / `post-tool.sh` ガードレールフックの発火が正確に1回になり、ログの信頼性が向上
+- `session-memory` の transcript 参照が `--resume` セッションでも正常動作
+
+### HTML コメント非表示 (v2.1.72)
+
+CC 2.1.72 で CLAUDE.md ファイル内の HTML コメント（`<!-- ... -->`）が自動注入時に非表示になった。
+Read ツールで直接ファイルを読んだ場合は引き続き可視。
+
+Harness への影響:
+- claude-mem が使用する `<!-- This section is auto-generated by claude-mem. -->` マーカーが自動注入時に非表示になる
+- **実害なし**: マーカーは情報コメントであり、activity log テーブル本体はコメント外に存在するため表示に影響なし
+- 重要な指示や設定を HTML コメント内に記述することは今後避けるべき
+
+### Bash auto-approval 追加 (v2.1.72)
+
+CC 2.1.72 で以下のコマンドが Bash auto-approval 許可リストに追加された:
+`lsof`, `pgrep`, `tput`, `ss`, `fd`, `fdfind`
+
+Harness への影響:
+- Worker がプロセス確認（`pgrep`）やファイル検索（`fd`）を権限プロンプトなしで実行可能に
+- guardrails の `pre-tool.sh` は引き続きこれらのコマンドを通過させる（ブロック対象外）
+
+### プロンプトキャッシュ修正 (v2.1.72)
+
+CC 2.1.72 で SDK の `query()` 呼び出し時のプロンプトキャッシュ無効化バグが修正された。
+入力トークンコストが最大 12 倍削減される。
+
+Harness への影響:
+- `breezing` や `harness-work` で多数のサブエージェント spawn を行う際のコスト大幅削減
+- 特に同一セッション内での反復的な API 呼び出しパターンで効果大
+
+### Output Styles (v2.1.72+)
+
+CC の Output Styles 機能により、システムプロンプト自体をカスタマイズできる。
+CLAUDE.md（ユーザーメッセージとして追加）や Skills（特定タスク用）とは異なるレイヤー。
+
+Harness では `.claude/output-styles/harness-ops.md` を提供:
+- `keep-coding-instructions: true` — コーディング指示を維持しつつ運用フローを最適化
+- 構造化された進捗報告フォーマット（実施/現在地/次アクション）
+- Quality Gate の表形式出力
+- Review 判定の構造化フォーマット
+- エスカレーション（3回ルール）の標準出力形式
+
+```bash
+# 有効化
+/output-style harness-ops
+```
+
+### `permissionMode` in agent frontmatter (v2.1.72+)
+
+公式ドキュメントで `permissionMode` がエージェント frontmatter の正式フィールドとして文書化された。
+
+Harness への反映:
+- Worker/Reviewer/Scaffolder の3エージェント全てに `permissionMode: bypassPermissions` を追加
+- spawn 時の `mode` 指定に依存しない宣言的権限管理を実現
+- Auto Mode 採用可否は teammate 実行経路側で再評価する。frontmatter の `permissionMode` は文書化済み値のみを使う
+
+```yaml
+# agents-v3/worker.md frontmatter
+permissionMode: bypassPermissions  # 追加
+```
+
+### Agent Teams 公式ベストプラクティス (v2.1.72+)
+
+Claude Code 公式に `agent-teams.md` が独立ドキュメントとして整備された。
+Harness の `agents-v3/team-composition.md` に以下を反映:
+
+1. **タスク粒度ガイドライン**: 5-6 tasks/teammate の推奨値
+2. **`teammateMode` 設定**: `"auto"` / `"in-process"` / `"tmux"` の公式サポート
+3. **Plan Approval パターン**: Worker に plan mode を要求する公式パターン
+4. **Quality Gate Hooks**: `TeammateIdle`/`TaskCompleted` のexit 2 フィードバックパターン
+5. **チームサイズ**: 3-5 teammates の推奨値（Harness の Worker 1-3 + Reviewer 1 と整合）
 
 ## 関連ドキュメント
 
