@@ -113,6 +113,15 @@
 | **`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (v2.1.74)** | hooks | SessionEnd フックのタイムアウトを設定可能に（従来は 1.5 秒固定で kill） |
 | **Full model ID 修正 (v2.1.74)** | agents-v3/, breezing | `claude-opus-4-6` 等の完全モデル ID がエージェント frontmatter・JSON config で認識されるように |
 | **Streaming API メモリリーク修正 (v2.1.74)** | breezing, harness-work | ストリーミングレスポンスバッファの無制限 RSS 増大を修正 |
+| **`--remote` / Cloud Sessions** | breezing, harness-work | `--remote` でターミナルからクラウドセッションを起動。非同期タスク実行 |
+| **`/teleport` (`/tp`)** | session | クラウドセッションをローカルターミナルに取り込み |
+| **`CLAUDE_CODE_REMOTE` 環境変数** | hooks, session-env-setup | クラウド vs ローカル実行の検出。フックの条件分岐に活用 |
+| **`CLAUDE_ENV_FILE` SessionStart 永続化** | hooks, session-env-setup | SessionStart フックから後続 Bash コマンドへ環境変数を永続化 |
+| **Slack Integration (`@Claude`)** | harness-work (将来対応) | Slack チャネルからコーディングタスクをルーティング。HTTP hooks で連携可能 |
+| **Server-managed settings (public beta)** | setup | サーバー配信による一括設定管理。Teams/Enterprise 向け |
+| **Microsoft Foundry** | setup, breezing | 新クラウドプロバイダとして追加 |
+| **`PreCompact` hook** | hooks | コンテキスト圧縮前の状態保存と WIP タスク警告（実装済み） |
+| **`Notification` hook event** | hooks | 通知発火時のカスタムハンドラ |
 
 ## 機能詳細
 
@@ -1119,6 +1128,93 @@ CC 2.1.74 でストリーミング API レスポンスバッファの無制限 R
 - `harness-work` で大量のファイル読み書きを含む長時間 Worker セッションのメモリ消費が安定化
 - v2.1.50〜v2.1.63 のメモリリーク修正シリーズ（LSP 診断、ツール出力、ファイル履歴等）に続く追加修正
 - Harness 側の JSONL ローテーション対策（独自のメモリ管理）と組み合わせて、二重の安定性確保
+
+### `--remote` / Cloud Sessions
+
+CC の `--remote` フラグでターミナルからクラウドセッションを起動できる。タスクは Anthropic 管理の隔離 VM 上で実行され、完了後に PR 作成が可能。
+
+**Harness での活用**:
+- `breezing` の大規模タスクをクラウドに委任し、ローカルリソースを節約
+- `--remote` で複数タスクを並列起動（各タスクが独立したクラウドセッション）
+- `/teleport` でクラウドの成果物をローカルに取り込み、後続の `/harness-review` に接続
+
+```bash
+# クラウドでタスク実行
+claude --remote "Fix the authentication bug in src/auth/login.ts"
+
+# 完了後にローカルに取り込み
+/teleport
+```
+
+### `/teleport` (`/tp`)
+
+クラウドセッションをローカルターミナルに取り込むコマンド。`/teleport` または `/tp` で対話的にセッションを選択、`claude --teleport <session-id>` で直接指定も可能。
+
+**前提条件**:
+- ローカルの git working directory がクリーンであること
+- 同一リポジトリから実行すること
+- 同一 Claude.ai アカウントで認証されていること
+
+### `CLAUDE_CODE_REMOTE` 環境変数
+
+クラウドセッション内では `CLAUDE_CODE_REMOTE=true` が設定される。Harness の `session-env-setup.sh` はこの値を `HARNESS_IS_REMOTE` として永続化し、他のフックハンドラがローカル専用処理をスキップする判定に使用可能。
+
+```bash
+# フックスクリプト内でのクラウド検出例
+if [ "$HARNESS_IS_REMOTE" = "true" ]; then
+  # クラウド環境ではローカル専用処理をスキップ
+  exit 0
+fi
+```
+
+### `CLAUDE_ENV_FILE` SessionStart 永続化
+
+CC の `SessionStart` フックは `CLAUDE_ENV_FILE` 環境変数が指すファイルに `KEY=VALUE` を書き込むことで、後続の Bash コマンドにも環境変数を永続化できる。
+
+Harness の `session-env-setup.sh` はこの機構を活用し、`HARNESS_VERSION`、`HARNESS_AGENT_TYPE`、`HARNESS_IS_REMOTE` 等をセッション全体で利用可能にしている。
+
+### Slack Integration (`@Claude`)
+
+Slack チャネルで `@Claude` にコーディングタスクをメンションすると、自動的にクラウドセッションが作成される。GitHub リポジトリとの連携が前提。
+
+**Harness との関係**:
+- Harness の HTTP hooks（`type: "http"`）を Slack Webhook URL に設定することで、タスク完了時の Slack 通知が可能
+- クラウドセッション内でも `.claude/settings.json` のフックが動作するため、Harness のガードレールは Slack 経由のタスクにも適用される
+
+### Server-managed settings (public beta)
+
+Claude.ai の管理画面からチーム全体の Claude Code 設定をサーバー配信する機能。Teams/Enterprise 向け。
+
+**Harness での活用**:
+- チーム全体の `permissions.deny` ルールを一括管理
+- Harness のフック設定をサーバー経由で配信（ただしフック設定はセキュリティ確認ダイアログが表示される）
+- `availableModels` + `model` の組み合わせでチームのモデル体験を統制
+
+### Microsoft Foundry
+
+Azure ベースの新クラウドプロバイダ。Bedrock / Vertex に続く第3のサードパーティプロバイダとして追加。
+`modelOverrides` 設定で Foundry のモデル ID にマッピング可能。
+
+### `PreCompact` hook
+
+コンテキスト圧縮が実行される直前に発火するフックイベント。Harness では以下の2層で実装済み:
+
+1. **`pre-compact-save.js`**: セッション状態（進捗、メトリクス）を永続化
+2. **agent hook**: `cc:WIP` タスクが残っていないかチェックし、警告メッセージを注入
+
+```json
+"PreCompact": [
+  { "hooks": [
+    { "type": "command", "command": "...pre-compact-save.js" },
+    { "type": "agent", "prompt": "Check Plans.md for WIP tasks...", "model": "haiku" }
+  ]}
+]
+```
+
+### `Notification` hook event
+
+Claude Code が通知を発行する際に発火するフックイベント。プラグインリファレンスに記載。
+外部監視ツールやダッシュボードへの通知転送に活用可能。
 
 ## 関連ドキュメント
 

@@ -6,6 +6,32 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+- release metadata updates are now release-only: normal PRs should leave `VERSION` and `.claude-plugin/plugin.json` untouched and record changes under `[Unreleased]`
+- pre-commit and CI now validate release metadata consistency without auto-bumping patch versions on ordinary code changes
+- README and README_ja now use the GitHub latest release badge instead of hardcoded per-version badge URLs
+
+### Added
+
+#### 1. Feature Table に公式ドキュメント由来の 9 機能を追加
+
+**今まで**: Claude Code 公式ドキュメント（60+ ページ）に記載されている `--remote` / Cloud Sessions、`/teleport`、`CLAUDE_CODE_REMOTE`、`CLAUDE_ENV_FILE`、Slack Integration、Server-managed settings、Microsoft Foundry、`PreCompact` hook、`Notification` hook event が Feature Table に未登録だった。
+
+**今後**: `docs/CLAUDE-feature-table.md` に 9 エントリを追加（概要テーブル + 機能詳細セクション）。`CLAUDE.md` にも高インパクトな 4 項目を反映。各機能の Harness での活用方法、コード例、前提条件を詳細に記述。
+
+#### 2. session-env-setup.sh にクラウドセッション検出を追加
+
+**今まで**: `session-env-setup.sh` はローカル環境前提で、クラウドセッション（`--remote` 実行時）かどうかを判定する手段がなかった。
+
+**今後**: `CLAUDE_CODE_REMOTE` 環境変数を `HARNESS_IS_REMOTE` として `CLAUDE_ENV_FILE` に永続化。他のフックハンドラがクラウド vs ローカルの条件分岐を行えるようになった。
+
+#### 3. hooks-editing.md に PreCompact / Notification イベントを追加
+
+**今まで**: hooks-editing.md の Event Types 一覧に `PreCompact` と `Notification` が記載されておらず、開発者が新しいフックを追加する際に参照できなかった。
+
+**今後**: Event Types JSON ブロックに `PreCompact`（コンテキスト圧縮前の状態保存）と `Notification`（通知発火時のカスタムハンドラ）を追加。Harness では `PreCompact` はすでに実装済み（command + agent の 2 層構成）。
+
 ---
 
 ## [3.10.2] - 2026-03-12

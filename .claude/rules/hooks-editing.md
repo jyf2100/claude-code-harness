@@ -255,7 +255,9 @@ Stop hooks execute at session termination, so:
     "WorktreeCreate": [],  // Worktree lifecycle start
     "WorktreeRemove": [],  // Worktree lifecycle end
     "UserPromptSubmit": [],// On user input
-    "PermissionRequest": [] // On permission request
+    "PermissionRequest": [], // On permission request
+    "PreCompact": [],      // Before context compaction
+    "Notification": []     // On notification dispatch
   }
 }
 ```

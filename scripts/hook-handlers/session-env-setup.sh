@@ -7,6 +7,7 @@
 #   HARNESS_EFFORT_DEFAULT   - デフォルト effort レベル (medium)
 #   HARNESS_AGENT_TYPE       - エージェントタイプ (BREEZING_ROLE または "solo")
 #   HARNESS_BREEZING_SESSION_ID - Breezing セッション ID (存在する場合)
+#   HARNESS_IS_REMOTE           - クラウドセッション検出 (CLAUDE_CODE_REMOTE から取得)
 #
 # Usage: bash session-env-setup.sh
 # Hook event: SessionStart
@@ -34,11 +35,15 @@ HARNESS_AGENT_TYPE="${BREEZING_ROLE:-solo}"
 # Breezing セッション ID (存在する場合)
 HARNESS_BREEZING_SESSION_ID="${BREEZING_SESSION_ID:-}"
 
+# クラウドセッション検出
+HARNESS_IS_REMOTE="${CLAUDE_CODE_REMOTE:-false}"
+
 # CLAUDE_ENV_FILE に書き出す (既存のハーネス変数を上書き)
 {
   echo "HARNESS_VERSION=${HARNESS_VERSION}"
   echo "HARNESS_EFFORT_DEFAULT=medium"
   echo "HARNESS_AGENT_TYPE=${HARNESS_AGENT_TYPE}"
+  echo "HARNESS_IS_REMOTE=${HARNESS_IS_REMOTE}"
   if [ -n "${HARNESS_BREEZING_SESSION_ID}" ]; then
     echo "HARNESS_BREEZING_SESSION_ID=${HARNESS_BREEZING_SESSION_ID}"
   fi
