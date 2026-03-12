@@ -4,6 +4,17 @@
 
 ---
 
+## Maintenance: Auto Mode review follow-up
+
+作成日: 2026-03-12
+目的: Auto Mode 既定化まわりの表現と実装実態のズレを是正し、agent skill preload 名と breezing mirror チェックを整えてレビューを通す
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M6 | Auto Mode を rollout/opt-in 表現へ戻し、agents-v3 の skills 名を実在 `harness-*` に統一し、breezing mirror drift を CI で検知できるようにする | `./scripts/sync-v3-skill-mirrors.sh --check` / `./scripts/ci/check-consistency.sh` / `./tests/validate-plugin.sh` / `./tests/test-codex-package.sh` が通り、follow-up review で重大指摘がなくなる | - | cc:完了 |
+
+---
+
 ## Maintenance: PR59/60 Auto Mode default merge prep
 
 作成日: 2026-03-12

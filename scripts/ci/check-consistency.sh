@@ -257,7 +257,7 @@ if [ -f "$SECURITY_TEMPLATE" ]; then
 fi
 
 # Check 3: settings.local.json.template が存在し、defaultMode が documented な permission mode であること
-# NOTE: Auto Mode の既定化は teammate 実行経路で扱い、project template では documented な bypassPermissions を配布する
+# NOTE: shipped default は bypassPermissions を維持し、Auto Mode は teammate 実行経路の follow-up rollout として扱う
 LOCAL_TEMPLATE="$PLUGIN_ROOT/templates/claude/settings.local.json.template"
 if [ -f "$LOCAL_TEMPLATE" ]; then
   if grep -q '"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' "$LOCAL_TEMPLATE"; then
@@ -379,6 +379,30 @@ fi
 if [ $MIRROR_ISSUES -gt 0 ]; then
   ERRORS=$((ERRORS + MIRROR_ISSUES))
 fi
+
+# breezing alias は public mirror と codex mirror の両方で skills-v3 と一致すること
+for mirror_entry in "claude:$CLAUDE_MIRROR/breezing" "codex:$CODEX_MIRROR/breezing"; do
+  mirror_name="${mirror_entry%%:*}"
+  mirror_path="${mirror_entry#*:}"
+  if [ ! -d "$mirror_path" ]; then
+    echo "  ❌ $mirror_name: breezing がディレクトリとして存在しません"
+    ERRORS=$((ERRORS + 1))
+    continue
+  fi
+
+  if [ -L "$mirror_path" ]; then
+    echo "  ❌ $mirror_name: breezing が symlink のままです"
+    ERRORS=$((ERRORS + 1))
+    continue
+  fi
+
+  if diff -qr "$V3_SKILLS_DIR/breezing" "$mirror_path" >/dev/null 2>&1; then
+    echo "  ✅ $mirror_name: breezing mirror is in sync"
+  else
+    echo "  ❌ $mirror_name: breezing mirror が skills-v3 と不一致"
+    ERRORS=$((ERRORS + 1))
+  fi
+done
 
 # ================================
 # 11. CHANGELOG フォーマット検証

@@ -9,8 +9,8 @@ color: yellow
 memory: project
 isolation: worktree
 skills:
-  - execute
-  - review
+  - harness-work
+  - harness-review
 hooks:
   PreToolUse:
     - matcher: "Write|Edit"
@@ -99,7 +99,7 @@ Task tool で subagent_type="worker" を指定
 6. **実装**（Green）:
    - `mode: solo` → 直接 Write/Edit/Bash で実装
    - `mode: codex` → `codex exec` に委託
-7. **セルフレビュー**: execute スキルの review フローで品質確認
+7. **セルフレビュー**: harness-work の実装フローと harness-review の観点で品質確認
 8. **ビルド検証**: テスト・型チェックを実行
 9. **エラー復旧**: 失敗時は原因分析→修正（最大3回）
 10. **コミット**: `git commit` で変更を記録
@@ -144,12 +144,12 @@ Codex 環境での代替:
 
 ```yaml
 skills:
-  - execute  # Claude Code の skills/ ディレクトリ参照。Codex では非互換
-  - review
+  - harness-work  # Claude Code の skills/ ディレクトリ参照。Codex では非互換
+  - harness-review
 ```
 
 Codex 環境での代替:
-- `$skill-name` 構文で Codex スキルを呼び出す（例: `$execute`）
+- `$skill-name` 構文で Codex スキルを呼び出す（例: `$harness-work`）
 - スキルは `~/.codex/skills/` または `.codex/skills/` に配置
 
 ### Task ツール

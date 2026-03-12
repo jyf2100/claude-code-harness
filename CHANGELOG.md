@@ -10,9 +10,9 @@ Change history for claude-code-harness.
 
 ## [3.10.1] - 2026-03-12
 
-### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode 既定化 + SubagentStart/Stop matcher 強化
+### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode rollout 整理 + SubagentStart/Stop matcher 強化
 
-**公式ドキュメント 60 ページの精査により発見した未追跡機能 12 項目を Feature Table に追加。Breezing の teammate 実行では Auto Mode を既定化しつつ、SubagentStart/SubagentStop hooks に agent type 別 matcher を追加して Worker/Reviewer/Scaffolder/Video Generator の起動・停止を個別にトラッキング可能に。**
+**公式ドキュメント 60 ページの精査により発見した未追跡機能 12 項目を Feature Table に追加。Auto Mode は shipped default と rollout target を分けて整理し、SubagentStart/SubagentStop hooks には agent type 別 matcher を追加して Worker/Reviewer/Scaffolder/Video Generator の起動・停止を個別にトラッキング可能に。**
 
 ---
 
@@ -46,11 +46,11 @@ Change history for claude-code-harness.
 
 **今後**: 最もインパクトの大きい 6 機能を CLAUDE.md の要約テーブルに追加。
 
-#### 4. Breezing の Auto Mode を既定化
+#### 4. Breezing の Auto Mode rollout を整理
 
-**今まで**: Auto Mode は `--auto-mode` 指定時だけ有効化する段階移行扱いで、Breezing の既定値は `bypassPermissions` 前提だった。
+**今まで**: Auto Mode の説明が実装より先行し、Breezing で既定化済みのように読める状態だった。
 
-**今後**: `/breezing` と `/harness-work --breezing` は teammate 実行時に Auto Mode を既定で有効化する。`--auto-mode` は後方互換の明示再指定として維持し、project template / frontmatter には公式 docs に載っている `bypassPermissions` を残す。
+**今後**: shipped default は `bypassPermissions` のまま維持し、`--auto-mode` は互換な親セッションでのみ試す opt-in rollout として文書化する。project template / frontmatter には公式 docs に載っている `bypassPermissions` を残す。
 
 ---
 

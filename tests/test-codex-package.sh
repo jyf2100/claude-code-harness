@@ -149,10 +149,14 @@ required_skill_dirs=(
 )
 skills_ok=true
 for dir in "${required_skill_dirs[@]}"; do
-  if [ -e "$dir" ]; then
+  if [ -d "$dir" ] && [ ! -L "$dir" ]; then
     echo "  ok: $dir"
   else
-    echo "  missing: $dir"
+    if [ -L "$dir" ]; then
+      echo "  symlink: $dir"
+    else
+      echo "  missing: $dir"
+    fi
     skills_ok=false
   fi
 done
@@ -230,6 +234,14 @@ if ! rg -q --fixed-strings -- '--codex' "codex/.codex/skills/harness-work/SKILL.
 fi
 if ! rg -q --fixed-strings '/harness-work' "codex/.codex/skills/breezing/SKILL.md"; then
   echo "  missing: /harness-work alias note in breezing/SKILL.md"
+  workflow_surface_ok=false
+fi
+if [ -L "codex/.codex/skills/breezing" ]; then
+  echo "  symlink: codex/.codex/skills/breezing must be a real directory"
+  workflow_surface_ok=false
+fi
+if ! diff -qr "skills-v3/breezing" "codex/.codex/skills/breezing" >/dev/null 2>&1; then
+  echo "  drift: codex breezing mirror does not match skills-v3/breezing"
   workflow_surface_ok=false
 fi
 if $workflow_surface_ok; then

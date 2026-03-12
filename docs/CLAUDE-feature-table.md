@@ -48,7 +48,7 @@
 | **`/reload-plugins` (v2.1.69)** | 全スキル | スキル・フック編集後の即時反映 |
 | **`includeGitInstructions: false` (v2.1.69)** | work, breezing | git 指示が不要な場面のトークン削減 |
 | **`git-subdir` plugin source (v2.1.69)** | setup, release | サブディレクトリ管理された plugin source に対応 |
-| **Auto Mode (Breezing default)** | breezing, work | `bypassPermissions` の安全な代替。Breezing (`/breezing`, `/execute --breezing`) では既定で有効化し、`--auto-mode` は明示再指定用に維持 |
+| **Auto Mode rollout prep** | breezing, work | `bypassPermissions` からの移行候補。現行 shipped default は `bypassPermissions`、`--auto-mode` は互換な親セッション向け opt-in marker |
 | **Per-agent hooks (v2.1.69+)** | agents-v3/ | エージェント定義の frontmatter に `hooks` フィールドを追加。Worker に PreToolUse ガード、Reviewer に Stop ログを設定 |
 | **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Worker エージェント定義に `isolation: worktree` を追加。並列書き込み時の自動 worktree 分離 |
 | **Compaction 画像保持 (v2.1.70)** | notebookLM, harness-review | サマリーリクエストで画像を保持。プロンプトキャッシュ再利用改善 |
@@ -105,7 +105,7 @@
 | **`/btw` サイドクエスチョン (v2.1.72+)** | 全スキル | 現在のコンテキストを保持したまま短い質問。ツールアクセスなし、履歴に残らない。サブエージェント起動の軽量代替 |
 | **Plugin CLI コマンド群 (v2.1.72+)** | setup | `claude plugin install/uninstall/enable/disable/update` + `--scope` フラグ。スクリプトによる自動化対応 |
 | **Remote Control 強化 (v2.1.72+)** | 調査済み・将来対応 | `/remote-control` (`/rc`) でセッション内から有効化。`--name`, `--sandbox`, `--verbose` フラグ。`/mobile` で QR コード表示。自動再接続対応 |
-| **`skills` フィールド in agent frontmatter (v2.1.72+)** | agents-v3/ | サブエージェントにスキルをプリロード。Worker に execute+review、Reviewer に review を注入（実装済み） |
+| **`skills` フィールド in agent frontmatter (v2.1.72+)** | agents-v3/ | サブエージェントにスキルをプリロード。Worker に `harness-work`+`harness-review`、Reviewer に `harness-review`、Scaffolder に `harness-setup`+`harness-plan` を注入（実装済み） |
 
 ## 機能詳細
 
@@ -440,17 +440,17 @@ Harness では Worker エージェントに `isolation: worktree` を追加。
 `memory: project` と組み合わせることで、worktree 間で Agent Memory（MEMORY.md）が共有され、
 並列 Worker が同一の学習内容を参照・更新可能。
 
-### Auto Mode 既定化ポリシー
+### Auto Mode rollout ポリシー
 
-Auto Mode は Claude Code の team execution をより安全側に寄せるため、Harness では Breezing の既定挙動として採用する。
-一方で project template や frontmatter には、公式 docs に載っている permission mode のみを残す。
+Auto Mode は Claude Code の team execution をより安全側に寄せるための移行候補として整理している。
+ただし shipped default はまだ `bypassPermissions` であり、project template や frontmatter には公式 docs に載っている permission mode のみを残す。
 
 | レイヤー | 採用値 | 理由 |
 |---------|--------|------|
 | project template (`permissions.defaultMode`) | `bypassPermissions` | documented permission modes に `autoMode` が含まれないため |
 | agent frontmatter (`permissionMode`) | `bypassPermissions` | 宣言的設定は documented 値のみを使うため |
-| teammate 実行経路 | **Auto Mode（既定）** | Breezing の安全性を上げつつ、template 側の互換性を壊さないため |
-| `--auto-mode` | 明示再指定 | 旧 docs / 運用との後方互換 |
+| teammate 実行経路 | `bypassPermissions`（現行） | shipped default と実際の permission 継承を一致させるため |
+| `--auto-mode` | opt-in marker | 親セッションが互換な permission mode の場合のみ rollout を試すため |
 
 既定コマンド例:
 
@@ -669,7 +669,7 @@ Harness では `.claude/output-styles/harness-ops.md` を提供:
 Harness への反映:
 - Worker/Reviewer/Scaffolder の3エージェント全てに `permissionMode: bypassPermissions` を追加
 - spawn 時の `mode` 指定に依存しない宣言的権限管理を実現
-- Auto Mode は teammate 実行経路で既定採用する。frontmatter の `permissionMode` と project template の `defaultMode` は文書化済み値のみを使う
+- Auto Mode は rollout 候補として整理し、現行 shipped default は `bypassPermissions` のまま維持する
 
 ```yaml
 # agents-v3/worker.md frontmatter
@@ -1011,9 +1011,9 @@ claude plugin update <plugin> [--scope user|project|local|managed]
 親会話のスキルは継承されないため、明示的にリストする必要がある。
 
 **Harness の実装状況**:
-- Worker: `skills: [execute, review]` — 実装とセルフレビューのスキルをプリロード
-- Reviewer: `skills: [review]` — レビュースキルをプリロード
-- Scaffolder: `skills: [setup, plan]` — セットアップと計画スキルをプリロード
+- Worker: `skills: [harness-work, harness-review]` — 実装とセルフレビューのスキルをプリロード
+- Reviewer: `skills: [harness-review]` — レビュースキルをプリロード
+- Scaffolder: `skills: [harness-setup, harness-plan]` — セットアップと計画スキルをプリロード
 
 > `skills` in skill (`context: fork`) の逆パターン。skill が agent を制御するのではなく、agent が skill を読み込む。
 

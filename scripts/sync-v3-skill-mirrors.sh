@@ -30,6 +30,10 @@ V3_SKILLS=(
   "harness-setup"
 )
 
+ALIAS_SKILLS=(
+  "breezing"
+)
+
 MIRROR_ROOTS=(
   "skills"
   "codex/.codex/skills"
@@ -81,6 +85,44 @@ check_skill() {
   echo "ok $mirror_root/$skill"
 }
 
+sync_alias_skill() {
+  local skill="$1"
+  local mirror_root="$2"
+  local src="$PLUGIN_ROOT/skills-v3/$skill"
+  local dst_root="$PLUGIN_ROOT/$mirror_root"
+  local dst="$dst_root/$skill"
+
+  mkdir -p "$dst_root"
+  rm -rf "$dst"
+  cp -R "$src" "$dst"
+  echo "synced $mirror_root/$skill"
+}
+
+check_alias_skill() {
+  local skill="$1"
+  local mirror_root="$2"
+  local src="$PLUGIN_ROOT/skills-v3/$skill"
+  local dst="$PLUGIN_ROOT/$mirror_root/$skill"
+
+  if [ ! -d "$dst" ]; then
+    echo "missing $mirror_root/$skill" >&2
+    return 1
+  fi
+
+  if [ -L "$dst" ]; then
+    echo "symlink $mirror_root/$skill" >&2
+    return 1
+  fi
+
+  if diff -qr "$src" "$dst" >/dev/null 2>&1; then
+    echo "ok $mirror_root/$skill"
+    return 0
+  fi
+
+  echo "drift $mirror_root/$skill" >&2
+  return 1
+}
+
 FAILURES=0
 for mirror_root in "${MIRROR_ROOTS[@]}"; do
   for skill in "${V3_SKILLS[@]}"; do
@@ -90,6 +132,21 @@ for mirror_root in "${MIRROR_ROOTS[@]}"; do
       if ! check_skill "$skill" "$mirror_root"; then
         FAILURES=$((FAILURES + 1))
       fi
+    fi
+  done
+done
+
+ALIAS_MIRROR_ROOTS=(
+  "skills"
+  "codex/.codex/skills"
+)
+
+for skill in "${ALIAS_SKILLS[@]}"; do
+  for mirror_root in "${ALIAS_MIRROR_ROOTS[@]}"; do
+    if [ "$MODE" = "sync" ]; then
+      sync_alias_skill "$skill" "$mirror_root"
+    else
+      check_alias_skill "$skill" "$mirror_root"
     fi
   done
 done

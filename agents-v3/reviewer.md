@@ -8,7 +8,7 @@ permissionMode: bypassPermissions
 color: blue
 memory: project
 skills:
-  - review
+  - harness-review
 hooks:
   Stop:
     - hooks:

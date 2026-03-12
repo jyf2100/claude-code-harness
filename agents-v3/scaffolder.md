@@ -8,8 +8,8 @@ permissionMode: bypassPermissions
 color: green
 memory: project
 skills:
-  - setup
-  - plan
+  - harness-setup
+  - harness-plan
 ---
 
 # Scaffolder Agent (v3)
