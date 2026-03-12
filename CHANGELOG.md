@@ -30,9 +30,9 @@ Change history for claude-code-harness.
 
 #### 3. Claude Code 2.1.74 docs / README / compatibility を同期
 
-**今まで**: `docs/CLAUDE-feature-table.md` は 2.1.74 機能を取り込み始めていた一方、README の機能サマリーは `2.1.71+`、`CLAUDE.md` の見出しは `2.1.72+`、互換性ドキュメントの latest verified snapshot は `2.1.69` / plugin `3.6.0` のままだった。
+**今まで**: `docs/CLAUDE-feature-table.md` は 2.1.74 機能を取り込み始めていた一方、README の機能サマリーは `2.1.71+`、互換性ドキュメントの latest verified snapshot は `2.1.69` / plugin `3.6.0` のままだった。
 
-**今後**: feature table を `2.1.74+` に統一し、README 英日・`CLAUDE.md`・`docs/CLAUDE_CODE_COMPATIBILITY.md` を現行実測に合わせて更新。`modelOverrides`、`autoMemoryDirectory`、`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`、full model ID 対応など、2.1.73〜2.1.74 の主要項目をサマリーに反映。
+**今後**: feature table を `2.1.74+` に統一し、README 英日と `docs/CLAUDE_CODE_COMPATIBILITY.md` を現行実測に合わせて更新。`modelOverrides`、`autoMemoryDirectory`、`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`、full model ID 対応など、2.1.73〜2.1.74 の主要項目をサマリーに反映。
 
 #### 4. Release metadata を 3.10.2 へ昇格
 
@@ -41,7 +41,6 @@ Change history for claude-code-harness.
 **今後**: `VERSION`、`.claude-plugin/plugin.json`、README 英日の version badge、CHANGELOG compare links を `3.10.2` に揃え、patch release として publish 可能な状態に修正。
 
 ---
-
 ## [3.10.1] - 2026-03-12
 
 ### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode rollout 整理 + SubagentStart/Stop matcher 強化
