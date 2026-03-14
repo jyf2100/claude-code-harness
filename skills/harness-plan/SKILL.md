@@ -1,7 +1,7 @@
 ---
 name: harness-plan
-description: "Unified planning skill for Harness v3. Handles task planning, Plans.md management, and progress sync. Use when user mentions: create a plan, add tasks, update Plans.md, mark complete, check progress, sync status, where am I, /harness-plan, /sync-status. Do NOT load for: implementation, code review, or release tasks."
-description-ja: "Harness v3 統合プランニングスキル。タスク計画・Plans.md管理・進捗同期を担当。以下のフレーズで起動: 計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認、/harness-plan、/sync-status。実装・レビュー・リリースには使わない。"
+description: "Unified planning skill for Harness v3. Handles task planning, Plans.md management, and progress sync. Use when user mentions: create a plan, add tasks, update Plans.md, mark complete, check progress, sync status, where am I, harness-plan, harness-sync. Do NOT load for: implementation, code review, or release tasks."
+description-ja: "Harness v3 統合プランニングスキル。タスク計画・Plans.md管理・進捗同期を担当。以下のフレーズで起動: 計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認、harness-plan、harness-sync。実装・レビュー・リリースには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "Task"]
 argument-hint: "[create|add|update|sync|sync --no-retro|--ci]"
 ---
@@ -23,8 +23,8 @@ Harness v3 の統合プランニングスキル。
 | "タスクを追加して" / "add a task" | `add` | Plans.md に新タスク追加 |
 | "完了にして" / "mark complete" | `update` | タスクマーカーを cc:完了 に変更 |
 | "今どこ？" / "check progress" | `sync` | 実装とPlans.mdを照合・同期 |
-| "/sync-status" | `sync` | 進捗確認（旧sync-statusと同等） |
-| "/plan" | `create` | 計画作成（旧plan-with-agentと同等） |
+| `harness-sync` | `sync` | 進捗確認（独立 sync surface と同等） |
+| `harness-plan create` | `create` | 計画作成 |
 
 ## サブコマンド詳細
 
@@ -52,7 +52,7 @@ See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
 Plans.md に新しいタスクを追加する。
 
 ```
-/plan add タスク名: 詳細説明 [--phase フェーズ番号]
+harness-plan add タスク名: 詳細説明 [--phase フェーズ番号]
 ```
 
 タスクは `cc:TODO` マーカーで追加される。
@@ -62,7 +62,7 @@ Plans.md に新しいタスクを追加する。
 タスクのステータスマーカーを変更する。
 
 ```
-/plan update [タスク名|タスク番号] [WIP|完了|blocked]
+harness-plan update [タスク名|タスク番号] [WIP|完了|blocked]
 ```
 
 マーカー対応表:
@@ -131,6 +131,7 @@ See [references/sync.md](${CLAUDE_SKILL_DIR}/references/sync.md)
 
 ## 関連スキル
 
-- `execute` — 計画したタスクを実装する（旧 work/breezing）
-- `review` — 実装のレビュー（旧 harness-review）
-- `setup` — プロジェクト初期化（旧 harness-init）
+- `harness-sync` — 実装と Plans.md を同期する
+- `harness-work` — 計画したタスクを実装する
+- `harness-review` — 実装のレビュー
+- `harness-setup` — プロジェクト初期化

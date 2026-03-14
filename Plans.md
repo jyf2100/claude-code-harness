@@ -4,6 +4,17 @@
 
 ---
 
+## Maintenance: Codex command surface + stale skill cleanup
+
+作成日: 2026-03-13
+目的: Codex の native multi-agent / subagent 導線に合わせて Harness の Codex 側コマンドを更新し、昔の skill/command が `~/.codex/skills` に残る問題を解消する
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M12 | Codex 配布 docs / AGENTS / setup scripts / tests を更新し、`harness-*` コマンド面と legacy skill cleanup を現行 Codex に合わせる | `test-codex-package.sh` と関連検証が通り、Codex で推奨コマンド面と stale skill cleanup が説明できる | M11 | cc:完了 |
+
+---
+
 ## Maintenance: PR61 selective merge rescue
 
 作成日: 2026-03-13

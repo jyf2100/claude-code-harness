@@ -226,10 +226,10 @@ Purpose: [フェーズの目的（省略可）]
 > Plans.md 完成！
 >
 > 次のステップ:
-> - `/execute` で実装開始
+> - `harness-work` で実装開始
 > - または「Phase 1 から始めて」と言う
-> - 機能の追加は `/plan add [機能名]`
-> - 機能の後回しは `/plan update [タスク] blocked`
+> - 機能の追加は `harness-plan add [機能名]`
+> - 機能の後回しは `harness-plan update [タスク] blocked`
 
 ## CI モード（--ci）
 

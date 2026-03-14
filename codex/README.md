@@ -24,6 +24,10 @@ path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-plan"
 enabled = true
 
 [[skills.config]]
+path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-sync"
+enabled = true
+
+[[skills.config]]
 path = "$(pwd)/claude-code-harness/codex/.codex/skills/harness-review"
 enabled = true
 
@@ -100,15 +104,15 @@ cp claude-code-harness/codex/.codex/config.toml "$CODEX_HOME/config.toml"
 - `features.multi_agent = true`
 - Harness role declarations are installed under `[agents.*]`
 - Setup scripts always ensure `multi_agent` + role defaults in target `config.toml`
-- Setup scripts keep backups in `$CODEX_HOME/backups/*` so Codex does not list old skills
+- Setup scripts keep backups in `$CODEX_HOME/backups/*` and move removed Harness skills out of `skills/` so Codex does not keep listing stale commands
 
 ## Runtime Behavior
 
-- `$harness-work` and `$harness-review` are the primary Codex-facing workflow surfaces.
-- `$work` / `$breezing` default to Codex native multi-agent orchestration.
+- `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, and `$harness-review` are the primary Codex-facing workflow surfaces.
+- Codex should be driven from the `harness-*` skill names, not legacy aliases like `$work`, `$plan-with-agent`, or `$verify`.
+- `$harness-work` and `$breezing` use Codex native multi-agent orchestration.
 - Native flow uses `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`.
-- `--claude` switches both implementation and review to Claude delegation.
-- `--claude + --codex-review` is invalid and should fail before execution.
+- `breezing` keeps Lead/Worker/Reviewer separation while reusing Codex-native subagents instead of older teammate-only wording.
 
 ## State Path
 

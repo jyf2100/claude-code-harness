@@ -1,6 +1,6 @@
 ---
 name: session-control
-description: "Apply /work --resume/--fork flags by updating session state files."
+description: "Apply harness-work --resume/--fork flags by updating session state files."
 allowed-tools: ["Read", "Bash", "Write", "Edit"]
 ---
 

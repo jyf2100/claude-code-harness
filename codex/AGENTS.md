@@ -169,10 +169,11 @@ skills/
 
 | カテゴリ | 用途 | トリガー例 |
 |---------|------|-----------|
-| impl | 実装、機能追加、テスト作成 | 「実装して」「機能追加」「コードを書いて」 |
+| harness-plan | 計画、タスク分解、Plans.md 更新 | 「計画して」「タスク追加」「今どこ」 |
+| harness-sync | 実装と Plans.md の同期 | 「進捗確認」「どこまで終わった」 |
+| harness-work / breezing | 実装、並列実行、チーム実行 | 「実装して」「全部やって」「チームで進めて」 |
 | harness-review | コードレビュー、品質チェック | 「レビューして」「セキュリティ」「パフォーマンス」 |
-| verify | ビルド検証、エラー復旧 | 「ビルド」「エラー復旧」「検証して」 |
-| setup | プロジェクト初期化、ファイル生成 | 「セットアップ」「CLAUDE.md」「初期化」 |
+| harness-setup | プロジェクト初期化、Codex 配布更新 | 「セットアップ」「Codex設定」「初期化」 |
 | 2agent | 2エージェント運用設定 | 「2-Agent」「Cursor設定」「PM連携」 |
 | memory | SSOT管理、メモリ初期化 | 「SSOT」「decisions.md」「マージ」 |
 | principles | 開発原則、ガイドライン | 「原則」「VibeCoder」「安全性」 |
@@ -186,8 +187,9 @@ skills/
 
 ## 開発フロー
 
-1. **計画**: `$plan-with-agent` でタスクを Plans.md に落とす
-2. **実装**: `$work` で Plans.md のタスクを実行
+1. **計画**: `$harness-plan` でタスクを Plans.md に落とす
+2. **同期**: `$harness-sync` で現状と Plans.md のズレを確認する
+3. **実装**: `$harness-work` または `$breezing` で Plans.md のタスクを実行
 3. **レビュー**: `$harness-review` で品質チェック
 4. **検証**: `./tests/validate-plugin.sh` で構造検証
 
@@ -200,24 +202,26 @@ skills/
 
 # Codex CLI での確認（手動）
 # - `${CODEX_HOME:-~/.codex}/skills` または `.codex/skills` が読み込まれること
-# - `$work` や `$harness-review` が認識されること
+# - `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, `$harness-review` が認識されること
 ```
 
 ## 注意事項
 
-- **自己参照に注意**: このリポジトリで `$work` を実行すると、自分自身のコードを編集することになる
+- **自己参照に注意**: このリポジトリで `$harness-work` / `$breezing` を実行すると、自分自身のコードを編集することになる
 - **Hooks は未対応**: Codex では `.codex/rules/` で暫定ガードを行う
 - **VERSION 同期**: 通常 PR では VERSION を触らず、release 時だけ更新
+- **古い skill は退避される**: setup script は削除済み legacy Harness skill を `~/.codex/backups/` に移し、古いコマンドが残留しないようにする
 
 ## 主要コマンド（開発時に使用）
 
 | コマンド | 用途 |
 |---------|------|
-| `$plan-with-agent` | 改善タスクを Plans.md に追加 |
-| `$work` | タスクを実装（並列実行対応） |
+| `$harness-plan` | 改善タスクを Plans.md に追加 |
+| `$harness-sync` | 実装と Plans.md の状態を同期 |
+| `$harness-work` | タスクを実装（必要に応じて並列化） |
+| `$breezing` | Lead/Worker/Reviewer のチーム実行 |
 | `$harness-review` | 変更内容をレビュー |
-| `$verify` | 検証（ビルド/テスト） |
-| `$remember` | 学習事項を記録 |
+| `$harness-setup codex` | Codex 配布物を更新し、古い skill を整理 |
 
 ### ハンドオフ
 
@@ -385,13 +389,13 @@ Generated with [Claude Code](https://claude.com/claude-code)
 ```markdown
 ## What's Changed
 
-**`/work --full` now automates implement -> self-review -> improve -> commit in parallel**
+**`$harness-work --parallel 3` now automates implement -> review -> integrate in parallel**
 
 ### Before / After
 
 | Before | After |
 |--------|-------|
-| `/work` executes tasks one at a time | `/work --full --parallel 3` runs in parallel |
+| `$harness-work` executes one task by default | `$harness-work --parallel 3` runs tasks in parallel |
 | Reviews required separate manual step | Each task-worker self-reviews autonomously |
 ```
 

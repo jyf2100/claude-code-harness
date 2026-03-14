@@ -339,6 +339,7 @@ MIRROR_ISSUES=0
 
 # v3 コアスキル（5動詞 harness- prefix）の mirror チェック
 V3_CORE_SKILLS="harness-plan harness-work harness-review harness-release harness-setup"
+V3_AUX_SKILLS="harness-sync"
 
 if [ -d "$V3_SKILLS_DIR" ]; then
   for skill in $V3_CORE_SKILLS; do
@@ -371,6 +372,41 @@ if [ -d "$V3_SKILLS_DIR" ]; then
         echo "  ✅ $mirror_name: $skill mirror is in sync"
       else
         echo "  ❌ $mirror_name: $skill mirror が skills-v3 と不一致"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+      fi
+    done
+  done
+
+  for skill in $V3_AUX_SKILLS; do
+    src="$V3_SKILLS_DIR/$skill"
+    for mirror_name in claude codex opencode; do
+      case "$mirror_name" in
+        claude) mirror_root="$CLAUDE_MIRROR" ;;
+        codex) mirror_root="$CODEX_MIRROR" ;;
+        opencode) mirror_root="$OPENCODE_MIRROR" ;;
+      esac
+
+      if [ ! -d "$mirror_root" ]; then
+        continue
+      fi
+
+      mirror_path="$mirror_root/$skill"
+      if [ ! -d "$mirror_path" ]; then
+        echo "  ❌ $mirror_name: $skill がディレクトリとして存在しません"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+        continue
+      fi
+
+      if [ -L "$mirror_path" ]; then
+        echo "  ❌ $mirror_name: $skill が symlink のままです"
+        MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
+        continue
+      fi
+
+      if diff -qr "$src" "$mirror_path" >/dev/null 2>&1; then
+        echo "  ✅ $mirror_name: $skill mirror is in sync"
+      else
+        echo "  ❌ $mirror_name: $skill mirror drifted from skills-v3/$skill"
         MIRROR_ISSUES=$((MIRROR_ISSUES + 1))
       fi
     done

@@ -141,6 +141,7 @@ fi
 log_test "Codex path-based core skills exist"
 required_skill_dirs=(
   "codex/.codex/skills/harness-plan"
+  "codex/.codex/skills/harness-sync"
   "codex/.codex/skills/harness-work"
   "codex/.codex/skills/harness-review"
   "codex/.codex/skills/harness-release"
@@ -220,6 +221,12 @@ fi
 
 log_test "Codex docs point at harness-* workflow surfaces"
 workflow_surface_ok=true
+for required_surface in '$harness-plan' '$harness-sync' '$harness-work' '$breezing' '$harness-review'; do
+  if ! rg -q --fixed-strings "$required_surface" "codex/README.md" "codex/AGENTS.md"; then
+    echo "  missing: ${required_surface} in codex docs"
+    workflow_surface_ok=false
+  fi
+done
 if ! rg -q --fixed-strings '$harness-work' "codex/README.md"; then
   echo "  missing: \$harness-work in codex/README.md"
   workflow_surface_ok=false
@@ -228,12 +235,16 @@ if ! rg -q --fixed-strings '$harness-review' "codex/README.md"; then
   echo "  missing: \$harness-review in codex/README.md"
   workflow_surface_ok=false
 fi
+if ! rg -q --fixed-strings 'spawn_agent' "codex/README.md" "codex/.codex/skills/breezing/SKILL.md"; then
+  echo "  missing: spawn_agent native orchestration note"
+  workflow_surface_ok=false
+fi
 if ! rg -q --fixed-strings -- '--codex' "codex/.codex/skills/harness-work/SKILL.md"; then
   echo "  missing: --codex in harness-work/SKILL.md"
   workflow_surface_ok=false
 fi
-if ! rg -q --fixed-strings '/harness-work' "codex/.codex/skills/breezing/SKILL.md"; then
-  echo "  missing: /harness-work alias note in breezing/SKILL.md"
+if ! rg -q --fixed-strings 'harness-work' "codex/.codex/skills/breezing/SKILL.md"; then
+  echo "  missing: harness-work alias note in breezing/SKILL.md"
   workflow_surface_ok=false
 fi
 if [ -L "codex/.codex/skills/breezing" ]; then
@@ -244,6 +255,14 @@ if ! diff -qr "skills-v3/breezing" "codex/.codex/skills/breezing" >/dev/null 2>&
   echo "  drift: codex breezing mirror does not match skills-v3/breezing"
   workflow_surface_ok=false
 fi
+for forbidden_pat in '$plan-with-agent' '$work' '$verify' '$remember'; do
+  if rg -n --fixed-strings "$forbidden_pat" "codex/AGENTS.md" "codex/.codex/skills/workflow-guide/SKILL.md" "codex/.codex/skills/workflow-guide/references/commands.md" >/tmp/codex-surface-forbidden.$$ 2>/dev/null; then
+    echo "  forbidden legacy command remains: $forbidden_pat"
+    head -5 /tmp/codex-surface-forbidden.$$ | sed 's/^/    /'
+    workflow_surface_ok=false
+  fi
+done
+rm -f /tmp/codex-surface-forbidden.$$ || true
 if $workflow_surface_ok; then
   log_pass "Harness workflow surfaces are documented for Codex"
 else
@@ -295,6 +314,18 @@ for script in "${setup_scripts[@]}"; do
   fi
   if ! rg -q --fixed-strings 'cleanup_legacy_skill_name_duplicates' "$script"; then
     echo "  missing cleanup_legacy_skill_name_duplicates: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings 'is_legacy_harness_skill_name' "$script"; then
+    echo "  missing is_legacy_harness_skill_name: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings 'is_harness_managed_skill_entry' "$script"; then
+    echo "  missing is_harness_managed_skill_entry: $script"
+    scripts_ok=false
+  fi
+  if ! rg -q --fixed-strings 'cleanup_removed_harness_skill_entries' "$script"; then
+    echo "  missing cleanup_removed_harness_skill_entries: $script"
     scripts_ok=false
   fi
   if ! rg -q --fixed-strings '_archived|*.backup.*' "$script"; then
@@ -373,6 +404,68 @@ fi
   log_pass "Duplicate frontmatter alias cleanup works"
 else
   log_fail "Duplicate frontmatter alias cleanup failed"
+fi
+
+# Test 1.8b: codex-setup-local should archive removed legacy harness skills but keep custom skills
+log_test "codex-setup-local archives removed legacy Harness skills"
+if PROJECT_ROOT="$PROJECT_ROOT" bash -lc '
+set -euo pipefail
+project_root="$PROJECT_ROOT"
+tmp_home="$(mktemp -d)"
+trap "rm -rf \"$tmp_home\"" EXIT
+
+export HOME="$tmp_home"
+export CODEX_HOME="$tmp_home/.codex"
+mkdir -p "$CODEX_HOME/skills/work" "$CODEX_HOME/skills/plan-with-agent" "$CODEX_HOME/skills/custom-helper"
+
+cat > "$CODEX_HOME/skills/work/SKILL.md" <<'"'"'EOF'"'"'
+---
+name: work
+description: Claude Code Harness legacy work skill
+allowed-tools: ["Read"]
+---
+
+# Harness v3 legacy work skill
+Plans.md
+EOF
+
+cat > "$CODEX_HOME/skills/plan-with-agent/SKILL.md" <<'"'"'EOF'"'"'
+---
+name: plan-with-agent
+description: Claude Code Harness legacy plan skill
+allowed-tools: ["Read"]
+---
+
+# Claude Code Harness legacy planner
+/harness-plan
+EOF
+
+cat > "$CODEX_HOME/skills/custom-helper/SKILL.md" <<'"'"'EOF'"'"'
+---
+name: custom-helper
+description: personal custom skill
+allowed-tools: ["Read"]
+---
+EOF
+
+CLAUDE_PLUGIN_ROOT="$project_root" bash "$project_root/scripts/codex-setup-local.sh" --user >/dev/null
+
+test -d "$CODEX_HOME/skills/harness-work"
+test -d "$CODEX_HOME/skills/custom-helper"
+
+if [ -d "$CODEX_HOME/skills/work" ] || [ -d "$CODEX_HOME/skills/plan-with-agent" ]; then
+  echo "  legacy harness skills still exist"
+  exit 1
+fi
+
+if ! find "$CODEX_HOME/backups/codex-setup-local" -type d \( -name "work.*" -o -name "plan-with-agent.*" \) | grep -q .; then
+  echo "  removed legacy harness skills were not archived"
+  exit 1
+fi
+'; then
+  log_pass "Removed legacy Harness skills are archived safely"
+else
+  log_fail "Removed legacy Harness skills were not archived correctly"
 fi
 
 # Test 2: skills directory parity

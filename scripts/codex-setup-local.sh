@@ -105,6 +105,26 @@ should_skip_sync_entry() {
   return 1
 }
 
+is_legacy_harness_skill_name() {
+  local name="$1"
+  case "$name" in
+    plan-with-agent|planning|plans-management|sync-status|work|execute|impl|parallel-workflows|verify|setup|harness-init|release-har|codex-review|codex-worker|remember)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+is_harness_managed_skill_entry() {
+  local skill_file="$1"
+  [ -f "$skill_file" ] || return 1
+
+  if grep -Eq 'Claude Code Harness|Harness v3|claude-code-harness|/harness-|Plans\.md' "$skill_file"; then
+    return 0
+  fi
+  return 1
+}
+
 cleanup_legacy_skill_entries() {
   local dst_dir="$1"
   local backup_root="$2"
@@ -187,6 +207,43 @@ cleanup_legacy_skill_name_duplicates() {
 
   if [ "$deduped" -gt 0 ]; then
     echo "Moved $deduped legacy skill alias(es) with duplicate frontmatter name"
+  fi
+}
+
+cleanup_removed_harness_skill_entries() {
+  local src_dir="$1"
+  local dst_dir="$2"
+  local backup_root="$3"
+  [ -d "$src_dir" ] || return 0
+  [ -d "$dst_dir" ] || return 0
+
+  local removed=0
+  local dst_entry
+  for dst_entry in "$dst_dir"/*; do
+    [ -d "$dst_entry" ] || continue
+    local dst_name
+    dst_name="$(basename "$dst_entry")"
+    if should_skip_sync_entry "$dst_name"; then
+      continue
+    fi
+    [ -e "$src_dir/$dst_name" ] && continue
+
+    local dst_skill_file="$dst_entry/SKILL.md"
+    local dst_skill_name
+    dst_skill_name="$(extract_skill_frontmatter_name "$dst_skill_file" || true)"
+
+    if ! is_harness_managed_skill_entry "$dst_skill_file"; then
+      continue
+    fi
+
+    if is_legacy_harness_skill_name "$dst_name" || { [ -n "$dst_skill_name" ] && is_legacy_harness_skill_name "$dst_skill_name"; }; then
+      backup_path "$dst_entry" "$backup_root"
+      removed=$((removed + 1))
+    fi
+  done
+
+  if [ "$removed" -gt 0 ]; then
+    echo "Moved $removed removed legacy Harness skill(s) that are no longer shipped"
   fi
 }
 
@@ -385,6 +442,7 @@ fi
 
 cleanup_legacy_skill_entries "$target_root/skills" "$backup_root"
 cleanup_legacy_skill_name_duplicates "$PLUGIN_DIR/codex/.codex/skills" "$target_root/skills" "$backup_root"
+cleanup_removed_harness_skill_entries "$PLUGIN_DIR/codex/.codex/skills" "$target_root/skills" "$backup_root"
 sync_named_children "$PLUGIN_DIR/codex/.codex/skills" "$target_root/skills" "Skills" "$backup_root"
 sync_named_children "$PLUGIN_DIR/codex/.codex/rules" "$target_root/rules" "Rules" "$backup_root"
 
@@ -401,3 +459,4 @@ echo "Backups are stored under: $backup_root (outside skill scan path)"
 if [ "$TARGET_MODE" = "user" ]; then
   echo "Restart Codex to reload user-level skills/rules if needed."
 fi
+echo "Use \$harness-plan / \$harness-work / \$breezing to run Harness from Codex."

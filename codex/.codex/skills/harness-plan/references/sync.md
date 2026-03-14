@@ -114,7 +114,7 @@ Plans.md 更新が必要です
 **優先 1**: {{タスク}}
 - 理由: {{依頼中 / アンブロック待ち}}
 
-**推奨**: /execute, /review
+**推奨**: harness-work, harness-review
 ```
 
 ## 異常検知

@@ -64,6 +64,7 @@ echo ""
 echo "🎯 [2/6] 5動詞スキルチェック..."
 
 V3_SKILLS=(harness-plan harness-work harness-review harness-release harness-setup)
+AUX_V3_SKILLS=(harness-sync)
 
 for skill in "${V3_SKILLS[@]}"; do
   skill_dir="$PLUGIN_ROOT/skills-v3/$skill"
@@ -80,6 +81,30 @@ for skill in "${V3_SKILLS[@]}"; do
   fi
 
   # frontmatter の name: チェック
+  if grep -q "^name: $skill$" "$skill_md"; then
+    pass_test "skills-v3/$skill/SKILL.md (name: $skill)"
+  else
+    fail_test "skills-v3/$skill/SKILL.md (name: フィールドが '$skill' でない)"
+  fi
+done
+
+echo ""
+echo "🧭 [2.5/6] 補助 workflow surface チェック..."
+
+for skill in "${AUX_V3_SKILLS[@]}"; do
+  skill_dir="$PLUGIN_ROOT/skills-v3/$skill"
+  skill_md="$skill_dir/SKILL.md"
+
+  if [ ! -d "$skill_dir" ]; then
+    fail_test "skills-v3/$skill/ (ディレクトリなし)"
+    continue
+  fi
+
+  if [ ! -f "$skill_md" ]; then
+    fail_test "skills-v3/$skill/SKILL.md (なし)"
+    continue
+  fi
+
   if grep -q "^name: $skill$" "$skill_md"; then
     pass_test "skills-v3/$skill/SKILL.md (name: $skill)"
   else
@@ -106,6 +131,27 @@ for mirror_dir in "${MIRRORS[@]}"; do
   fi
 
   for skill in "${V3_SKILLS[@]}"; do
+    source_dir="$PLUGIN_ROOT/skills-v3/$skill"
+    mirror_path="$PLUGIN_ROOT/$mirror_dir/$skill"
+
+    if [ ! -d "$mirror_path" ]; then
+      fail_test "$mirror_dir/$skill (ディレクトリなし)"
+      continue
+    fi
+
+    if [ -L "$mirror_path" ]; then
+      fail_test "$mirror_dir/$skill (symlink のまま)"
+      continue
+    fi
+
+    if diff -qr "$source_dir" "$mirror_path" >/dev/null 2>&1; then
+      pass_test "$mirror_dir/$skill (skills-v3/$skill と同期)"
+    else
+      fail_test "$mirror_dir/$skill (skills-v3/$skill と差分あり)"
+    fi
+  done
+
+  for skill in "${AUX_V3_SKILLS[@]}"; do
     source_dir="$PLUGIN_ROOT/skills-v3/$skill"
     mirror_path="$PLUGIN_ROOT/$mirror_dir/$skill"
 

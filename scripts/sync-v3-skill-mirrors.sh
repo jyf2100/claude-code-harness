@@ -24,6 +24,7 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 V3_SKILLS=(
   "harness-plan"
+  "harness-sync"
   "harness-work"
   "harness-review"
   "harness-release"

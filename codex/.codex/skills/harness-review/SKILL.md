@@ -1,7 +1,7 @@
 ---
 name: harness-review
-description: "Unified review skill for Harness v3. Multi-angle code, plan, and scope review. Use when user mentions: review, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, /harness-review. Do NOT load for: implementation, new features, bug fixes, setup, or release."
-description-ja: "Harness v3 統合レビュースキル。コード・プラン・スコープを多角的にレビュー。以下で起動: レビュー、コードレビュー、プランレビュー、スコープ分析、セキュリティ、品質チェック、/harness-review。実装・新機能・バグ修正・セットアップ・リリースには使わない。"
+description: "Unified review skill for Harness v3. Multi-angle code, plan, and scope review. Use when user mentions: review, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, harness-review. Do NOT load for: implementation, new features, bug fixes, setup, or release."
+description-ja: "Harness v3 統合レビュースキル。コード・プラン・スコープを多角的にレビュー。以下で起動: レビュー、コードレビュー、プランレビュー、スコープ分析、セキュリティ、品質チェック、harness-review。実装・新機能・バグ修正・セットアップ・リリースには使わない。"
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[code|plan|scope]"
 context: fork
@@ -22,18 +22,18 @@ Harness v3 の統合レビュースキル。
 | ユーザー入力 | サブコマンド | 動作 |
 |------------|------------|------|
 | "レビューして" / "review" | `code`（自動） | コードレビュー（直近の変更） |
-| "/plan-with-agent 後" | `plan`（自動） | 計画レビュー |
+| "`harness-plan` 実行後" | `plan`（自動） | 計画レビュー |
 | "スコープ確認" | `scope`（自動） | スコープ分析 |
-| `/review code` | `code` | コードレビュー強制 |
-| `/review plan` | `plan` | 計画レビュー強制 |
-| `/review scope` | `scope` | スコープ分析強制 |
+| `harness-review code` | `code` | コードレビュー強制 |
+| `harness-review plan` | `plan` | 計画レビュー強制 |
+| `harness-review scope` | `scope` | スコープ分析強制 |
 
 ## レビュータイプ自動判定
 
 | 直前のアクティビティ | レビュータイプ | 観点 |
 |--------------------|--------------|------|
-| `/execute` 後 | **Code Review** | Security, Performance, Quality, Accessibility |
-| `/plan` 後 | **Plan Review** | Clarity, Feasibility, Dependencies, Acceptance |
+| `harness-work` 後 | **Code Review** | Security, Performance, Quality, Accessibility |
+| `harness-plan` 後 | **Plan Review** | Clarity, Feasibility, Dependencies, Acceptance |
 | タスク追加後 | **Scope Review** | Scope-creep, Priority, Feasibility, Impact |
 
 ## Code Review フロー
@@ -77,7 +77,7 @@ git diff HEAD~1 -- <changed_files>
 ### Step 4: コミット判定
 
 - **APPROVE**: 自動コミット実行（`--no-commit` でなければ）
-- **REQUEST_CHANGES**: 問題箇所と修正方針を提示。`/execute` で修正後に再レビュー
+- **REQUEST_CHANGES**: 問題箇所と修正方針を提示。`harness-work` で修正後に再レビュー
 
 ## Plan Review フロー
 
@@ -141,6 +141,6 @@ Lead エージェントまたはユーザーが結果を読み取り、次のア
 
 ## 関連スキル
 
-- `execute` — レビュー後に修正を実装
-- `plan` — 計画を作成・修正
-- `release` — レビュー通過後にリリース
+- `harness-work` — レビュー後に修正を実装
+- `harness-plan` — 計画を作成・修正
+- `harness-release` — レビュー通過後にリリース
