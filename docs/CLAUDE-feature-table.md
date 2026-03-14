@@ -1216,6 +1216,150 @@ Azure ベースの新クラウドプロバイダ。Bedrock / Vertex に続く第
 Claude Code が通知を発行する際に発火するフックイベント。プラグインリファレンスに記載。
 外部監視ツールやダッシュボードへの通知転送に活用可能。
 
+### `--plugin-dir` 仕様変更 (v2.1.76, breaking)
+
+**変更内容**: `--plugin-dir` が1つのパスのみを受け付けるように変更。複数ディレクトリは繰り返し指定。
+
+```bash
+# 旧（非対応に）
+claude --plugin-dir path1,path2
+
+# 新
+claude --plugin-dir path1 --plugin-dir path2
+```
+
+**Harness への影響**: Harness プラグインのみを使用する一般的な構成では影響なし。
+複数プラグインを同時使用する場合のみ構文変更が必要。
+
+---
+
+## Claude Code 2.1.76 新機能
+
+### MCP Elicitation サポート
+
+**動作概要**: MCP サーバーがタスク実行中にユーザーへ構造化された入力を要求できるプロトコル。フォームフィールドまたはブラウザ URL を通じてインタラクティブなダイアログを表示する。
+
+**Harness での活用**:
+- Breezing のバックグラウンド Worker/Reviewer は UI 対話不能なため、`Elicitation` フックで自動スキップを実装
+- 通常セッションではそのまま通過（ユーザーが対話で応答）
+- `elicitation-handler.sh` がイベントをログ記録
+
+**制約事項**:
+- バックグラウンドエージェントでは elicitation に応答不能（フックによる自動処理が必須）
+- MCP サーバー側が elicitation をサポートしている必要がある
+
+### `Elicitation`/`ElicitationResult` フック
+
+**動作概要**: MCP Elicitation の前後でインターセプト可能な2つの新フックイベント。`Elicitation` はレスポンスが MCP サーバーに返される前に、`ElicitationResult` は返された後に発火する。
+
+**Harness での活用**:
+- `Elicitation`: Breezing セッション中の自動スキップ判定 + ログ記録
+- `ElicitationResult`: 結果のログ記録（`.claude/state/elicitation-events.jsonl`）
+- hooks.json に両イベントのハンドラを登録
+
+**制約事項**:
+- `Elicitation` フックでブロック（deny）するとMCPサーバーへの入力が届かない
+- 推奨 timeout: Elicitation 10s / ElicitationResult 5s
+
+### `PostCompact` フック
+
+**動作概要**: コンテキストコンパクション完了後に発火する新フックイベント。`PreCompact` フック（既存）と対になる。
+
+**Harness での活用**:
+- コンパクション後のコンテキスト再注入（WIP タスク状態の復元）
+- `.claude/state/compaction-events.jsonl` にイベント記録
+- 長時間セッションでの状態継続性向上
+- PreCompact（状態保存）→ PostCompact（状態復元）の対称構造
+
+**制約事項**:
+- 推奨 timeout: 15s
+- コンパクション失敗時（circuit breaker 発動時）は PostCompact が発火しない可能性あり
+
+### `-n`/`--name` CLI フラグ
+
+**動作概要**: セッション起動時に表示名を設定する CLI フラグ。`claude -n "auth-refactor"` のように使用し、セッション一覧での識別に活用する。
+
+**Harness での活用**:
+- Breezing セッションに `breezing-{timestamp}` 形式の名前を自動設定
+- セッション一覧でのフィルタリング・追跡に活用
+- ログ分析時のセッション特定が容易に
+
+**コード例**:
+```bash
+claude -n "breezing-$(date +%Y%m%d-%H%M%S)"
+```
+
+### `worktree.sparsePaths` 設定
+
+**動作概要**: 大規模モノレポで `claude --worktree` 使用時に、git sparse-checkout を通じて必要なディレクトリのみをチェックアウトする設定。ワークツリー作成のパフォーマンスを大幅に改善する。
+
+**Harness での活用**:
+- Breezing の並列 Worker 起動時間を短縮（大規模リポジトリ）
+- `.claude/settings.json` で設定:
+```json
+{
+  "worktree": {
+    "sparsePaths": ["src/", "tests/", "package.json"]
+  }
+}
+```
+
+**制約事項**:
+- sparse-checkout されていないパスのファイルは Worker からアクセス不可
+- 依存関係のあるディレクトリはすべて sparsePaths に含める必要がある
+
+### `/effort` スラッシュコマンド
+
+**動作概要**: セッション中に effort レベル（low/medium/high）を切り替えるスラッシュコマンド。`/effort auto` でデフォルトにリセット。
+
+**Harness での活用**:
+- harness-work の多要素スコアリングと連携し、タスク複雑度に応じた effort 制御が可能
+- 複雑なタスクでは `/effort high`（ultrathink 有効化）を手動で設定可能
+- 簡易タスクでは `/effort low` でトークン消費を抑制
+
+### `--worktree` 起動高速化
+
+**動作概要**: git refs の直接読み取りと、リモートブランチが利用可能な場合の冗長な `git fetch` スキップにより、`--worktree` の起動時間を短縮。
+
+**Harness での活用**:
+- Breezing の Worker 起動オーバーヘッドが自動的に削減
+- 特に多数の Worker を同時起動する場合に恩恵が大きい
+
+### バックグラウンドエージェント部分結果保持
+
+**動作概要**: バックグラウンドエージェントが kill された場合にも、部分的な結果が会話コンテキストに保存される。
+
+**Harness での活用**:
+- Breezing の Worker がタイムアウトや手動停止で中断された場合、作業の一部が Lead に伝達される
+- Worker の途中成果物を活用した再割り当てが可能に
+- 「やり直し」の無駄が削減
+
+### stale worktree 自動クリーンアップ
+
+**動作概要**: 中断された並列実行で残った stale ワークツリーが自動的にクリーンアップされる。
+
+**Harness での活用**:
+- `worktree-remove.sh` による手動クリーンアップの補完
+- Breezing セッションのクラッシュ後も自動回復
+- ディスク容量の無駄な消費を防止
+
+### 自動コンパクション circuit breaker
+
+**動作概要**: 自動コンパクションが連続して失敗した場合、3回で停止するサーキットブレーカーが導入された。無限リトライによるトークン浪費を防止する。
+
+**Harness での活用**:
+- Harness の「3回ルール」（CI失敗時の3回制限）と一致する設計思想
+- 長時間 Breezing セッションでの予期せぬコスト増加を防止
+- circuit breaker 発動時は PostToolUseFailure フックと連携してエスカレーション
+
+### Deferred Tools スキーマ修正
+
+**動作概要**: `ToolSearch` で読み込んだツールがコンパクション後に入力スキーマを失い、配列・数値パラメータが型エラーで拒否される問題を修正。
+
+**Harness での活用**:
+- 長時間セッションでの ToolSearch 経由ツールの安定性が向上
+- Breezing のコンパクション後もMCPツールが正常に動作
+
 ## 関連ドキュメント
 
 - [CLAUDE.md](../CLAUDE.md) - 開発ガイド（Feature Table の要約版）

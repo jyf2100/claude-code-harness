@@ -4,6 +4,33 @@
 
 ---
 
+## Maintenance: v3.10.3 release closeout
+
+作成日: 2026-03-14
+目的: 未公開の M10〜M18 をまとめて patch release として確定し、version / tag / GitHub Release / main push まで完了する
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M19 | `3.10.3` として release metadata を更新し、検証・tag・push・GitHub Release を完了する | `VERSION` / `plugin.json` / `CHANGELOG` / tag / GitHub Release / `origin/main` が `3.10.3` で一致し、主要検証が通る | M10-M18 | cc:完了 |
+
+---
+
+## Maintenance: Claude Code 2.1.76 統合
+
+作成日: 2026-03-14
+目的: CC 2.1.76 の新機能（MCP Elicitation, PostCompact hook, -n/--name, worktree.sparsePaths 等）を Harness に組み込み、Feature Table・hooks・skills を最新化する
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M13 | hooks.json (×2) に Elicitation/ElicitationResult/PostCompact フックエントリ追加 + handler scripts 新規作成 | 新フック 3 種が hooks.json に追加、handler が `${CLAUDE_PLUGIN_ROOT}` 経由で実行可能 | - | cc:完了 |
+| M14 | CLAUDE.md Feature Table に CC 2.1.76 の全新機能行を追加（~10 行）、バージョン表記を 2.1.76+ に更新 | Feature Table に新機能行があり、表記が 2.1.76+ | - | cc:完了 |
+| M15 | docs/CLAUDE-feature-table.md に CC 2.1.76 の詳細セクション追加 | 各新機能の動作概要・Harness 活用方法・制約事項が記載 | M14 | cc:完了 |
+| M16 | breezing/SKILL.md + harness-work/SKILL.md に `-n`/`--name`、`worktree.sparsePaths`、部分結果保持、`/effort` コマンド参照を追記 | 4 機能が skills に反映 | - | cc:完了 |
+| M17 | hooks-editing.md に Elicitation/ElicitationResult/PostCompact イベント追記 + `--plugin-dir` 破壊的変更をドキュメント反映 | hooks-editing.md に 3 イベント、docs に破壊的変更の注記あり | - | cc:完了 |
+| M18 | CHANGELOG.md [Unreleased] に CC 2.1.76 統合の変更点を記録 | CHANGELOG に全変更点が記録 | M13-M17 | cc:完了 |
+
+---
+
 ## Maintenance: Codex command surface + stale skill cleanup
 
 作成日: 2026-03-13

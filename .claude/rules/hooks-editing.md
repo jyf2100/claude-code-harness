@@ -32,6 +32,10 @@ hooks/hooks.json           ← Source file (for development)
 4 つのタイプが利用可能です: `command`（汎用）、`http`（外部連携）、`prompt`（LLM 単一判断）、`agent`（LLM エージェント判断）。後者2つは v2.1.63+ で全イベント対応。
 
 > **CC v2.1.69+**: `InstructionsLoaded` イベント、`agent_id` / `agent_type` フィールド、`{"continue": false, "stopReason": "..."}` レスポンスが追加されました。
+>
+> **CC v2.1.76+**: `Elicitation`、`ElicitationResult`、`PostCompact` イベントが追加されました。
+> MCP Elicitation はバックグラウンドエージェントでは UI 対話不能なため、フックで自動処理が必要です。
+> PostCompact は PreCompact と対になり、コンパクション後のコンテキスト再注入に使用します。
 
 ### command Type (General Purpose)
 
@@ -230,6 +234,9 @@ Execute command type via `run-script.js`:
 | Stop | 20s | Ensure completion of termination processing |
 | SessionEnd | 30s | セッション終了処理。`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` で制御可能 |
 | UserPromptSubmit | 10-30s | Policy injection, tracking |
+| Elicitation | 10s | MCP elicitation のインターセプト。Breezing では自動スキップ |
+| ElicitationResult | 5s | 結果のログ記録のみ、軽量処理 |
+| PostCompact | 15s | コンテキスト再注入。WIP タスク状態の復元を含む |
 
 ### Special Considerations for Stop Hooks
 
@@ -271,6 +278,9 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
     "UserPromptSubmit": [],// On user input
     "PermissionRequest": [], // On permission request
     "PreCompact": [],      // Before context compaction
+    "PostCompact": [],     // After context compaction (v2.1.76+)
+    "Elicitation": [],     // MCP elicitation request (v2.1.76+)
+    "ElicitationResult": [], // MCP elicitation result (v2.1.76+)
     "Notification": []     // On notification dispatch
   }
 }
