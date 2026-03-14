@@ -46,19 +46,51 @@ Change history for claude-code-harness.
 - **setup scripts**: `scripts/setup-codex.sh` / `scripts/codex-setup-local.sh` が、現在 ship されていない legacy Harness skill を backup へ退避
 - **test coverage**: `tests/test-codex-package.sh` と `validate-plugin-v3.sh` で `harness-sync` surface、native multi-agent 文言、legacy skill cleanup の回帰を追加
 
-#### 5. Claude Code 2.1.76 統合 — MCP Elicitation + PostCompact + Worktree 高速化
+#### 5. Claude Code 2.1.76 統合
 
-**今まで**: Harness は CC 2.1.74 までの機能に対応。MCP Elicitation（MCP サーバーからの構造化入力要求）、PostCompact フック（コンパクション後のコンテキスト再注入）、`-n`/`--name` セッション命名、`worktree.sparsePaths` モノレポ最適化などの 2.1.76 新機能が未統合だった。
+Claude Code 2.1.76 の新機能を Harness に統合。Feature Table のバージョン表記を `2.1.74+` → `2.1.76+` に更新。
 
-**今後**: 以下の全項目を統合:
+##### 5-1. MCP Elicitation への自動対応
 
-- **hooks.json**: `Elicitation`、`ElicitationResult`、`PostCompact` の 3 フックイベントを追加。Breezing のバックグラウンド Worker は MCP elicitation に対話不能なため `elicitation-handler.sh` で自動スキップ。`post-compact.sh` で WIP タスク状態をコンパクション後に再注入
-- **handler scripts**: `elicitation-handler.sh`（elicitation インターセプト + Breezing 自動スキップ）、`elicitation-result.sh`（結果ログ）、`post-compact.sh`（コンテキスト再注入）の 3 本を新規作成
-- **CLAUDE.md Feature Table**: バージョン表記を `2.1.74+` → `2.1.76+` に更新、12 行の新機能を追加
-- **docs/CLAUDE-feature-table.md**: 11 セクションの詳細解説（動作概要・Harness 活用・制約事項）を追加。`--plugin-dir` 破壊的変更の注記も追加
-- **breezing/SKILL.md**: `-n`/`--name` セッション命名、`worktree.sparsePaths` モノレポ最適化、バックグラウンドエージェント部分結果保持の 3 機能を追記
-- **harness-work/SKILL.md**: `/effort` スラッシュコマンド参照、stale worktree 自動クリーンアップの 2 機能を追記
-- **hooks-editing.md**: `Elicitation`/`ElicitationResult`/`PostCompact` の 3 イベントを Event Types + 推奨 timeout テーブルに追加、`CC v2.1.76+` バージョン注記を追加
+**CC のアプデ**: MCP サーバー（GitHub, Slack 等の外部ツール接続）が、タスク実行中にユーザーへ「質問」できるようになった（Elicitation）。例えば「どのリポジトリに push しますか？」のようなフォーム入力を求められる。あわせて `Elicitation`（質問前）と `ElicitationResult`（回答後）の 2 つのフックイベントが追加された。
+
+**Harness での活用**: Breezing の Worker はバックグラウンド実行のため、MCP からの質問フォームに応答できない。放置すると Worker がフリーズする。そこで `elicitation-handler.sh` を新規作成し、Breezing セッション中は elicitation を自動スキップ、通常セッションではそのまま通過してユーザーが回答する仕組みを実装。`elicitation-result.sh` で結果をログ記録。
+
+##### 5-2. PostCompact によるコンテキスト再注入
+
+**CC のアプデ**: コンテキスト圧縮（コンパクション）の**完了後**に発火する `PostCompact` フックが追加された。既存の `PreCompact`（圧縮前）と対になる。
+
+**Harness での活用**: 長時間セッションで圧縮が起きると「今どのタスクをやっているか」が薄まる問題があった。`post-compact.sh` を新規作成し、圧縮後に Plans.md の WIP/TODO タスク状態を自動で再注入。PreCompact（状態保存）→ PostCompact（状態復元）の対称構造で、作業文脈の継続性を確保。
+
+##### 5-3. Worktree の高速化と安定化
+
+**CC のアプデ**: 3 つの改善が入った。(1) `worktree.sparsePaths` 設定で巨大リポジトリの worktree 作成時に必要ディレクトリだけをチェックアウト、(2) git refs 直接読取による `--worktree` 起動高速化、(3) 中断された並列実行で残った stale worktree の自動クリーンアップ。
+
+**Harness での活用**: Breezing で複数 Worker を同時起動する際の起動時間が短縮。stale worktree の手動削除も不要に。breezing/SKILL.md と harness-work/SKILL.md にそれぞれ活用ガイドを追記。
+
+##### 5-4. セッション命名と Effort 動的制御
+
+**CC のアプデ**: `-n`/`--name` フラグでセッションに表示名を設定可能に。`/effort` コマンドでセッション中に思考の深さ（low/medium/high）を切替可能に。
+
+**Harness での活用**: Breezing セッションに `breezing-{timestamp}` 形式の名前を設定してセッション識別を容易に。harness-work の多要素スコアリング（タスク複雑度に応じた自動 effort 調整）と `/effort` 手動切替の併用が可能に。
+
+##### 5-5. バックグラウンドエージェント部分結果保持
+
+**CC のアプデ**: バックグラウンドエージェントが kill（タイムアウトや手動停止）された場合にも、途中の作業結果がコンテキストに残るようになった。以前は全損だった。
+
+**Harness での活用**: Breezing の Worker が途中停止しても、Lead が途中成果を引き継いで別 Worker に再割り当て可能に。「やり直し」コストが削減。
+
+##### 5-6. 自動コンパクション circuit breaker
+
+**CC のアプデ**: 自動コンパクションが 3 回連続失敗すると停止するサーキットブレーカーが導入。無限リトライによるトークン浪費を防止。
+
+**Harness での活用**: Harness の「3 回ルール」（CI 失敗時の 3 回制限）と同じ設計思想。長時間 Breezing での予期せぬコスト増加を防止。
+
+##### 5-7. `--plugin-dir` 破壊的変更
+
+**CC のアプデ**: `--plugin-dir` が 1 パスのみ受付に変更。複数ディレクトリは `--plugin-dir path1 --plugin-dir path2` と繰り返し指定する方式に。
+
+**Harness への影響**: Harness プラグイン単体使用では影響なし。複数プラグイン同時使用時のみ構文変更が必要。
 
 ---
 
