@@ -6,6 +6,26 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [3.10.5] - 2026-03-15
+
+### テーマ: set-locale.sh の skills-v3 対応
+
+**`set-locale.sh` が `skills-v3/` ディレクトリを処理対象外としていた不具合を修正。**
+
+---
+
+### Fixed
+
+#### 1. `set-locale.sh` が `skills-v3/` を処理しない問題
+
+**今まで**: `scripts/i18n/set-locale.sh ja` を実行しても、`skills-v3/` ディレクトリ内の SKILL.md は `description` フィールドが英語のまま残っていた。`skills/`、`codex/.codex/skills/`、`opencode/skills/` は処理されるが、v3 アーキテクチャで導入された `skills-v3/` が処理対象リストから漏れていた。
+
+**今後**: `process_skill_dir` の呼び出しに `skills-v3/` を追加。4 ディレクトリすべてが一括で切り替わるようになった。
+
+### Changed
+
+- `.gitignore`: `.superset/`、`skills/x-announce/` を追跡対象外に追加
+
 ## [3.10.4] - 2026-03-15
 
 ### テーマ: エージェント安全制限と Notification フック実装
