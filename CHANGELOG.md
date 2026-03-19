@@ -6,6 +6,14 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [3.10.6] - 2026-03-19
+
+### テーマ: プラグイン利用者向け品質改善
+
+**`claude plugin install` 後に発生する致命的エラーと UX 問題を修正。Issue #64, #65 対応。**
+
+---
+
 ### Fixed
 
 #### 0-1. プラグインインストール後にフックが MODULE_NOT_FOUND で全滅する問題を修正（Issue #64）
