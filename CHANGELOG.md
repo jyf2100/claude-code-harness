@@ -6,6 +6,32 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+#### 0-1. プラグインインストール後にフックが MODULE_NOT_FOUND で全滅する問題を修正（Issue #64）
+
+**今まで**: `core/dist/` が `.gitignore` で除外されていたため、`claude plugin install` した環境にコンパイル済み JavaScript が存在せず、全フック（PreToolUse / PostToolUse / PermissionRequest）が `MODULE_NOT_FOUND` で即座に失敗していた。ガードレールエンジン（R01-R09）が完全に無効化される致命的な問題。
+
+**今後**: `.gitignore` から `/core/dist/` の除外を解除し、ビルド済み JS をリポジトリに含めるように変更。プラグインインストール後すぐにフックが動作する。
+
+#### 0-2. PostToolUse HTTP hook がデフォルトでエラーを出す問題を修正（Issue #65）
+
+**今まで**: `hooks.json` に `localhost:9090` 宛のメトリクス HTTP hook がデフォルトで有効になっていた。メトリクスサーバーを立てていないユーザーは `Write`/`Edit`/`Bash`/`Task` のたびに connection refused エラーが発生し、最大5秒の遅延も生じていた。CHANGELOG では「テンプレート」と説明されていたが、実際にはアクティブだった。
+
+**今後**: HTTP hook エントリを `hooks.json` から削除し、`docs/examples/hooks-metrics-http.json` にテンプレートとして移動。デフォルト状態ではエラーが出ない。メトリクス連携を使いたいユーザーはテンプレートを参照して自分の hooks.json に追加する運用に変更。
+
+#### 0-3. 壊れたシンボリックリンク `codex-review` を削除
+
+**今まで**: `skills-v3/extensions/codex-review` が `../../skills/codex-review` を指していたが、リンク先の `skills/codex-review/` ディレクトリが存在せず、broken symlink になっていた。
+
+**今後**: 壊れたシンボリックリンクを削除。`codex-review` 機能が実装された段階で改めて追加する。
+
+#### 0-4. `plugin.json` と `marketplace.json` のライセンス不整合を修正
+
+**今まで**: `plugin.json` では `"license": "MIT"` だが、`marketplace.json` では `"license": "Proprietary"` と矛盾していた。
+
+**今後**: `marketplace.json` のライセンスを `"MIT"` に統一。
+
 ### Changed
 
 #### 1. エージェント `disallowedTools` を公式名称に統一

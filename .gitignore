@@ -197,7 +197,8 @@ out/
 
 # Core engine (v3)
 /core/node_modules/
-/core/dist/
+# /core/dist/ is tracked for plugin distribution (Issue #64)
+# Build with: cd core && npm install && npm run build
 
 # Skills - node_modules and generated files
 **/skills/**/node_modules/

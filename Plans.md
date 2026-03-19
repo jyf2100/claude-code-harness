@@ -4,6 +4,21 @@
 
 ---
 
+## Fix: プラグイン利用者向け品質改善（Issue #64, #65）
+
+作成日: 2026-03-19
+目的: プラグインインストール後に利用者が遭遇する致命的エラー・UX 問題を修正する（Issue #64: MODULE_NOT_FOUND, Issue #65: HTTP hook エラー）
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| F1 | `.gitignore` から `/core/dist/` を除外解除し、ビルド済み JS をリポジトリに含める | `core/dist/index.js` が git tracked になり、`claude plugin install` 後にフックが動作する | - | cc:完了 |
+| F2 | `hooks.json` (×2) から `localhost:9090` HTTP hook エントリを削除し、`docs/examples/` にテンプレートとして移動 | デフォルト状態で HTTP hook エラーが出ない。テンプレートがドキュメントで参照可能 | - | cc:完了 |
+| F3 | 壊れたシンボリックリンク `skills-v3/extensions/codex-review` を削除 | `find -type l -xtype l` で broken symlink が 0 件 | - | cc:完了 |
+| F4 | `marketplace.json` のライセンスを `plugin.json` と統一（MIT） | 両ファイルの license フィールドが一致 | - | cc:完了 |
+| F5 | CHANGELOG.md の `[Unreleased]` にプラグイン品質改善の変更点を記録 | CHANGELOG に全変更が Before/After 形式で記載 | F1-F4 | cc:完了 |
+
+---
+
 ## Maintenance: v3.10.3 release closeout
 
 作成日: 2026-03-14
