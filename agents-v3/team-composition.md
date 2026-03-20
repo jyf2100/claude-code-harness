@@ -314,7 +314,11 @@ Codex 0.110+ は `codex fork` / `/fork` でスレッドを分岐できるが、
 | `--full-auto` | - | `-a on-request` + `--sandbox workspace-write` のエイリアス（低摩擦自動実行） |
 | `--dangerously-bypass-approvals-and-sandbox` | - | 全サンドボックス・承認をバイパス（極度危険） |
 
-> **注意**: 旧フラグ `-a never` / `--ask-for-approval` は 0.115.0 で廃止。`--full-auto` または `--sandbox` を使用。
+> **注意**: 旧フラグ `-a never` は 0.115.0 で CLI フラグとして廃止（`-a` は認識されない）。
+> `--full-auto` は内部的に `-a on-request` + `--sandbox workspace-write` 相当で、
+> 旧 `-a never`（完全承認不要）とは動作が異なる（モデル判断で承認を求める場合がある）。
+> 完全非対話が必要な場合は `--dangerously-bypass-approvals-and-sandbox` を使用。
+> harness の Worker 用途では `--full-auto` で実用上問題ない。
 
 ### プロンプト渡し方式
 
