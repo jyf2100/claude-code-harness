@@ -56,30 +56,44 @@ git diff ${BASE_REF:-HEAD~1} -- <changed_files>
 | **Quality** | 命名, 単一責任, テストカバレッジ, エラーハンドリング |
 | **Accessibility** | ARIA属性, キーボードナビ, カラーコントラスト |
 
+### Step 2.5: 閾値基準による verdict 判定
+
+各指摘を以下の重要度に分類し、**この基準のみ**で verdict を決定する。
+
+| 重要度 | 定義 | verdict への影響 |
+|--------|------|-----------------|
+| **critical** | セキュリティ脆弱性、データ損失リスク、本番障害の可能性 | 1 件でも → REQUEST_CHANGES |
+| **major** | 既存機能の破壊、仕様との明確な矛盾、テスト不通過 | 1 件でも → REQUEST_CHANGES |
+| **minor** | 命名改善、コメント不足、スタイル不統一 | verdict に影響しない |
+| **recommendation** | ベストプラクティス提案、将来の改善案 | verdict に影響しない |
+
+> **重要**: minor / recommendation のみの場合は **必ず APPROVE** を返すこと。
+> 「あったほうが良い改善」は REQUEST_CHANGES の理由にならない。
+
 ### Step 3: レビュー結果出力
 
-```markdown
-## レビュー結果
-
-### APPROVE / REQUEST_CHANGES
-
-**重大な問題**: なし / {{詳細}}
-
-| 観点 | 評価 | 詳細 |
-|------|------|------|
-| Security | OK / NG | {{詳細}} |
-| Performance | OK / NG | {{詳細}} |
-| Quality | OK / NG | {{詳細}} |
-| Accessibility | OK / NG | {{詳細}} |
-
-### 推奨改善点（必須ではない）
-- {{改善提案}}
+```json
+{
+  "verdict": "APPROVE | REQUEST_CHANGES",
+  "critical_issues": [],
+  "major_issues": [],
+  "observations": [
+    {
+      "severity": "critical | major | minor | recommendation",
+      "category": "Security | Performance | Quality | Accessibility",
+      "location": "ファイル名:行番号",
+      "issue": "問題の説明",
+      "suggestion": "修正案"
+    }
+  ],
+  "recommendations": ["必須ではない改善提案"]
+}
 ```
 
 ### Step 4: コミット判定
 
 - **APPROVE**: 自動コミット実行（`--no-commit` でなければ）
-- **REQUEST_CHANGES**: 問題箇所と修正方針を提示。`harness-work` で修正後に再レビュー
+- **REQUEST_CHANGES**: critical/major の指摘箇所と修正方針を提示。`harness-work` の修正ループで自動修正後に再レビュー（最大 3 回）
 
 ## Plan Review フロー
 
