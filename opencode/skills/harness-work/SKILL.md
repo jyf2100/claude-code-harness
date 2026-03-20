@@ -259,7 +259,7 @@ JSON 形式で verdict（APPROVE / REQUEST_CHANGES）を返してください。
 REVIEW_EOF
 # pre-commit: staged + unstaged の差分を base ref と比較
 git diff "${BASE_REF}" >> "$REVIEW_PROMPT"
-cat "$REVIEW_PROMPT" | ${TIMEOUT:+$TIMEOUT 120} codex exec - --full-auto 2>>/tmp/harness-review-$$.log
+cat "$REVIEW_PROMPT" | ${TIMEOUT:+$TIMEOUT 120} codex exec - --sandbox read-only 2>>/tmp/harness-review-$$.log
 REVIEW_EXIT=$?
 rm -f "$REVIEW_PROMPT"
 ```
@@ -270,7 +270,7 @@ Codex exec が使えない場合（`command -v codex` が失敗、または exit
 
 ```
 Agent tool: subagent_type="reviewer"
-prompt: "以下の変更をレビューしてください: {git diff HEAD~1}"
+prompt: "以下の変更をレビューしてください: {git diff ${BASE_REF}}"
 ```
 
 Reviewer agent は Read-only（Write/Edit/Bash 無効）で安全にレビューを実行する。
