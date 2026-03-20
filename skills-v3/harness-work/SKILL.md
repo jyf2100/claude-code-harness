@@ -188,9 +188,8 @@ Lead (this agent)
 
 **Phase A: Pre-delegate（準備）**:
 1. Plans.md を読み込み、対象タスクを特定
-2. 全対象タスクを `cc:WIP` に更新（Lead が一括管理）
-3. 依存グラフを解析し、実行順序を決定（Depends カラム）
-4. 各タスクの effort スコアリング（ultrathink 注入判定）
+2. 依存グラフを解析し、実行順序を決定（Depends カラム）
+3. 各タスクの effort スコアリング（ultrathink 注入判定）
 
 **Phase B: Delegate（Worker spawn → レビュー → cherry-pick）**:
 
@@ -204,6 +203,8 @@ Lead (this agent)
 for task in execution_order:
     # B-1. Worker spawn（フォアグラウンド、worktree 分離）
     # Agent tool の戻り値に agentId が含まれる — 修正ループで SendMessage に使用
+    Plans.md: task.status = "cc:WIP"  # 着手時に更新（未着手タスクは cc:TODO のまま）
+
     worker_result = Agent(
         subagent_type="claude-code-harness:worker",
         prompt="タスク: {task.内容}\nDoD: {task.DoD}\nmode: breezing",
