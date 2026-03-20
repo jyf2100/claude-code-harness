@@ -195,6 +195,10 @@ Lead (this agent)
 
 各タスクについて以下を**逐次**実行する（依存順）:
 
+> **API 注記**: 以下は Claude Code の API 構文で記述。
+> Codex 環境では `Agent(...)` → `spawn_agent(...)`, `SendMessage(...)` → `send_input(...)` に読み替え。
+> 詳細は `team-composition.md` の API マッピング表を参照。
+
 ```
 for task in execution_order:
     # B-1. Worker spawn
@@ -220,9 +224,10 @@ for task in execution_order:
         verdict = codex_exec(updated_diff) or reviewer_agent(updated_diff)
         review_count++
 
-    # B-4. APPROVE → main に cherry-pick
+    # B-4. APPROVE → main に cherry-pick（最新の commit hash を使用）
     if verdict == "APPROVE":
-        git cherry-pick --no-commit {worker_result.commit}  # worktree から main へ
+        latest_commit = updated_result.commit if review_count > 0 else worker_result.commit
+        git cherry-pick --no-commit {latest_commit}  # worktree から main へ
         git commit -m "{task.内容}"
         Plans.md: task.status = "cc:完了 [{hash}]"
     else:

@@ -122,6 +122,7 @@ Task tool で subagent_type="worker" を指定
 6. **実装**（Green）:
    - `mode: solo` → 直接 Write/Edit/Bash で実装
    - `mode: codex` → `codex exec` に委託
+   - `mode: breezing` → 直接 Write/Edit/Bash で実装（solo と同じ実装方法。違いは commit・Plans.md 更新のタイミング）
 7. **セルフレビュー**: harness-work の実装フローと harness-review の観点で品質確認
 8. **ビルド検証**: テスト・型チェックを実行
 9. **エラー復旧**: 失敗時は原因分析→修正（最大3回）
