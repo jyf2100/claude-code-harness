@@ -278,7 +278,7 @@ cat > "$REVIEW_PROMPT" << 'REVIEW_EOF'
 minor / recommendation のみの場合は必ず APPROVE を返してください。
 
 JSON 形式で返してください:
-{"verdict": "APPROVE|REQUEST_CHANGES", "critical_issues": [], "recommendations": []}
+{"verdict": "APPROVE|REQUEST_CHANGES", "critical_issues": [], "major_issues": [], "recommendations": []}
 
 ## diff
 REVIEW_EOF
