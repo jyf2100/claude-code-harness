@@ -101,15 +101,19 @@ Task tool で subagent_type="worker" を指定
   "task": "タスクの説明",
   "context": "プロジェクトコンテキスト",
   "files": ["関連ファイルのリスト"],
-  "mode": "solo | codex"
+  "mode": "solo | codex | breezing"
 }
 ```
+
+> **`mode: breezing` の場合**: Worker は worktree 内でコミットするが、
+> Lead に結果を返した後、Lead がレビュー→cherry-pick で main に反映する。
+> Worker 自身は main ブランチに直接影響しない。
 
 ## 実行フロー
 
 1. **入力解析**: タスク内容と対象ファイルを把握
 2. **メモリ確認**: 過去パターンを参照
-3. **Plans.md 更新**: 対象タスクを `cc:WIP` に変更
+3. **Plans.md 更新**: 対象タスクを `cc:WIP` に変更（`mode: solo` 時のみ。`mode: breezing` 時は **Lead が管理**するため Worker は Plans.md を編集しない）
 4. **TDD 判定**: 以下の条件で TDD フェーズを実行するか判定
    - `[skip:tdd]` マーカーがある → TDD スキップ
    - テストフレームワークが存在しない → TDD スキップ
@@ -121,11 +125,29 @@ Task tool で subagent_type="worker" を指定
 7. **セルフレビュー**: harness-work の実装フローと harness-review の観点で品質確認
 8. **ビルド検証**: テスト・型チェックを実行
 9. **エラー復旧**: 失敗時は原因分析→修正（最大3回）
-10. **外部レビュー受付**: Lead / Codex exec からのレビュー結果を受け取り、REQUEST_CHANGES の場合は指摘に基づいて修正を実施（最大 3 回）
-11. **コミット**: `git commit` で変更を記録
-12. **Plans.md 更新**: タスクを `cc:完了` に変更
-13. **完了報告データ生成**: 変更内容・Before/After・影響ファイルを JSON で Lead に返却
-14. **メモリ更新**: 学習内容を記録
+10. **コミット**（モードにより分岐）:
+    - `mode: solo` → `git commit` で main に直接記録
+    - `mode: breezing` → worktree 内で `git commit`（main には反映しない）
+11. **Lead への結果返却**（`mode: breezing` 時）:
+    - worktree 内の commit hash を取得
+    - 以下の JSON を Lead に返す:
+      ```json
+      {
+        "status": "completed",
+        "commit": "worktree 内の commit hash",
+        "worktreePath": "worktree のパス",
+        "files_changed": ["変更ファイルリスト"],
+        "summary": "変更内容の 1 行サマリ"
+      }
+      ```
+    - **この時点では main に cc:完了 を書かない**（Lead がレビュー後に更新）
+12. **外部レビュー受付**（`mode: breezing` 時のみ）:
+    - Lead から SendMessage で REQUEST_CHANGES の指摘を受け取る
+    - 指摘に基づいて修正を実施 → worktree 内で `git commit --amend`
+    - 修正後、更新された commit hash を Lead に返す（最大 3 回）
+13. **Plans.md 更新**（`mode: solo` 時のみ）: タスクを `cc:完了` に変更。`mode: breezing` 時は Worker は Plans.md に一切触れない（Lead が cherry-pick 後に更新）
+14. **完了報告データ生成**: 変更内容・Before/After・影響ファイルを JSON で Lead に返却
+15. **メモリ更新**: 学習内容を記録
 
 ## エラー復旧
 

@@ -186,12 +186,56 @@ Lead (this agent)
 └── Reviewer (code-reviewer agent) — レビュー担当
 ```
 
-**フロー**:
-1. Lead: タスク分割と subagent への割り当て
-2. Worker: 実装完了（コミット前）
-3. レビューループ: Codex exec（優先）/ Reviewer agent（フォールバック）→ APPROVE / REQUEST_CHANGES
-4. REQUEST_CHANGES の場合: Worker に修正を指示（SendMessage）→ 再レビュー（最大 3 回）
-5. APPROVE → `git commit` → `cc:完了 [hash]`
+**Phase A: Pre-delegate（準備）**:
+1. Plans.md を読み込み、対象タスクを特定
+2. 依存グラフを解析し、実行順序を決定（Depends カラム）
+3. 各タスクの effort スコアリング（ultrathink 注入判定）
+
+**Phase B: Delegate（Worker spawn → レビュー → cherry-pick）**:
+
+各タスクについて以下を**逐次**実行する（依存順）:
+
+```
+for task in execution_order:
+    # B-1. Worker spawn
+    worker_result = Agent(
+        subagent_type="claude-code-harness:worker",
+        prompt="タスク: {task.内容}\nDoD: {task.DoD}\nmode: breezing",
+        isolation="worktree"
+    )
+    # worker_result には {commit, worktreePath, files_changed, summary} が含まれる
+
+    # B-2. Lead がレビュー実行（Codex exec 優先）
+    REVIEW_PROMPT = """
+    判定基準: critical/major → REQUEST_CHANGES、minor/recommendation → APPROVE
+    diff: $(git -C {worktreePath} show {worker_result.commit})
+    """
+    verdict = codex_exec(REVIEW_PROMPT) or reviewer_agent(REVIEW_PROMPT)
+
+    # B-3. 修正ループ（REQUEST_CHANGES 時、最大 3 回）
+    review_count = 0
+    while verdict == "REQUEST_CHANGES" and review_count < 3:
+        SendMessage(to=worker_id, message="指摘内容: {issues}\n修正して amend してください")
+        updated_result = wait_for_worker()
+        verdict = codex_exec(updated_diff) or reviewer_agent(updated_diff)
+        review_count++
+
+    # B-4. APPROVE → main に cherry-pick
+    if verdict == "APPROVE":
+        git cherry-pick --no-commit {worker_result.commit}  # worktree から main へ
+        git commit -m "{task.内容}"
+        Plans.md: task.status = "cc:完了 [{hash}]"
+    else:
+        → ユーザーにエスカレーション
+
+    # B-5. Progress feed
+    print("📊 Progress: Task {completed}/{total} 完了 — {task.内容}")
+```
+
+**Phase C: Post-delegate（統合・報告）**:
+1. 全タスクの commit log を集計
+2. **リッチ完了報告**（「完了報告フォーマット」の Breezing テンプレート）を出力
+3. Plans.md の最終確認（全タスク cc:完了 になっているか）
 
 ## CI 失敗時の対応
 
