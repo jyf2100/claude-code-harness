@@ -6,6 +6,59 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### テーマ: work/Breezing 一連フロー自動化
+
+**スキル発動からコミット・報告まで、人手を介さず一気通貫で完走する自動化フローを実現。Codex exec によるレビューループと閾値基準付き判定で、品質と収束性を両立。**
+
+---
+
+#### 1. Plans.md 自動登録（Phase A）
+
+**今まで**: Plans.md が存在しない場合、harness-work はエラーで停止していました。
+また、会話で伝えた要件が Plans.md に載っていなくても検出されず、手動で追記する必要がありました。
+
+**今後**: Plans.md がなければ `harness-plan create --ci` を自動呼び出しして生成。
+会話からアクション動詞（「追加して」「修正して」等）を検出し、未記載タスクを v2 フォーマットで自動追記します。
+
+#### 2. Codex exec レビューループ（Phase B）
+
+**今まで**: Solo/Parallel モードにはレビューステージがなく、Worker のセルフレビューのみでした。
+Breezing モードでは Reviewer agent が独立レビューしましたが、修正ループは手動承認が必要でした。
+
+**今後**: 全モード共通で実装完了後に自動レビューを実行します。
+Codex exec（優先）→ 内部 Reviewer agent（フォールバック）の 2 段構成。
+REQUEST_CHANGES 時は自動修正→再レビュー（最大 3 回）。
+
+#### 3. レビュー閾値基準（Phase B 追加）
+
+**今まで**: 自由レビューのため、minor な改善提案でも REQUEST_CHANGES が返り、レビューループが収束しませんでした。
+
+**今後**: レビュープロンプトに 4 段階の閾値基準（critical/major/minor/recommendation）を明示的に渡します。
+critical/major のみ REQUEST_CHANGES、minor/recommendation は APPROVE。
+スコープ外の指摘（外部ツールの制約等）も verdict に影響しない設計です。
+
+#### 4. リッチ完了報告（Phase C）
+
+**今まで**: タスク完了後の報告は簡素なテキスト（Progress: Task N/M 完了）のみでした。
+
+**今後**: コミット後に視覚的サマリを自動出力します。
+「何をしたか」「何が変わるか（Before/After）」「変更ファイル」「残りの課題（Plans.md 連動）」をボックス形式で表示。
+Breezing モードでは全タスク完了後にまとめ報告。
+
+#### 5. codex exec フラグ統一
+
+**今まで**: 全スキル・スクリプトが旧フラグ `-a never`（codex-cli 0.115.0 で廃止）を使用しており、codex exec が即エラー終了していました。
+
+**今後**: 全箇所を `--full-auto` に統一。`$TIMEOUT` 展開も `${TIMEOUT:+$TIMEOUT N}` の安全パターンに修正。
+レビュー用 codex exec は `--sandbox read-only` で write 権限なし。
+
+#### 6. platform copy 完全同期
+
+**今まで**: primary の `skills/` と platform copy（`codex/.codex/skills/`, `opencode/skills/`, `skills-v3/`）が手動同期のため乖離していました。
+
+**今後**: 今回の変更で全 platform copy を primary と完全同期。
+`harness-review` の BASE_REF 対応、`breezing` の Review Policy も全 copy に反映済み。
+
 ## [3.11.0] - 2026-03-20
 
 ### テーマ: Claude Code v2.1.77〜v2.1.79 統合 + 「書いただけ禁止」品質革命
