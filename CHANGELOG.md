@@ -6,6 +6,8 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-03-21
+
 ### テーマ: work/Breezing 一連フロー自動化
 
 **スキル発動からコミット・報告まで、人手を介さず一気通貫で完走する自動化フローを実現。Codex exec によるレビューループと閾値基準付き判定で、品質と収束性を両立。**
