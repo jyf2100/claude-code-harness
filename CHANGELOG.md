@@ -59,6 +59,20 @@ Breezing モードでは全タスク完了後にまとめ報告。
 **今後**: 今回の変更で全 platform copy を primary と完全同期。
 `harness-review` の BASE_REF 対応、`breezing` の Review Policy も全 copy に反映済み。
 
+#### 7. Breezing レビューループ実装（Phase F）
+
+**今まで**: Breezing モードでは Worker が main に直接コミットしてから Reviewer がレビューしていました。
+REQUEST_CHANGES が出ても既にコミット済みで、修正ループが構造的に成立しませんでした。
+
+**今後**: Worker は worktree 内でコミットし、Lead がレビュー後に main へ cherry-pick する方式に変更。
+- Worker: `mode: breezing` で worktree 内 commit → Lead に `{commit, worktreePath}` を返す
+- Lead: Codex exec / Reviewer agent でレビュー → APPROVE なら `git cherry-pick`
+- REQUEST_CHANGES: Lead が SendMessage で Worker に修正指示 → Worker が amend → 再レビュー（最大 3 回）
+- Phase C: Lead が `git log` + Plans.md から Breezing まとめ報告を生成
+
+Worker の出力 JSON に `worktreePath` / `summary` フィールドを追加。
+Plans.md 更新は Lead が一元管理（Worker は breezing 時に Plans.md を編集しない）。
+
 ## [3.11.0] - 2026-03-20
 
 ### テーマ: Claude Code v2.1.77〜v2.1.79 統合 + 「書いただけ禁止」品質革命
