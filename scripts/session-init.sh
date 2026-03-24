@@ -120,6 +120,50 @@ mkdir -p "$STATE_DIR"
 # session-skills-used.json をリセット（新セッション開始）
 echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
 
+RESUME_CONTEXT_FILE="${STATE_DIR}/memory-resume-context.md"
+RESUME_PENDING_FLAG="${STATE_DIR}/.memory-resume-pending"
+RESUME_PROCESSING_FLAG="${STATE_DIR}/.memory-resume-processing"
+RESUME_MAX_BYTES="${HARNESS_MEM_RESUME_MAX_BYTES:-32768}"
+
+case "$RESUME_MAX_BYTES" in
+  ''|*[!0-9]*) RESUME_MAX_BYTES=32768 ;;
+esac
+if [ "$RESUME_MAX_BYTES" -gt 65536 ]; then
+  RESUME_MAX_BYTES=65536
+fi
+if [ "$RESUME_MAX_BYTES" -lt 4096 ]; then
+  RESUME_MAX_BYTES=4096
+fi
+
+consume_memory_resume_context() {
+  local file="$1"
+  local max_bytes="$2"
+  local total=0
+  local line=""
+  local line_bytes=0
+  local out=""
+
+  if [ ! -f "$file" ]; then
+    return 0
+  fi
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line_bytes="$(printf '%s\n' "$line" | wc -c | tr -d '[:space:]')"
+    case "$line_bytes" in
+      ''|*[!0-9]*) line_bytes=0 ;;
+    esac
+    if [ $((total + line_bytes)) -gt "$max_bytes" ]; then
+      break
+    fi
+    out="${out}${line}
+"
+    total=$((total + line_bytes))
+  done < "$file"
+
+  rm -f "$RESUME_PENDING_FLAG" "$RESUME_PROCESSING_FLAG" "$RESUME_CONTEXT_FILE" 2>/dev/null || true
+  printf '%s' "$out"
+}
+
 # SSOT 同期フラグをクリア（新セッション開始時）
 # このフラグは /sync-ssot-from-memory 実行時に作成され、
 # Plans.md クリーンアップ前の SSOT 同期確認に使用される
@@ -335,6 +379,20 @@ if [ "$SIMPLE_MODE" = "true" ]; then
   while IFS= read -r warning_line; do
     add_line "$warning_line"
   done <<< "$(simple_mode_warning ja)"
+  add_line ""
+fi
+
+MEMORY_CONTEXT=""
+if [ -f "$RESUME_PENDING_FLAG" ] || [ -f "$RESUME_CONTEXT_FILE" ]; then
+  MEMORY_CONTEXT="$(consume_memory_resume_context "$RESUME_CONTEXT_FILE" "$RESUME_MAX_BYTES")"
+fi
+
+if [ -n "$MEMORY_CONTEXT" ]; then
+  OUTPUT="${OUTPUT}${MEMORY_CONTEXT}"
+  case "$MEMORY_CONTEXT" in
+    *$'\n') ;;
+    *) OUTPUT="${OUTPUT}\n" ;;
+  esac
   add_line ""
 fi
 

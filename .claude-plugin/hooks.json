@@ -98,6 +98,12 @@
           },
           {
             "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"",
+            "timeout": 30,
+            "once": true
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" session-init",
             "timeout": 30,
             "once": true
@@ -117,6 +123,12 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/session-env-setup.sh\"",
             "timeout": 10,
+            "once": true
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"",
+            "timeout": 30,
             "once": true
           },
           {
@@ -354,6 +366,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-user-prompt.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" userprompt-inject-policy",
             "timeout": 30
           },
@@ -400,6 +417,11 @@
       {
         "matcher": "*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-post-tool-use.sh\"",
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" posttooluse-log-toolname",
@@ -529,6 +551,11 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" session-summary",
             "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-stop.sh\"",
+            "timeout": 30
           },
           {
             "type": "command",
