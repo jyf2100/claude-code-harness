@@ -243,6 +243,61 @@ for f in "${HOOK_FILES[@]}"; do
 done
 
 # ============================================================
+# [7] Hardening parity チェック
+# ============================================================
+echo ""
+echo "🛡️ [7/7] Hardening parity チェック..."
+
+if [ -f "$PLUGIN_ROOT/docs/hardening-parity.md" ]; then
+  pass_test "docs/hardening-parity.md"
+else
+  fail_test "docs/hardening-parity.md (存在しない)"
+fi
+
+if [ -f "$PLUGIN_ROOT/scripts/lib/codex-hardening-contract.txt" ] && grep -q 'HARNESS_HARDENING_CONTRACT_V1' "$PLUGIN_ROOT/scripts/lib/codex-hardening-contract.txt"; then
+  pass_test "scripts/lib/codex-hardening-contract.txt"
+else
+  fail_test "scripts/lib/codex-hardening-contract.txt (存在しない)"
+fi
+
+if grep -q 'docs/hardening-parity.md' "$PLUGIN_ROOT/README.md"; then
+  pass_test "README.md → hardening parity リンク"
+else
+  fail_test "README.md に hardening parity リンクがない"
+fi
+
+for rule_id in \
+  "R10:no-git-bypass-flags" \
+  "R11:no-reset-hard-protected-branch" \
+  "R12:warn-direct-push-protected-branch" \
+  "R13:warn-protected-review-paths"
+do
+  if grep -q "$rule_id" "$PLUGIN_ROOT/core/src/guardrails/rules.ts"; then
+    pass_test "core/src/guardrails/rules.ts ($rule_id)"
+  else
+    fail_test "core/src/guardrails/rules.ts ($rule_id がない)"
+  fi
+done
+
+if grep -q 'codex-hardening-contract.txt' "$PLUGIN_ROOT/scripts/codex/codex-exec-wrapper.sh"; then
+  pass_test "codex-exec-wrapper.sh hardening contract template"
+else
+  fail_test "codex-exec-wrapper.sh が hardening contract template を参照していない"
+fi
+
+if grep -q 'codex-hardening-contract.txt' "$PLUGIN_ROOT/scripts/codex-worker-engine.sh"; then
+  pass_test "codex-worker-engine.sh hardening contract template"
+else
+  fail_test "codex-worker-engine.sh が hardening contract template を参照していない"
+fi
+
+if grep -q 'gate_hardening()' "$PLUGIN_ROOT/scripts/codex-worker-quality-gate.sh"; then
+  pass_test "codex-worker-quality-gate.sh hardening gate"
+else
+  fail_test "codex-worker-quality-gate.sh に hardening gate がない"
+fi
+
+# ============================================================
 # サマリー
 # ============================================================
 echo ""

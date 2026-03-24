@@ -4,6 +4,59 @@
 
 ---
 
+## Phase 30: Claude Code / Codex 両対応 hardening parity
+
+作成日: 2026-03-25
+目的: `claude-code-hardened` から得た示唆を Harness に取り込み、Claude Code は hook による runtime enforcement、Codex は wrapper / quality gate / merge gate による近似 enforcement として両経路に反映する
+
+### 設計方針
+
+- shell hook をそのまま移植せず、Harness の既存 surface（`core/guardrails`, `hooks`, `scripts/codex*`, quality gate）へ吸収する
+- 共通化するのは「ポリシー」であり、実装は Claude Code と Codex で分ける
+- Claude Code は deny / warn / ask を PreToolUse / PostToolUse で実行し、Codex は実行前注入・実行後検査・マージ前検証で同等の事故防止を目指す
+- プラットフォーム制約により完全一致しない差分は docs に明示し、`validate` / `doctor` 系の出力で利用者に見える化する
+
+### Phase 30.0: 共通 hardening policy 定義 [P0]
+
+Purpose: 先に「何を守るか」を定義し、Claude Code / Codex で別実装しても意味がズレないようにする
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 30.0.1 | `docs/` または `skills-v3/harness-work` 参照文書に hardening policy matrix を追加し、対象ルール（`--no-verify` / `--no-gpg-sign` 禁止、protected branch への `reset --hard` 禁止、protected files 警告、pre-push secrets チェック）の意図と severity を定義 | 対象ルール、適用 surface、deny/warn/ask の基準が表で確認できる | - | cc:完了 |
+| 30.0.2 | Claude Code / Codex の適用方式マッピングを定義し、「共通ポリシー・実装差分・既知の非対称性」を明文化する | 各ルールごとに CC hook / Codex wrapper / quality gate / docs-only のどれで実現するかが決まっている | 30.0.1 | cc:完了 |
+
+### Phase 30.1: Claude Code 経路の runtime hardening 追加 [P0]
+
+Purpose: Claude Code では hook で直接止められるものを増やし、Git 事故と重要ファイル誤編集を実行前に減らす
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 30.1.1 | `core/src/guardrails/rules.ts` に `--no-verify` / `--no-gpg-sign` 禁止ルールと protected branch への `git reset --hard` deny / direct push warn ルールを追加 | 危険 Git コマンドが期待どおり deny / warn され、既存 force-push ルールと競合しない | 30.0.2 | cc:完了 |
+| 30.1.2 | protected files プロファイル（例: `package.json`, `Dockerfile`, `.github/workflows`, `schema.prisma`）を warn / deny できる設定面を追加する | 既定または opt-in の protected files 一覧があり、Write/Edit 時に警告またはブロックできる | 30.0.2 | cc:完了 |
+| 30.1.3 | `core/src/guardrails/__tests__/rules.test.ts` と統合テストを更新し、上記 hardening の回帰テストを追加する | deny / warn の主要ケースにテストがあり、既存 guardrail テストが全通過する | 30.1.1, 30.1.2 | cc:完了 |
+
+### Phase 30.2: Codex 経路の parity hardening 追加 [P0]
+
+Purpose: Codex Hooks 未搭載の制約下で、wrapper / prompt 注入 / quality gate / merge gate を組み合わせて近い安全性を出す
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 30.2.1 | `scripts/codex/codex-exec-wrapper.sh` と関連 rules 注入フローを拡張し、Codex 実行前に hardening contract を base instructions へ注入する | Codex 実行前に hardening policy が必ず prompt context に含まれ、スキップ手段が明示的に制限される | 30.0.2 | cc:完了 |
+| 30.2.2 | `scripts/codex-worker-quality-gate.sh` などの post-exec 検証に protected files / no-verify 相当 / secrets 検査を追加し、危険変更を merge 前に落とす | Codex の出力結果に対して hardening policy 違反が検出され、失敗理由が安定出力される | 30.2.1 | cc:完了 |
+| 30.2.3 | Codex 経路の既知限界（hook 不在による runtime 非対称）を docs に記載し、Claude Code との差を利用者に見える化する | docs に「どこまで同等化できたか / できないか」が明記されている | 30.2.2 | cc:完了 |
+
+### Phase 30.3: validate / doctor / docs の見える化 [P1]
+
+Purpose: hardening の実装有無と適用範囲を、人が読んで判断できる状態にする
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 30.3.1 | `tests/validate-plugin.sh` または新規スクリプトに hardening surface の検査を追加し、Claude Code / Codex 両経路の有効化状態を確認できるようにする | validate 実行で主要 hardening policy の有効/未設定が判別できる | 30.1.3, 30.2.2 | cc:完了 |
+| 30.3.2 | README または docs に「Claude Code では直接 enforcement、Codex では近似 enforcement」という説明と運用例を追加する | 利用者が両経路の差と推奨運用を 1 ページで理解できる | 30.3.1 | cc:完了 |
+| 30.3.3 | CHANGELOG の `[Unreleased]` に cross-runtime hardening 追加を記録する | 利用者価値と制約が CHANGELOG に簡潔に記載されている | 30.3.2 | cc:完了 |
+
+---
+
 ## Phase 29: CCAGI レポート由来の高価値要素を Harness に取り込む
 
 作成日: 2026-03-24

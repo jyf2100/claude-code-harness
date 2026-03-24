@@ -163,17 +163,25 @@ Packages the verified result into CHANGELOG, tag, and release handoff steps afte
   <img src="assets/readme-visuals-en/generated/safety-guardrails.svg" alt="Safety Protection System" width="640">
 </p>
 
-Harness v3 protects your codebase with a **TypeScript guardrail engine** (`core/`) — 9 declarative rules (R01–R09), compiled and type-checked:
+Harness v3 protects your codebase with a **TypeScript guardrail engine** (`core/`) — 13 declarative rules (R01–R13), compiled and type-checked:
 
 | Rule | Protected | Action |
 |------|-----------|--------|
 | R01 | `sudo` commands | **Deny** |
 | R02 | `.git/`, `.env`, secrets | **Deny** write |
-| R03 | `rm -rf /`, destructive paths | **Deny** |
-| R04 | `git push --force` | **Deny** |
-| R05–R09 | Mode-specific guards | Context-aware |
+| R03 | Shell writes to protected files | **Deny** |
+| R04 | Writes outside project | **Ask** |
+| R05 | `rm -rf` | **Ask** |
+| R06 | `git push --force` | **Deny** |
+| R07–R09 | Mode-specific and secret-read guards | Context-aware |
+| R10 | `--no-verify`, `--no-gpg-sign` | **Deny** |
+| R11 | `git reset --hard main/master` | **Deny** |
+| R12 | Direct push to `main` / `master` | **Warn** |
+| R13 | Protected file edits | **Warn** |
 | Post | `it.skip`, assertion tampering | **Warning** |
 | Perm | `git status`, `npm test` | **Auto-allow** |
+
+Runtime differences between Claude Code hooks and Codex CLI gates are documented in [docs/hardening-parity.md](docs/hardening-parity.md).
 
 ---
 

@@ -79,7 +79,7 @@ describe("E2E: PreToolUse フロー", () => {
 
     it("git push（force なし）は approve される", async () => {
       const result = await evaluatePreTool(
-        buildInput("Bash", { command: "git push origin main" })
+        buildInput("Bash", { command: "git push origin feature/login" })
       );
       expect(result.decision).toBe("approve");
     });
@@ -118,6 +118,30 @@ describe("E2E: PreToolUse フロー", () => {
         buildInput("Bash", { command: "git push -f origin main" })
       );
       expect(result.decision).toBe("deny");
+    });
+
+    it("--no-verify は deny される", async () => {
+      const result = await evaluatePreTool(
+        buildInput("Bash", { command: "git commit --no-verify -m 'test'" })
+      );
+      expect(result.decision).toBe("deny");
+      expect(result.reason).toContain("--no-verify");
+    });
+
+    it("--no-gpg-sign は deny される", async () => {
+      const result = await evaluatePreTool(
+        buildInput("Bash", { command: "git commit --no-gpg-sign -m 'test'" })
+      );
+      expect(result.decision).toBe("deny");
+      expect(result.reason).toContain("--no-gpg-sign");
+    });
+
+    it("git reset --hard main は deny される", async () => {
+      const result = await evaluatePreTool(
+        buildInput("Bash", { command: "git reset --hard main" })
+      );
+      expect(result.decision).toBe("deny");
+      expect(result.reason).toContain("reset --hard");
     });
 
     it(".env ファイルへの Write は deny される", async () => {
@@ -263,6 +287,24 @@ describe("E2E: PreToolUse フロー", () => {
       expect(result.decision).toBe("approve");
       expect(result.systemMessage).toContain("警告");
       expect(result.systemMessage).toContain(".env");
+    });
+
+    it("git push origin main は approve + systemMessage を返す", async () => {
+      const result = await evaluatePreTool(
+        buildInput("Bash", { command: "git push origin main" })
+      );
+      expect(result.decision).toBe("approve");
+      expect(result.systemMessage).toBeTruthy();
+      expect(result.systemMessage).toContain("main");
+    });
+
+    it("package.json への Write は approve + systemMessage を返す", async () => {
+      const result = await evaluatePreTool(
+        buildInput("Write", { file_path: "/test/project/package.json" })
+      );
+      expect(result.decision).toBe("approve");
+      expect(result.systemMessage).toBeTruthy();
+      expect(result.systemMessage).toContain("package.json");
     });
   });
 });

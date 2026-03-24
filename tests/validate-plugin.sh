@@ -285,6 +285,66 @@ else
 fi
 
 echo ""
+echo "8. Hardening parity の検証"
+echo "----------------------------------------"
+
+HARDENING_DOC="$PLUGIN_ROOT/docs/hardening-parity.md"
+HARDENING_CONTRACT="$PLUGIN_ROOT/scripts/lib/codex-hardening-contract.txt"
+if [ -f "$HARDENING_DOC" ]; then
+    pass_test "hardening parity 文書が存在します"
+else
+    fail_test "docs/hardening-parity.md が見つかりません"
+fi
+
+if [ -f "$HARDENING_CONTRACT" ] && grep -q "HARNESS_HARDENING_CONTRACT_V1" "$HARDENING_CONTRACT"; then
+    pass_test "Codex hardening contract テンプレートが存在します"
+else
+    fail_test "scripts/lib/codex-hardening-contract.txt が見つかりません"
+fi
+
+if grep -q "docs/hardening-parity.md" "$PLUGIN_ROOT/README.md"; then
+    pass_test "README.md から hardening parity 文書へリンクされています"
+else
+    fail_test "README.md に hardening parity 文書へのリンクがありません"
+fi
+
+RULES_FILE="$PLUGIN_ROOT/core/src/guardrails/rules.ts"
+RULE_IDS=(
+    "R10:no-git-bypass-flags"
+    "R11:no-reset-hard-protected-branch"
+    "R12:warn-direct-push-protected-branch"
+    "R13:warn-protected-review-paths"
+)
+for rule_id in "${RULE_IDS[@]}"; do
+    if grep -q "$rule_id" "$RULES_FILE"; then
+        pass_test "guardrail rule: $rule_id"
+    else
+        fail_test "guardrail rule が見つかりません: $rule_id"
+    fi
+done
+
+CODEX_WRAPPER="$PLUGIN_ROOT/scripts/codex/codex-exec-wrapper.sh"
+if grep -q "codex-hardening-contract.txt" "$CODEX_WRAPPER"; then
+    pass_test "Codex wrapper が hardening contract テンプレートを参照しています"
+else
+    fail_test "Codex wrapper が hardening contract テンプレートを参照していません"
+fi
+
+CODEX_ENGINE="$PLUGIN_ROOT/scripts/codex-worker-engine.sh"
+if grep -q "codex-hardening-contract.txt" "$CODEX_ENGINE"; then
+    pass_test "Codex worker engine が hardening contract テンプレートを参照しています"
+else
+    fail_test "Codex worker engine が hardening contract テンプレートを参照していません"
+fi
+
+CODEX_GATE="$PLUGIN_ROOT/scripts/codex-worker-quality-gate.sh"
+if grep -q "gate_hardening()" "$CODEX_GATE" && grep -q '"hardening"' "$CODEX_GATE"; then
+    pass_test "Codex quality gate に hardening parity チェックがあります"
+else
+    fail_test "Codex quality gate に hardening parity チェックがありません"
+fi
+
+echo ""
 echo "=========================================="
 echo "テスト結果サマリー"
 echo "=========================================="

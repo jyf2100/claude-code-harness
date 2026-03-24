@@ -12,7 +12,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+EXECUTION_ROOT="${HARNESS_CODEX_EXECUTION_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+CONTRACT_TEMPLATE="${SCRIPT_DIR}/../lib/codex-hardening-contract.txt"
+HARDENING_MARKER="HARNESS_HARDENING_CONTRACT_V1"
 
 PROMPT_FILE="${1:-}"
 TIMEOUT_SEC="${2:-120}"
@@ -40,10 +43,60 @@ if [ "${HARNESS_CODEX_NO_SYNC:-}" != "1" ] && [ -f "${SYNC_SCRIPT}" ]; then
   }
 fi
 
+# === Hardening contract ===
+generate_hardening_contract() {
+  if [ ! -f "${CONTRACT_TEMPLATE}" ]; then
+    echo "[codex-exec-wrapper] Error: hardening contract template not found: ${CONTRACT_TEMPLATE}" >&2
+    exit 1
+  fi
+  cat "${CONTRACT_TEMPLATE}"
+}
+
+# Generate the injected contract once so the prompt, base instructions, and state artifact stay aligned.
+build_hardening_contract_artifact() {
+  local output_dir="$1"
+  mkdir -p "$output_dir"
+  generate_hardening_contract > "$output_dir/hardening-contract.txt"
+}
+
+prepend_hardening_contract_if_missing() {
+  local file_path="$1"
+  local tmp_file=""
+  if [ ! -f "${file_path}" ]; then
+    return 0
+  fi
+  if grep -Fq "${HARDENING_MARKER}" "${file_path}" 2>/dev/null; then
+    return 0
+  fi
+  tmp_file="$(mktemp /tmp/codex-contract-sync.XXXXXX)"
+  {
+    generate_hardening_contract
+    printf '\n---\n\n'
+    cat "${file_path}"
+  } > "${tmp_file}"
+  mv "${tmp_file}" "${file_path}"
+}
+
+# === 注入済みプロンプトを作成 ===
+CODEX_STATE_DIR="${HARNESS_CODEX_STATE_DIR:-${EXECUTION_ROOT}/.claude/state/codex-worker}"
+TMP_PROMPT="$(mktemp /tmp/codex-exec-prompt.XXXXXX)"
+build_hardening_contract_artifact "$CODEX_STATE_DIR"
+prepend_hardening_contract_if_missing "${CODEX_STATE_DIR}/base-instructions.txt"
+prepend_hardening_contract_if_missing "${CODEX_STATE_DIR}/prompt.txt"
+if grep -Fq "${HARDENING_MARKER}" "${PROMPT_FILE}" 2>/dev/null; then
+  cp "${PROMPT_FILE}" "${TMP_PROMPT}"
+else
+  {
+    generate_hardening_contract
+    printf '\n---\n\n'
+    cat "${PROMPT_FILE}"
+  } > "${TMP_PROMPT}"
+fi
+
 # === 一時ファイルの準備 ===
 TMP_OUT="$(mktemp /tmp/codex-exec-out.XXXXXX)"
 TMP_LEARNING="$(mktemp /tmp/codex-learning.XXXXXX)"
-trap 'rm -f "${TMP_OUT}" "${TMP_LEARNING}"' EXIT
+trap 'rm -f "${TMP_OUT}" "${TMP_LEARNING}" "${TMP_PROMPT}"' EXIT
 
 # === 本体: codex exec を実行 ===
 echo "[codex-exec-wrapper] codex exec 実行中（timeout=${TIMEOUT_SEC}s）..." >&2
@@ -52,9 +105,9 @@ EXIT_CODE=0
 # stdin 経由でプロンプトを渡す（ARG_MAX 超過を回避）
 # "-" は codex exec の公式 stdin 入力指定
 if [ -n "${TIMEOUT}" ]; then
-  cat "${PROMPT_FILE}" | ${TIMEOUT} "${TIMEOUT_SEC}" codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
+  cat "${TMP_PROMPT}" | ${TIMEOUT} "${TIMEOUT_SEC}" codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 else
-  cat "${PROMPT_FILE}" | codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
+  cat "${TMP_PROMPT}" | codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 fi
 
 # タイムアウト（exit 124）の場合もログを出力
@@ -84,7 +137,7 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   fi
 
   # === codex-learnings.md にアトミック追記（mkdir ロック方式、macOS 対応）===
-  MEMORY_DIR="${PROJECT_ROOT}/.claude/memory"
+  MEMORY_DIR="${HARNESS_CODEX_MEMORY_DIR:-${EXECUTION_ROOT}/.claude/memory}"
   mkdir -p "${MEMORY_DIR}"
   LEARNINGS_FILE="${MEMORY_DIR}/codex-learnings.md"
   LOCK_DIR="${MEMORY_DIR}/.codex-learnings.lock"
@@ -125,7 +178,7 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   fi
 
   # 学習内容を state ディレクトリにも JSONL 保存（既存互換）
-  STATE_DIR="${PROJECT_ROOT}/.claude/state"
+  STATE_DIR="${HARNESS_CODEX_GENERAL_STATE_DIR:-${EXECUTION_ROOT}/.claude/state}"
   mkdir -p "${STATE_DIR}"
   LEARNING_FILE="${STATE_DIR}/codex-learning.jsonl"
 

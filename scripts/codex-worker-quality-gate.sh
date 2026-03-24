@@ -32,6 +32,44 @@ log_skip() {
     printf '%s\t%s\t%s\t%s\n' "$(now_utc)" "$gate" "$reason" "$user" >> "$GATE_SKIP_LOG"
 }
 
+# diff の起点を解決（デフォルトブランチの merge-base、なければ HEAD~1、最後は HEAD）
+resolve_diff_base() {
+    local worktree="$1"
+    local default_branch
+    default_branch=$(get_default_branch)
+
+    local diff_base
+    diff_base=$(cd "$worktree" && git merge-base HEAD "origin/$default_branch" 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo "")
+
+    if [[ -z "$diff_base" ]]; then
+        diff_base=$(cd "$worktree" && git rev-parse HEAD 2>/dev/null || echo "")
+    fi
+
+    echo "$diff_base"
+}
+
+# 指定範囲の追加行を取得（改行でそのまま返す）
+collect_added_lines() {
+    local worktree="$1"
+    local diff_base="$2"
+
+    cd "$worktree" && git diff "$diff_base"..HEAD --unified=0 -- \
+        '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' \
+        '*.sh' '*.md' '*.json' '*.yaml' '*.yml' '*.toml' \
+        '*.py' '*.go' '*.rs' '*.txt' 2>/dev/null | grep '^+' | grep -v '^+++ ' || true
+}
+
+# 指定範囲の変更ファイルを取得
+collect_changed_files() {
+    local worktree="$1"
+    local diff_base="$2"
+
+    cd "$worktree" && git diff --name-only "$diff_base"..HEAD -- \
+        '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' \
+        '*.sh' '*.md' '*.json' '*.yaml' '*.yml' '*.toml' \
+        '*.py' '*.go' '*.rs' '*.txt' 2>/dev/null || true
+}
+
 # Gate 1: 証跡検証
 gate_evidence() {
     local worktree="$1"
@@ -282,6 +320,127 @@ gate_test() {
     return 0
 }
 
+# Gate 4: Hardening parity
+gate_hardening() {
+    local worktree="$1"
+    local output_file="$2"
+
+    log_gate "Gate 4: hardening parity"
+
+    local codex_state_dir="$worktree/.claude/state/codex-worker"
+    local base_instructions_file="$codex_state_dir/base-instructions.txt"
+    local prompt_file="$codex_state_dir/prompt.txt"
+    local contract_file="$codex_state_dir/hardening-contract.txt"
+    local marker="HARNESS_HARDENING_CONTRACT_V1"
+
+    local status="passed"
+    local violations=()
+
+    # 1. Injected contract artifact の確認
+    local contract_files=(
+        "$base_instructions_file"
+        "$prompt_file"
+        "$contract_file"
+    )
+
+    for file in "${contract_files[@]}"; do
+        if [[ ! -f "$file" ]]; then
+            violations+=("Hardening contract artifact missing: $file")
+            status="critical"
+            continue
+        fi
+
+        if ! grep -Fq "$marker" "$file" 2>/dev/null; then
+            violations+=("Hardening contract marker missing: $file")
+            status="critical"
+        fi
+    done
+
+    # 2. Diff ベースの hardening 違反チェック
+    local diff_base
+    diff_base=$(resolve_diff_base "$worktree")
+
+    if [[ -n "$diff_base" ]]; then
+        local changed_files
+        local added_lines
+        changed_files=$(collect_changed_files "$worktree" "$diff_base")
+        added_lines=$(collect_added_lines "$worktree" "$diff_base")
+
+        # 2-1. bypass flags
+        if echo "$added_lines" | grep -qE -- '--no-verify|--no-gpg-sign'; then
+            violations+=("Added lines contain bypass flags: --no-verify or --no-gpg-sign")
+            [[ "$status" == "passed" ]] && status="failed"
+        fi
+
+        # 2-2. protected branch reset
+        if echo "$added_lines" | grep -qE 'git[[:space:]]+reset[[:space:]]+--hard'; then
+            if echo "$added_lines" | grep -qE '(origin/)?(main|master)'; then
+                violations+=("Added lines contain protected hard reset command against main/master")
+                [[ "$status" == "passed" ]] && status="failed"
+            fi
+        fi
+
+        # 2-3. protected files
+        while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+                package.json|Dockerfile|docker-compose.yml|schema.prisma|wrangler.toml|index.html|.github/workflows/*.yml|.github/workflows/*.yaml)
+                    violations+=("Protected file changed: $file")
+                    [[ "$status" == "passed" ]] && status="failed"
+                    ;;
+            esac
+        done <<< "$changed_files"
+
+        # 2-4. secrets / credentials
+        if echo "$added_lines" | grep -qE '(api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|password|credential|private[_-]?key)[[:space:]]*[:=]'; then
+            violations+=("Added lines contain hardcoded secret-like assignment")
+            [[ "$status" == "passed" ]] && status="failed"
+        fi
+
+        if echo "$added_lines" | grep -qE '(postgres://|mysql://|mongodb://|redis://|amqp://|DATABASE_URL|REDIS_URL)'; then
+            violations+=("Added lines contain hardcoded service/database connection string")
+            [[ "$status" == "passed" ]] && status="failed"
+        fi
+
+        if echo "$added_lines" | grep -qE '(192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+)'; then
+            violations+=("Added lines contain private IP address")
+            [[ "$status" == "passed" ]] && status="failed"
+        fi
+    else
+        violations+=("Hardening diff base could not be resolved")
+        status="critical"
+    fi
+
+    local violations_json='[]'
+    if [[ ${#violations[@]} -gt 0 ]]; then
+        violations_json=$(printf '%s\n' "${violations[@]}" | jq -R . | jq -s '.')
+    fi
+
+    local details="hardening parity OK"
+    case "$status" in
+        critical) details="hardening contract missing or invalid" ;;
+        failed) details="hardening violations detected" ;;
+    esac
+
+    jq -n \
+        --arg status "$status" \
+        --arg details "$details" \
+        --arg marker "$marker" \
+        --argjson violations "$violations_json" \
+        '{
+            status: $status,
+            details: $details,
+            marker: $marker,
+            violations: $violations
+        }' > "$output_file"
+
+    case "$status" in
+        passed) return 0 ;;
+        failed) return 1 ;;
+        critical) return 2 ;;
+    esac
+}
+
 # メイン処理
 main() {
     check_dependencies
@@ -435,6 +594,37 @@ main() {
         fi
     fi
 
+    # Gate 4: Hardening parity
+    if [[ " ${skip_gates[*]} " =~ " hardening " ]]; then
+        log_warn "Gate 4 (hardening) をスキップ"
+        log_skip "hardening" "$skip_reason"
+        skipped_json=$(echo "$skipped_json" | jq '. + ["hardening"]')
+        gates_json=$(echo "$gates_json" | jq --arg reason "$skip_reason" '.hardening = {"status": "skipped", "details": $reason}')
+    else
+        local hardening_exit_code=0
+        gate_hardening "$worktree" "$tmp_dir/hardening.json" || hardening_exit_code=$?
+
+        if [[ $hardening_exit_code -eq 0 ]]; then
+            gates_json=$(echo "$gates_json" | jq --slurpfile g "$tmp_dir/hardening.json" '.hardening = $g[0]')
+        elif [[ $hardening_exit_code -eq 2 ]]; then
+            overall_status="critical"
+            gates_json=$(echo "$gates_json" | jq --slurpfile g "$tmp_dir/hardening.json" '.hardening = $g[0]')
+            errors_json=$(echo "$errors_json" | jq '. + ["CRITICAL: hardening contract missing or invalid"]')
+            while IFS= read -r violation; do
+                [[ -z "$violation" ]] && continue
+                errors_json=$(echo "$errors_json" | jq --arg v "$violation" '. + [$v]')
+            done < <(jq -r '.violations[]' "$tmp_dir/hardening.json" 2>/dev/null || true)
+        else
+            overall_status="failed"
+            gates_json=$(echo "$gates_json" | jq --slurpfile g "$tmp_dir/hardening.json" '.hardening = $g[0]')
+            errors_json=$(echo "$errors_json" | jq '. + ["Gate 4 failed: hardening violations"]')
+            while IFS= read -r violation; do
+                [[ -z "$violation" ]] && continue
+                errors_json=$(echo "$errors_json" | jq --arg v "$violation" '. + [$v]')
+            done < <(jq -r '.violations[]' "$tmp_dir/hardening.json" 2>/dev/null || true)
+        fi
+    fi
+
     # 最終結果出力
     local result
     result=$(jq -n \
@@ -471,7 +661,7 @@ Usage: $0 --worktree PATH [OPTIONS]
 
 Options:
   --worktree PATH       検査対象の worktree（必須）
-  --skip-gate GATE      特定ゲートをスキップ (evidence, structure, test)
+  --skip-gate GATE      特定ゲートをスキップ (evidence, structure, test, hardening)
   --reason TEXT         スキップ理由（--skip-gate と併用、必須）
   -h, --help            ヘルプ表示
 
@@ -479,6 +669,7 @@ Gates:
   evidence   - AGENTS_SUMMARY 証跡検証
   structure  - lint, type-check
   test       - テスト実行、改ざん検出
+  hardening  - Codex parity hardening（contract, bypass flags, protected files, secrets）
 
 Examples:
   $0 --worktree ../worktrees/worker-1

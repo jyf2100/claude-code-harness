@@ -39,6 +39,7 @@ WORKTREE_PATH=""
 DRY_RUN=false
 PROJECT_ROOT=""
 AGENTS_HASH=""
+CONTRACT_TEMPLATE="$SCRIPT_DIR/lib/codex-hardening-contract.txt"
 
 # 使用方法
 usage() {
@@ -161,12 +162,26 @@ collect_rules() {
     echo "$rules_content"
 }
 
+generate_hardening_contract() {
+    if [[ ! -f "$CONTRACT_TEMPLATE" ]]; then
+        log_error "hardening contract template が見つかりません: $CONTRACT_TEMPLATE"
+        exit 1
+    fi
+    cat "$CONTRACT_TEMPLATE"
+}
+
+prepend_hardening_contract() {
+    local body="$1"
+    printf '%s\n\n---\n\n%s\n' "$(generate_hardening_contract)" "$body"
+}
+
 # base-instructions 生成
 generate_base_instructions() {
     local rules_content
     rules_content=$(collect_rules)
 
-    cat << EOF
+    local body
+    body=$(cat << EOF
 # Codex Worker Instructions
 
 ## Rules（プロジェクト固有ルール）
@@ -185,11 +200,14 @@ AGENTS_SUMMARY: <1行要約> | HASH:<SHA256先頭8文字>
 証跡のハッシュは AGENTS.md の内容から計算してください。
 
 EOF
+)
+    prepend_hardening_contract "$body"
 }
 
 # prompt 生成
 generate_prompt() {
-    cat << EOF
+    local body
+    body=$(cat << EOF
 $TASK
 
 ---
@@ -200,6 +218,8 @@ AGENTS_SUMMARY: <AGENTS.mdの1行要約> | HASH:<SHA256先頭8文字>
 
 この証跡がない場合、作業は無効とみなされます。
 EOF
+)
+    prepend_hardening_contract "$body"
 }
 
 # 証跡検証（Claude Code 内から呼び出す想定、このスクリプト内では使用しない）

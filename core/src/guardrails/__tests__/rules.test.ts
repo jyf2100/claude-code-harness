@@ -252,7 +252,7 @@ describe("R06: git push --force ブロック", () => {
 
   it("通常の git push はブロックしない", () => {
     const result = evaluateRules(
-      makeCtx("Bash", { command: "git push origin main" })
+      makeCtx("Bash", { command: "git push origin feature/login" })
     );
     expect(result.decision).toBe("approve");
   });
@@ -262,6 +262,100 @@ describe("R06: git push --force ブロック", () => {
       makeCtx("Bash", { command: "git push --force" }, { workMode: true })
     );
     expect(result.decision).toBe("deny");
+  });
+});
+
+// ============================================================
+// R10: Git bypass flags ブロック
+// ============================================================
+describe("R10: Git bypass flags ブロック", () => {
+  it("--no-verify をブロックする", () => {
+    const result = evaluateRules(
+      makeCtx("Bash", { command: "git commit --no-verify -m 'test'" })
+    );
+    expect(result.decision).toBe("deny");
+  });
+
+  it("--no-gpg-sign をブロックする", () => {
+    const result = evaluateRules(
+      makeCtx("Bash", { command: "git commit --no-gpg-sign -m 'test'" })
+    );
+    expect(result.decision).toBe("deny");
+  });
+});
+
+// ============================================================
+// R11: protected branch への git reset --hard ブロック
+// ============================================================
+describe("R11: protected branch への git reset --hard ブロック", () => {
+  const dangerousResetCmds = [
+    "git reset --hard main",
+    "git reset --hard master",
+    "git reset --hard origin/main",
+  ];
+
+  for (const cmd of dangerousResetCmds) {
+    it(`${cmd} をブロックする`, () => {
+      const result = evaluateRules(makeCtx("Bash", { command: cmd }));
+      expect(result.decision).toBe("deny");
+    });
+  }
+});
+
+// ============================================================
+// R12: protected branch への direct push 警告
+// ============================================================
+describe("R12: protected branch への direct push 警告", () => {
+  it("git push origin main は approve + systemMessage を返す", () => {
+    const result = evaluateRules(
+      makeCtx("Bash", { command: "git push origin main" })
+    );
+    expect(result.decision).toBe("approve");
+    expect(result.systemMessage).toBeTruthy();
+    expect(result.systemMessage).toContain("main");
+  });
+
+  it("git push upstream master は approve + systemMessage を返す", () => {
+    const result = evaluateRules(
+      makeCtx("Bash", { command: "git push upstream master" })
+    );
+    expect(result.decision).toBe("approve");
+    expect(result.systemMessage).toBeTruthy();
+    expect(result.systemMessage).toContain("master");
+  });
+});
+
+// ============================================================
+// R13: 重要ファイル変更の警告
+// ============================================================
+describe("R13: 重要ファイル変更の警告", () => {
+  const protectedPaths = [
+    "package.json",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".github/workflows/ci.yml",
+    "schema.prisma",
+    "wrangler.toml",
+    "index.html",
+  ];
+
+  for (const path of protectedPaths) {
+    it(`${path} の Write は approve + systemMessage を返す`, () => {
+      const result = evaluateRules(
+        makeCtx("Write", { file_path: path })
+      );
+      expect(result.decision).toBe("approve");
+      expect(result.systemMessage).toBeTruthy();
+      expect(result.systemMessage).toContain(path);
+    });
+  }
+
+  it("通常のソースファイル変更は警告しない", () => {
+    const result = evaluateRules(
+      makeCtx("Write", { file_path: "src/index.ts" })
+    );
+    expect(result.decision).toBe("approve");
+    expect(result.systemMessage).toBeUndefined();
   });
 });
 

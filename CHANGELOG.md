@@ -6,6 +6,19 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/hardening-parity.md` to define a shared hardening policy matrix for Claude Code hooks and Codex CLI quality gates.
+
+### Changed
+
+- `README.md`, `tests/validate-plugin.sh`, and `tests/validate-plugin-v3.sh` now surface cross-runtime hardening parity and verify that the Claude Code and Codex enforcement paths are both wired.
+
+### Security
+
+- Guardrails now cover `--no-verify` / `--no-gpg-sign`, protected branch `git reset --hard`, direct push warnings for `main` / `master`, and protected file edit warnings.
+- Codex parity hardening now injects a runtime contract into `codex exec` flows and verifies bypass flags, protected file edits, and secret-like additions before merge.
+
 ## [3.13.0] - 2026-03-25
 
 ### テーマ: Codex ネイティブ対応 + レビュー品質強化 + メモリ永続化
