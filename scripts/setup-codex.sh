@@ -392,7 +392,7 @@ sandbox = "workspace-read-only"
 description = "Standard Breezing implementer (impl_mode: standard). Implements tasks, runs self-review, build, and tests."
 
 [agents.code_reviewer]
-description = "Breezing reviewer. Performs independent code review with harness-review 4-point assessment. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
+description = "Breezing reviewer. Performs independent code review with harness-review 5-point assessment including AI Residuals. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
 sandbox = "workspace-read-only"
 
 [agents.codex_implementer]
@@ -484,7 +484,7 @@ CFG
         cat >> "$cfg" <<'CFG'
 
 [agents.code_reviewer]
-description = "Breezing reviewer. Performs independent code review with harness-review 4-point assessment. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
+description = "Breezing reviewer. Performs independent code review with harness-review 5-point assessment including AI Residuals. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
 sandbox = "workspace-read-only"
 CFG
     fi

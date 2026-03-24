@@ -33,7 +33,7 @@ Harness v3 の統合レビュースキル。
 
 | 直前のアクティビティ | レビュータイプ | 観点 |
 |--------------------|--------------|------|
-| `harness-work` 後 | **Code Review** | Security, Performance, Quality, Accessibility |
+| `harness-work` 後 | **Code Review** | Security, Performance, Quality, Accessibility, AI Residuals |
 | `harness-plan` 後 | **Plan Review** | Clarity, Feasibility, Dependencies, Acceptance |
 | タスク追加後 | **Scope Review** | Scope-creep, Priority, Feasibility, Impact |
 
@@ -43,11 +43,24 @@ Harness v3 の統合レビュースキル。
 
 ```bash
 # BASE_REF が harness-work から渡された場合はそれを使用、なければ HEAD~1 にフォールバック
+CHANGED_FILES="$(git diff --name-only --diff-filter=ACMR "${BASE_REF:-HEAD~1}")"
 git diff ${BASE_REF:-HEAD~1} --stat
-git diff ${BASE_REF:-HEAD~1} -- <changed_files>
+git diff ${BASE_REF:-HEAD~1} -- ${CHANGED_FILES}
 ```
 
-### Step 2: 4観点でレビュー
+### Step 1.5: AI Residuals を静的走査
+
+LLM の印象だけで判定せず、再実行できる形で残骸候補を拾う。`scripts/review-ai-residuals.sh` は stable な JSON を返すので、その結果をレビュー根拠として使う。
+
+```bash
+# 差分ベース
+AI_RESIDUALS_JSON="$(bash scripts/review-ai-residuals.sh --base-ref "${BASE_REF:-HEAD~1}")"
+
+# 対象ファイルを明示したい場合
+bash scripts/review-ai-residuals.sh path/to/file.ts path/to/config.sh
+```
+
+### Step 2: 5観点でレビュー
 
 | 観点 | チェック内容 |
 |------|------------|
@@ -55,6 +68,17 @@ git diff ${BASE_REF:-HEAD~1} -- <changed_files>
 | **Performance** | N+1クエリ, 不要な再レンダリング, メモリリーク |
 | **Quality** | 命名, 単一責任, テストカバレッジ, エラーハンドリング |
 | **Accessibility** | ARIA属性, キーボードナビ, カラーコントラスト |
+| **AI Residuals** | `mockData`, `dummy`, `fake`, `localhost`, `TODO`, `FIXME`, `it.skip`, `describe.skip`, `test.skip`, ハードコードされた秘密情報/環境依存 URL, 明らかな仮実装コメント |
+
+### Step 2.2: AI Residuals の severity 判定表
+
+`AI Residuals` は、まず `scripts/review-ai-residuals.sh` の JSON を確認し、その後に diff 文脈で「本当に出荷リスクか」を最終判断する。
+
+| 重要度 | 代表例 | 判定の考え方 |
+|--------|--------|-------------|
+| **major** | `localhost` / `127.0.0.1` / `0.0.0.0` の接続先、`it.skip` / `describe.skip` / `test.skip`、ハードコードされた秘密情報っぽい値、dev/staging 固定 URL | 本番事故、誤設定、検証抜けに直結しやすい。1 件でも `REQUEST_CHANGES` |
+| **minor** | `mockData`, `dummy`, `fakeData`, `TODO`, `FIXME` | 残骸の可能性は高いが、即事故とは限らない。修正推奨だが verdict は変えない |
+| **recommendation** | `temporary implementation`, `replace later`, `placeholder implementation` のような仮実装コメント | コメント単体では即バグ断定できないが、追跡・明確化を促したい |
 
 ### Step 2.5: 閾値基準による verdict 判定
 
@@ -69,6 +93,7 @@ git diff ${BASE_REF:-HEAD~1} -- <changed_files>
 
 > **重要**: minor / recommendation のみの場合は **必ず APPROVE** を返すこと。
 > 「あったほうが良い改善」は REQUEST_CHANGES の理由にならない。
+> `AI Residuals` でも同じ。`major` に入るのは「出荷事故や誤設定に直結しやすいもの」だけで、単なる残骸候補は `minor` または `recommendation` に留める。
 
 ### Step 3: レビュー結果出力
 
@@ -80,7 +105,7 @@ git diff ${BASE_REF:-HEAD~1} -- <changed_files>
   "observations": [
     {
       "severity": "critical | major | minor | recommendation",
-      "category": "Security | Performance | Quality | Accessibility",
+      "category": "Security | Performance | Quality | Accessibility | AI Residuals",
       "location": "ファイル名:行番号",
       "issue": "問題の説明",
       "suggestion": "修正案"

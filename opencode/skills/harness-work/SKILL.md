@@ -322,8 +322,9 @@ BASE_REF=$(git rev-parse HEAD)
 
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
 REVIEW_PROMPT=$(mktemp /tmp/codex-review-XXXXXX.md)
-cat > "$REVIEW_PROMPT" << 'REVIEW_EOF'
-以下の diff をレビューしてください。
+AI_RESIDUALS_JSON="$(bash scripts/review-ai-residuals.sh --base-ref "${BASE_REF}" 2>/dev/null || echo '{"tool":"review-ai-residuals","scan_mode":"diff","base_ref":null,"files_scanned":[],"summary":{"verdict":"APPROVE","major":0,"minor":0,"recommendation":0,"total":0},"observations":[]}')"
+cat > "$REVIEW_PROMPT" <<REVIEW_EOF
+以下の diff と静的検出結果をレビューしてください。
 
 ## 判定基準（これのみで verdict を決定）
 - critical（セキュリティ脆弱性・データ損失・本番障害）: 1件でも → REQUEST_CHANGES
@@ -333,8 +334,16 @@ cat > "$REVIEW_PROMPT" << 'REVIEW_EOF'
 
 minor / recommendation のみの場合は必ず APPROVE を返してください。
 
+## 追加観点
+- AI Residuals（mock / dummy / localhost / TODO / test.skip / ハードコード設定など）
+- `scripts/review-ai-residuals.sh` の結果を根拠の1つとして使い、major に当たるものだけ verdict に反映してください
+- 単なる残骸候補や仮実装コメントは minor / recommendation に留めてください
+
 JSON 形式で返してください:
 {"verdict": "APPROVE|REQUEST_CHANGES", "critical_issues": [], "major_issues": [], "recommendations": []}
+
+## AI residual scan result
+${AI_RESIDUALS_JSON}
 
 ## diff
 REVIEW_EOF
