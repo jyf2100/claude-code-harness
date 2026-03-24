@@ -99,7 +99,7 @@ EOF
 
 START_PAYLOAD='{"session_id":"claude-session-1","source":"startup","hook_event_name":"SessionStart"}'
 PROMPT_PAYLOAD='{"session_id":"claude-session-1","hook_event_name":"UserPromptSubmit","prompt":"Can you continue the previous discussion?"}'
-STOP_PAYLOAD='{"session_id":"claude-session-1","summary_mode":"standard"}'
+STOP_PAYLOAD='{"session_id":"claude-session-1","summary_mode":"standard","last_assistant_message":"1. 問題: 新しいセッションを開くと前の会話の文脈が途切れる 2. 決定: continuity briefing を最初のターンで必ず表示する 3. 次にやるべきこと: adapter delivery を Claude / Codex 両方で揃える"}'
 
 printf '%s' "${START_PAYLOAD}" | (
   cd "${CLAUDE_TMP}" &&
@@ -145,18 +145,23 @@ def find_first(command_name):
     raise SystemExit(f"missing command {command_name}")
 
 record_events = [payload for command, payload in entries if command == "record-event"]
-if len(record_events) < 2:
-    raise SystemExit("expected at least two record-event payloads")
+if len(record_events) < 3:
+    raise SystemExit("expected at least three record-event payloads")
 
 resume_pack = find_first("resume-pack")
 finalize = find_first("finalize-session")
 
 start_event = record_events[0]["event"]
-prompt_event = record_events[-1]["event"]
+prompt_event = record_events[1]["event"]
+assistant_event = record_events[2]["event"]
 
 assert start_event["correlation_id"] == "corr-seeded"
 assert resume_pack["correlation_id"] == "corr-seeded"
 assert prompt_event["correlation_id"] == "corr-seeded"
+assert assistant_event["correlation_id"] == "corr-seeded"
+assert assistant_event["event_type"] == "checkpoint"
+assert assistant_event["payload"]["title"] == "assistant_response"
+assert "continuity briefing" in assistant_event["payload"]["content"]
 assert finalize["correlation_id"] == "corr-seeded"
 PY
 
