@@ -13,6 +13,7 @@
 | `skills-v3/` | Distribution-included | 現行の 5 verb skills | README, mirror sync checks |
 | `agents-v3/` | Distribution-included | 現行の worker / reviewer / scaffolder | README, validate-plugin-v3 |
 | `hooks/` | Distribution-included | 実行時 guardrail と lifecycle hook | `hooks/hooks.json`, validate-plugin |
+| `scripts/hook-handlers/memory-bridge.sh`, `scripts/hook-handlers/memory-*.sh` | Distribution-included | harness-mem 連携用の bridge と wrapper。hook は安定した bridge を参照し、wrapper は互換とテストに使う | `validate-plugin`, `test-memory-hook-wiring.sh` |
 | `templates/` | Distribution-included | project init と rules 配布の正本 | `check-consistency.sh` |
 | `commands/` | Compatibility-retained | 旧 slash command 資産。互換確認と mirror/build のため保持 | `tests/validate-plugin.sh`, `scripts/build-opencode.js` |
 | `skills/` | Compatibility-retained | 旧 skill 群。移行済みだが既存導線の互換用に保持 | README architecture, codex mirror tests |
@@ -26,6 +27,7 @@
 
 - `commands/` は削除済み扱いにしない。現在は **Compatibility-retained**。
 - `mcp-server/` は削除済み扱いにしない。現在は **Development-only and distribution-excluded**。
+- `scripts/hook-handlers/memory-bridge.sh` と `memory-*.sh` は local bridge でも **Distribution-included**。hook が参照するため、repo に tracked されている必要がある。
 - README や `Plans.md` で「削除」と書く場合は、実際に tree から消えたときだけ使う。
 - 「配布外」「互換維持」「開発専用」はこの文書のラベルに合わせて使い分ける。
 

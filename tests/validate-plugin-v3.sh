@@ -242,6 +242,22 @@ for f in "${HOOK_FILES[@]}"; do
   fi
 done
 
+for f in \
+  "scripts/lib/harness-mem-bridge.sh" \
+  "scripts/hook-handlers/memory-bridge.sh" \
+  "scripts/hook-handlers/memory-session-start.sh" \
+  "scripts/hook-handlers/memory-user-prompt.sh" \
+  "scripts/hook-handlers/memory-post-tool-use.sh" \
+  "scripts/hook-handlers/memory-stop.sh" \
+  "scripts/hook-handlers/memory-codex-notify.sh"
+do
+  if [ -f "$PLUGIN_ROOT/$f" ]; then
+    pass_test "$f"
+  else
+    fail_test "$f (存在しない)"
+  fi
+done
+
 # ============================================================
 # [7] Hardening parity チェック
 # ============================================================

@@ -19,6 +19,13 @@ Change history for claude-code-harness.
 - Guardrails now cover `--no-verify` / `--no-gpg-sign`, protected branch `git reset --hard`, direct push warnings for `main` / `master`, and protected file edit warnings.
 - Codex parity hardening now injects a runtime contract into `codex exec` flows and verifies bypass flags, protected file edits, and secret-like additions before merge.
 
+### Fixed
+
+- Restored tracked distribution of `scripts/hook-handlers/memory-*.sh` so marketplace installs no longer reference missing harness-mem bridge wrappers during `SessionStart`, `UserPromptSubmit`, `PostToolUse`, and `Stop` hooks.
+- Switched memory lifecycle hooks to a single `memory-bridge.sh` entrypoint so hook wiring no longer depends on each individual wrapper path existing in the plugin payload.
+- Fixed `sync-plugin-cache.sh` source detection so `CLAUDE_PLUGIN_ROOT` is treated as the plugin root itself when that is what Claude Code provides.
+- Added regression coverage for memory hook wiring and marketplace cache synchronization so the missing-wrapper failure is caught in CI before release.
+
 ## [3.13.0] - 2026-03-25
 
 ### テーマ: Codex ネイティブ対応 + レビュー品質強化 + メモリ永続化

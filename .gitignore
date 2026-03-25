@@ -137,15 +137,10 @@ codex/.codex/skills/x-release-harness/
 /mcp-server/
 .mcp.json
 
-# Harness Memory local bridge wrappers (distribution excluded)
+# Harness Memory local bridge launchers
 /scripts/harness-mem
 /scripts/harness-memd
 /scripts/harness-mem-client.sh
-/scripts/hook-handlers/memory-post-tool-use.sh
-/scripts/hook-handlers/memory-session-start.sh
-/scripts/hook-handlers/memory-stop.sh
-/scripts/hook-handlers/memory-user-prompt.sh
-/scripts/hook-handlers/memory-codex-notify.sh
 
 # スライド中間ファイル
 docs/slides/

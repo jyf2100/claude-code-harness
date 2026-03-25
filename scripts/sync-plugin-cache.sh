@@ -31,7 +31,13 @@ fi
 # Detect plugin source location
 # Priority: 1. CLAUDE_PLUGIN_ROOT env var, 2. Script's parent directory (default)
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  PLUGIN_SOURCE="$CLAUDE_PLUGIN_ROOT/claude-code-harness"
+  if [ -f "${CLAUDE_PLUGIN_ROOT}/VERSION" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json" ]; then
+    PLUGIN_SOURCE="$CLAUDE_PLUGIN_ROOT"
+  elif [ -f "${CLAUDE_PLUGIN_ROOT}/claude-code-harness/VERSION" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/claude-code-harness/.claude-plugin/plugin.json" ]; then
+    PLUGIN_SOURCE="$CLAUDE_PLUGIN_ROOT/claude-code-harness"
+  else
+    PLUGIN_SOURCE="$CLAUDE_PLUGIN_ROOT"
+  fi
 else
   # Default: use script's parent directory (works for both dev and installed)
   PLUGIN_SOURCE="$(dirname "$SCRIPT_DIR")"
@@ -129,6 +135,13 @@ sync_critical_files() {
     "scripts/setup-existing-project.sh"
     "scripts/stop-cleanup-check.sh"
     "scripts/stop-plans-reminder.sh"
+    "scripts/lib/harness-mem-bridge.sh"
+    "scripts/hook-handlers/memory-bridge.sh"
+    "scripts/hook-handlers/memory-session-start.sh"
+    "scripts/hook-handlers/memory-user-prompt.sh"
+    "scripts/hook-handlers/memory-post-tool-use.sh"
+    "scripts/hook-handlers/memory-stop.sh"
+    "scripts/hook-handlers/memory-codex-notify.sh"
     "hooks/hooks.json"
     ".claude-plugin/hooks.json"
     ".claude-plugin/plugin.json"
@@ -182,7 +195,19 @@ main() {
 
     # ファイル差分をチェック（VERSION も含める）
     local needs_sync=false
-    for rel_path in "VERSION" "scripts/pretooluse-guard.sh" "scripts/posttooluse-log-toolname.sh" "scripts/session-init.sh"; do
+    for rel_path in \
+      "VERSION" \
+      "scripts/pretooluse-guard.sh" \
+      "scripts/posttooluse-log-toolname.sh" \
+      "scripts/session-init.sh" \
+      "scripts/lib/harness-mem-bridge.sh" \
+      "scripts/hook-handlers/memory-bridge.sh" \
+      "scripts/hook-handlers/memory-session-start.sh" \
+      "scripts/hook-handlers/memory-user-prompt.sh" \
+      "scripts/hook-handlers/memory-post-tool-use.sh" \
+      "scripts/hook-handlers/memory-stop.sh" \
+      "scripts/hook-handlers/memory-codex-notify.sh"
+    do
       if files_differ "$PLUGIN_SOURCE/$rel_path" "$CACHE_DIR/$rel_path"; then
         needs_sync=true
         break

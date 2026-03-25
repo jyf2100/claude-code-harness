@@ -220,6 +220,35 @@ if [ -f "$POST_TOOL_FAILURE" ]; then
     rm -rf "$tmp_dir"
 fi
 
+MEMORY_WRAPPERS=(
+    "$PLUGIN_ROOT/scripts/lib/harness-mem-bridge.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-bridge.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-session-start.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-user-prompt.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-post-tool-use.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-stop.sh"
+    "$PLUGIN_ROOT/scripts/hook-handlers/memory-codex-notify.sh"
+)
+for wrapper in "${MEMORY_WRAPPERS[@]}"; do
+    if [ -f "$wrapper" ]; then
+        pass_test "memory wrapper が存在します: $(basename "$wrapper")"
+    else
+        fail_test "memory wrapper が見つかりません: $wrapper"
+    fi
+done
+
+if bash "$PLUGIN_ROOT/tests/test-memory-hook-wiring.sh" >/dev/null 2>&1; then
+    pass_test "memory hook wiring が有効です"
+else
+    fail_test "memory hook wiring の整合が崩れています"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-sync-plugin-cache.sh" >/dev/null 2>&1; then
+    pass_test "sync-plugin-cache が memory wrapper を配布キャッシュへ同期できます"
+else
+    fail_test "sync-plugin-cache が memory wrapper を配布キャッシュへ同期できません"
+fi
+
 echo ""
 echo "6. スクリプトの検証"
 echo "----------------------------------------"

@@ -98,7 +98,7 @@
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge session-start",
             "timeout": 30,
             "once": true
           },
@@ -127,7 +127,7 @@
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge session-start",
             "timeout": 30,
             "once": true
           },
@@ -366,7 +366,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-user-prompt.sh\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge user-prompt",
             "timeout": 10
           },
           {
@@ -419,7 +419,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-post-tool-use.sh\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge post-tool-use",
             "timeout": 10
           },
           {
@@ -554,7 +554,7 @@
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-stop.sh\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge stop",
             "timeout": 30
           },
           {

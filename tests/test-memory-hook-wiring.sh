@@ -8,29 +8,46 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
+required_wrapper_files=(
+  "${ROOT_DIR}/scripts/lib/harness-mem-bridge.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-bridge.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-session-start.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-user-prompt.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-post-tool-use.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-stop.sh"
+  "${ROOT_DIR}/scripts/hook-handlers/memory-codex-notify.sh"
+)
+
+for wrapper_file in "${required_wrapper_files[@]}"; do
+  [ -f "${wrapper_file}" ] || {
+    echo "Required harness-mem wrapper is missing: ${wrapper_file}"
+    exit 1
+  }
+done
+
 for hooks_file in "${ROOT_DIR}/hooks/hooks.json" "${ROOT_DIR}/.claude-plugin/hooks.json"; do
-  jq -e '.hooks.SessionStart[] | select(.matcher == "startup") | .hooks[] | select(.command == "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"")' "${hooks_file}" >/dev/null || {
-    echo "SessionStart startup is missing memory-session-start in ${hooks_file}"
+  jq -e '.hooks.SessionStart[] | select(.matcher == "startup") | .hooks[] | select(.command == "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge session-start")' "${hooks_file}" >/dev/null || {
+    echo "SessionStart startup is missing memory-bridge session-start in ${hooks_file}"
     exit 1
   }
 
-  jq -e '.hooks.SessionStart[] | select(.matcher == "resume") | .hooks[] | select(.command == "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"")' "${hooks_file}" >/dev/null || {
-    echo "SessionStart resume is missing memory-session-start in ${hooks_file}"
+  jq -e '.hooks.SessionStart[] | select(.matcher == "resume") | .hooks[] | select(.command == "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge session-start")' "${hooks_file}" >/dev/null || {
+    echo "SessionStart resume is missing memory-bridge session-start in ${hooks_file}"
     exit 1
   }
 
-  jq -e '.hooks.UserPromptSubmit[] | .hooks[] | select(.command == "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-user-prompt.sh\"")' "${hooks_file}" >/dev/null || {
-    echo "UserPromptSubmit is missing memory-user-prompt in ${hooks_file}"
+  jq -e '.hooks.UserPromptSubmit[] | .hooks[] | select(.command == "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge user-prompt")' "${hooks_file}" >/dev/null || {
+    echo "UserPromptSubmit is missing memory-bridge user-prompt in ${hooks_file}"
     exit 1
   }
 
-  jq -e '.hooks.PostToolUse[] | .hooks[] | select(.command == "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-post-tool-use.sh\"")' "${hooks_file}" >/dev/null || {
-    echo "PostToolUse is missing memory-post-tool-use in ${hooks_file}"
+  jq -e '.hooks.PostToolUse[] | .hooks[] | select(.command == "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge post-tool-use")' "${hooks_file}" >/dev/null || {
+    echo "PostToolUse is missing memory-bridge post-tool-use in ${hooks_file}"
     exit 1
   }
 
-  jq -e '.hooks.Stop[] | .hooks[] | select(.command == "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-stop.sh\"")' "${hooks_file}" >/dev/null || {
-    echo "Stop is missing memory-stop in ${hooks_file}"
+  jq -e '.hooks.Stop[] | .hooks[] | select(.command == "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" hook-handlers/memory-bridge stop")' "${hooks_file}" >/dev/null || {
+    echo "Stop is missing memory-bridge stop in ${hooks_file}"
     exit 1
   }
 done
