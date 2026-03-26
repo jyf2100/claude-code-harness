@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Chachamaru127/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
+  <a href="https://github.com/jyf2100/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/jyf2100/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-5_Verbs-orange.svg" alt="Skills">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  English | <a href="README_ja.md">日本語</a>
+  English | <a href="README_ja.md">日本語</a> | <a href="README_cn.md">中文</a>
 </p>
 
 ---
@@ -64,7 +64,7 @@ Supported baseline and latest verified snapshot: see [Claude Code Compatibility]
 claude
 
 # Add the marketplace & install
-/plugin marketplace add Chachamaru127/claude-code-harness
+/plugin marketplace add jyf2100/claude-code-harness
 /plugin install claude-code-harness@claude-code-harness-marketplace
 
 # Initialize your project
@@ -300,7 +300,7 @@ Use Harness with [Codex CLI](https://github.com/openai/codex) — no Claude Code
 
 ```bash
 # 1. Clone the Harness repository
-git clone https://github.com/Chachamaru127/claude-code-harness.git
+git clone https://github.com/jyf2100/claude-code-harness.git
 cd claude-code-harness
 
 # 2. Install skills/rules to user scope (~/.codex)
@@ -420,7 +420,7 @@ Skill packs can teach a prompt. Harness also enforces behavior at runtime.
 | Plugin not loading | Clear cache: `rm -rf ~/.claude/plugins/cache/claude-code-harness-marketplace/` and restart |
 | Hooks not working | Ensure Node.js 18+ is installed |
 
-For more help, [open an issue](https://github.com/Chachamaru127/claude-code-harness/issues).
+For more help, [open an issue](https://github.com/jyf2100/claude-code-harness/issues).
 
 ---
 

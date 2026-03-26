@@ -1,225 +1,225 @@
-# CLAUDE.md - Claude Harness Development Guide
+# CLAUDE.md - Claude Harness 开发指南
 
-This file provides guidance for Claude Code when working in this repository.
+本文件为 Claude Code 在本仓库中工作时提供指导。
 
-## Project Overview
+## 项目概述
 
-**Claude harness** is a plugin for autonomous operation of Claude Code in a "Plan → Work → Review" workflow.
+**Claude harness** 是一个插件，用于在"计划 → 执行 → 审查"工作流中自主运行 Claude Code。
 
-**Special note**: This project is self-referential — it uses the harness itself to improve the harness.
+**特别说明**：本项目具有自指性——它使用 Harness 自身来改进 Harness。
 
-## Claude Code 2.1.79+ Feature Utilization Guide
+## Claude Code 2.1.79+ 功能使用指南
 
-Harness makes full use of new features introduced in Claude Code 2.1.79.
+Harness 充分利用了 Claude Code 2.1.79 引入的新功能。
 
-| Feature | Skill | Purpose |
+| 功能 | 技能 | 用途 |
 |---------|-------|---------|
-| **Agent Memory (memory frontmatter)** | task-worker, code-reviewer | Persistent learning |
-| **TeammateIdle/TaskCompleted Hook** | breezing | Automated team monitoring |
-| **Skill budget scaling** | All skills | Auto-adjusts to 2% of context window |
-| **Fast mode (Opus 4.6)** | All skills | High-speed output mode |
-| **Worktree isolation** | breezing, parallel-workflows | Safe parallel writes to the same file |
-| **`/simplify` Auto-Refinement** | work | Automatic code simplification after implementation |
-| **HTTP hooks** | hooks | JSON POST to external services (Slack, dashboards, metrics) |
-| **Effort levels + ultrathink (v2.1.68)** | harness-work | Multi-factor scoring injects ultrathink for complex tasks |
-| **Agent hooks (v2.1.68)** | hooks | LLM-based code quality guard (type: "agent") |
-| **`${CLAUDE_SKILL_DIR}` variable (v2.1.69)** | all skills | Stable skill-local reference path resolution |
-| **InstructionsLoaded hook (v2.1.69)** | hooks | Pre-session instruction load tracking and environment checks |
-| **`agent_id` / `agent_type` fields (v2.1.69)** | hooks, breezing | Robust teammate identity and role-aware guarding |
-| **`{"continue": false}` teammate response (v2.1.69)** | breezing | Stop team loop when all tasks are completed or stop is requested |
-| **`/reload-plugins` (v2.1.69)** | all skills | Immediate reflection after skill/hook edits without restarting |
-| **`includeGitInstructions: false` (v2.1.69)** | breezing, work | Reduce prompt token overhead for git-instruction-light tasks |
-| **`git-subdir` plugin source (v2.1.69)** | setup, release | Support plugin source managed from repository subdirectories |
-| **Sonnet 4.5 → 4.6 auto-migration** | all skills | Legacy Sonnet references migrate to 4.6 behavior automatically |
-| **WorktreeCreate/Remove hook (v2.1.50)** | breezing | Worktree lifecycle auto-setup and cleanup |
-| **Auto Mode (Research Preview, Phase 1 active)** | breezing, work | `--auto-mode` flag for safer bypassPermissions alternative. Phase 1: RP started 2026-03-12 |
-| **Per-agent hooks (v2.1.69+)** | agents-v3/ | Worker PreToolUse guard + Reviewer Stop log in agent frontmatter |
-| **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Auto worktree isolation for parallel writes with shared Agent Memory |
-| **`/loop` + Cron scheduling (v2.1.71)** | breezing, harness-work | Periodic task monitoring with `/loop 5m /sync-status` |
-| **PostToolUseFailure hook (v2.1.70)** | hooks | Auto-escalation after 3 consecutive failures |
-| **Background Agent output fix (v2.1.71)** | breezing | Safe background agent usage with output path in completion notification |
-| **Compaction image retention (v2.1.70)** | all skills | Images preserved during context compaction |
-| **Subagent `background` field (v2.1.71+)** | breezing | Always-background agent execution via frontmatter |
-| **Subagent `local` memory scope (v2.1.71+)** | agents-v3/ | Non-VCS agent memory in `.claude/agent-memory-local/` |
-| **Agent Teams experimental flag (v2.1.71+)** | breezing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var for official Agent Teams |
-| **`/agents` command (v2.1.71+)** | setup, troubleshoot | Interactive agent management UI (create/edit/delete) |
-| **Desktop Scheduled Tasks (v2.1.71+)** | harness-work | `~/.claude/scheduled-tasks/` SKILL.md-based recurring tasks |
-| **`--agents` CLI flag (v2.1.71+)** | breezing, CI | Session-level JSON agent definitions without disk persistence |
-| **`ExitWorktree` tool (v2.1.72)** | breezing, work | Programmatic worktree exit for agent workflows |
-| **Effort levels simplified (v2.1.72)** | harness-work | 永続レベルは `low/medium/high`（`○ ◐ ●`）。`max` は Opus 4.6 のセッション専用オプションとして存続 |
-| **Agent tool `model` param restored (v2.1.72)** | breezing | Per-invocation model overrides re-enabled |
-| **`/plan` description argument (v2.1.72)** | harness-plan | `/plan fix the auth bug` enters plan mode with context |
-| **Parallel tool call fix (v2.1.72)** | breezing, work | Failed Read/WebFetch/Glob no longer cancel sibling calls |
-| **Worktree isolation fixes (v2.1.72)** | breezing | Task resume cwd restore + background notification worktreePath |
-| **`/clear` preserves background agents (v2.1.72)** | breezing | `/clear` only kills foreground tasks; background agents survive |
-| **Hooks fixes (v2.1.72)** | hooks | transcript_path fix, skill hooks double-fire fix, async stdin fix |
-| **HTML comments hidden in CLAUDE.md (v2.1.72)** | all | `<!-- -->` hidden from auto-injection; visible via Read tool |
-| **Sandboxing (`/sandbox`)** | breezing, work | OS-level filesystem/network isolation complementing bypassPermissions |
-| **`opusplan` model alias** | breezing | Auto-switches Opus (plan) ↔ Sonnet (execute) for Lead sessions |
-| **`CLAUDE_CODE_SUBAGENT_MODEL` env var** | breezing, work | Centralized subagent model control for Worker/Reviewer |
-| **Checkpointing (`/rewind`)** | work | Session state tracking, rewind, and selective summarization |
-| **Code Review (managed, RP)** | harness-review | Multi-agent PR review with `REVIEW.md` guidance. Teams/Enterprise |
-| **Status Line (`/statusline`)** | all skills | Custom shell-script status bar for context/cost/git monitoring |
-| **1M Context (`sonnet[1m]`)** | harness-review, breezing | 1M token context window for large codebase analysis |
-| **Chrome Integration (`--chrome`, beta)** | harness-work, harness-review | Browser automation for UI testing, console debugging, data extraction |
-| **`modelOverrides` setting (v2.1.73)** | setup, breezing | Map model picker entries to custom provider model IDs (Bedrock ARNs, etc.) |
-| **`/output-style` deprecated (v2.1.73)** | all skills | Use `/config` instead; output style selection moved to config menu |
-| **Bedrock/Vertex Opus 4.6 default (v2.1.73)** | breezing | Default Opus on cloud providers updated from 4.1 to 4.6 |
-| **`autoMemoryDirectory` setting (v2.1.74)** | session-memory, setup | Custom auto-memory storage path for project-specific memory isolation |
-| **`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (v2.1.74)** | hooks | Configurable SessionEnd hooks timeout (was fixed 1.5s kill) |
-| **Full model ID fix (v2.1.74)** | agents-v3/, breezing | `claude-opus-4-6` etc. now recognized in agent frontmatter and JSON config |
-| **Streaming API memory leak fix (v2.1.74)** | breezing, work | Unbounded RSS growth in streaming response buffers fixed |
-| **LSP server integration (`.lsp.json`)** | setup | Real-time diagnostics, code navigation via Language Server Protocol |
-| **`SubagentStart`/`SubagentStop` matcher** | breezing, hooks | Agent type-specific lifecycle monitoring with matcher filtering |
-| **Agent Teams: Task Dependencies** | breezing | Auto-unblocking dependent tasks with file-lock claiming |
-| **`--teammate-mode` CLI flag** | breezing | Per-session display mode override (`in-process`/`tmux`) |
-| **`skills` field in agent frontmatter** | agents-v3/ | Preload skill content into subagent context at startup |
-| **`--remote` / Cloud Sessions** | breezing, harness-work | Terminal-to-cloud async task execution with `/teleport` retrieval |
-| **`CLAUDE_ENV_FILE` SessionStart persistence** | hooks | Persist env vars from SessionStart hooks to subsequent Bash commands |
-| **`PreCompact` hook** | hooks | Pre-compaction state save + WIP task warning (implemented) |
-| **Slack Integration (`@Claude`)** | harness-work (future) | Route coding tasks from Slack channels via cloud sessions |
-| **Analytics Dashboard** | setup, harness-review | PR attribution (`claude-code-assisted` label), usage/contribution metrics, leaderboard |
-| **OpenTelemetry Monitoring** | hooks, breezing | OTel metrics/events export (sessions, tokens, cost, tool results, active time) |
-| **`/security-review` command** | harness-review | Analyze pending changes for security vulnerabilities (injection, auth, data exposure) |
-| **`/insights` command** | session-memory | Session analysis report: project areas, interaction patterns, friction points |
-| **`/stats` command** | session | Daily usage visualization, session history, streaks, model preferences |
-| **Prompt Suggestions** | all skills | Git-history-based context-aware autocomplete; Tab to accept, Enter to submit |
-| **PR Review Status footer** | breezing, harness-review | Clickable PR link with color-coded review status (green/yellow/red/gray/purple) |
-| **`CLAUDE_CODE_TASK_LIST_ID` env var** | breezing | Named task list sharing across sessions: `CLAUDE_CODE_TASK_LIST_ID=my-project claude` |
-| **`fastModePerSessionOptIn` setting** | setup, breezing | Admin control: fast mode resets each session, users must `/fast` to re-enable |
-| **1M Context Window (`opus[1m]`) (v2.1.75)** | breezing, harness-review | Opus 4.6 の 1M コンテキスト窓。Max/Team/Enterprise では自動昇格 |
-| **Memory file timestamps (v2.1.75)** | session-memory, memory | メモリファイルの最終更新タイムスタンプ。鮮度ベースのメモリ判断を支援 |
-| **Async hook suppression (v2.1.75)** | breezing, hooks | 非同期フック完了メッセージをデフォルト非表示。`--verbose` で表示 |
-| **`/effort max` session-only (v2.1.75+)** | harness-work, harness-plan | Opus 4.6 限定の最深推論モード。セッション単位で有効化、永続化しない |
-| **MCP Elicitation サポート (v2.1.76)** | hooks, breezing | MCP サーバーからの構造化入力要求。Breezing では自動スキップ |
-| **`Elicitation`/`ElicitationResult` フック (v2.1.76)** | hooks | MCP elicitation の前後でインターセプト・ログ記録 |
-| **`PostCompact` フック (v2.1.76)** | hooks, breezing | コンパクション完了後のコンテキスト再注入（PreCompact の対） |
-| **`-n`/`--name` CLI フラグ (v2.1.76)** | breezing | セッション表示名の設定。セッション一覧での識別に活用 |
-| **`worktree.sparsePaths` 設定 (v2.1.76)** | breezing, setup | モノレポでの worktree sparse-checkout。並列ワーカー起動高速化 |
-| **`/effort` スラッシュコマンド (v2.1.76)** | harness-work | セッション中の effort レベル切替（low/medium/high） |
-| **`--worktree` 起動高速化 (v2.1.76)** | breezing | git refs 直接読取 + 冗長な fetch スキップ |
-| **バックグラウンドエージェント部分結果保持 (v2.1.76)** | breezing | kill 時にも部分結果がコンテキストに保存 |
-| **stale worktree 自動クリーンアップ (v2.1.76)** | breezing | 中断された並列実行のワークツリーを自動削除 |
-| **自動コンパクション circuit breaker (v2.1.76)** | all skills | 3 回連続失敗で自動停止（無限リトライ防止） |
-| **`--plugin-dir` 仕様変更 (v2.1.76, breaking)** | setup | 複数ディレクトリは `--plugin-dir` 繰返しで指定 |
-| **Deferred Tools スキーマ修正 (v2.1.76)** | all skills | コンパクション後の ToolSearch ツールスキーマ保持 |
-| **`/context` コマンド (v2.1.74)** | all skills | コンテキスト消費の可視化と最適化提案。長時間セッションの肥大化防止 |
-| **`maxTurns` エージェント安全制限** | agents-v3/ | Worker: 100, Reviewer: 50, Scaffolder: 75。暴走防止の安全弁 |
-| **`Notification` フック実装** | hooks | 通知イベント（permission_prompt, idle_prompt 等）のログ記録。Breezing 観測性向上 |
-| **Output token limits 64k/128k (v2.1.77)** | all skills | Opus 4.6 / Sonnet 4.6 のデフォルト出力 64k、上限 128k トークン |
-| **`allowRead` sandbox setting (v2.1.77)** | harness-review | `denyRead` 領域内で特定パスの読み取りを再許可 |
-| **PreToolUse `allow` respects `deny` (v2.1.77)** | guardrails | フック `allow` が settings.json の `deny` ルールを上書きしない（セキュリティ強化） |
-| **Agent `resume` → `SendMessage` (v2.1.77)** | breezing | Agent tool の `resume` パラメータ廃止。`SendMessage({to: agentId})` に移行 |
-| **`/branch` (was `/fork`) (v2.1.77)** | session | `/fork` を `/branch` にリネーム（`/fork` はエイリアスとして存続） |
-| **`claude plugin validate` enhanced (v2.1.77)** | setup | frontmatter + hooks.json の構文検証を追加 |
-| **`--resume` 45% faster (v2.1.77)** | session | fork-heavy セッション再開が最大 45% 高速化、100-150MB メモリ削減 |
-| **Stale worktree race fix (v2.1.77)** | breezing | アクティブエージェントの worktree が誤削除される競合を修正 |
-| **`StopFailure` hook event (v2.1.78)** | hooks | API エラー（レート制限、認証失敗）でのセッション停止失敗をキャプチャ |
-| **`${CLAUDE_PLUGIN_DATA}` variable (v2.1.78)** | hooks, setup | プラグイン更新でも永続するステートディレクトリ変数 |
-| **Agent `effort`/`maxTurns`/`disallowedTools` frontmatter (v2.1.78)** | agents-v3/ | プラグインエージェント定義で effort・ターン制限・ツール禁止を宣言的に設定 |
-| **`deny: ["mcp__*"]` permission fix (v2.1.78)** | setup | settings.json の deny ルールで MCP ツールを正しくブロック |
-| **`ANTHROPIC_CUSTOM_MODEL_OPTION` env var (v2.1.78)** | setup | `/model` ピッカーにカスタムモデルエントリを追加 |
-| **`--worktree` skills/hooks loading fix (v2.1.78)** | breezing | worktree フラグ使用時もスキル・フックが正しくロードされる |
-| **Large session truncation fix (v2.1.78)** | session | `cc log` / `--resume` で 5MB 超セッションが切り詰められる問題を修正 |
-| **`--console` auth flag (v2.1.79)** | setup | Anthropic Console API 課金認証用の `claude auth login --console` |
-| **Turn duration toggle (v2.1.79)** | all skills | `/config` でターン実行時間の表示を切替 |
-| **`CLAUDE_CODE_PLUGIN_SEED_DIR` multiple dirs (v2.1.79)** | setup | 複数シードディレクトリをプラットフォーム区切り文字で指定 |
-| **SessionEnd hooks fix in `/resume` (v2.1.79)** | hooks | 対話的 `/resume` セッション切替時に SessionEnd フックが正常発火 |
-| **18MB startup memory reduction (v2.1.79)** | all skills | 起動時メモリ使用量を約 18MB 削減 |
+| **Agent Memory (memory frontmatter)** | task-worker, code-reviewer | 持久化学习 |
+| **TeammateIdle/TaskCompleted Hook** | breezing | 自动化团队监控 |
+| **Skill budget scaling** | 所有技能 | 自动调整为上下文窗口的 2% |
+| **Fast mode (Opus 4.6)** | 所有技能 | 高速输出模式 |
+| **Worktree isolation** | breezing, parallel-workflows | 安全地并行写入同一文件 |
+| **`/simplify` 自动优化** | work | 实现后自动简化代码 |
+| **HTTP hooks** | hooks | JSON POST 到外部服务（Slack、仪表盘、指标） |
+| **Effort levels + ultrathink (v2.1.68)** | harness-work | 多因素评分为复杂任务注入 ultrathink |
+| **Agent hooks (v2.1.68)** | hooks | 基于 LLM 的代码质量守护（type: "agent"） |
+| **`${CLAUDE_SKILL_DIR}` 变量 (v2.1.69)** | 所有技能 | 稳定的技能本地引用路径解析 |
+| **InstructionsLoaded hook (v2.1.69)** | hooks | 会话前指令加载跟踪和环境检查 |
+| **`agent_id` / `agent_type` 字段 (v2.1.69)** | hooks, breezing | 健壮的队友身份和角色感知守护 |
+| **`{"continue": false}` 队友响应 (v2.1.69)** | breezing | 所有任务完成或请求停止时停止团队循环 |
+| **`/reload-plugins` (v2.1.69)** | 所有技能 | 编辑技能/钩子后立即刷新，无需重启 |
+| **`includeGitInstructions: false` (v2.1.69)** | breezing, work | 减少 git 指令轻量任务的提示词开销 |
+| **`git-subdir` 插件源 (v2.1.69)** | setup, release | 支持从仓库子目录管理的插件源 |
+| **Sonnet 4.5 → 4.6 自动迁移** | 所有技能 | 旧版 Sonnet 引用自动迁移到 4.6 行为 |
+| **WorktreeCreate/Remove hook (v2.1.50)** | breezing | Worktree 生命周期自动设置和清理 |
+| **Auto Mode (研究预览，第一阶段已启动)** | breezing, work | `--auto-mode` 标志作为更安全的 bypassPermissions 替代方案。第一阶段：研究预览于 2026-03-12 启动 |
+| **Per-agent hooks (v2.1.69+)** | agents-v3/ | Worker PreToolUse 守护 + Reviewer Stop 日志在 agent frontmatter 中 |
+| **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | 自动 worktree 隔离，支持共享 Agent Memory 的并行写入 |
+| **`/loop` + Cron 调度 (v2.1.71)** | breezing, harness-work | 周期性任务监控，如 `/loop 5m /sync-status` |
+| **PostToolUseFailure hook (v2.1.70)** | hooks | 连续 3 次失败后自动升级 |
+| **Background Agent output fix (v2.1.71)** | breezing | 安全的后台 agent 使用，完成通知中包含输出路径 |
+| **Compaction image retention (v2.1.70)** | 所有技能 | 上下文压缩时保留图片 |
+| **Subagent `background` 字段 (v2.1.71+)** | breezing | 通过 frontmatter 实现始终后台执行的 agent |
+| **Subagent `local` memory scope (v2.1.71+)** | agents-v3/ | 非 VCS agent memory 存储在 `.claude/agent-memory-local/` |
+| **Agent Teams 实验性标志 (v2.1.71+)** | breezing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 环境变量用于官方 Agent Teams |
+| **`/agents` 命令 (v2.1.71+)** | setup, troubleshoot | 交互式 agent 管理 UI（创建/编辑/删除） |
+| **Desktop Scheduled Tasks (v2.1.71+)** | harness-work | `~/.claude/scheduled-tasks/` 基于 SKILL.md 的周期性任务 |
+| **`--agents` CLI 标志 (v2.1.71+)** | breezing, CI | 会话级 JSON agent 定义，无需磁盘持久化 |
+| **`ExitWorktree` tool (v2.1.72)** | breezing, work | Agent 工作流的编程式 worktree 退出 |
+| **Effort levels 简化 (v2.1.72)** | harness-work | 持久级别为 `low/medium/high`（`○ ◐ ●`）。`max` 仅作为 Opus 4.6 的会话专属选项保留 |
+| **Agent tool `model` 参数恢复 (v2.1.72)** | breezing | 重新启用每次调用的模型覆盖 |
+| **`/plan` 描述参数 (v2.1.72)** | harness-plan | `/plan fix the auth bug` 带上下文进入计划模式 |
+| **Parallel tool call 修复 (v2.1.72)** | breezing, work | 失败的 Read/WebFetch/Glob 不再取消同级调用 |
+| **Worktree isolation 修复 (v2.1.72)** | breezing | 任务恢复 cwd 还原 + 后台通知 worktreePath |
+| **`/clear` 保留后台 agents (v2.1.72)** | breezing | `/clear` 只终止前台任务；后台 agents 保持运行 |
+| **Hooks 修复 (v2.1.72)** | hooks | transcript_path 修复、skill hooks 双重触发修复、async stdin 修复 |
+| **HTML comments hidden in CLAUDE.md (v2.1.72)** | 所有 | `<!-- -->` 对自动注入隐藏；通过 Read 工具可见 |
+| **Sandboxing (`/sandbox`)** | breezing, work | 操作系统级文件系统/网络隔离，作为 bypassPermissions 的补充 |
+| **`opusplan` model alias** | breezing | Lead 会话中自动切换 Opus（计划）↔ Sonnet（执行） |
+| **`CLAUDE_CODE_SUBAGENT_MODEL` env var** | breezing, work | Worker/Reviewer 的集中式子 agent 模型控制 |
+| **Checkpointing (`/rewind`)** | work | 会话状态跟踪、回滚和选择性摘要 |
+| **Code Review (托管版，研究预览)** | harness-review | 多 agent PR 审查，带有 `REVIEW.md` 指导。Teams/Enterprise |
+| **Status Line (`/statusline`)** | 所有技能 | 自定义 shell 脚本状态栏，用于上下文/成本/git 监控 |
+| **1M Context (`sonnet[1m]`)** | harness-review, breezing | 大型代码库分析的 1M token 上下文窗口 |
+| **Chrome Integration (`--chrome`, beta)** | harness-work, harness-review | 浏览器自动化，用于 UI 测试、控制台调试、数据提取 |
+| **`modelOverrides` setting (v2.1.73)** | setup, breezing | 将模型选择器条目映射到自定义提供商模型 ID（Bedrock ARNs 等） |
+| **`/output-style` 已弃用 (v2.1.73)** | 所有技能 | 改用 `/config`；输出样式选择已移至配置菜单 |
+| **Bedrock/Vertex Opus 4.6 默认值 (v2.1.73)** | breezing | 云提供商上的默认 Opus 从 4.1 更新到 4.6 |
+| **`autoMemoryDirectory` setting (v2.1.74)** | session-memory, setup | 项目特定内存隔离的自定义 auto-memory 存储路径 |
+| **`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (v2.1.74)** | hooks | 可配置的 SessionEnd hooks 超时（原固定 1.5s kill） |
+| **Full model ID fix (v2.1.74)** | agents-v3/, breezing | `claude-opus-4-6` 等现在可在 agent frontmatter 和 JSON 配置中识别 |
+| **Streaming API memory leak fix (v2.1.74)** | breezing, work | 流式响应缓冲区中的无界 RSS 增长已修复 |
+| **LSP server integration (`.lsp.json`)** | setup | 通过语言服务器协议实现实时诊断、代码导航 |
+| **`SubagentStart`/`SubagentStop` matcher** | breezing, hooks | Agent 类型特定的生命周期监控，带有匹配器过滤 |
+| **Agent Teams: Task Dependencies** | breezing | 带文件锁声明的自动解锁依赖任务 |
+| **`--teammate-mode` CLI flag** | breezing | 每会话显示模式覆盖（`in-process`/`tmux`） |
+| **`skills` field in agent frontmatter** | agents-v3/ | 启动时预加载技能内容到子 agent 上下文 |
+| **`--remote` / Cloud Sessions** | breezing, harness-work | 终端到云端异步任务执行，通过 `/teleport` 获取结果 |
+| **`CLAUDE_ENV_FILE` SessionStart persistence** | hooks | 从 SessionStart hooks 持久化环境变量到后续 Bash 命令 |
+| **`PreCompact` hook** | hooks | 压缩前状态保存 + WIP 任务警告（已实现） |
+| **Slack Integration (`@Claude`)** | harness-work (未来) | 通过云会话从 Slack 频道路由编码任务 |
+| **Analytics Dashboard** | setup, harness-review | PR 归因（`claude-code-assisted` 标签）、使用/贡献指标、排行榜 |
+| **OpenTelemetry Monitoring** | hooks, breezing | OTel 指标/事件导出（会话、tokens、成本、工具结果、活动时间） |
+| **`/security-review` command** | harness-review | 分析待处理更改的安全漏洞（注入、认证、数据暴露） |
+| **`/insights` command** | session-memory | 会话分析报告：项目领域、交互模式、摩擦点 |
+| **`/stats` command** | session | 每日使用可视化、会话历史、连续天数、模型偏好 |
+| **Prompt Suggestions** | 所有技能 | 基于 git 历史的上下文感知自动补全；Tab 接受，Enter 提交 |
+| **PR Review Status footer** | breezing, harness-review | 可点击的 PR 链接，带颜色编码的审查状态（绿/黄/红/灰/紫） |
+| **`CLAUDE_CODE_TASK_LIST_ID` env var** | breezing | 跨会话共享命名任务列表：`CLAUDE_CODE_TASK_LIST_ID=my-project claude` |
+| **`fastModePerSessionOptIn` setting** | setup, breezing | 管理员控制：快速模式每次会话重置，用户必须 `/fast` 重新启用 |
+| **1M Context Window (`opus[1m]`) (v2.1.75)** | breezing, harness-review | Opus 4.6 的 1M 上下文窗口。Max/Team/Enterprise 自动升级 |
+| **Memory file timestamps (v2.1.75)** | session-memory, memory | 内存文件的最后更新时间戳。支持基于新鲜度的内存判断 |
+| **Async hook suppression (v2.1.75)** | breezing, hooks | 异步 hook 完成消息默认隐藏。`--verbose` 显示 |
+| **`/effort max` session-only (v2.1.75+)** | harness-work, harness-plan | Opus 4.6 专属的最深推理模式。会话级启用，不持久化 |
+| **MCP Elicitation 支持 (v2.1.76)** | hooks, breezing | MCP 服务器的结构化输入请求。Breezing 中自动跳过 |
+| **`Elicitation`/`ElicitationResult` hook (v2.1.76)** | hooks | MCP elicitation 前后拦截和日志记录 |
+| **`PostCompact` hook (v2.1.76)** | hooks, breezing | 压缩完成后的上下文重新注入（PreCompact 的对应） |
+| **`-n`/`--name` CLI flag (v2.1.76)** | breezing | 设置会话显示名称。用于会话列表中的识别 |
+| **`worktree.sparsePaths` setting (v2.1.76)** | breezing, setup | 单体仓库中的 worktree sparse-checkout。加速并行 worker 启动 |
+| **`/effort` slash command (v2.1.76)** | harness-work | 会话中切换 effort 级别（low/medium/high） |
+| **`--worktree` 启动加速 (v2.1.76)** | breezing | 直接读取 git refs + 跳过冗余 fetch |
+| **后台 agent 部分结果保留 (v2.1.76)** | breezing | kill 时部分结果也保存到上下文 |
+| **stale worktree 自动清理 (v2.1.76)** | breezing | 自动删除中断的并行执行的 worktree |
+| **自动压缩 circuit breaker (v2.1.76)** | 所有技能 | 连续 3 次失败自动停止（防止无限重试） |
+| **`--plugin-dir` 规范变更 (v2.1.76, breaking)** | setup | 多目录通过重复 `--plugin-dir` 指定 |
+| **Deferred Tools schema 修复 (v2.1.76)** | 所有技能 | 压缩后 ToolSearch 工具 schema 保留 |
+| **`/context` command (v2.1.74)** | 所有技能 | 上下文消费可视化和优化建议。防止长时间会话膨胀 |
+| **`maxTurns` agent 安全限制** | agents-v3/ | Worker: 100, Reviewer: 50, Scaffolder: 75。防止失控的安全阀 |
+| **`Notification` hook 实现** | hooks | 通知事件（permission_prompt, idle_prompt 等）的日志记录。Breezing 可观测性提升 |
+| **Output token limits 64k/128k (v2.1.77)** | 所有技能 | Opus 4.6 / Sonnet 4.6 默认输出 64k，上限 128k tokens |
+| **`allowRead` sandbox setting (v2.1.77)** | harness-review | 在 `denyRead` 区域内重新允许特定路径的读取 |
+| **PreToolUse `allow` respects `deny` (v2.1.77)** | guardrails | Hook `allow` 不会覆盖 settings.json 的 `deny` 规则（安全增强） |
+| **Agent `resume` → `SendMessage` (v2.1.77)** | breezing | Agent tool 的 `resume` 参数已弃用。迁移到 `SendMessage({to: agentId})` |
+| **`/branch` (原 `/fork`) (v2.1.77)** | session | `/fork` 重命名为 `/branch`（`/fork` 作为别名保留） |
+| **`claude plugin validate` 增强 (v2.1.77)** | setup | 添加 frontmatter + hooks.json 语法验证 |
+| **`--resume` 45% 加速 (v2.1.77)** | session | fork-heavy 会话恢复最多加速 45%，减少 100-150MB 内存 |
+| **Stale worktree race fix (v2.1.77)** | breezing | 修复活跃 agent 的 worktree 被误删的竞态条件 |
+| **`StopFailure` hook event (v2.1.78)** | hooks | 捕获 API 错误（速率限制、认证失败）导致的会话停止失败 |
+| **`${CLAUDE_PLUGIN_DATA}` variable (v2.1.78)** | hooks, setup | 插件更新后仍持久的状态目录变量 |
+| **Agent `effort`/`maxTurns`/`disallowedTools` frontmatter (v2.1.78)** | agents-v3/ | 插件 agent 定义中声明式设置 effort/轮次限制/工具禁用 |
+| **`deny: ["mcp__*"]` permission fix (v2.1.78)** | setup | settings.json 的 deny 规则正确阻止 MCP 工具 |
+| **`ANTHROPIC_CUSTOM_MODEL_OPTION` env var (v2.1.78)** | setup | 向 `/model` 选择器添加自定义模型条目 |
+| **`--worktree` skills/hooks loading fix (v2.1.78)** | breezing | 使用 worktree 标志时技能和 hooks 也正确加载 |
+| **Large session truncation fix (v2.1.78)** | session | 修复 `cc log` / `--resume` 中 5MB+ 会话被截断的问题 |
+| **`--console` auth flag (v2.1.79)** | setup | Anthropic Console API 计费认证的 `claude auth login --console` |
+| **Turn duration toggle (v2.1.79)** | 所有技能 | 在 `/config` 中切换轮次执行时间显示 |
+| **`CLAUDE_CODE_PLUGIN_SEED_DIR` multiple dirs (v2.1.79)** | setup | 使用平台分隔符指定多个种子目录 |
+| **SessionEnd hooks fix in `/resume` (v2.1.79)** | hooks | 交互式 `/resume` 会话切换时 SessionEnd hooks 正常触发 |
+| **18MB startup memory reduction (v2.1.79)** | 所有技能 | 启动时内存使用减少约 18MB |
 
-Full details: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
+完整详情：[docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
 
-## Development Rules
+## 开发规则
 
-### Commit Messages
+### 提交信息
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `docs:` / `refactor:` / `test:` / `chore:`
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:` / `fix:` / `docs:` / `refactor:` / `test:` / `chore:`
 
-### Version Management
+### 版本管理
 
-Keep `VERSION` and `.claude-plugin/plugin.json` in sync.
-Normal feature/docs PRs must leave both files unchanged and record changes under `CHANGELOG.md`'s `[Unreleased]` section.
-Use `./scripts/sync-version.sh bump` only when cutting a release.
+保持 `VERSION` 和 `.claude-plugin/plugin.json` 同步。
+普通功能/文档 PR 必须保持两个文件不变，并在 `CHANGELOG.md` 的 `[Unreleased]` 部分记录更改。
+仅在发布时使用 `./scripts/sync-version.sh bump`。
 
 ### CHANGELOG
 
-Details: [.claude/rules/changelog.md](.claude/rules/changelog.md) (Keep a Changelog format; include Before/After tables for major changes)
+详情：[.claude/rules/changelog.md](.claude/rules/changelog.md)（Keep a Changelog 格式；重大更改包含 Before/After 表格）
 
-### Language
+### 语言
 
-All responses must be in **Japanese** (including `context: fork` skills).
+所有回复必须使用**中文**（包括 `context: fork` 技能）。
 
-### Code Style
+### 代码风格
 
-- Use clear and descriptive names
-- Add comments for complex logic
-- Keep commands/agents/skills single-responsibility
+- 使用清晰且描述性的名称
+- 为复杂逻辑添加注释
+- 保持命令/agents/技能单一职责
 
-## Repository Structure
+## 仓库结构
 
-`.claude-plugin/` Plugin manifest / `agents/` Sub-agents / `skills/` Skills / `hooks/` Hooks / `scripts/` Shell scripts / `docs/` Documentation / `tests/` Validation
+`.claude-plugin/` 插件清单 / `agents/` 子 agents / `skills/` 技能 / `hooks/` 钩子 / `scripts/` Shell 脚本 / `docs/` 文档 / `tests/` 验证
 
-## Using Skills (Important)
+## 使用技能（重要）
 
-**Before starting work:** If a relevant skill exists, launch it with the Skill tool first.
+**开始工作前**：如果存在相关技能，先用 Skill 工具启动它。
 
-> For heavy tasks, skills spawn sub-agents from `agents/` in parallel via the Task tool.
+> 对于繁重任务，技能通过 Task 工具并行生成 `agents/` 中的子 agents。
 
-### Top Skill Categories (Top 5)
+### 顶级技能类别（前 5）
 
-| Category | Purpose | Trigger Examples |
+| 类别 | 用途 | 触发示例 |
 |---------|---------|-----------------|
-| work | Task implementation (auto-scope detection, --codex support) | "implement", "do it all", "/work" |
-| breezing | Full auto-run with Agent Teams (--codex support) | "run with team", "breezing" |
-| harness-review | Code review, quality checks | "review", "security", "performance" |
-| setup | Setup integration hub (init, harness-mem, Codex CLI, etc.) | "setup", "initialize", "harness-mem", "codex-setup" |
-| memory | SSOT management, memory search, SSOT promotion | "SSOT", "decisions.md", "memory search", "claude-mem" |
+| work | 任务实现（自动范围检测，--codex 支持） | "implement"、"do it all"、"/work" |
+| breezing | Agent Teams 全自动运行（--codex 支持） | "run with team"、"breezing" |
+| harness-review | 代码审查、质量检查 | "review"、"security"、"performance" |
+| setup | 设置集成中心（init、harness-mem、Codex CLI 等） | "setup"、"initialize"、"harness-mem"、"codex-setup" |
+| memory | SSOT 管理、内存搜索、SSOT 提升 | "SSOT"、"decisions.md"、"memory search"、"claude-mem" |
 
-Full category list and hierarchy: [docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
+完整类别列表和层次结构：[docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
 
-## Development Flow
+## 开发流程
 
-0. **When editing skills/hooks**: run `/reload-plugins` to refresh runtime cache immediately
-1. **Plan**: Use `/plan-with-agent` to add tasks to Plans.md
-2. **Implement**: `/work` (Claude implements) or `/breezing` (team full-run). Both support `--codex`
-3. **Review**: Runs automatically (manual: `/harness-review`)
-4. **Validate**: Run `./tests/validate-plugin.sh` for structural validation
+0. **编辑 skills/hooks 时**：运行 `/reload-plugins` 立即刷新运行时缓存
+1. **计划**：使用 `/plan-with-agent` 向 Plans.md 添加任务
+2. **实现**：`/work`（Claude 实现）或 `/breezing`（团队全运行）。两者都支持 `--codex`
+3. **审查**：自动运行（手动：`/harness-review`）
+4. **验证**：运行 `./tests/validate-plugin.sh` 进行结构验证
 
-## Testing
+## 测试
 
 ```bash
-./tests/validate-plugin.sh          # Validate plugin structure
-./scripts/ci/check-consistency.sh   # Consistency check
+./tests/validate-plugin.sh          # 验证插件结构
+./scripts/ci/check-consistency.sh   # 一致性检查
 ```
 
-Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
+详情：[docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 
-## Notes
+## 注意事项
 
-- **Watch for self-reference**: Running `/work` on this plugin means editing its own code
-- **Hooks run automatically**: PreToolUse/PostToolUse guards are active
-- **VERSION sync**: Leave version files untouched in normal PRs; update them only for releases
+- **注意自指性**：在此插件上运行 `/work` 意味着编辑其自身的代码
+- **Hooks 自动运行**：PreToolUse/PostToolUse 守护处于活动状态
+- **VERSION 同步**：普通 PR 中不要修改版本文件；仅在发布时更新
 
-## Key Commands (for development)
+## 关键命令（用于开发）
 
-| Command | Purpose |
+| 命令 | 用途 |
 |---------|---------|
-| `/plan-with-agent` | Add improvement tasks to Plans.md |
-| `/work` | Implement tasks (auto-scope detection, --codex support) |
-| `/breezing` | Full team parallel run with Agent Teams (--codex support) |
-| `/harness-review` | Review changes |
-| `/validate` | Validate plugin |
-| `/remember` | Record learnings |
+| `/plan-with-agent` | 向 Plans.md 添加改进任务 |
+| `/work` | 实现任务（自动范围检测，--codex 支持） |
+| `/breezing` | Agent Teams 全并行运行（--codex 支持） |
+| `/harness-review` | 审查更改 |
+| `/validate` | 验证插件 |
+| `/remember` | 记录学习内容 |
 
-Details & handoff: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
+详情和交接：[docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 
-## SSOT (Single Source of Truth)
+## SSOT（单一事实来源）
 
-- `.claude/memory/decisions.md` - Decisions (Why)
-- `.claude/memory/patterns.md` - Reusable patterns (How)
+- `.claude/memory/decisions.md` - 决策（为什么）
+- `.claude/memory/patterns.md` - 可复用模式（如何做）
 
-## Test Tampering Prevention
+## 测试篡改预防
 
-> **Absolutely prohibited**: Tampering with tests to fake "success"
+> **绝对禁止**：篡改测试以伪造"成功"
 
-Details: [.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.claude/rules/implementation-quality.md](.claude/rules/implementation-quality.md)
+详情：[.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.claude/rules/implementation-quality.md](.claude/rules/implementation-quality.md)

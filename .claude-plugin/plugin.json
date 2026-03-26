@@ -3,11 +3,11 @@
   "version": "3.14.0",
   "description": "Claude harness - A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
   "author": {
-    "name": "Chachamaru",
-    "url": "https://github.com/Chachamaru127"
+    "name": "jyf2100",
+    "url": "https://github.com/jyf2100"
   },
-  "homepage": "https://github.com/Chachamaru127/claude-code-harness",
-  "repository": "https://github.com/Chachamaru127/claude-code-harness",
+  "homepage": "https://github.com/jyf2100/claude-code-harness",
+  "repository": "https://github.com/jyf2100/claude-code-harness",
   "license": "MIT",
   "keywords": [
     "claude-code",
