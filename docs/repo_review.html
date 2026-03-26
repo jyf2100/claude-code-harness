@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Harness - 仓库深度走读报告</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #eaeaea;
+            --accent-color: #4f8cff;
+            --accent-hover: #6ba3ff;
+            --border-color: #2d2d4a;
+            --code-bg: #16213e;
+            --table-header-bg: #0f3460;
+            --warning-bg: #3d2b00;
+            --success-bg: #1a3d00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.7;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #8ab4f8;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #a8c7fa;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--code-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--table-header-bg);
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        tr:hover {
+            background: rgba(79, 140, 255, 0.1);
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 20px 0;
+            color: #aaa;
+        }
+
+        ul, ol {
+            padding-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .meta-box {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .meta-box p {
+            margin-bottom: 8px;
+        }
+
+        .score-box {
+            display: inline-block;
+            background: var(--success-bg);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .toc {
+            background: var(--code-bg);
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            padding: 5px 0;
+        }
+
+        .toc a {
+            color: var(--text-color);
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+        }
+
+        .directory-tree {
+            font-family: 'Fira Code', monospace;
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: rgba(79, 140, 255, 0.2);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.4rem; }
+            .container { padding: 20px 0; }
+            pre { padding: 15px; }
+            table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Claude Code Harness - 仓库深度走读报告</h1>
+
+        <div class="meta-box">
+            <p><strong>生成日期:</strong> 2026-03-26</p>
+            <p><strong>仓库:</strong> <a href="https://github.com/jyf2100/claude-code-harness">jyf2100/claude-code-harness</a></p>
+            <p><strong>版本:</strong> v3.14.0</p>
+            <p><strong>主要语言:</strong> TypeScript / Shell (Bash)</p>
+        </div>
+
+        <div class="toc">
+            <h3>目录</h3>
+            <ul>
+                <li><a href="#overview">概要</a></li>
+                <li><a href="#phase-1">阶段 1: 架构地图</a></li>
+                <li><a href="#phase-2">阶段 2: 关键路径分析</a></li>
+                <li><a href="#phase-3">阶段 3: 核心子系统深挖</a></li>
+                <li><a href="#phase-4">阶段 4: 快速上手</a></li>
+                <li><a href="#phase-5">阶段 5: 文档总结</a></li>
+                <li><a href="#phase-6">阶段 6: 评分卡</a></li>
+                <li><a href="#extensions">扩展点</a></li>
+                <li><a href="#conclusion">结论</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">概要</h2>
+
+        <p>Claude Code Harness 是一个<strong>自指涉插件系统</strong>，通过"计划 → 执行 → 审查"工作流实现 Claude Code 的自主运行。项目实现了复杂的护栏引擎、多代理编排和广泛的钩子系统，让 Claude 能够使用自身来改进自身。</p>
+
+        <p><strong>核心优势:</strong></p>
+        <ul>
+            <li>完善的 TypeScript 护栏引擎，包含 13 条声明式安全规则</li>
+            <li>多代理团队编排（Lead/Worker/Reviewer 模式）</li>
+            <li>测试篡改检测，防止实现捷径</li>
+            <li>覆盖 20+ 生命周期事件的钩子系统</li>
+        </ul>
+
+        <p><strong>架构哲学:</strong> 自托管、自改进 —— Harness 使用自己的技能和代理来开发自己。</p>
+
+        <h2 id="phase-1">阶段 1: 架构地图</h2>
+
+        <h3>目录结构</h3>
+
+        <div class="directory-tree">claude-code-harness/
+├── core/                    # TypeScript 核心引擎
+│   └── src/
+│       ├── index.ts         # stdin → 路由 → stdout 管道
+│       ├── types.ts         # HookInput, HookResult, Signal 类型定义
+│       ├── guardrails/      # 护栏引擎
+│       │   ├── rules.ts     # 13 条声明式规则 (R01-R13)
+│       │   ├── pre-tool.ts  # PreToolUse 评估
+│       │   ├── post-tool.ts # PostToolUse 评估
+│       │   ├── permission.ts# PermissionRequest 处理
+│       │   └── tampering.ts # 测试篡改检测
+│       ├── state/           # SQLite 状态管理
+│       │   ├── store.ts     # HarnessStore 类
+│       │   ├── schema.ts    # DDL 定义
+│       │   └── migration.ts # 数据库迁移
+│       └── engine/          # 生命周期管理
+│           └── lifecycle.ts # 会话生命周期
+│
+├── skills/                  # 27 个技能定义
+│   ├── harness-work/        # 统一执行（solo/parallel/breezing）
+│   ├── breezing/            # 团队执行别名
+│   ├── harness-plan/        # 规划技能
+│   ├── harness-review/      # 代码审查
+│   └── ...                  # 23 个其他技能
+│
+├── agents-v3/               # 3 代理系统 (v3)
+│   ├── worker.md            # 实现代理
+│   ├── reviewer.md          # 审查代理（只读）
+│   └── scaffolder.md        # 状态管理代理
+│
+├── hooks/                   # 钩子入口点
+│   ├── hooks.json           # 钩子配置
+│   ├── pre-tool.sh          # PreToolUse 垫片
+│   └── post-tool.sh         # PostToolUse 垫片
+│
+├── scripts/                 # 70+ Shell 脚本
+│   └── ...                  # 工具脚本
+│
+└── .claude-plugin/          # 插件清单
+    ├── plugin.json          # 插件元数据
+    └── settings.json        # 默认设置</div>
+
+        <h3>入口点</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>入口点</th>
+                    <th>类型</th>
+                    <th>用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>core/src/index.ts</code></td>
+                    <td>CLI</td>
+                    <td>stdin JSON → 路由 → stdout JSON</td>
+                </tr>
+                <tr>
+                    <td><code>hooks/pre-tool.sh</code></td>
+                    <td>Hook</td>
+                    <td>PreToolUse → 护栏检查</td>
+                </tr>
+                <tr>
+                    <td><code>hooks/post-tool.sh</code></td>
+                    <td>Hook</td>
+                    <td>PostToolUse → 篡改检测</td>
+                </tr>
+                <tr>
+                    <td><code>skills/*/SKILL.md</code></td>
+                    <td>Skill</td>
+                    <td>用户斜杠命令</td>
+                </tr>
+                <tr>
+                    <td><code>agents-v3/*.md</code></td>
+                    <td>Agent</td>
+                    <td>子代理定义</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="phase-2">阶段 2: 关键路径分析</h2>
+
+        <h3>钩子执行管道</h3>
+
+        <pre><code>Claude Code
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│ 钩子事件 (PreToolUse / PostToolUse / 等)                │
+│ 输入: {"tool_name": "Write", "tool_input": {...}}       │
+└─────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│ hooks/hooks.json                                        │
+│ 匹配器: "Write|Edit|MultiEdit|Bash|Read"                │
+│ → 路由到 pre-tool.sh                                    │
+└─────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│ core/src/index.ts                                       │
+│ 1. readStdin() → 解析 JSON                              │
+│ 2. route("pre-tool", input)                             │
+│ 3. evaluatePreTool() → 规则评估                         │
+│ 4. stdout JSON 结果                                     │
+└─────────────────────────────────────────────────────────┘
+    │
+    ▼
+Claude Code (继续 / 阻止 / 询问用户)</code></pre>
+
+        <h3>Breezing 团队执行流程</h3>
+
+        <pre><code>用户: /breezing all
+    │
+    ▼
+Lead 代理（当前 Claude 会话）
+    │
+    ▼
+Phase A: 预委托
+1. 读取 Plans.md
+2. 解析依赖图
+3. 评估任务复杂度
+    │
+    ▼
+Phase B: 委托（按依赖顺序逐个任务执行）
+B-1: 生成 Worker → Worker 在 worktree 中创建 commit
+B-2: Lead 审查（Codex exec 或 Reviewer 代理）
+B-3: 修复循环（最多 3 轮）
+B-4: Cherry-pick 到 main
+    │
+    ▼
+Phase C: 后委托
+1. 汇总所有 commits
+2. 生成丰富的完成报告
+3. 最终 Plans.md 验证</code></pre>
+
+        <h2 id="phase-3">阶段 3: 核心子系统深挖</h2>
+
+        <h3>3.1 护栏引擎</h3>
+
+        <p><strong>位置:</strong> <code>core/src/guardrails/</code></p>
+
+        <p>护栏引擎是一个<strong>声明式规则评估系统</strong>，在工具调用执行前后进行检查。</p>
+
+        <h4>13 条护卫规则 (R01-R13)</h4>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>规则 ID</th>
+                    <th>工具</th>
+                    <th>模式</th>
+                    <th>决策</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>R01</td><td>Bash</td><td><code>sudo</code> 命令</td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R02</td><td>Write/Edit</td><td>受保护路径（.env, .git, *.pem）</td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R03</td><td>Bash</td><td>通过 shell 写入受保护路径</td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R04</td><td>Write/Edit</td><td>项目根目录外</td><td><strong>询问</strong></td></tr>
+                <tr><td>R05</td><td>Bash</td><td><code>rm -rf</code> 模式</td><td><strong>询问</strong></td></tr>
+                <tr><td>R06</td><td>Bash</td><td><code>git push --force</code></td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R07</td><td>Write/Edit</td><td>Codex 模式激活时</td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R08</td><td>Write/Edit/Bash</td><td>Breezing reviewer 角色</td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R09</td><td>Read</td><td>读取机密文件</td><td><strong>通过 + 警告</strong></td></tr>
+                <tr><td>R10</td><td>Bash</td><td><code>--no-verify</code> / <code>--no-gpg-sign</code></td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R11</td><td>Bash</td><td>在 main/master 上 <code>git reset --hard</code></td><td><strong>拒绝</strong></td></tr>
+                <tr><td>R12</td><td>Bash</td><td>直接推送到 main/master</td><td><strong>通过 + 警告</strong></td></tr>
+                <tr><td>R13</td><td>Write/Edit</td><td>受保护的审查路径</td><td><strong>通过 + 警告</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 测试篡改检测</h3>
+
+        <p><strong>位置:</strong> <code>core/src/guardrails/tampering.ts</code></p>
+
+        <p>检测破坏测试完整性的模式：</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>模式 ID</th>
+                    <th>检测内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>T01</td><td><code>it.skip</code> / <code>describe.skip</code></td></tr>
+                <tr><td>T02</td><td><code>xit</code> / <code>xdescribe</code></td></tr>
+                <tr><td>T03</td><td><code>@pytest.mark.skip</code></td></tr>
+                <tr><td>T04</td><td><code>t.Skip()</code></td></tr>
+                <tr><td>T05</td><td>注释掉的 <code>expect()</code></td></tr>
+                <tr><td>T06</td><td>注释掉的 <code>assert()</code></td></tr>
+                <tr><td>T07</td><td>TODO 替换断言</td></tr>
+                <tr><td>T08</td><td><code>eslint-disable</code></td></tr>
+                <tr><td>T09</td><td>CI 中的 <code>continue-on-error: true</code></td></tr>
+                <tr><td>T10</td><td>CI 中的 <code>if: always()</code></td></tr>
+                <tr><td>T11</td><td>硬编码的 <code>answers_for_tests</code> 字典</td></tr>
+                <tr><td>T12</td><td>直接返回测试值</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.3 状态管理 (SQLite)</h3>
+
+        <p><strong>位置:</strong> <code>core/src/state/store.ts</code></p>
+
+        <p>使用 <code>better-sqlite3</code> 实现同步、WAL 模式持久化。</p>
+
+        <h4>数据库表</h4>
+
+        <ul>
+            <li><strong>sessions</strong> - 会话生命周期追踪</li>
+            <li><strong>signals</strong> - 代理间消息传递</li>
+            <li><strong>task_failures</strong> - 失败历史与严重程度</li>
+            <li><strong>work_states</strong> - 工作模式状态（24 小时 TTL）</li>
+        </ul>
+
+        <h3>3.4 钩子系统</h3>
+
+        <p><strong>位置:</strong> <code>hooks/hooks.json</code></p>
+
+        <p>20+ 钩子事件，支持 command/agent/prompt 类型：</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>事件</th>
+                    <th>用途</th>
+                    <th>钩子类型</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>PreToolUse</code></td><td>执行守护</td><td>command, agent</td></tr>
+                <tr><td><code>PostToolUse</code></td><td>篡改检测、清理</td><td>command, agent</td></tr>
+                <tr><td><code>SessionStart</code></td><td>环境设置</td><td>command</td></tr>
+                <tr><td><code>SessionEnd</code></td><td>清理、摘要</td><td>command</td></tr>
+                <tr><td><code>SubagentStart/Stop</code></td><td>代理生命周期追踪</td><td>command</td></tr>
+                <tr><td><code>TeammateIdle</code></td><td>团队协调</td><td>command</td></tr>
+                <tr><td><code>TaskCompleted</code></td><td>进度追踪</td><td>command</td></tr>
+                <tr><td><code>PreCompact</code></td><td>WIP 任务警告</td><td>command, agent</td></tr>
+                <tr><td><code>PostCompact</code></td><td>上下文重新注入</td><td>command</td></tr>
+                <tr><td><code>Elicitation</code></td><td>MCP 表单处理</td><td>command</td></tr>
+                <tr><td><code>UserPromptSubmit</code></td><td>策略注入</td><td>command</td></tr>
+                <tr><td><code>Stop</code></td><td>会话摘要、WIP 检查</td><td>command, agent</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="phase-4">阶段 4: 快速上手</h2>
+
+        <h3>前置条件</h3>
+
+        <ul>
+            <li>Node.js 18+</li>
+            <li>Claude Code CLI（推荐 v2.1.69+）</li>
+            <li>Git</li>
+        </ul>
+
+        <h3>安装</h3>
+
+        <pre><code class="language-bash"># 从 GitHub fork 安装
+claude plugin add https://github.com/jyf2100/claude-code-harness
+
+# 或手动安装
+git clone https://github.com/jyf2100/claude-code-harness.git
+claude plugin add ./claude-code-harness</code></pre>
+
+        <h3>核心技能使用</h3>
+
+        <pre><code class="language-bash"># 规划任务
+/harness-plan create
+
+# 执行下一个任务（solo 模式）
+/harness-work
+
+# 使用团队执行所有任务
+/breezing all
+
+# 代码审查
+/harness-review
+
+# 发布新版本
+/harness-release</code></pre>
+
+        <h2 id="phase-5">阶段 5: 文档总结</h2>
+
+        <h3>内部文档</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>文档</th>
+                    <th>用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>CLAUDE.md</code></td><td>项目开发指南（中文）</td></tr>
+                <tr><td><code>docs/CLAUDE-feature-table.md</code></td><td>Claude Code 功能兼容性</td></tr>
+                <tr><td><code>docs/CLAUDE-commands.md</code></td><td>命令参考</td></tr>
+                <tr><td><code>docs/CLAUDE-skill-catalog.md</code></td><td>技能层次结构</td></tr>
+                <tr><td><code>.claude/rules/hooks-editing.md</code></td><td>钩子编辑规则</td></tr>
+                <tr><td><code>.claude/rules/skill-editing.md</code></td><td>技能编辑规则</td></tr>
+                <tr><td><code>.claude/rules/versioning.md</code></td><td>SemVer 指南</td></tr>
+            </tbody>
+        </table>
+
+        <h3>代理记忆系统</h3>
+
+        <ul>
+            <li>位置: <code>.claude/agent-memory/{agent-name}/</code></li>
+            <li>跨会话持久化的学习内容</li>
+            <li>模式、失败记录、项目特定知识</li>
+        </ul>
+
+        <h2 id="phase-6">阶段 6: 评分卡</h2>
+
+        <h3>评分维度（满分 100 分）</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>维度</th>
+                    <th>分数</th>
+                    <th>依据</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>架构设计</strong></td>
+                    <td>9/10</td>
+                    <td>清晰的四层分离：核心引擎 / 技能 / 代理 / 钩子</td>
+                </tr>
+                <tr>
+                    <td><strong>代码质量</strong></td>
+                    <td>8/10</td>
+                    <td>TypeScript 严格模式，完善的类型定义</td>
+                </tr>
+                <tr>
+                    <td><strong>安全性</strong></td>
+                    <td>9/10</td>
+                    <td>13 条护卫规则，测试篡改检测，受保护路径阻止</td>
+                </tr>
+                <tr>
+                    <td><strong>可测试性</strong></td>
+                    <td>7/10</td>
+                    <td>核心引擎有单元测试，钩子的集成测试可扩展</td>
+                </tr>
+                <tr>
+                    <td><strong>文档</strong></td>
+                    <td>9/10</td>
+                    <td>完善的中文文档，内联注释，技能文档</td>
+                </tr>
+                <tr>
+                    <td><strong>可扩展性</strong></td>
+                    <td>9/10</td>
+                    <td>插件架构，声明式规则，27 个技能，3 个代理，20+ 钩子</td>
+                </tr>
+                <tr>
+                    <td><strong>可观测性</strong></td>
+                    <td>8/10</td>
+                    <td>会话追踪，信号系统，任务失败日志</td>
+                </tr>
+                <tr>
+                    <td><strong>自托管</strong></td>
+                    <td>10/10</td>
+                    <td>使用自身开发自身 —— 终极的吃自己的狗粮</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><span class="score-box">总分: 88/100</span></p>
+
+        <h3>改进建议 Top 5</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>优先级</th>
+                    <th>建议</th>
+                    <th>影响</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td><strong>扩展 shell 脚本的测试覆盖</strong></td><td>高 - 可靠性</td></tr>
+                <tr><td>2</td><td><strong>添加 OTel 指标导出</strong> 用于生产监控</td><td>中 - 可观测性</td></tr>
+                <tr><td>3</td><td><strong>将关键 shell 脚本迁移到 TypeScript</strong></td><td>中 - 可维护性</td></tr>
+                <tr><td>4</td><td><strong>为钩子管道添加集成测试</strong></td><td>高 - 可靠性</td></tr>
+                <tr><td>5</td><td><strong>创建贡献指南</strong> (CONTRIBUTING.md)</td><td>低 - 社区</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="extensions">扩展点</h2>
+
+        <h3>添加新的护卫规则</h3>
+
+        <ol>
+            <li>编辑 <code>core/src/guardrails/rules.ts</code></li>
+            <li>在 <code>GUARD_RULES</code> 数组中添加新的 <code>GuardRule</code> 条目</li>
+            <li>实现 <code>evaluate()</code> 函数</li>
+            <li>运行 <code>./scripts/sync-plugin-cache.sh</code></li>
+        </ol>
+
+        <h3>添加新技能</h3>
+
+        <ol>
+            <li>创建 <code>skills/{skill-name}/SKILL.md</code></li>
+            <li>添加 YAML frontmatter，包含 <code>name</code>、<code>description</code>、<code>allowed-tools</code></li>
+            <li>可选添加 <code>references/</code> 目录存放详细文档</li>
+            <li>更新 CHANGELOG.md</li>
+        </ol>
+
+        <h3>添加新钩子</h3>
+
+        <ol>
+            <li>编辑 <code>hooks/hooks.json</code>（以及 <code>.claude-plugin/hooks.json</code>）</li>
+            <li>在相应的事件类型下添加条目</li>
+            <li>运行 <code>./scripts/sync-plugin-cache.sh</code></li>
+        </ol>
+
+        <h2 id="conclusion">结论</h2>
+
+        <p>Claude Code Harness 是一个复杂的、自改进的插件系统，展示了以下高级模式：</p>
+
+        <ul>
+            <li><strong>声明式安全</strong> 通过护栏规则实现</li>
+            <li><strong>多代理编排</strong> 采用 Lead/Worker/Reviewer 模式</li>
+            <li><strong>基于钩子的可扩展性</strong> 覆盖 20+ 生命周期事件</li>
+            <li><strong>自指涉开发</strong> —— 使用自身来构建自身</li>
+        </ul>
+
+        <p>该项目非常适合希望用适当的护栏和质量门控自动化 Claude Code 工作流的团队。</p>
+
+        <footer>
+            <p><em>由 Claude Code 使用 repo-deep-dive-report 技能生成</em></p>
+        </footer>
+    </div>
+</body>
+</html>
