@@ -1,12 +1,12 @@
 #!/bin/bash
 # diagnose-and-fix.sh
-# CI エラーを診断し、修正案を提案または自動修正するスクリプト
+# 诊断 CI 错误，提出修复建议或自动修复的脚本
 #
 # Usage:
-#   ./scripts/ci/diagnose-and-fix.sh          # 診断のみ
-#   ./scripts/ci/diagnose-and-fix.sh --fix    # 自動修正も実行
+#   ./scripts/ci/diagnose-and-fix.sh          # 仅诊断
+#   ./scripts/ci/diagnose-and-fix.sh --fix    # 同时执行自动修复
 #
-# このスクリプトは CI 失敗時に Claude が実行し、修正案を得るために使用します。
+# 本脚本由 Claude 在 CI 失败时执行，用于获取修复建议。
 
 set -euo pipefail
 
@@ -21,63 +21,63 @@ fi
 ISSUES_FOUND=0
 FIXES_APPLIED=0
 
-echo "🔧 CI 診断＆修正ツール"
+echo "🔧 CI 诊断与修复工具"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 # ================================
-# 1. バージョン同期チェック
+# 1. 版本同步检查
 # ================================
 check_version_sync() {
-  echo "📋 [1/5] バージョン同期チェック..."
+  echo "📋 [1/5] 版本同步检查..."
 
   local file_version=$(cat VERSION 2>/dev/null | tr -d '[:space:]')
   local json_version=$(grep '"version"' .claude-plugin/plugin.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 
   if [ "$file_version" != "$json_version" ]; then
-    echo "  ❌ VERSION ($file_version) と plugin.json ($json_version) が不一致"
+    echo "  ❌ VERSION ($file_version) 与 plugin.json ($json_version) 不一致"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 
     if [ "$AUTO_FIX" = true ]; then
-      echo "  🔧 修正中: plugin.json を $file_version に更新..."
+      echo "  🔧 修复中: 将 plugin.json 更新为 $file_version..."
       sed -i.bak "s/\"version\": \"$json_version\"/\"version\": \"$file_version\"/" .claude-plugin/plugin.json
       rm -f .claude-plugin/plugin.json.bak
       FIXES_APPLIED=$((FIXES_APPLIED + 1))
-      echo "  ✅ 修正完了"
+      echo "  ✅ 修复完成"
     else
-      echo "  💡 修正案: plugin.json の version を \"$file_version\" に変更"
+      echo "  💡 修复建议: 将 plugin.json 的 version 改为 \"$file_version\""
     fi
   else
-    echo "  ✅ 同期済み (v$file_version)"
+    echo "  ✅ 已同步 (v$file_version)"
   fi
 }
 
 # ================================
-# 2. チェックリスト同期チェック
+# 2. 检查清单同步检查
 # ================================
 check_checklist_sync() {
   echo ""
-  echo "📋 [2/5] チェックリスト同期チェック..."
+  echo "📋 [2/5] 检查清单同步检查..."
 
   if ./scripts/ci/check-checklist-sync.sh >/dev/null 2>&1; then
-    echo "  ✅ 同期済み"
+    echo "  ✅ 已同步"
   else
-    echo "  ❌ スクリプトとコマンドのチェックリストが不一致"
+    echo "  ❌ 脚本与命令的检查清单不一致"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 
-    echo "  💡 修正案:"
-    echo "     1. scripts/*.sh の check_file/check_dir を確認"
-    echo "     2. commands/*.md のチェックリストを手動で更新"
-    echo "     (自動修正非対応 - 手動で確認が必要)"
+    echo "  💡 修复建议:"
+    echo "     1. 检查 scripts/*.sh 的 check_file/check_dir"
+    echo "     2. 手动更新 commands/*.md 的检查清单"
+    echo "     (不支持自动修复 - 需要手动确认)"
   fi
 }
 
 # ================================
-# 3. テンプレート存在チェック
+# 3. 模板存在性检查
 # ================================
 check_templates() {
   echo ""
-  echo "📋 [3/5] テンプレート存在チェック..."
+  echo "📋 [3/5] 模板存在性检查..."
 
   local missing=()
   local templates=(
@@ -99,28 +99,28 @@ check_templates() {
   done
 
   if [ ${#missing[@]} -eq 0 ]; then
-    echo "  ✅ 全テンプレート存在"
+    echo "  ✅ 所有模板均存在"
   else
-    echo "  ❌ 不足テンプレート:"
+    echo "  ❌ 缺失模板:"
     for m in "${missing[@]}"; do
       echo "     - $m"
     done
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
-    echo "  💡 修正案: 不足ファイルを作成"
+    echo "  💡 修复建议: 创建缺失的文件"
   fi
 }
 
 # ================================
-# 4. Hooks 整合性チェック
+# 4. Hooks 完整性检查
 # ================================
 check_hooks() {
   echo ""
-  echo "📋 [4/5] Hooks 整合性チェック..."
+  echo "📋 [4/5] Hooks 完整性检查..."
 
   if ! jq empty hooks/hooks.json 2>/dev/null; then
-    echo "  ❌ hooks.json が無効な JSON"
+    echo "  ❌ hooks.json 为无效的 JSON"
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
-    echo "  💡 修正案: hooks/hooks.json の JSON 構文を確認"
+    echo "  💡 修复建议: 检查 hooks/hooks.json 的 JSON 语法"
     return
   fi
 
@@ -134,23 +134,23 @@ check_hooks() {
   done
 
   if [ ${#missing_scripts[@]} -eq 0 ]; then
-    echo "  ✅ Hooks 設定正常"
+    echo "  ✅ Hooks 配置正常"
   else
-    echo "  ❌ 参照スクリプト不足:"
+    echo "  ❌ 引用的脚本缺失:"
     for s in "${missing_scripts[@]}"; do
       echo "     - $s"
     done
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
-    echo "  💡 修正案: 不足スクリプトを作成、または hooks.json から参照を削除"
+    echo "  💡 修复建议: 创建缺失的脚本，或从 hooks.json 中删除引用"
   fi
 }
 
 # ================================
-# 5. リリースメタデータチェック
+# 5. 发布元数据检查
 # ================================
 check_version_bump() {
   echo ""
-  echo "📋 [5/5] リリースメタデータチェック..."
+  echo "📋 [5/5] 发布元数据检查..."
 
   local check_log
   check_log="$(mktemp)"
@@ -165,24 +165,24 @@ check_version_bump() {
   rm -f "$check_log"
 
   if [ "$AUTO_FIX" = true ] && ! bash ./scripts/sync-version.sh check >/dev/null 2>&1; then
-    echo "  🔧 修正中: plugin.json を VERSION に同期..."
+    echo "  🔧 修复中: 将 plugin.json 同步到 VERSION..."
     bash ./scripts/sync-version.sh sync
     FIXES_APPLIED=$((FIXES_APPLIED + 1))
 
     if bash ./scripts/ci/check-version-bump.sh >/dev/null 2>&1; then
-      echo "  ✅ plugin.json 同期で release metadata 整合を回復"
+      echo "  ✅ 已通过同步 plugin.json 恢复发布元数据的完整性"
       return
     fi
   fi
 
   ISSUES_FOUND=$((ISSUES_FOUND + 1))
-  echo "  💡 修正方針:"
-  echo "     - 通常 PR では VERSION を変更しない"
-  echo "     - release 時だけ VERSION / plugin.json / CHANGELOG release entry を一緒に更新する"
+  echo "  💡 修复方针:"
+  echo "     - 普通 PR 不要修改 VERSION"
+  echo "     - 仅在发布时同时更新 VERSION / plugin.json / CHANGELOG 发布条目"
 }
 
 # ================================
-# メイン実行
+# 主执行流程
 # ================================
 
 check_version_sync
@@ -192,32 +192,32 @@ check_hooks
 check_version_bump
 
 # ================================
-# 結果サマリー
+# 结果摘要
 # ================================
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ $ISSUES_FOUND -eq 0 ]; then
-  echo "✅ 問題は見つかりませんでした"
+  echo "✅ 未发现问题"
   exit 0
 fi
 
-echo "📊 結果サマリー:"
-echo "  - 検出された問題: $ISSUES_FOUND 個"
+echo "📊 结果摘要:"
+echo "  - 检测到的问题: $ISSUES_FOUND 个"
 
 if [ "$AUTO_FIX" = true ]; then
-  echo "  - 自動修正: $FIXES_APPLIED 個"
+  echo "  - 自动修复: $FIXES_APPLIED 个"
   if [ $FIXES_APPLIED -gt 0 ]; then
     echo ""
-    echo "💡 次のステップ:"
-    echo "  1. 修正内容を確認: git diff"
-    echo "  2. CHANGELOG.md を更新"
-    echo "  3. コミット＆プッシュ"
+    echo "💡 后续步骤:"
+    echo "  1. 确认修复内容: git diff"
+    echo "  2. 更新 CHANGELOG.md"
+    echo "  3. 提交并推送"
   fi
 else
   echo ""
-  echo "💡 自動修正を実行するには:"
+  echo "💡 如需执行自动修复:"
   echo "  ./scripts/ci/diagnose-and-fix.sh --fix"
 fi
 

@@ -1,16 +1,16 @@
-# テストスイート
+# 测试套件
 
-このディレクトリには、claude-code-harnessプラグインの品質を保証するためのテストが含まれています。
+本目录包含用于保证 claude-code-harness 插件质量的测试。
 
-## VibeCoder向けテスト
+## VibeCoder 面向的测试
 
-エンタープライズレベルの複雑なテストではなく、**1人でクライアントプロジェクトをこなすVibeCoder**が、プラグインが正しく動作することを簡単に確認できるシンプルなテストです。
+不是企业级复杂测试，而是**让独自承接客户项目的 VibeCoder** 能简单确认插件正常工作的简易测试。
 
-## テストの実行方法
+## 测试运行方法
 
-### プラグイン構造の検証
+### 插件结构验证
 
-プラグインの基本構造が正しいかを検証します：
+验证插件的基本结构是否正确：
 
 ```bash
 ./tests/validate-plugin.sh
@@ -18,81 +18,81 @@
 ./scripts/ci/check-consistency.sh
 ```
 
-### Unified Memory 検証
+### Unified Memory 验证
 
-共通メモリdaemonの基本動作を検証します：
+验证共享内存 daemon 的基本运行：
 
 ```bash
 ./tests/test-memory-daemon.sh
 ```
 
-ゾンビプロセスが残らないかをループ検証します：
+循环验证是否不会残留僵尸进程：
 
 ```bash
 ./tests/test-memory-daemon-zombie.sh 100
 ```
 
-検索品質（hybrid ranking / privacy filter / API経路）を検証します：
+验证搜索质量（hybrid ranking / privacy filter / API 路由）：
 
 ```bash
 ./tests/test-memory-search-quality.sh
 ```
 
-これらの検証は以下を確認します：
+这些验证确认以下内容：
 
-1. **プラグイン構造**: plugin.jsonの存在と妥当性
-2. **コマンド**: 登録されたコマンドファイルの存在
-3. **スキル**: スキル定義の存在と基本的な品質
-4. **エージェント**: エージェント定義の存在
-5. **フック**: hooks.jsonの妥当性
-6. **スクリプト**: 自動化スクリプトの存在と実行権限
-7. **ドキュメント**: README等の必須ドキュメント
+1. **插件结构**: plugin.json 的存在和有效性
+2. **命令**: 注册的命令文件是否存在
+3. **技能**: 技能定义的存在和基本质量
+4. **代理**: 代理定义是否存在
+5. **钩子**: hooks.json 的有效性
+6. **脚本**: 自动化脚本的存在和执行权限
+7. **文档**: README 等必需文档
 
-### 期待される出力
+### 预期输出
 
 ```
 ==========================================
-Claude harness - プラグイン検証テスト
+Claude harness - 插件验证测试
 ==========================================
 
-1. プラグイン構造の検証
+1. 插件结构验证
 ----------------------------------------
-✓ plugin.json が存在します
-✓ plugin.json は有効なJSONです
-✓ plugin.json に name フィールドがあります
-✓ plugin.json に version フィールドがあります
+✓ plugin.json 存在
+✓ plugin.json 是有效 JSON
+✓ plugin.json 有 name 字段
+✓ plugin.json 有 version 字段
 ...
 
 ==========================================
-テスト結果サマリー
+测试结果摘要
 ==========================================
 合格: 25
 警告: 1
-失敗: 0
+失败: 0
 
-✓ 全てのテストに合格しました！
+✓ 所有测试都通过了！
 ```
 
-## テストの追加
+## 添加测试
 
-新しいコマンドやスキルを追加した場合、このテストを実行して構造が正しいことを確認してください。
+添加新命令或技能时，请运行此测试确认结构正确。
 
-## CI/CDでの利用
+## CI/CD 中的使用
 
-GitHub Actions では `.github/workflows/validate-plugin.yml` が以下を実行します。
+GitHub Actions 中 `.github/workflows/validate-plugin.yml` 执行以下内容：
 
 - `./tests/validate-plugin.sh`
 - `./scripts/ci/check-consistency.sh`
 - `./tests/test-codex-package.sh`
 - `cd core && npm test`
 
-`/harness-work all` の success / failure fixture は smoke / full を分けて管理しています。詳細は [docs/evidence/work-all.md](../docs/evidence/work-all.md) を参照してください。
+`/harness-work all` 的 success / failure fixture 分为 smoke / full 管理。详情参见 [docs/evidence/work-all.md](../docs/evidence/work-all.md)。
 
-## トラブルシューティング
+## 故障排除
 
-### jqコマンドが見つからない
+### 找不到 jq 命令
 
-テストスクリプトは`jq`コマンドを使用します。インストールされていない場合：
+测试脚本使用 `jq` 命令。未安装时：
 
 ```bash
 # macOS
@@ -105,17 +105,17 @@ sudo apt-get install jq
 sudo apt-get install jq
 ```
 
-### テストが失敗する場合
+### 测试失败时
 
-1. エラーメッセージを確認
-2. 該当するファイルが存在するか確認
-3. JSONファイルの構文エラーがないか確認
+1. 确认错误消息
+2. 确认相关文件是否存在
+3. 确认 JSON 文件是否有语法错误
 
-## VibeCoder向けのポイント
+## VibeCoder 的要点
 
-- **シンプル**: 複雑なテストフレームワークは不要
-- **実用的**: 実際に問題になる構造エラーを検出
-- **高速**: 数秒で完了
-- **わかりやすい**: 結果が一目でわかる
+- **简单**: 不需要复杂测试框架
+- **实用**: 检测实际成为问题的结构错误
+- **快速**: 数秒完成
+- **易懂**: 结果一目了然
 
-このテストは、プラグインを変更した後に「壊れていないか」を素早く確認するためのものです。
+此测试用于在修改插件后快速确认"没有坏掉"。

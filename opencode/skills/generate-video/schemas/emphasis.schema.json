@@ -2,41 +2,41 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://claude-code-harness.com/schemas/emphasis.schema.json",
   "title": "Emphasis Schema",
-  "description": "強調表現のスキーマ。テキスト強調、効果音、カラー、配置を定義します。",
+  "description": "强调表现的架构。定义文本强调、效果音、颜色、布局。",
   "version": "1.0.0",
   "type": "object",
   "required": ["level"],
   "properties": {
     "level": {
       "type": "string",
-      "description": "強調レベル",
+      "description": "强调级别",
       "enum": ["high", "medium", "low"]
     },
     "text": {
       "type": "array",
-      "description": "強調するテキスト要素（キーワード・フレーズ）",
+      "description": "强调的文本元素（关键词/短语）",
       "items": {
         "type": "object",
         "required": ["content"],
         "properties": {
           "content": {
             "type": "string",
-            "description": "強調するテキスト内容"
+            "description": "强调的文本内容"
           },
           "start_ms": {
             "type": "integer",
-            "description": "強調開始時刻（シーン内での相対位置、ミリ秒）",
+            "description": "强调开始时间（场景内相对位置，毫秒）",
             "minimum": 0
           },
           "duration_ms": {
             "type": "integer",
-            "description": "強調表示の長さ（ミリ秒）",
+            "description": "强调显示时长（毫秒）",
             "minimum": 1,
             "default": 1000
           },
           "style": {
             "type": "string",
-            "description": "テキストスタイル",
+            "description": "文本样式",
             "enum": ["bold", "glitch", "underline", "highlight", "glow"],
             "default": "bold"
           }
@@ -47,11 +47,11 @@
     },
     "sound": {
       "type": "object",
-      "description": "効果音設定",
+      "description": "效果音设置",
       "properties": {
         "type": {
           "type": "string",
-          "description": "効果音の種類",
+          "description": "效果音类型",
           "enum": ["none", "pop", "whoosh", "chime", "ding"],
           "default": "none"
         },
@@ -64,13 +64,13 @@
         },
         "timing": {
           "type": "string",
-          "description": "効果音のタイミング",
+          "description": "效果音的时机",
           "enum": ["start", "end", "peak"],
           "default": "start"
         },
         "trigger_ms": {
           "type": "integer",
-          "description": "効果音発動時刻（シーン内での相対位置、ミリ秒）",
+          "description": "效果音触发时间（场景内相对位置，毫秒）",
           "minimum": 0,
           "default": 0
         }
@@ -79,27 +79,27 @@
     },
     "color": {
       "type": "object",
-      "description": "強調カラー設定",
+      "description": "强调色设置",
       "properties": {
         "primary": {
           "type": "string",
-          "description": "プライマリカラー（HEX形式）",
+          "description": "主色（HEX格式）",
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "default": "#00F5FF"
         },
         "secondary": {
           "type": "string",
-          "description": "セカンダリカラー（HEX形式、グラデーション用）",
+          "description": "次色（HEX格式，用于渐变）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "glow": {
           "type": "boolean",
-          "description": "グロー効果を適用するか",
+          "description": "是否应用发光效果",
           "default": true
         },
         "glow_intensity": {
           "type": "number",
-          "description": "グロー強度（ぼかし半径、ピクセル）",
+          "description": "发光强度（模糊半径，像素）",
           "minimum": 0,
           "maximum": 100,
           "default": 20
@@ -109,26 +109,26 @@
     },
     "position": {
       "type": "object",
-      "description": "強調要素の配置設定",
+      "description": "强调元素的布局设置",
       "properties": {
         "alignment": {
           "type": "string",
-          "description": "配置位置",
+          "description": "布局位置",
           "enum": ["center", "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right"],
           "default": "center"
         },
         "offset": {
           "type": "object",
-          "description": "配置オフセット（ピクセル）",
+          "description": "布局偏移（像素）",
           "properties": {
             "x": {
               "type": "number",
-              "description": "X軸オフセット",
+              "description": "X轴偏移",
               "default": 0
             },
             "y": {
               "type": "number",
-              "description": "Y軸オフセット",
+              "description": "Y轴偏移",
               "default": 0
             }
           },
@@ -136,7 +136,7 @@
         },
         "padding": {
           "type": "number",
-          "description": "画面端からのパディング（ピクセル）",
+          "description": "距离屏幕边缘的间距（像素）",
           "minimum": 0,
           "default": 40
         }
@@ -145,35 +145,35 @@
     },
     "animation": {
       "type": "object",
-      "description": "強調表示のアニメーション設定",
+      "description": "强调显示的动画设置",
       "properties": {
         "entry": {
           "type": "string",
-          "description": "登場アニメーション",
+          "description": "入场动画",
           "enum": ["none", "fade_in", "slide_in", "zoom_in", "bounce"],
           "default": "fade_in"
         },
         "exit": {
           "type": "string",
-          "description": "退場アニメーション",
+          "description": "退场动画",
           "enum": ["none", "fade_out", "slide_out", "zoom_out"],
           "default": "fade_out"
         },
         "duration_ms": {
           "type": "integer",
-          "description": "アニメーション長さ（ミリ秒）",
+          "description": "动画时长（毫秒）",
           "minimum": 1,
           "maximum": 2000,
           "default": 500
         },
         "pulse": {
           "type": "boolean",
-          "description": "パルス効果（点滅・拡縮）を有効にするか",
+          "description": "是否启用脉冲效果（闪烁/缩放）",
           "default": false
         },
         "pulse_speed": {
           "type": "number",
-          "description": "パルス速度（1秒あたりのサイクル数）",
+          "description": "脉冲速度（每秒周期数）",
           "minimum": 0.1,
           "maximum": 10,
           "default": 1.0
@@ -183,27 +183,27 @@
     },
     "background": {
       "type": "object",
-      "description": "強調要素の背景設定（ボックス表示など）",
+      "description": "强调元素的背景设置（如框显示）",
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "背景を表示するか",
+          "description": "是否显示背景",
           "default": false
         },
         "color": {
           "type": "string",
-          "description": "背景カラー（HEX形式またはRGBA）",
+          "description": "背景色（HEX格式或RGBA）",
           "default": "rgba(0, 0, 0, 0.8)"
         },
         "border_radius": {
           "type": "number",
-          "description": "角丸の半径（ピクセル）",
+          "description": "圆角半径（像素）",
           "minimum": 0,
           "default": 8
         },
         "padding": {
           "type": "object",
-          "description": "背景内のパディング（ピクセル）",
+          "description": "背景内的内边距（像素）",
           "properties": {
             "top": {
               "type": "number",
@@ -230,7 +230,7 @@
         },
         "border": {
           "type": "object",
-          "description": "ボーダー設定",
+          "description": "边框设置",
           "properties": {
             "enabled": {
               "type": "boolean",
@@ -243,7 +243,7 @@
             },
             "color": {
               "type": "string",
-              "description": "ボーダーカラー（HEX形式）",
+              "description": "边框颜色（HEX格式）",
               "pattern": "^#[0-9A-Fa-f]{6}$",
               "default": "#00F5FF"
             }
@@ -255,41 +255,41 @@
     },
     "typography": {
       "type": "object",
-      "description": "タイポグラフィ設定",
+      "description": "排版设置",
       "properties": {
         "font_size": {
           "type": "number",
-          "description": "フォントサイズ（ピクセル）",
+          "description": "字体大小（像素）",
           "minimum": 12,
           "maximum": 200,
           "default": 48
         },
         "font_weight": {
           "type": ["string", "number"],
-          "description": "フォントの太さ",
+          "description": "字体粗细",
           "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900, "normal", "bold"],
           "default": 700
         },
         "font_family": {
           "type": "string",
-          "description": "フォントファミリー",
+          "description": "字体系列",
           "default": "sans-serif"
         },
         "line_height": {
           "type": "number",
-          "description": "行の高さ（倍率）",
+          "description": "行高（倍数）",
           "minimum": 0.5,
           "maximum": 3,
           "default": 1.5
         },
         "letter_spacing": {
           "type": "number",
-          "description": "文字間隔（ピクセル）",
+          "description": "字母间距（像素）",
           "default": 0
         },
         "text_transform": {
           "type": "string",
-          "description": "テキスト変換",
+          "description": "文本转换",
           "enum": ["none", "uppercase", "lowercase", "capitalize"],
           "default": "none"
         }

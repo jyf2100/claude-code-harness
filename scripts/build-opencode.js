@@ -2,12 +2,12 @@
 /**
  * build-opencode.js
  *
- * Harness コマンドを opencode.ai 互換形式に変換するスクリプト
+ * 将 Harness 命令转换为 opencode.ai 兼容格式的脚本
  *
- * 変換内容:
- * - commands/ → opencode/commands/ にコピー
- * - frontmatter から description-en を削除
- * - CLAUDE.md → AGENTS.md として生成
+ * 转换内容:
+ * - commands/ → opencode/commands/ 复制
+ * - 从 frontmatter 中删除 description-en
+ * - CLAUDE.md → AGENTS.md 生成
  *
  * 使用方法:
  *   node scripts/build-opencode.js
@@ -26,7 +26,7 @@ const OPENCODE_TEMPLATES_DIR = path.join(ROOT_DIR, 'templates', 'opencode', 'com
 const OPENCODE_PM_DIR = path.join(OPENCODE_COMMANDS_DIR, 'pm');
 
 /**
- * ディレクトリを再帰的に作成
+ * 递归创建目录
  */
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -35,7 +35,7 @@ function ensureDir(dir) {
 }
 
 /**
- * ディレクトリを再帰的にクリア
+ * 递归清空目录
  */
 function clearDir(dir) {
   if (fs.existsSync(dir)) {
@@ -44,7 +44,7 @@ function clearDir(dir) {
 }
 
 /**
- * frontmatter を解析
+ * 解析 frontmatter
  */
 function parseFrontmatter(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);
@@ -70,7 +70,7 @@ function parseFrontmatter(content) {
 }
 
 /**
- * frontmatter を文字列に変換
+ * 将 frontmatter 转换为字符串
  */
 function stringifyFrontmatter(frontmatter) {
   const lines = Object.entries(frontmatter)
@@ -79,23 +79,23 @@ function stringifyFrontmatter(frontmatter) {
 }
 
 /**
- * Harness コマンドを opencode 形式に変換
+ * 将 Harness 命令转换为 opencode 格式
  */
 function convertCommand(content) {
   const { frontmatter, body } = parseFrontmatter(content);
 
   if (!frontmatter) {
-    // frontmatter がない場合はそのまま返す
+    // 如果没有 frontmatter，直接返回原内容
     return content;
   }
 
-  // opencode で不要なフィールドを削除
+  // 删除 opencode 不需要的字段
   const opencodeFields = ['description-en', 'name'];
   for (const field of opencodeFields) {
     delete frontmatter[field];
   }
 
-  // frontmatter が空になった場合
+  // 如果 frontmatter 变为空
   if (Object.keys(frontmatter).length === 0) {
     return body;
   }
@@ -104,7 +104,7 @@ function convertCommand(content) {
 }
 
 /**
- * ディレクトリ内のファイルを再帰的に処理
+ * 递归处理目录中的文件
  */
 function processDirectory(srcDir, destDir) {
   ensureDir(destDir);
@@ -131,30 +131,30 @@ function processDirectory(srcDir, destDir) {
 }
 
 /**
- * AGENTS.md を生成（CLAUDE.md の全文コピー）
+ * 生成 AGENTS.md（CLAUDE.md 的完整副本）
  *
- * opencode.ai は AGENTS.md をルールファイルとして認識し、
- * CLAUDE.md をフォールバックとしてサポートする。
- * ここでは CLAUDE.md の内容をそのまま AGENTS.md として出力する。
+ * opencode.ai 将 AGENTS.md 识别为规则文件，
+ * 并支持 CLAUDE.md 作为后备。
+ * 这里将 CLAUDE.md 的内容直接输出为 AGENTS.md。
  */
 function generateAgentsMd() {
   const claudeMdPath = path.join(ROOT_DIR, 'CLAUDE.md');
 
   if (!fs.existsSync(claudeMdPath)) {
-    console.log(`  ⚠ CLAUDE.md not found, skipping AGENTS.md generation`);
+    console.log(`  ⚠ 未找到 CLAUDE.md，跳过 AGENTS.md 生成`);
     return;
   }
 
   let claudeMdContent = fs.readFileSync(claudeMdPath, 'utf8');
 
-  // タイトルを CLAUDE.md から AGENTS.md に変換
-  // "# CLAUDE.md" または "# CLAUDE.md - ..." のパターンに対応
+  // 将标题从 CLAUDE.md 转换为 AGENTS.md
+  // 匹配 "# CLAUDE.md" 或 "# CLAUDE.md - ..." 的模式
   claudeMdContent = claudeMdContent.replace(
     /^# CLAUDE\.md(\s*-\s*.*)?$/m,
     (match, suffix) => `# AGENTS.md${suffix || ''}`
   );
 
-  // opencode 互換のヘッダーを追加
+  // 添加 opencode 兼容的头部
   const header = `<!-- Generated from CLAUDE.md by build-opencode.js -->
 <!-- opencode.ai compatible version of Claude Code Harness -->
 
@@ -168,7 +168,7 @@ function generateAgentsMd() {
 }
 
 /**
- * opencode.json サンプルを生成
+ * 生成 opencode.json 示例
  */
 function generateOpencodeJson() {
   const config = {
@@ -188,96 +188,96 @@ function generateOpencodeJson() {
 }
 
 /**
- * README.md を生成（既存の場合はスキップ）
+ * 生成 README.md（如果已存在则跳过）
  */
 function generateReadme() {
   const destPath = path.join(OPENCODE_DIR, 'README.md');
 
-  // 既存の README.md がある場合はスキップ
+  // 如果已有 README.md 则跳过
   if (fs.existsSync(destPath)) {
-    console.log(`  ⏭ ${path.relative(ROOT_DIR, destPath)} (already exists, skipped)`);
+    console.log(`  ⏭ ${path.relative(ROOT_DIR, destPath)} (已存在，跳过)`);
     return;
   }
 
   const readme = `# Harness for OpenCode
 
-Claude Code Harness の opencode.ai 互換版です。
+Claude Code Harness 的 opencode.ai 兼容版本。
 
-## セットアップ
+## 设置
 
-### 1. コマンドとスキルをプロジェクトにコピー
+### 1. 将命令和技能复制到项目
 
 \`\`\`bash
-# Harness をクローン
+# 克隆 Harness
 git clone https://github.com/Chachamaru127/claude-code-harness.git
 
-# opencode 用ファイルをコピー
+# 复制 opencode 用文件
 cp -r claude-code-harness/opencode/commands/ your-project/.opencode/commands/
 cp -r claude-code-harness/opencode/skills/ your-project/.claude/skills/
 cp claude-code-harness/opencode/AGENTS.md your-project/AGENTS.md
 \`\`\`
 
-### 2. MCP サーバーをセットアップ（オプション）
+### 2. 设置 MCP 服务器（可选）
 
 \`\`\`bash
-# MCP サーバーをビルド
+# 构建 MCP 服务器
 cd claude-code-harness/mcp-server
 npm install
 npm run build
 
-# opencode.json をプロジェクトにコピーしてパスを調整
+# 将 opencode.json 复制到项目并调整路径
 cp claude-code-harness/opencode/opencode.json your-project/
-# opencode.json 内のパスを実際のパスに変更
+# 修改 opencode.json 中的路径为实际路径
 \`\`\`
 
-### 3. 利用開始
+### 3. 开始使用
 
 \`\`\`bash
 cd your-project
 opencode
 \`\`\`
 
-## 利用可能なコマンド
+## 可用命令
 
-| コマンド | 説明 |
+| 命令 | 说明 |
 |----------|------|
-| \`/harness-init\` | プロジェクトセットアップ |
-| \`/plan-with-agent\` | 開発プラン作成 |
-| \`/work\` | タスク実行 |
-| \`/harness-review\` | コードレビュー |
+| \`/harness-init\` | 项目设置 |
+| \`/plan-with-agent\` | 创建开发计划 |
+| \`/work\` | 执行任务 |
+| \`/harness-review\` | 代码审查 |
 
-## 利用可能なスキル
+## 可用技能
 
-opencode.ai は \`.claude/skills/\` ディレクトリのスキルを自動認識します：
+opencode.ai 会自动识别 \`.claude/skills/\` 目录中的技能：
 
-| スキル | 説明 |
+| 技能 | 说明 |
 |--------|------|
-| \`notebookLM\` | ドキュメント生成（NotebookLM YAML、スライド） |
-| \`impl\` | 機能実装 |
-| \`harness-review\` | コードレビュー |
-| \`verify\` | ビルド検証・エラー復旧 |
-| \`auth\` | 認証・決済（Clerk, Stripe） |
-| \`deploy\` | デプロイ（Vercel, Netlify） |
-| \`ui\` | UIコンポーネント生成 |
+| \`notebookLM\` | 文档生成（NotebookLM YAML、幻灯片） |
+| \`impl\` | 功能实现 |
+| \`harness-review\` | 代码审查 |
+| \`verify\` | 构建验证与错误恢复 |
+| \`auth\` | 认证与支付（Clerk, Stripe） |
+| \`deploy\` | 部署（Vercel, Netlify） |
+| \`ui\` | UI 组件生成 |
 
-## MCP ツール
+## MCP 工具
 
-MCP サーバー経由で以下のツールが利用可能です：
+通过 MCP 服务器可使用以下工具：
 
-| ツール | 説明 |
+| 工具 | 说明 |
 |--------|------|
-| \`harness_workflow_plan\` | プラン作成 |
-| \`harness_workflow_work\` | タスク実行 |
-| \`harness_workflow_review\` | コードレビュー |
-| \`harness_session_broadcast\` | セッション間通知 |
-| \`harness_status\` | 状態確認 |
+| \`harness_workflow_plan\` | 创建计划 |
+| \`harness_workflow_work\` | 执行任务 |
+| \`harness_workflow_review\` | 代码审查 |
+| \`harness_session_broadcast\` | 会话间通知 |
+| \`harness_status\` | 状态确认 |
 
-## 制限事項
+## 限制
 
-- Harness プラグインシステム（\`.claude-plugin/\`）は opencode では使用できません
-- フックは opencode 側で別途設定が必要です
+- Harness 插件系统（\`.claude-plugin/\`）在 opencode 中不可用
+- 钩子需要在 opencode 端单独设置
 
-## 関連リンク
+## 相关链接
 
 - [Claude Code Harness](https://github.com/Chachamaru127/claude-code-harness)
 - [OpenCode Documentation](https://opencode.ai/docs/)
@@ -288,18 +288,18 @@ MCP サーバー経由で以下のツールが利用可能です：
 }
 
 /**
- * スキルをコピー（.claude/skills/ 互換形式）
+ * 复制技能（.claude/skills/ 兼容格式）
  *
- * opencode.ai は .claude/skills/<name>/SKILL.md を認識する。
- * harness のスキルをそのままコピーする。
+ * opencode.ai 识别 .claude/skills/<name>/SKILL.md。
+ * 直接复制 harness 的技能。
  */
 function copySkills() {
   if (!fs.existsSync(SKILLS_DIR)) {
-    console.log(`  ⚠ skills/ directory not found, skipping`);
+    console.log(`  ⚠ 未找到 skills/ 目录，跳过`);
     return 0;
   }
 
-  // 既存のスキルディレクトリをクリア
+  // 清空现有技能目录
   clearDir(OPENCODE_SKILLS_DIR);
   ensureDir(OPENCODE_SKILLS_DIR);
 
@@ -313,21 +313,21 @@ function copySkills() {
     const srcSkillDir = path.join(SKILLS_DIR, skillName);
     const destSkillDir = path.join(OPENCODE_SKILLS_DIR, skillName);
 
-    // テスト用・開発用・opencode 非対応スキルはスキップ
+    // 跳过测试用、开发用、不支持 opencode 的技能
     const skipSkills = ['breezing'];
     if (skillName.startsWith('test-') || skillName.startsWith('x-') || skipSkills.includes(skillName)) {
-      console.log(`  ⏭ ${skillName}/ (dev/test/unsupported skill, skipped)`);
+      console.log(`  ⏭ ${skillName}/ (开发/测试/不支持的技能，跳过)`);
       continue;
     }
 
-    // SKILL.md が存在するか確認
+    // 确认 SKILL.md 是否存在
     const skillMdPath = path.join(srcSkillDir, 'SKILL.md');
     if (!fs.existsSync(skillMdPath)) {
-      console.log(`  ⏭ ${skillName}/ (no SKILL.md, skipped)`);
+      console.log(`  ⏭ ${skillName}/ (无 SKILL.md，跳过)`);
       continue;
     }
 
-    // スキルディレクトリを再帰的にコピー
+    // 递归复制技能目录
     copyDirectoryRecursive(srcSkillDir, destSkillDir);
     copiedCount++;
     console.log(`  ✓ ${skillName}/`);
@@ -337,37 +337,37 @@ function copySkills() {
 }
 
 /**
- * ディレクトリを再帰的にコピー
+ * 递归复制目录
  */
 function copyDirectoryRecursive(src, dest) {
   ensureDir(dest);
 
   const entries = fs.readdirSync(src, { withFileTypes: true });
 
-  // 除外するディレクトリ/ファイルパターン
+  // 排除的目录/文件模式
   const excludePatterns = [
-    'CLAUDE.md',           // 自動生成されるメモリコンテキスト
-    'node_modules',        // npm 依存関係
-    'coverage',            // テストカバレッジ
-    '.claude',             // Claude セッション状態
+    'CLAUDE.md',           // 自动生成的内存上下文
+    'node_modules',        // npm 依赖
+    'coverage',            // 测试覆盖率
+    '.claude',             // Claude 会话状态
   ];
 
-  // 除外するファイル名パターン（startsWith）
+  // 排除的文件名模式（startsWith）
   const excludePrefixes = [
-    'IMPLEMENTATION_',     // 開発途中ドキュメント
-    'TASK_',               // タスク関連ドキュメント
+    'IMPLEMENTATION_',     // 开发中文档
+    'TASK_',               // 任务相关文档
   ];
 
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    // 完全一致で除外
+    // 完全匹配排除
     if (excludePatterns.includes(entry.name)) {
       continue;
     }
 
-    // プレフィックスで除外
+    // 前缀排除
     if (excludePrefixes.some(prefix => entry.name.startsWith(prefix))) {
       continue;
     }
@@ -381,55 +381,55 @@ function copyDirectoryRecursive(src, dest) {
 }
 
 /**
- * メイン処理
+ * 主处理流程
  */
 function main() {
-  console.log('🔄 Building opencode version...\n');
+  console.log('🔄 构建 opencode 版本...\n');
 
-  // opencode ディレクトリをクリア
+  // 清空 opencode 目录
   clearDir(OPENCODE_COMMANDS_DIR);
   clearDir(OPENCODE_SKILLS_DIR);
   ensureDir(OPENCODE_DIR);
 
-  // コマンドを変換（v2.17.0+: commands/ は Skills に移行済み、存在する場合のみ処理）
-  console.log('📁 Converting commands:');
+  // 转换命令（v2.17.0+: commands/ 已迁移到 Skills，仅当存在时处理）
+  console.log('📁 转换命令:');
   let commandCount = 0;
   if (fs.existsSync(COMMANDS_DIR)) {
     const commandEntries = fs.readdirSync(COMMANDS_DIR);
     if (commandEntries.length === 0) {
-      console.log('  ⏭ commands/ is empty (migrated to skills in v2.17.0+)');
+      console.log('  ⏭ commands/ 为空（v2.17.0+ 已迁移到 skills）');
     } else {
       commandCount = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
     }
   } else {
-    console.log('  ⏭ commands/ not found (migrated to skills in v2.17.0+)');
+    console.log('  ⏭ 未找到 commands/（v2.17.0+ 已迁移到 skills）');
   }
 
-  // PM コマンドを変換（templates/opencode/commands/ から）
-  console.log('\n📁 Processing PM commands (from templates/opencode/):');
+  // 转换 PM 命令（从 templates/opencode/commands/）
+  console.log('\n📁 处理 PM 命令（来自 templates/opencode/）:');
   let pmCount = 0;
   if (fs.existsSync(OPENCODE_TEMPLATES_DIR)) {
     pmCount = processDirectory(OPENCODE_TEMPLATES_DIR, OPENCODE_PM_DIR);
-    console.log(`   PM Commands: ${pmCount} files`);
+    console.log(`   PM 命令: ${pmCount} 个文件`);
   } else {
-    console.log('   ⚠ templates/opencode/commands/ not found, skipping PM commands');
+    console.log('   ⚠ 未找到 templates/opencode/commands/，跳过 PM 命令');
   }
 
-  // スキルをコピー
-  console.log('\n📁 Copying skills:');
+  // 复制技能
+  console.log('\n📁 复制技能:');
   const skillCount = copySkills();
 
-  // 追加ファイルを生成
-  console.log('\n📄 Generating additional files:');
+  // 生成额外文件
+  console.log('\n📄 生成额外文件:');
   generateAgentsMd();
   generateOpencodeJson();
   generateReadme();
 
-  console.log(`\n✅ Done!`);
-  console.log(`   Commands: ${commandCount} files`);
-  console.log(`   PM Commands: ${pmCount} files`);
-  console.log(`   Skills: ${skillCount} directories`);
-  console.log(`   Output: ${path.relative(process.cwd(), OPENCODE_DIR)}/`);
+  console.log(`\n✅ 完成！`);
+  console.log(`   命令: ${commandCount} 个文件`);
+  console.log(`   PM 命令: ${pmCount} 个文件`);
+  console.log(`   技能: ${skillCount} 个目录`);
+  console.log(`   输出: ${path.relative(process.cwd(), OPENCODE_DIR)}/`);
 }
 
 main();

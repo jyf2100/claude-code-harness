@@ -1,129 +1,129 @@
 ---
 name: harness-work
-description: "Harness v3 統合実行スキル（Codex ネイティブ版）。Plans.md タスクを1件から全並列チーム実行まで担当。以下で起動: 実装して、実行して、harness-work、全部やって、breezing、チーム実行、parallel。プランニング・レビュー・リリース・セットアップには使わない。"
+description: "Harness v3 统合执行技能（Codex 原生版）。负责 Plans.md 任务从1件到全并行团队执行。以下短语启动: 实现、执行、harness-work、全部搞定、breezing、团队执行、parallel。不用于规划・审查・发布・设置。"
 description-en: "Unified execution skill for Harness v3 (Codex native). Implements Plans.md tasks from single task to full parallel team runs."
-description-ja: "Harness v3 統合実行スキル（Codex ネイティブ版）。Plans.md タスクを1件から全並列チーム実行まで担当。"
+description-ja: "Harness v3 统一执行技能（Codex 原生版）。Plans.md 任务从1件到全并行团队执行。"
 argument-hint: "[all] [task-number|range] [--parallel N] [--no-commit] [--breezing]"
 ---
 
 # Harness Work (v3) — Codex Native
 
-> **この SKILL.md は Codex CLI ネイティブ版です。**
-> Claude Code 版は `skills-v3/harness-work/SKILL.md` を参照してください。
-> サブエージェント API は Codex の `spawn_agent` / `send_input` / `wait_agent` / `close_agent` を使用します。
+> **本 SKILL.md 是 Codex CLI 原生版。**
+> Claude Code 版请参见 `skills-v3/harness-work/SKILL.md`。
+> 子代理 API 使用 Codex 的 `spawn_agent` / `send_input` / `wait_agent` / `close_agent`。
 
-Harness v3 の統合実行スキル。
+Harness v3 的统合执行技能。
 
 ## Quick Reference
 
-| ユーザー入力 | モード | 動作 |
+| 用户输入 | 模式 | 动作 |
 |------------|--------|------|
-| `harness-work` | **solo** | 次の未完了タスクを1件実行 |
-| `harness-work all` | **sequential** | 全未完了タスクを直列実行 |
-| `harness-work 3` | solo | タスク3だけ即実行 |
-| `harness-work --parallel 3` | parallel | `codex exec` で3並列実行（Bash `&` + `wait`） |
-| `harness-work --breezing` | breezing | `spawn_agent` によるチーム実行（明示時のみ） |
+| `harness-work` | **solo** | 执行下一个未完成任务 1 件 |
+| `harness-work all` | **sequential** | 串行执行所有未完成任务 |
+| `harness-work 3` | solo | 仅执行任务 3 |
+| `harness-work --parallel 3` | parallel | 用 `codex exec` 3 并行执行（Bash `&` + `wait`） |
+| `harness-work --breezing` | breezing | 通过 `spawn_agent` 的团队执行（仅明确指定时） |
 
 ## Execution Mode Selection
 
-> **重要**: Codex では `spawn_agent` はユーザーが明示的にチーム実行・並列作業を求めた場合にのみ使用する。
-> タスク件数だけを根拠に自動昇格しない。
+> **重要**: Codex 中 `spawn_agent` 仅在用户明确要求团队执行・并行作业时使用。
+> 不以任务数量为依据自动升级。
 
-| 条件 | モード | 理由 |
+| 条件 | 模式 | 理由 |
 |------|--------|------|
-| 引数なし / 1件指定 | **Solo** | 直接実装が最速 |
-| `all` / 範囲指定（フラグなし） | **Sequential** | 直列で安全に逐次処理 |
-| `--parallel N` | **Parallel** | `codex exec` の Bash 並列（明示時のみ） |
-| `--breezing` | **Breezing** | `spawn_agent` チーム実行（明示時のみ） |
+| 无参数 / 指定 1 件 | **Solo** | 直接实现最快 |
+| `all` / 范围指定（无标志） | **Sequential** | 串行安全地逐个处理 |
+| `--parallel N` | **Parallel** | `codex exec` 的 Bash 并行（仅明确指定时） |
+| `--breezing` | **Breezing** | `spawn_agent` 团队执行（仅明确指定时） |
 
-### ルール
+### 规则
 
-1. **明示フラグは常にデフォルトを上書き**する
-2. **`--breezing` と `--parallel` は明示時のみ発動**。件数による自動昇格はしない
-3. `--parallel` と `--breezing` は排他（同時指定不可）
+1. **明确标志始终覆盖默认值**
+2. **`--breezing` 和 `--parallel` 仅在明确指定时生效**。不以数量自动升级
+3. `--parallel` 和 `--breezing` 互斥（不能同时指定）
 
-## オプション
+## 选项
 
-| オプション | 説明 | デフォルト |
+| 选项 | 说明 | 默认值 |
 |----------|------|----------|
-| `all` | 全未完了タスクを対象 | - |
-| `N` or `N-M` | タスク番号/範囲指定 | - |
-| `--parallel N` | `codex exec` Bash 並列数 | - |
-| `--sequential` | 直列実行強制 | - |
-| `--no-commit` | main への最終コミット抑制（Solo/Sequential のみ。Breezing/Parallel では非対応） | false |
-| `--breezing` | Lead/Worker/Reviewer のチーム実行 | false |
-| `--no-tdd` | TDD フェーズスキップ | false |
+| `all` | 以所有未完成任务为对象 | - |
+| `N` or `N-M` | 任务编号/范围指定 | - |
+| `--parallel N` | `codex exec` Bash 并行数 | - |
+| `--sequential` | 强制串行执行 | - |
+| `--no-commit` | 抑制向 main 的最终提交（仅 Solo/Sequential。Breezing/Parallel 不支持） | false |
+| `--breezing` | Lead/Worker/Reviewer 的团队执行 | false |
+| `--no-tdd` | 跳过 TDD 阶段 | false |
 
-## スコープダイアログ（引数なし時）
+## 范围对话（无参数时）
 
 ```
 harness-work
-どこまでやりますか?
-1) 次のタスク: Plans.md の次の未完了タスク → Solo で実行
-2) 全部: 残りのタスクをすべて直列実行
-3) 番号指定: タスク番号を入力（例: 3, 5-7）
+要执行到什么程度?
+1) 下一个任务: Plans.md 的下一个未完成任务 → Solo 执行
+2) 全部: 串行执行所有剩余任务
+3) 指定编号: 输入任务编号（例: 3, 5-7）
 ```
 
-引数ありなら即実行（対話スキップ）。
+有参数则立即执行（跳过对话）。
 
-## 実行モード詳細
+## 执行模式详情
 
-### Solo モード
+### Solo 模式
 
-1. Plans.md を読み込み、対象タスクを特定
-   - **Plans.md が存在しない場合**: `harness-plan create --ci` を自動呼び出し → Plans.md を生成して続行
-   - ヘッダーに DoD / Depends カラムがない場合: 停止
-   - **会話に未記載タスクがある場合**: 直前の会話コンテキストから要件を抽出し、Plans.md に `cc:TODO` で自動追記
-1.5. **タスク背景確認**（30 秒）:
-   - タスクの「内容」と「DoD」から目的を 1 行で推論表示
-   - 推論に自信がある場合: そのまま実装に進む
-   - 推論に自信がない場合: ユーザーに 1 問だけ確認
-2. タスクを `cc:WIP` に更新。`TASK_BASE_REF=$(git rev-parse HEAD)` を記録
-3. **TDD フェーズ**（`[skip:tdd]` なし & テストFW存在時）:
-   a. テストファイルを先に作成（Red）
-   b. 失敗を確認
-4. コードを実装（Green）
-5. `git commit` で自動コミット（`--no-commit` で省略可）
-6. **自動レビューステージ**（「レビューループ」参照）— TASK_BASE_REF..HEAD の差分をレビュー
-7. タスクを `cc:完了 [hash]` に更新
-8. **リッチ完了報告**（「完了報告フォーマット」参照）
-9. **失敗時の自動再計画**（テスト/CI 失敗時のみ）
+1. 读取 Plans.md，确定目标任务
+   - **Plans.md 不存在时**: 自动调用 `harness-plan create --ci` → 生成 Plans.md 后继续
+   - 头部没有 DoD / Depends 列时: 停止
+   - **会话中有未记载任务时**: 从紧邻的会话语境中提取需求，以 `cc:TODO` 自动追加到 Plans.md
+1.5. **任务背景确认**（30 秒）:
+   - 从任务的"内容"和"DoD"推论并显示 1 行目的
+   - 推论有信心时: 直接进入实现
+   - 推论没信心时: 仅向用户确认 1 问
+2. 将任务更新为 `cc:WIP`。记录 `TASK_BASE_REF=$(git rev-parse HEAD)`
+3. **TDD 阶段**（无 `[skip:tdd]` & 测试框架存在时）:
+   a. 先创建测试文件（Red）
+   b. 确认失败
+4. 实现代码（Green）
+5. 用 `git commit` 自动提交（可用 `--no-commit` 省略）
+6. **自动审查阶段**（参见"审查循环"）— 审查 TASK_BASE_REF..HEAD 的差异
+7. 将任务更新为 `cc:完了 [hash]`
+8. **丰富完成报告**（参见"完成报告格式"）
+9. **失败时的自动重新规划**（仅测试/CI 失败时）
 
-### Sequential モード（`all` 指定時のデフォルト）
+### Sequential 模式（指定 `all` 时的默认）
 
-Plans.md のタスクを依存順に1件ずつ Solo モードで逐次処理する。
-各タスク完了後に Plans.md を更新し、次タスクに進む。
+按依赖顺序逐个用 Solo 模式处理 Plans.md 的任务。
+每个任务完成后更新 Plans.md，进入下一个任务。
 
-### Parallel モード（`--parallel N` 明示時のみ）
+### Parallel 模式（仅明确 `--parallel N` 时）
 
-独立タスクを Bash の `&` + `wait` で `codex exec` 並列実行する。
+用 Bash 的 `&` + `wait` 并行执行 `codex exec` 的独立任务。
 
-> **制約**: 同一ファイルを変更する可能性があるタスクは並列化しないこと。
-> `git worktree add` で Worker ごとに作業ディレクトリを分離し、Lead がレビュー後に cherry-pick する。
+> **约束**: 不要并行化可能修改同一文件的任务。
+> 用 `git worktree add` 为每个 Worker 分离工作目录，Lead 审查后 cherry-pick。
 
 ```bash
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
 
-# Worker ごとに worktree を分離（-b <branch> <path> の順序に注意）
+# 为每个 Worker 分离 worktree（注意 -b <branch> <path> 的顺序）
 git worktree add -b worker-a-$$ /tmp/worker-a-$$
 git worktree add -b worker-b-$$ /tmp/worker-b-$$
 
-# タスク A（-C で worktree を作業ディレクトリに指定）
+# 任务 A（用 -C 指定 worktree 为工作目录）
 PROMPT_A=$(mktemp /tmp/codex-prompt-XXXXXX.md)
 cat > "$PROMPT_A" << EOF
-タスク A の内容...
+任务 A 的内容...
 
-完了後、以下の JSON を stdout に出力してください:
+完成后，请输出以下 JSON 到 stdout:
 {"commit": "<hash>", "files_changed": ["path1", "path2"], "summary": "..."}
 EOF
 cat "$PROMPT_A" | ${TIMEOUT:+$TIMEOUT 300} codex exec -C /tmp/worker-a-$$ - --sandbox workspace-write > /tmp/out-a-$$.json 2>>/tmp/harness-codex-$$.log &
 
-# タスク B（-C で worktree を作業ディレクトリに指定）
+# 任务 B（用 -C 指定 worktree 为工作目录）
 PROMPT_B=$(mktemp /tmp/codex-prompt-XXXXXX.md)
 cat > "$PROMPT_B" << EOF
-タスク B の内容...
+任务 B 的内容...
 
-完了後、以下の JSON を stdout に出力してください:
+完成后，请输出以下 JSON 到 stdout:
 {"commit": "<hash>", "files_changed": ["path1", "path2"], "summary": "..."}
 EOF
 cat "$PROMPT_B" | ${TIMEOUT:+$TIMEOUT 300} codex exec -C /tmp/worker-b-$$ - --sandbox workspace-write > /tmp/out-b-$$.json 2>>/tmp/harness-codex-$$.log &
@@ -131,153 +131,153 @@ cat "$PROMPT_B" | ${TIMEOUT:+$TIMEOUT 300} codex exec -C /tmp/worker-b-$$ - --sa
 wait
 rm -f "$PROMPT_A" "$PROMPT_B"
 
-# Lead が各 Worker の出力 JSON から commit hash を取得し、個別にレビュー → cherry-pick
-# ... レビュー・cherry-pick 処理 ...
+# Lead 从各 Worker 的输出 JSON 获取 commit hash，逐个审查 → cherry-pick
+# ... 审查・cherry-pick 处理 ...
 
-# worktree 削除
+# 删除 worktree
 git worktree remove /tmp/worker-a-$$
 git worktree remove /tmp/worker-b-$$
 ```
 
-### Breezing モード（`--breezing` 明示時のみ）
+### Breezing 模式（仅明确 `--breezing` 时）
 
-Lead / Worker / Reviewer の役割分離でチーム実行する。
-Codex の native subagent API を使用する。
+通过 Lead / Worker / Reviewer 角色分离进行团队执行。
+使用 Codex 的 native subagent API。
 
-> **`--breezing` は明示時のみ**。ユーザーが「チーム実行で」「breezing で」と指示した場合に限り使用する。
+> **`--breezing` 仅在明确指定时**。仅在用户指示"用团队执行""用 breezing"时使用。
 
 ```
 Lead (this agent)
-├── Worker (spawn_agent) — 実装担当
-│   各 Worker は git worktree で分離された作業ディレクトリで動作
-└── Reviewer (codex exec --sandbox read-only) — レビュー担当
+├── Worker (spawn_agent) — 实现担当
+│   各 Worker 在 git worktree 分离的工作目录中运行
+└── Reviewer (codex exec --sandbox read-only) — 审查担当
 ```
 
-**Phase A: Pre-delegate（準備）**:
-1. Plans.md を読み込み、対象タスクを特定
-2. 依存グラフを解析し、実行順序を決定（Depends カラム）
-3. 各タスクに対応する git worktree を作成
+**Phase A: Pre-delegate（准备）**:
+1. 读取 Plans.md，确定目标任务
+2. 解析依赖图，决定执行顺序（Depends 列）
+3. 为每个任务创建对应的 git worktree
 
-**Phase B: Delegate（Worker spawn → レビュー → cherry-pick）**:
+**Phase B: Delegate（Worker spawn → 审查 → cherry-pick）**:
 
-各タスクについて以下を**逐次**実行する（依存順）:
+对每个任务**逐个**执行以下内容（按依赖顺序）:
 
 ```
 for task in execution_order:
-    # B-0. 作業ディレクトリ分離
+    # B-0. 工作目录分离
     worktree_path = "/tmp/worker-{task.number}-$$"
     branch_name = "worker-{task.number}-$$"
     git worktree add -b {branch_name} {worktree_path}
-    TASK_BASE_REF = git rev-parse HEAD  # このタスク固有の base ref
+    TASK_BASE_REF = git rev-parse HEAD  # 此任务专属的 base ref
 
     # B-1. Worker spawn（Codex native subagent）
     Plans.md: task.status = "cc:WIP"
 
     worker_id = spawn_agent({
-        message: "作業ディレクトリ: {worktree_path} で作業してください。\n\nタスク: {task.内容}\nDoD: {task.DoD}\n\n実装してください。完了後 git commit してください。\n\n完了時、以下の JSON を返してください:\n{\"commit\": \"<hash>\", \"files_changed\": [\"path1\"], \"summary\": \"...\"}",
+        message: "工作目录: {worktree_path} 中工作。\n\n任务: {task.内容}\nDoD: {task.DoD}\n\n请实现。完成后请 git commit。\n\n完成时，请返回以下 JSON:\n{\"commit\": \"<hash>\", \"files_changed\": [\"path1\"], \"summary\": \"...\"}",
         fork_context: true
     })
     wait_agent({ ids: [worker_id] })
-    # Worker の出力から commit hash, files_changed, summary を取得
+    # 从 Worker 输出获取 commit hash, files_changed, summary
 
-    # B-2. Lead がレビュー実行（codex exec --sandbox read-only）
-    # このタスク固有の diff のみをレビュー（TASK_BASE_REF 起点）
+    # B-2. Lead 执行审查（codex exec --sandbox read-only）
+    # 仅审查此任务专属的 diff（TASK_BASE_REF 起始）
     diff_text = git("-C", worktree_path, "diff", TASK_BASE_REF, "HEAD")
-    verdict = codex_exec_review(diff_text)  # 詳細は「レビューループ」参照
+    verdict = codex_exec_review(diff_text)  # 详情参见"审查循环"
 
-    # B-3. 修正ループ（REQUEST_CHANGES 時、最大 3 回）
+    # B-3. 修正循环（REQUEST_CHANGES 时，最多 3 次）
     review_count = 0
     while verdict == "REQUEST_CHANGES" and review_count < 3:
-        # Worker は完了済みだが close していないので send_input で直接指示可能
+        # Worker 已完成但未 close，所以可直接用 send_input 指示
         send_input({
             id: worker_id,
-            message: "指摘内容: {issues}\n修正して git commit --amend してください。修正後 JSON を再出力してください。"
+            message: "指出内容: {issues}\n请修正后 git commit --amend。修正后请再次输出 JSON。"
         })
         wait_agent({ ids: [worker_id] })
-        # 再レビュー（TASK_BASE_REF 起点の差分）
+        # 再审查（TASK_BASE_REF 起始的差异）
         diff_text = git("-C", worktree_path, "diff", TASK_BASE_REF, "HEAD")
         verdict = codex_exec_review(diff_text)
         review_count++
 
     close_agent({ id: worker_id })
 
-    # B-4. 結果処理
+    # B-4. 结果处理
     if verdict == "APPROVE":
-        # worktree の commit を main に cherry-pick
+        # 将 worktree 的 commit cherry-pick 到 main
         commit_hash = git("-C", worktree_path, "rev-parse", "HEAD")
         git cherry-pick --no-commit {commit_hash}
         git commit -m "{task.内容}"
         Plans.md: task.status = "cc:完了 [{short_hash}]"
     else:
-        → ユーザーにエスカレーション（Plans.md は cc:WIP のまま）
-        # B-5 以降はスキップ、次タスクも停止
+        → 升级给用户（Plans.md 保持 cc:WIP）
+        # 跳过 B-5 以后，后续任务也停止
 
-    # B-5. Worktree クリーンアップ
+    # B-5. Worktree 清理
     git worktree remove {worktree_path}
     git branch -D {branch_name}
 
     # B-6. Progress feed
-    print("📊 Progress: Task {completed}/{total} 完了 — {task.内容}")
+    print("📊 Progress: Task {completed}/{total} 完成 — {task.内容}")
 ```
 
-**Phase C: Post-delegate（統合・報告）**:
-1. 全タスクの commit log を集計
-2. **リッチ完了報告** を出力
-3. Plans.md の最終確認（全タスク cc:完了 になっているか）
+**Phase C: Post-delegate（整合・报告）**:
+1. 统计所有任务的 commit log
+2. 输出**丰富完成报告**
+3. Plans.md 最终确认（所有任务是否都是 cc:完了）
 
-## CI 失敗時の対応
+## CI 失败时的应对
 
-1. ログを確認してエラーを特定
-2. 修正を実施
-3. 同一原因で 3 回失敗したら自動修正ループを停止
-4. 失敗ログ・試みた修正・残る論点をまとめてエスカレーション
+1. 确认日志并识别错误
+2. 实施修正
+3. 同一原因失败 3 次则停止自动修正循环
+4. 汇总失败日志・尝试过的修正・剩余论点后升级
 
-## 失敗タスクの自動再チケット化
+## 失败任务的自动重新工单化
 
-タスク完了後にテスト/CI が失敗した場合、修正タスク案を自動生成し、承認後に Plans.md へ反映する。
+任务完成后测试/CI 失败时，自动生成修正任务方案，批准后反映到 Plans.md。
 
-| 条件 | アクション |
+| 条件 | 动作 |
 |------|----------|
-| `cc:完了` 後にテスト失敗 | 修正タスク案を提示し、承認を待つ |
-| CI 失敗（3回未満） | 修正を実施 |
-| CI 失敗（3回目） | 修正タスク案を提示 + エスカレーション |
+| `cc:完了` 后测试失败 | 提示修正任务方案，等待批准 |
+| CI 失败（3 次以内） | 实施修正 |
+| CI 失败（第 3 次） | 提示修正任务方案 + 升级 |
 
-## レビューループ
+## 审查循环
 
-実装完了後に自動実行される品質検証ステージ。
-**全モード共通**（Solo / Sequential / Parallel / Breezing）で統一的に適用される。
+实现完成后自动执行的质量验证阶段。
+**所有模式共用**（Solo / Sequential / Parallel / Breezing）统一适用。
 
-### レビュー実行（codex exec 方式）
+### 审查执行（codex exec 方式）
 
-`codex exec --sandbox read-only` でレビューを実行する。
-verdict は `-o` フラグで最終メッセージをファイルに書き出し、JSON を機械的に取得する。
+用 `codex exec --sandbox read-only` 执行审查。
+verdict 通过 `-o` 标志将最终消息写入文件，机械地获取 JSON。
 
-> **差分の起点**: 各タスク固有の `TASK_BASE_REF`（タスク着手時の HEAD）を使う。
-> 累積差分ではなく、そのタスクの変更のみをレビュー対象にする。
+> **差异起点**: 使用各任务专属的 `TASK_BASE_REF`（任务开始时的 HEAD）。
+> 不是累积差异，仅审查该任务的变更。
 
 ```bash
-# タスク開始時に base ref を記録（cc:WIP 更新前に実行）
+# 任务开始时记录 base ref（更新 cc:WIP 前执行）
 TASK_BASE_REF=$(git rev-parse HEAD)
 
-# ... 実装完了後 ...
+# ... 实现完成后 ...
 
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
 REVIEW_PROMPT=$(mktemp /tmp/codex-review-XXXXXX.md)
 REVIEW_OUT=$(mktemp /tmp/codex-review-out-XXXXXX.json)
 cat > "$REVIEW_PROMPT" << 'REVIEW_EOF'
-以下の diff をレビューしてください。
+请审查以下 diff。
 
-## 判定基準（これのみで verdict を決定）
-- critical（セキュリティ脆弱性・データ損失・本番障害）: 1件でも → REQUEST_CHANGES
-- major（既存機能破壊・仕様矛盾・テスト不通過）: 1件でも → REQUEST_CHANGES
-- minor（命名・コメント・スタイル）: verdict に影響しない → APPROVE
-- recommendation（改善提案）: verdict に影響しない → APPROVE
+## 判定标准（仅以此决定 verdict）
+- critical（安全漏洞・数据丢失・生产故障）: 1 件以上 → REQUEST_CHANGES
+- major（破坏现有功能・与规格矛盾・测试不通过）: 1 件以上 → REQUEST_CHANGES
+- minor（命名・注释・风格）: 不影响 verdict → APPROVE
+- recommendation（改善建议）: 不影响 verdict → APPROVE
 
-minor / recommendation のみの場合は必ず APPROVE を返してください。
+仅有 minor / recommendation 时必须返回 APPROVE。
 
-以下の JSON のみを出力してください（他のテキストは出力しないこと）:
+请仅输出以下 JSON（不要输出其他文本）:
 {"verdict": "APPROVE", "critical_issues": [], "major_issues": [], "recommendations": []}
-または
+或
 {"verdict": "REQUEST_CHANGES", "critical_issues": [...], "major_issues": [...], "recommendations": [...]}
 
 ## diff
@@ -287,124 +287,124 @@ cat "$REVIEW_PROMPT" | ${TIMEOUT:+$TIMEOUT 120} codex exec - --sandbox read-only
 REVIEW_EXIT=$?
 rm -f "$REVIEW_PROMPT"
 
-# verdict を JSON から抽出（-o で書き出されたファイルを解析）
+# 从 JSON 提取 verdict（解析用 -o 写出的文件）
 VERDICT=$(grep -o '"verdict":\s*"[^"]*"' "$REVIEW_OUT" | head -1 | grep -o 'APPROVE\|REQUEST_CHANGES')
 rm -f "$REVIEW_OUT"
 ```
 
-### APPROVE / REQUEST_CHANGES の判定基準
+### APPROVE / REQUEST_CHANGES 的判定标准
 
-| 重要度 | 定義 | verdict への影響 |
+| 重要度 | 定义 | 对 verdict 的影响 |
 |--------|------|-----------------|
-| **critical** | セキュリティ脆弱性、データ損失リスク、本番障害の可能性 | 1 件でも → REQUEST_CHANGES |
-| **major** | 既存機能の破壊、仕様との明確な矛盾、テスト不通過 | 1 件でも → REQUEST_CHANGES |
-| **minor** | 命名改善、コメント不足、スタイル不統一 | verdict に影響しない |
-| **recommendation** | ベストプラクティス提案、将来の改善案 | verdict に影響しない |
+| **critical** | 安全漏洞、数据丢失风险、生产故障可能性 | 1 件以上 → REQUEST_CHANGES |
+| **major** | 破坏现有功能、与规格明显矛盾、测试不通过 | 1 件以上 → REQUEST_CHANGES |
+| **minor** | 命名改善、注释不足、风格不统一 | 不影响 verdict |
+| **recommendation** | 最佳实践建议、未来改善方案 | 不影响 verdict |
 
-> **重要**: minor / recommendation のみの場合は **必ず APPROVE** を返すこと。
+> **重要**: 仅有 minor / recommendation 时**必须返回 APPROVE**。
 
-### 修正ループ（REQUEST_CHANGES 時）
+### 修正循环（REQUEST_CHANGES 时）
 
 ```
 review_count = 0
 MAX_REVIEWS = 3
 
 while verdict == "REQUEST_CHANGES" and review_count < MAX_REVIEWS:
-    1. レビュー指摘を解析（critical / major のみ対象）
-    2. 各指摘に対して修正を実装
+    1. 分析审查指出（仅 critical / major 为对象）
+    2. 针对每个指出实现修正
     3. git commit --amend
-    4. 再度 codex exec でレビューを実行（TASK_BASE_REF 起点）
+    4. 再次用 codex exec 执行审查（TASK_BASE_REF 起始）
     review_count++
 
 if review_count >= MAX_REVIEWS and verdict != "APPROVE":
-    → ユーザーにエスカレーション
-    → 「3 回修正しましたが以下の critical/major 指摘が残っています」+ 指摘一覧を表示
-    → ユーザー判断を待つ（続行 / 中断）
+    → 升级给用户
+    → "已修正 3 次但以下 critical/major 指出仍然存在" + 显示指出列表
+    → 等待用户判断（继续 / 中断）
 ```
 
-### Breezing モードでの適用
+### Breezing 模式下的适用
 
-1. Worker が worktree 内で実装・commit → `wait_agent` で完了待ち
-2. Lead が `codex exec --sandbox read-only` でレビュー（TASK_BASE_REF 起点）
-3. REQUEST_CHANGES → `send_input` で Worker に修正指示 → Worker が amend
-4. 修正後、再レビュー（最大 3 回）
-5. `close_agent` で Worker を終了
-6. APPROVE → Lead が main に cherry-pick → Plans.md を `cc:完了 [{hash}]` に更新
+1. Worker 在 worktree 内实现・commit → 用 `wait_agent` 等待完成
+2. Lead 用 `codex exec --sandbox read-only` 审查（TASK_BASE_REF 起始）
+3. REQUEST_CHANGES → 用 `send_input` 向 Worker 发送修正指示 → Worker 进行 amend
+4. 修正后，再审查（最多 3 次）
+5. 用 `close_agent` 终止 Worker
+6. APPROVE → Lead cherry-pick 到 main → 将 Plans.md 更新为 `cc:完了 [{hash}]`
 
-### Worker の出力契約
+### Worker 的输出契约
 
-Worker プロンプトには、完了時に以下の JSON を返すことを明示する:
+Worker 提示词中明确要求完成时返回以下 JSON:
 
 ```json
 {
   "commit": "a1b2c3d",
   "files_changed": ["src/foo.ts", "tests/foo.test.ts"],
-  "summary": "foo モジュールに bar 機能を追加"
+  "summary": "向 foo 模块添加 bar 功能"
 }
 ```
 
-Lead はこの JSON を解析して commit hash とファイル一覧を取得する。
-Worker が JSON を返さなかった場合は `git log --oneline -1` で直近 commit を取得する。
+Lead 解析此 JSON 获取 commit hash 和文件列表。
+Worker 未返回 JSON 时用 `git log --oneline -1` 获取最近 commit。
 
-## 完了報告フォーマット
+## 完成报告格式
 
-タスク完了時に自動出力される視覚的サマリ。
+任务完成时自动输出的视觉摘要。
 
-### Solo テンプレート
+### Solo 模板
 
 ```
 ┌─────────────────────────────────────────────┐
-│  ✓ Task {N} 完了: {タスク名}                    │
+│  ✓ Task {N} 完成: {任务名}                    │
 ├─────────────────────────────────────────────┤
-│  ■ 何をしたか                                 │
-│    • {変更内容 1}                              │
-│    • {変更内容 2}                              │
-│  ■ 何が変わるか                                │
-│    Before: {旧動作}                            │
-│    After:  {新動作}                            │
-│  ■ 変更ファイル ({N} files)                    │
-│    {ファイルパス 1}                             │
-│  ■ 残りの課題                                  │
-│    Plans.md に {M} 件の未完了タスクあり          │
-│  commit: {hash} | review: {APPROVE}           │
+│  ■ 做了什么                                  │
+│    • {变更内容 1}                             │
+│    • {变更内容 2}                             │
+│  ■ 有什么变化                                │
+│    Before: {旧行为}                           │
+│    After:  {新行为}                           │
+│  ■ 变更文件 ({N} files)                      │
+│    {文件路径 1}                               │
+│  ■ 剩余课题                                   │
+│    Plans.md 有 {M} 件未完成任务               │
+│  commit: {hash} | review: {APPROVE}          │
 └─────────────────────────────────────────────┘
 ```
 
-### Breezing テンプレート
+### Breezing 模板
 
 ```
 ┌─────────────────────────────────────────────┐
-│  ✓ Breezing 完了: {N}/{M} タスク             │
+│  ✓ Breezing 完成: {N}/{M} 任务               │
 ├─────────────────────────────────────────────┤
-│  1. ✓ {タスク名 1}            [{hash1}]      │
-│  2. ✓ {タスク名 2}            [{hash2}]      │
-│  ■ 全体の変更                                 │
+│  1. ✓ {任务名 1}            [{hash1}]        │
+│  2. ✓ {任务名 2}            [{hash2}]        │
+│  ■ 整体变更                                   │
 │    {N} files changed, {A} insertions(+),     │
 │    {D} deletions(-)                          │
-│  ■ 残りの課題                                  │
-│    Plans.md に {K} 件の未完了タスクあり         │
+│  ■ 剩余课题                                   │
+│    Plans.md 有 {K} 件未完成任务               │
 └─────────────────────────────────────────────┘
 ```
 
-## Claude Code 版との差分
+## 与 Claude Code 版的差异
 
-| 項目 | Claude Code 版 | Codex ネイティブ版（本ファイル） |
+| 项目 | Claude Code 版 | Codex 原生版（本文件） |
 |------|---------------|-------------------------------|
 | Worker spawn | `Agent(subagent_type="worker")` | `spawn_agent({message, fork_context})` |
-| 完了待ち | `Agent` の戻り値 | `wait_agent({ids: [id]})` |
+| 等待完成 | `Agent` 的返回值 | `wait_agent({ids: [id]})` |
 | 修正指示 | `SendMessage(to: agentId)` | `send_input({id, message})` |
-| Worker 終了 | 自動（Agent tool 戻り値） | `close_agent({id})` で明示終了 |
-| Worktree 分離 | `isolation="worktree"` 自動管理 | `git worktree add` で手動分離 |
-| 権限 | `bypassPermissions` | `codex exec`: `--full-auto` / `spawn_agent`: セッション権限継承 |
-| レビュー | Codex exec → Reviewer agent fallback | `codex exec --sandbox read-only` のみ |
-| verdict 取得 | Agent 応答を解析 | `codex exec -o <file>` + grep 抽出 |
-| モード自動昇格 | タスク数で自動判定 | 明示フラグのみ（自動昇格しない） |
-| Effort 制御 | `ultrathink` + `/effort` | `model_reasoning_effort` in config.toml |
-| Auto-Refinement | `/simplify` | なし |
+| Worker 终止 | 自动（Agent tool 返回值） | 用 `close_agent({id})` 明确终止 |
+| Worktree 分离 | `isolation="worktree"` 自动管理 | 用 `git worktree add` 手动分离 |
+| 权限 | `bypassPermissions` | `codex exec`: `--full-auto` / `spawn_agent`: 继承会话权限 |
+| 审查 | Codex exec → Reviewer agent fallback | 仅 `codex exec --sandbox read-only` |
+| verdict 获取 | 解析 Agent 响应 | `codex exec -o <file>` + grep 提取 |
+| 模式自动升级 | 按任务数自动判定 | 仅明确标志（不自动升级） |
+| Effort 控制 | `ultrathink` + `/effort` | config.toml 中的 `model_reasoning_effort` |
+| Auto-Refinement | `/simplify` | 无 |
 
-## 関連スキル
+## 相关技能
 
-- `harness-plan` — 実行するタスクを計画する
-- `harness-sync` — 実装と Plans.md を同期する
-- `harness-review` — 実装のレビュー
-- `harness-release` — バージョンバンプ・リリース
+- `harness-plan` — 规划要执行的任务
+- `harness-sync` — 同步实现与 Plans.md
+- `harness-review` — 实现的审查
+- `harness-release` — 版本升级・发布

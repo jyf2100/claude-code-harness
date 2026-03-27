@@ -1,8 +1,8 @@
 # Superpowers Comparison Notes
 
-最終更新: 2026-03-06
+Last Updated: 2026-03-06
 
-このメモは公開 PR 用ではなく、README / LP / benchmark 更新時の内部根拠用です。
+This note is for internal reference when updating README / LP / benchmark, not for public PR.
 
 ## Snapshot
 
@@ -14,25 +14,25 @@
 
 ### Harness strengths
 
-- runtime enforcement が厚い。hooks と TypeScript core が明確
-- consistency check, validate-plugin, core test で「主張に対する検査導線」を作りやすい
-- Codex / OpenCode / Claude の multi-client 配布導線が repo に織り込まれている
+- Strong runtime enforcement. Hooks and TypeScript core are clear
+- Easy to build verification paths for claims via consistency check, validate-plugin, core test
+- Multi-client distribution paths (Codex / OpenCode / Claude) are woven into the repo
 
 ### Superpowers strengths
 
-- public narrative が鋭い。README の約束が分かりやすい
-- market adoption / social proof が非常に強い
-- operator 目線では「何を学べばいいか」が直感的
+- Sharp public narrative. README promises are clear
+- Very strong market adoption / social proof
+- Intuitive "what to learn" from operator perspective
 
 ### Harness weaknesses that matter
 
-- README / Plans / docs の自己矛盾があると、実力差より大きく信用を失う
-- 配布対象と repo 内残置物の境界が曖昧だと、保守コストの高さだけが先に見える
-- `/harness-work all` のような強い claim は、再現証拠がないと narrative で負ける
+- Self-contradictions in README / Plans / docs cause greater credibility loss than actual capability gaps
+- Unclear boundaries between distribution targets and repo residue make maintenance costs visible first
+- Strong claims like `/harness-work all` lose narrative battles without reproducible evidence
 
 ## Recommended Direction
 
-1. badge / docs / Plans drift を最優先で潰す
-2. `/harness-work all` evidence pack を公開導線に乗せる
-3. README を `5 verb skills + TypeScript guardrail engine` に再集中する
-4. 競合批判ではなく、runtime enforcement と verification で差別化する
+1. Eliminate badge / docs / Plans drift as top priority
+2. Put `/harness-work all` evidence pack on public path
+3. Re-focus README on `5 verb skills + TypeScript guardrail engine`
+4. Differentiate via runtime enforcement and verification, not competitor criticism

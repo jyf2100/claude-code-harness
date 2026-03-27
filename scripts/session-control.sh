@@ -1,6 +1,6 @@
 #!/bin/bash
 # session-control.sh
-# /work の resume/fork フラグに応じてセッション状態を更新
+# 根据 /work 的 resume/fork 标志更新会话状态
 #
 # Usage:
 #   ./scripts/session-control.sh --resume <id|latest>
@@ -33,14 +33,14 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     *)
-      echo "Unknown arg: $1" >&2
+      echo "未知参数: $1" >&2
       exit 1
       ;;
   esac
 done
 
 if [ -n "$RESUME_TARGET" ] && [ -n "$FORK_TARGET" ]; then
-  echo "Both --resume and --fork are not allowed in the same call." >&2
+  echo "不允许在同一调用中同时使用 --resume 和 --fork。" >&2
   exit 1
 fi
 
@@ -133,7 +133,7 @@ resume_session() {
   local events_file="$ARCHIVE_DIR/${target_id}.events.jsonl"
 
   if [ ! -f "$session_file" ]; then
-    echo "Resume target not found: $target_id" >&2
+    echo "未找到 resume 目标: $target_id" >&2
     exit 1
   fi
 
@@ -156,7 +156,7 @@ fork_session() {
     if [ -f "$candidate" ]; then
       base_file="$candidate"
     else
-      echo "Fork target not found: $target_id" >&2
+      echo "未找到 fork 目标: $target_id" >&2
       exit 1
     fi
   fi
@@ -212,7 +212,7 @@ base["changes_this_session"] = []
 Path("$STATE_FILE").write_text(json.dumps(base, indent=2))
 PY
   else
-    echo "jq or python3 required for fork." >&2
+    echo "fork 需要 jq 或 python3。" >&2
     exit 1
   fi
 
@@ -227,7 +227,7 @@ PY
 if [ "$RESUME_LATEST" = "true" ]; then
   RESUME_TARGET="$(pick_latest_session)"
   if [ -z "$RESUME_TARGET" ]; then
-    echo "No archived sessions found for --resume latest." >&2
+    echo "未找到 --resume latest 的归档会话。" >&2
     exit 1
   fi
 fi
@@ -242,5 +242,5 @@ if [ -n "$FORK_TARGET" ]; then
   exit 0
 fi
 
-echo "No resume/fork target specified. Nothing to do." >&2
+echo "未指定 resume/fork 目标。无需操作。" >&2
 exit 1

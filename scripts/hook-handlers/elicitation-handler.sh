@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # elicitation-handler.sh
-# Elicitation フックハンドラ
-# MCP サーバーがユーザーに構造化入力を要求する際に発火
-# Breezing セッション中（バックグラウンド Worker/Reviewer）は対話不能のため自動スキップ
+# Elicitation 钩子处理器
+# 当 MCP 服务器请求用户进行结构化输入时触发
+# Breezing 会话期间（后台 Worker/Reviewer）无法进行交互，因此自动跳过
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON response
@@ -10,30 +10,30 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ログファイル
+# 日志文件
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 LOG_FILE="${STATE_DIR}/elicitation-events.jsonl"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行）
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -48,19 +48,19 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"Elicitation: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 MCP_SERVER=""
 ELICITATION_ID=""
 MESSAGE=""
@@ -87,7 +87,7 @@ except:
   MESSAGE="$(echo "${_parsed}" | sed -n '3p')"
 fi
 
-# === タイムライン記録 ===
+# === 时间线记录 ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
@@ -120,8 +120,8 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === Breezing セッション中は elicitation を自動スキップ ===
-# バックグラウンド Worker/Reviewer は UI 対話不能のため
+# === Breezing 会话期间自动跳过 elicitation ===
+# 因为后台 Worker/Reviewer 无法进行 UI 交互
 if [ -n "${HARNESS_BREEZING_SESSION_ID:-}" ]; then
   SKIP_REASON="Breezing session (${HARNESS_BREEZING_SESSION_ID}): background agent cannot interact with elicitation UI"
   if command -v jq >/dev/null 2>&1; then
@@ -134,6 +134,6 @@ if [ -n "${HARNESS_BREEZING_SESSION_ID:-}" ]; then
   exit 0
 fi
 
-# === 通常セッション: そのまま通過（ユーザーが対話で応答） ===
+# === 常规会话: 直接通过（用户在交互中响应） ===
 echo '{"decision":"approve","reason":"Elicitation: forwarding to user"}'
 exit 0

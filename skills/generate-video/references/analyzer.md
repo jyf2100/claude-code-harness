@@ -1,131 +1,131 @@
-# Video Analyzer - コードベース分析エンジン
+# Video Analyzer - 代码库分析引擎
 
-プロジェクトを自動分析し、動画生成に必要な情報を抽出します。
+自动分析项目，提取视频生成所需的信息。
 
 ---
 
 ## 概要
 
-`/generate-video` の Step 1 で実行される分析エンジンです。
-コードベースとプロジェクト資産を解析し、最適な動画構成を判定します。
+在 `/generate-video` 的 Step 1 中执行的分析引擎。
+解析代码库和项目资产，判断最优的视频构成。
 
-## 分析項目
+## 分析项目
 
-### 1. フレームワーク検出
+### 1. 框架检测
 
-| 検出対象 | 判定方法 |
+| 检测对象 | 判定方法 |
 |---------|---------|
-| Next.js | `next.config.*` の存在 |
-| React | `package.json` の dependencies |
-| Vue | `vue.config.*` または `nuxt.config.*` |
+| Next.js | `next.config.*` 的存在 |
+| React | `package.json` 的 dependencies |
+| Vue | `vue.config.*` 或 `nuxt.config.*` |
 | Svelte | `svelte.config.*` |
-| Express/Fastify | `package.json` の dependencies |
+| Express/Fastify | `package.json` 的 dependencies |
 
-**実行コマンド**:
+**执行命令**：
 ```bash
-# package.json から依存関係を抽出
+# 从 package.json 提取依赖
 cat package.json | jq '.dependencies, .devDependencies'
 
-# 設定ファイルの存在確認
+# 确认配置文件存在
 ls -la *.config.* 2>/dev/null
 ```
 
-### 2. 主要機能検出
+### 2. 主要功能检测
 
-| 機能 | 検出パターン |
-|------|-------------|
-| 認証 | `auth/`, `login/`, `@clerk`, `@auth0`, `supabase` |
-| 決済 | `payment/`, `billing/`, `stripe`, `@stripe` |
-| ダッシュボード | `dashboard/`, `admin/`, `analytics` |
+| 功能 | 检测模式 |
+|------|---------|
+| 认证 | `auth/`, `login/`, `@clerk`, `@auth0`, `supabase` |
+| 支付 | `payment/`, `billing/`, `stripe`, `@stripe` |
+| 仪表盘 | `dashboard/`, `admin/`, `analytics` |
 | API | `api/`, `routes/`, `trpc`, `graphql` |
 | DB | `prisma/`, `drizzle/`, `@supabase` |
 
-**実行コマンド**:
+**执行命令**：
 ```bash
-# ディレクトリ構造から機能を推測
+# 从目录结构推测功能
 find src app -type d -name "auth" -o -name "login" -o -name "dashboard" 2>/dev/null
 
-# パッケージから機能を推測
+# 从包推测功能
 grep -E "clerk|stripe|supabase|prisma" package.json
 ```
 
-### 3. UIコンポーネント検出
+### 3. UI 组件检测
 
-| 項目 | 検出方法 |
+| 项目 | 检测方法 |
 |------|---------|
-| ページ数 | `app/**/page.tsx` または `pages/**/*.tsx` のカウント |
-| コンポーネント数 | `components/**/*.tsx` のカウント |
-| UIライブラリ | `shadcn`, `radix`, `chakra`, `mui` の検出 |
+| 页面数 | `app/**/page.tsx` 或 `pages/**/*.tsx` 的计数 |
+| 组件数 | `components/**/*.tsx` 的计数 |
+| UI 库 | 检测 `shadcn`, `radix`, `chakra`, `mui` |
 
-**実行コマンド**:
+**执行命令**：
 ```bash
-# ページ数カウント
+# 页面数计数
 find . -name "page.tsx" -o -name "page.jsx" 2>/dev/null | wc -l
 
-# コンポーネント数カウント
+# 组件数计数
 find . -path "*/components/*" -name "*.tsx" 2>/dev/null | wc -l
 ```
 
-### 4. プロジェクト資産解析
+### 4. 项目资产分析
 
-| 資産 | 用途 |
+| 资产 | 用途 |
 |------|------|
-| `package.json` | プロジェクト名、description |
-| `README.md` | プロジェクト概要、タグライン |
-| `Plans.md` | 完了タスク（リリースノート用） |
-| `CHANGELOG.md` | 変更点（リリースノート用） |
-| `.claude/memory/decisions.md` | 技術的意思決定（アーキテクチャ解説用） |
+| `package.json` | 项目名、description |
+| `README.md` | 项目概要、标语 |
+| `Plans.md` | 已完成任务（发布说明用） |
+| `CHANGELOG.md` | 变更点（发布说明用） |
+| `.claude/memory/decisions.md` | 技术决策（架构解说用） |
 
-**実行コマンド**:
+**执行命令**：
 ```bash
-# プロジェクト情報抽出
+# 提取项目信息
 cat package.json | jq '{name, description, version}'
 
-# README の最初の段落を抽出
+# 提取 README 的第一段
 head -20 README.md
 ```
 
 ---
 
-## 動画タイプ自動判定
+## 视频类型自动判定
 
-### 判定ロジック
+### 判定逻辑
 
 ```
-分析結果から動画タイプを判定:
+从分析结果判定视频类型：
     │
-    ├─ CHANGELOG が最近更新（7日以内）
-    │   └─ → リリースノート動画
+    ├─ CHANGELOG 最近更新（7 天内）
+    │   └─ → 发布说明视频
     │
-    ├─ 大きな構造変更（新ディレクトリ追加等）
-    │   └─ → アーキテクチャ解説
+    ├─ 大型结构变更（新目录添加等）
+    │   └─ → 架构解说
     │
-    ├─ UI変更が多い（コンポーネント追加/変更）
-    │   └─ → プロダクトデモ
+    ├─ UI 变更多（组件添加/更改）
+    │   └─ → 产品演示
     │
-    └─ 複数条件に該当
-        └─ → 複合動画（ユーザーに確認）
+    └─ 符合多个条件
+        └─ → 复合视频（向用户确认）
 ```
 
-### 判定基準
+### 判定标准
 
-| タイプ | 条件 |
-|--------|------|
-| **リリースノート** | `git log --since="7 days ago"` に tag/release がある |
-| **アーキテクチャ** | 新しい `src/*/` ディレクトリ、大きなリファクタ |
-| **プロダクトデモ** | UI コンポーネントの追加/変更 |
-| **デフォルト** | プロダクトデモ（最も汎用的） |
+| 类型 | 条件 |
+|------|------|
+| **发布说明** | `git log --since="7 days ago"` 中有 tag/release |
+| **架构** | 新的 `src/*/` 目录、大型重构 |
+| **产品演示** | UI 组件的添加/更改 |
+| **默认** | 产品演示（最通用） |
 
 ---
 
-## 出力フォーマット
+## 输出格式
 
-分析結果は以下の形式で出力:
+分析结果以以下格式输出：
 
 ```yaml
 project:
   name: "MyAwesomeApp"
-  description: "タスク管理を簡単に"
+  description: "让任务管理变简单"
   version: "1.2.0"
 
 framework:
@@ -133,11 +133,11 @@ framework:
   ui_library: "shadcn/ui"
 
 features:
-  - name: "認証"
+  - name: "认证"
     type: "auth"
     path: "src/app/(auth)/"
     provider: "Clerk"
-  - name: "ダッシュボード"
+  - name: "仪表盘"
     type: "dashboard"
     path: "src/app/dashboard/"
   - name: "API"
@@ -153,8 +153,8 @@ recent_changes:
   changelog_updated: true
   last_release: "2026-01-20"
   major_changes:
-    - "認証フロー追加"
-    - "ダッシュボード改善"
+    - "添加认证流程"
+    - "改进仪表盘"
 
 recommended_video_type: "release-notes"
 confidence: 0.85
@@ -162,39 +162,39 @@ confidence: 0.85
 
 ---
 
-## 実行例
+## 执行示例
 
 ```
-📊 プロジェクト分析中...
+📊 正在分析项目...
 
-✅ 分析完了
+✅ 分析完成
 
-| 項目 | 結果 |
+| 项目 | 结果 |
 |------|------|
-| プロジェクト名 | MyAwesomeApp |
-| フレームワーク | Next.js 14 |
-| UIライブラリ | shadcn/ui |
-| ページ数 | 12 |
-| コンポーネント数 | 45 |
+| 项目名 | MyAwesomeApp |
+| 框架 | Next.js 14 |
+| UI 库 | shadcn/ui |
+| 页面数 | 12 |
+| 组件数 | 45 |
 
-🔍 検出された機能:
-- 認証（Clerk）
-- ダッシュボード
-- API（8エンドポイント）
+🔍 检测到的功能：
+- 认证（Clerk）
+- 仪表盘
+- API（8 个端点）
 
-📋 最近の変更:
-- v1.2.0 リリース（3日前）
-- 認証フロー追加
-- ダッシュボード改善
+📋 最近更改：
+- v1.2.0 发布（3 天前）
+- 添加认证流程
+- 改进仪表盘
 
-🎬 推奨動画タイプ: リリースノート動画
-   理由: 最近のリリースがあり、主要な機能追加があります
+🎬 推荐视频类型：发布说明视频
+   理由：有最近的发布，包含主要功能添加
 ```
 
 ---
 
 ## Notes
 
-- 分析は非破壊的（ファイルを変更しない）
-- 大規模プロジェクトでも数秒で完了
-- 検出できない機能は手動で追加可能（planner.md で）
+- 分析是非破坏性的（不更改文件）
+- 即使是大型项目也能在几秒内完成
+- 无法检测的功能可在 planner.md 中手动添加

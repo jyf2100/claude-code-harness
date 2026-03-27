@@ -1,68 +1,68 @@
 # Skill Routing Rules (Reference)
 
-スキル間のルーティングルールのリファレンスドキュメント。
+技能间路由规则的参考文档。
 
-> **SSOT の場所**: 各スキルの `description` フィールドがルーティングの SSOT です。
-> このファイルは詳細な説明と例を提供するリファレンスであり、実際のルーティングは各スキルの description に依存します。
+> **SSOT 位置**：各技能的 `description` 字段是路由的 SSOT。
+> 此文件是提供详细说明和示例的参考，实际路由依赖于各技能的 description。
 >
-> **重要**: 各スキルの description と本文の「Do NOT Load For」テーブルは完全一致している必要があります。
+> **重要**：各技能的 description 和正文中的「Do NOT Load For」表格必须完全一致。
 
-## Codex 関連ルーティング
+## Codex 相关路由
 
-### harness-review (Codex レビュー機能を包含)
+### harness-review（包含 Codex 审查功能）
 
-**目的**: Codex CLI (`codex exec`) でセカンドオピニオンレビューを提供（v3 で `codex-review` から統合）
+**目的**：用 Codex CLI (`codex exec`) 提供第二意见审查（v3 中从 `codex-review` 集成）
 
-**トリガーキーワード**（description から引用）:
+**触发关键词**（引自 description）：
 - "review", "code review", "plan review"
 - "scope analysis", "security", "performance"
 - "quality checks", "PRs", "diffs"
 - "/harness-review"
 
-**除外キーワード**（description から引用）:
+**排除关键词**（引自 description）：
 - "implementation", "new features", "bug fixes"
 - "setup", "release"
 
-### harness-work --codex (Codex 実装機能を包含)
+### harness-work --codex（包含 Codex 实现功能）
 
-**目的**: Codex を実装エンジンとして使用（v3 で統合）
+**目的**：将 Codex 用作实现引擎（v3 中集成）
 
-**トリガーキーワード**:
+**触发关键词**：
 - "implement", "execute", "/work"
 - "breezing", "team run"
 - "--codex", "--parallel"
 
-**除外キーワード**（description から引用）:
+**排除关键词**（引自 description）：
 - "planning", "code review", "release"
 - "setup", "initialization"
 
-**対応**: `/harness-work --codex` で実行
+**对应**：用 `/harness-work --codex` 执行
 
-## ルーティング判定フロー（参考）
+## 路由判定流程（参考）
 
-> このセクションは Claude Code の内部動作の説明であり、追加のキーワード定義ではありません。
-> 実際のルーティングは各スキルの description に記載されたキーワードのみで判定されます。
+> 此部分是 Claude Code 内部运行的说明，不是额外的关键词定义。
+> 实际路由仅通过各技能 description 中记载的关键词判定。
 
 ```
-ユーザー入力
+用户输入
     │
-    ├── description のトリガーキーワードにマッチ → 該当スキルをロード
-    ├── description の除外キーワードにマッチ → 該当スキルを除外
-    └── どちらでもない → 通常のスキルマッチング
+    ├── 匹配 description 的触发关键词 → 加载相应技能
+    ├── 匹配 description 的排除关键词 → 排除相应技能
+    └── 都不是 → 常规技能匹配
 ```
 
-## 優先順位ルール（参考）
+## 优先级规则（参考）
 
-キーワードが複数のスキルにマッチする場合の優先順位:
+关键词匹配多个技能时的优先级：
 
-1. **除外が最優先**: 除外キーワードにマッチしたスキルは絶対にロードしない
-2. **具体的なキーワードが優先**: 完全一致 > 部分一致
+1. **排除最优先**：匹配排除关键词的技能绝对不加载
+2. **具体关键词优先**：完全匹配 > 部分匹配
 
-> **注**: 「文脈判定」は曖昧さを生むため使用しない。description のキーワードで決定的に判定される。
+> **注**：「上下文判定」会产生歧义，因此不使用。由 description 的关键词确定性判定。
 
-## 更新ルール
+## 更新规则
 
-1. **description = SSOT**: 各スキルの `description` フィールドがルーティングの正式な定義
-2. **本文との一致**: 各スキルの「Do NOT Load For」テーブルは description と完全一致が必須
-3. **このファイルの役割**: 詳細な説明と判定フローのリファレンス（SSOT ではない）
-4. **完全リスト維持**: 汎用表現（"〜全般"）を使わず、具体的なキーワードを列挙する
+1. **description = SSOT**：各技能的 `description` 字段是路由的正式定义
+2. **与正文一致**：各技能的「Do NOT Load For」表格必须与 description 完全一致
+3. **此文件的角色**：详细说明和判定流程的参考（不是 SSOT）
+4. **维护完整列表**：不使用通用表述（"~概览"），而是列举具体关键词

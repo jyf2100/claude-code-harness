@@ -1,28 +1,28 @@
 # Positioning Notes
 
-最終更新: 2026-03-06
+Last Updated: 2026-03-06
 
-公開向けに短く言うなら、`claude-code-harness` の価値は「skill pack を増やすこと」ではなく、**Plan -> Work -> Review を runtime enforcement と verification 付きで回せること**です。
+For public communication, `claude-code-harness` value is not "increasing skill packs" but **enabling Plan -> Work -> Review with runtime enforcement and verification**.
 
 ## Core Message
 
-- Harness は `5 verb skills + TypeScript guardrail engine` を商品本体として扱う
-- 価値はコマンド数の多さではなく、`guardrail`, `review`, `consistency`, `evidence` が一体で効くこと
-- `commands/` や `mcp-server/` のような legacy / optional bucket は弱みではなく、境界が明文化されていれば運用資産として説明できる
+- Harness treats `5 verb skills + TypeScript guardrail engine` as the core product
+- Value is not command quantity, but integrated effectiveness of `guardrail`, `review`, `consistency`, `evidence`
+- Legacy / optional buckets like `commands/` or `mcp-server/` are not weaknesses - they become operational assets when boundaries are documented
 
 ## Public Comparison Language
 
-- 避ける: 「競合より圧倒的に上」「完全勝利」
-- 使う: 「runtime enforcement が強い」「verification path が明確」「claims を再現証拠に結びつけている」
-- 競合比較では、思想や採用実績を否定せず、Harness の強みを guardrail / evidence / operator clarity に寄せて説明する
+- Avoid: "Overwhelmingly better than competitors", "Complete victory"
+- Use: "Strong runtime enforcement", "Clear verification path", "Claims tied to reproducible evidence"
+- For competitor comparisons, don't dismiss philosophy or adoption track record; focus Harness strengths on guardrail / evidence / operator clarity
 
 ## Recommended One-liner
 
-> Claude Code を skill pack で拡張するだけでなく、Plan -> Work -> Review を guardrail と検証付きで運用できるようにするハーネス。
+> A harness that not only extends Claude Code with skill packs, but enables Plan -> Work -> Review operations with guardrails and verification.
 
 ## Proof Points
 
 - TypeScript guardrail engine (`core/`)
 - 5 verb skills (`skills-v3/`)
-- consistency check と plugin validation
+- Consistency check and plugin validation
 - `/harness-work all` evidence pack

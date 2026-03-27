@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
 #
 # codex-worker-setup.sh
-# Codex Worker 機能のセットアップスクリプト
+# Codex Worker 功能的设置脚本
 #
 # Usage: ./scripts/codex-worker-setup.sh [--check-only]
 #
 # Options:
-#   --check-only  インストール状態の確認のみ（変更なし）
+#   --check-only  仅检查安装状态（不做任何更改）
 #
 
 set -euo pipefail
 
-# 色定義
+# 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# 最小バージョン要件
+# 最低版本要求
 MIN_CODEX_VERSION="0.107.0"
 MIN_GIT_VERSION="2.5.0"
 
-# グローバル変数
+# 全局变量
 CHECK_ONLY=false
 ERRORS=()
 WARNINGS=()
 CODEX_CLI_OK=false
 CODEX_EXEC_OK=false
 
-# ヘルパー関数
+# 辅助函数
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -43,16 +43,16 @@ log_error() {
     ERRORS+=("$1")
 }
 
-# バージョン比較（semver）
+# 版本比较（semver）
 version_gte() {
     local v1="$1"
     local v2="$2"
 
-    # バージョン文字列を数値配列に変換
+    # 将版本字符串转换为数值数组
     IFS='.' read -ra V1 <<< "$v1"
     IFS='.' read -ra V2 <<< "$v2"
 
-    # 各セグメントを比較
+    # 比较各段
     for i in 0 1 2; do
         local n1="${V1[$i]:-0}"
         local n2="${V2[$i]:-0}"
@@ -67,13 +67,13 @@ version_gte() {
     return 0
 }
 
-# Codex CLI 確認
+# Codex CLI 检查
 check_codex_cli() {
-    log_info "Codex CLI を確認中..."
+    log_info "正在检查 Codex CLI..."
 
     if ! command -v codex &> /dev/null; then
-        log_error "Codex CLI が見つかりません"
-        log_info "インストール方法: npm install -g @openai/codex"
+        log_error "未找到 Codex CLI"
+        log_info "安装方法: npm install -g @openai/codex"
         return 1
     fi
 
@@ -85,35 +85,35 @@ check_codex_cli() {
         CODEX_CLI_OK=true
         return 0
     else
-        log_error "Codex CLI v$version は古いです (>= $MIN_CODEX_VERSION 必須)"
+        log_error "Codex CLI v$version 版本过旧 (需要 >= $MIN_CODEX_VERSION)"
         return 1
     fi
 }
 
-# Codex 認証確認
+# Codex 认证检查
 check_codex_auth() {
-    log_info "Codex 認証を確認中..."
+    log_info "正在检查 Codex 认证..."
 
     if [[ "$CODEX_CLI_OK" != true ]]; then
-        log_warn "Codex CLI が未インストールまたはバージョン不足のためスキップ"
+        log_warn "Codex CLI 未安装或版本不足，跳过"
         return 1
     fi
 
     if codex login status &> /dev/null; then
-        log_info "Codex 認証: OK"
+        log_info "Codex 认证: OK"
         return 0
     else
-        log_warn "Codex 未認証: 'codex login' を実行してください"
+        log_warn "Codex 未认证: 请运行 'codex login'"
         return 1
     fi
 }
 
-# Git バージョン確認（worktree サポート）
+# Git 版本检查（worktree 支持）
 check_git_version() {
-    log_info "Git バージョンを確認中..."
+    log_info "正在检查 Git 版本..."
 
     if ! command -v git &> /dev/null; then
-        log_error "Git が見つかりません"
+        log_error "未找到 Git"
         return 1
     fi
 
@@ -121,20 +121,20 @@ check_git_version() {
     version=$(git --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "0.0.0")
 
     if version_gte "$version" "$MIN_GIT_VERSION"; then
-        log_info "Git v$version (>= $MIN_GIT_VERSION, worktree サポート)"
+        log_info "Git v$version (>= $MIN_GIT_VERSION, 支持 worktree)"
         return 0
     else
-        log_error "Git v$version は古いです (>= $MIN_GIT_VERSION 必須、worktree サポート)"
+        log_error "Git v$version 版本过旧 (需要 >= $MIN_GIT_VERSION 以支持 worktree)"
         return 1
     fi
 }
 
-# Codex CLI 実行確認（CLI-only）
+# Codex CLI 执行检查（仅 CLI）
 check_codex_exec() {
-    log_info "Codex CLI 実行を確認中..."
+    log_info "正在检查 Codex CLI 执行..."
 
     if [[ "$CODEX_CLI_OK" != true ]]; then
-        log_warn "Codex CLI が未インストールまたはバージョン不足のためスキップ"
+        log_warn "Codex CLI 未安装或版本不足，跳过"
         return 1
     fi
 
@@ -146,52 +146,52 @@ check_codex_exec() {
     fi
 
     if [[ -z "$timeout_cmd" ]]; then
-        log_warn "timeout/gtimeout が見つかりません（Codex CLI 実行確認をスキップ）"
+        log_warn "未找到 timeout/gtimeout（跳过 Codex CLI 执行检查）"
         return 1
     fi
 
     if "$timeout_cmd" 15 codex exec "echo test" >/dev/null 2>&1; then
-        log_info "Codex CLI 実行: OK"
+        log_info "Codex CLI 执行: OK"
         CODEX_EXEC_OK=true
         return 0
     else
-        log_warn "Codex CLI 実行確認に失敗（認証/接続/タイムアウトを確認）"
+        log_warn "Codex CLI 执行检查失败（请检查认证/连接/超时）"
         return 1
     fi
 }
 
-# 設定ファイル生成
+# 配置文件生成
 generate_config() {
     local config_dir=".claude/state"
     local config_file="$config_dir/codex-worker-config.json"
 
-    log_info "設定ファイルを生成中..."
+    log_info "正在生成配置文件..."
 
     if [[ "$CHECK_ONLY" == true ]]; then
         if [[ -f "$config_file" ]]; then
-            log_info "設定ファイル: 存在"
+            log_info "配置文件: 已存在"
         else
-            log_warn "設定ファイル: 未作成"
+            log_warn "配置文件: 未创建"
         fi
         return 0
     fi
 
-    # ディレクトリ作成
+    # 创建目录
     mkdir -p "$config_dir"
 
-    # Codex バージョン取得
+    # 获取 Codex 版本
     local codex_version="unknown"
     if [[ "$CODEX_CLI_OK" == true ]]; then
         codex_version=$(codex --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
     fi
 
-    # Codex 実行状態
+    # Codex 执行状态
     local codex_exec_ready="false"
     if [[ "$CODEX_EXEC_OK" == true ]]; then
         codex_exec_ready="true"
     fi
 
-    # 設定ファイル生成（キー名は common.sh の get_config と一致させる）
+    # 生成配置文件（键名需与 common.sh 的 get_config 保持一致）
     cat > "$config_file" << EOF
 {
   "codex_version": "$codex_version",
@@ -213,14 +213,14 @@ generate_config() {
 }
 EOF
 
-    # Security: 本人のみ読み書き可能
+    # 安全性: 仅所有者可读写
     chmod 600 "$config_file"
-    log_info "設定ファイル生成完了: $config_file"
+    log_info "配置文件生成完成: $config_file"
 }
 
-# メイン処理
+# 主处理
 main() {
-    # 引数解析
+    # 参数解析
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --check-only)
@@ -235,11 +235,11 @@ main() {
     done
 
     echo "========================================"
-    echo "Codex Worker セットアップ"
+    echo "Codex Worker 设置"
     echo "========================================"
     echo ""
 
-    # 各チェック実行
+    # 执行各项检查
     check_codex_cli || true
     check_codex_auth || true
     check_git_version || true
@@ -248,11 +248,11 @@ main() {
 
     echo ""
     echo "========================================"
-    echo "結果サマリー"
+    echo "结果摘要"
     echo "========================================"
 
     if [[ ${#ERRORS[@]} -eq 0 ]] && [[ ${#WARNINGS[@]} -eq 0 ]]; then
-        echo -e "${GREEN}すべてのチェックに合格しました${NC}"
+        echo -e "${GREEN}所有检查均已通过${NC}"
         exit 0
     fi
 
@@ -264,7 +264,7 @@ main() {
     fi
 
     if [[ ${#ERRORS[@]} -gt 0 ]]; then
-        echo -e "${RED}エラー (${#ERRORS[@]}):${NC}"
+        echo -e "${RED}错误 (${#ERRORS[@]}):${NC}"
         for e in "${ERRORS[@]}"; do
             echo "  - $e"
         done

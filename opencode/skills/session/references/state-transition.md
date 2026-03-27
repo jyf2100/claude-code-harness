@@ -6,31 +6,31 @@ allowed-tools: [Read, Bash]
 
 # State Transition
 
-セッション状態の遷移を実行する。
+执行会话状态转换。
 
-## 入力
+## 输入
 
-workflow 変数:
-- `target_state` (string): 遷移先の状態
-- `event_name` (string): トリガーイベント
-- `event_data` (string, optional): イベント付加データ (JSON)
+workflow 变量:
+- `target_state` (string): 转换目标状态
+- `event_name` (string): 触发事件
+- `event_data` (string, optional): 事件附加数据 (JSON)
 
-## 有効な状態
+## 有效状态
 
-| 状態 | 説明 |
+| 状态 | 说明 |
 |------|------|
-| `idle` | セッション未開始 |
-| `initialized` | SessionStart 完了 |
-| `planning` | Plan/Work の準備 |
-| `executing` | /work 実行中 |
-| `reviewing` | review 実行中 |
-| `verifying` | build/test 実行中 |
-| `escalated` | 人間確認待ち |
-| `completed` | 成果物確定 |
-| `failed` | 回復不能 |
-| `stopped` | Stop hook 到達 |
+| `idle` | 会话未开始 |
+| `initialized` | SessionStart 完成 |
+| `planning` | Plan/Work 准备中 |
+| `executing` | /work 执行中 |
+| `reviewing` | review 执行中 |
+| `verifying` | build/test 执行中 |
+| `escalated` | 人工确认等待中 |
+| `completed` | 交付物确定 |
+| `failed` | 不可恢复 |
+| `stopped` | Stop hook 到达 |
 
-## 代表的な遷移
+## 典型转换
 
 | From | Event | To |
 |------|-------|----|
@@ -44,34 +44,34 @@ workflow 変数:
 | * | session.stop | stopped |
 | stopped | session.resume | initialized |
 
-## 実行
+## 执行
 
 ```bash
 ./scripts/session-state.sh --state <state> --event <event> [--data <json>]
 ```
 
-### 例: 実行状態への遷移
+### 示例: 转换到执行状态
 
 ```bash
 ./scripts/session-state.sh --state executing --event work.start
 ```
 
-### 例: エスカレーション（データ付き）
+### 示例: 升级（带数据）
 
 ```bash
 ./scripts/session-state.sh --state escalated --event escalation.requested \
   --data '{"reason":"Build failed 3 times","retry_count":3}'
 ```
 
-## 期待される結果
+## 期望结果
 
-- `.claude/state/session.json` の `state`, `updated_at`, `last_event_id`, `event_seq` が更新される
-- `.claude/state/session.events.jsonl` にイベントが追記される
-- 不正な遷移は stderr にエラー出力 + 非ゼロ終了
+- `.claude/state/session.json` 的 `state`, `updated_at`, `last_event_id`, `event_seq` 被更新
+- `.claude/state/session.events.jsonl` 追加事件
+- 非法转换输出错误到 stderr + 非零退出
 
-## エラーハンドリング
+## 错误处理
 
-遷移が失敗した場合（不正な遷移など）:
-1. 現在の状態と許可された遷移を stderr に出力
-2. 非ゼロ終了コードを返す
-3. 呼び出し元（workflow）でエスカレーション処理を行う
+转换失败时（如非法转换）:
+1. 向 stderr 输出当前状态和允许的转换
+2. 返回非零退出码
+3. 由调用方（workflow）进行升级处理

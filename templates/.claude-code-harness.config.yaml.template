@@ -4,8 +4,8 @@
 # This file lets you customize cleanup thresholds.
 # If omitted, default values are used.
 
-# Plans.md の配置場所（デフォルト: "." = プロジェクトルート）
-# 例: ".claude/memory" にすると SSOT と統一配置
+# Plans.md 的配置位置（默认: "." = 项目根目录）
+# 例: ".claude/memory" 则与 SSOT 统一配置
 plansDirectory: "."
 
 cleanup:

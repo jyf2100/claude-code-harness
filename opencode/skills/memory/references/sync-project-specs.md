@@ -1,103 +1,103 @@
 # Sync Project Specs Reference
 
-**作業完了後に「Plans.md ちゃんと更新されてるかな？」と不安な時に実行します。**
+**工作完成后不确定「Plans.md 是否正确更新了」时执行。**
 
 ## When to Use
 
 | Situation | Command to Use |
 |-----------|----------------|
-| "How far along? What's next?" | `/sync-status` (use this first) |
-| "Worked on it but forgot if I updated Plans.md" | **This command** |
-| "Started from old template, format might be outdated" | **This command** |
+| "进展如何？接下来做什么？" | `/sync-status`（首先用这个） |
+| "做了工作但忘记是否更新 Plans.md" | **此命令** |
+| "从旧模板开始，格式可能过时" | **此命令** |
 
-> Tip: Usually `/sync-status` is sufficient. Use this for "just in case" or "format migration".
+> Tip: 通常 `/sync-status` 就够了。用这个作为「以防万一」或「格式迁移」。
 
 ---
 
 ## Purpose
 
-Aligns project specs/docs (e.g., `Plans.md`, `AGENTS.md`, `.claude/rules/*`) with latest claude-code-harness operations (**PM ↔ Impl**, `pm:*` markers, handoff commands).
+将项目规格/文档（如 `Plans.md`、`AGENTS.md`、`.claude/rules/*`）与最新 claude-code-harness 操作（**PM ↔ Impl**、`pm:*` 标记、handoff 命令）对齐。
 
 ## VibeCoder Phrases
 
-- "**Worked on it but unsure if Plans.md is updated**" → this command
-- "**Want to align old format files to latest**" → Unifies markers and descriptions
-- "**Keep manual changes, fix only needed parts**" → Preserves existing text, applies only diffs
+- "**做了工作但不确定 Plans.md 是否更新**" → 此命令
+- "**想将旧格式文件统一到最新**" → 统一标记和说明
+- "**保留手动更改，只修复必要部分**" → 保留现有文本，只应用差分
 
 ---
 
-## Sync Targets (Only Existing Files)
+## Sync Targets（仅现有文件）
 
 - `Plans.md`
 - `AGENTS.md`
-- `CLAUDE.md` (only if has operation description)
+- `CLAUDE.md`（仅当有操作说明时）
 - `.claude/rules/workflow.md`
 - `.claude/rules/plans-management.md`
 
 ---
 
-## Sync Content (Minimal Diff Policy)
+## Sync Content（最小差分方针）
 
-### 1. Marker Normalization
+### 1. 标记规范化
 
-- **Standard**: `pm:依頼中`, `pm:確認済`
-- **Compatible**: `cursor:依頼中`, `cursor:確認済` (treated as synonyms)
+- **标准**: `pm:依頼中`, `pm:確認済`
+- **兼容**: `cursor:依頼中`, `cursor:確認済`（视为同义词）
 
-### 2. State Transition Documentation
+### 2. 状态转换文档化
 
 ```
 pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
 ```
 
-### 3. Handoff Routes Addition
+### 3. 添加 Handoff 路由
 
-- PM→Impl: `/handoff-to-impl-claude` (for PM Claude)
+- PM→Impl: `/handoff-to-impl-claude`（用于 PM Claude）
 - Impl→PM: `/handoff-to-pm-claude`
-- Cursor workflow: `/handoff-to-claude`, `/handoff-to-cursor`
+- Cursor 工作流: `/handoff-to-claude`, `/handoff-to-cursor`
 
-### 4. Notification File Description
+### 4. 通知文件说明
 
-- `.claude/state/pm-notification.md` (compatible: `.claude/state/cursor-notification.md`)
-
----
-
-## Execution Steps
-
-### Step 1: Collect Current State (Required)
-
-- Check target file existence and extract relevant sections
-- Tally `Plans.md` marker occurrences (pm/cursor/cc)
-
-### Step 2: Declare Change Policy (Required)
-
-Tell user:
-- Preserve existing text in principle (no destructive rewrites)
-- Additions/replacements limited to "minimum necessary for operation"
-- Changes shown as diffs, adjust if needed
-
-### Step 3: Sync (Apply Diffs)
-
-- **Plans.md**: Add `pm:*` to marker legend, note `cursor:*` as compatible
-- **AGENTS.md**: Update roles to PM/Impl
-- **rules/*.md**: Change `cursor:*` to `pm:*` standard + compatibility note
-- **CLAUDE.md**: Add PM↔Impl routes if operation section exists
-
-### Step 4: Finish (Required)
-
-- Run `/sync-status` to verify markers
-- Use `/remember` to lock "project-specific operations" if needed
+- `.claude/state/pm-notification.md`（兼容: `.claude/state/cursor-notification.md`）
 
 ---
 
-## Parallel Execution
+## 执行步骤
 
-File reads can be parallelized:
+### Step 1: 收集当前状态（必需）
+
+- 确认目标文件存在并提取相关区块
+- 统计 `Plans.md` 标记出现次数（pm/cursor/cc）
+
+### Step 2: 声明更改方针（必需）
+
+告诉用户：
+- 原则上保留现有文本（不破坏性重写）
+- 添加/替换限于「操作所需的最小必要」
+- 更改以差分显示，需要时调整
+
+### Step 3: 同步（应用差分）
+
+- **Plans.md**: 添加 `pm:*` 到标记图例，注明 `cursor:*` 为兼容
+- **AGENTS.md**: 更新角色为 PM/Impl
+- **rules/*.md**: 将 `cursor:*` 更改为 `pm:*` 标准 + 兼容说明
+- **CLAUDE.md**: 如有操作区块则添加 PM↔Impl 路由
+
+### Step 4: 完成（必需）
+
+- 运行 `/sync-status` 验证标记
+- 需要时用 `/remember` 锁定「项目特定操作」
+
+---
+
+## 并行执行
+
+文件读取可以并行：
 
 | Process | Parallel |
 |---------|----------|
-| Plans.md read | ✅ Independent |
-| AGENTS.md read | ✅ Independent |
-| CLAUDE.md read | ✅ Independent |
-| rules/*.md read | ✅ Independent |
+| Plans.md 读取 | ✅ 独立 |
+| AGENTS.md 读取 | ✅ 独立 |
+| CLAUDE.md 读取 | ✅ 独立 |
+| rules/*.md 读取 | ✅ 独立 |
 
-Updates run serially for consistency.
+更新为保证一致性串行运行。

@@ -1,38 +1,38 @@
-# Slide Generator - Nano Banana Pro スライド画像生成
+# Slide Generator - Nano Banana Pro 幻灯片图片生成
 
-Nano Banana Pro（Google DeepMind）を使用して、プロジェクト紹介スライド画像を自動生成します。
+使用 Nano Banana Pro（Google DeepMind）自动生成项目介绍幻灯片图片。
 
 ---
 
 ## 概要
 
-`/generate-slide` の Step 3 で実行される画像生成ロジックです。
-3つのデザインパターンそれぞれで2枚ずつ生成し、品質チェック後にベスト1枚を選出します。
+在 `/generate-slide` 的 Step 3 中执行的图片生成逻辑。
+为3种设计模式各生成2张图片，经过质量检查后选出最佳1张。
 
 ## 前提条件
 
-- `GOOGLE_AI_API_KEY` 環境変数が設定済み
-- Google AI Studio で Nano Banana Pro（Gemini 3 Pro Image Preview）が有効化済み
+- `GOOGLE_AI_API_KEY` 环境变量已设置
+- Google AI Studio 已启用 Nano Banana Pro（Gemini 3 Pro Image Preview）
 
 ---
 
-## API 仕様
+## API 规格
 
-> **共通仕様**: `generate-video/references/image-generator.md` と同一の Nano Banana Pro API を使用。
+> **通用规格**: 使用与 `generate-video/references/image-generator.md` 相同的 Nano Banana Pro API
 
-### エンドポイント
+### 端点
 
 ```
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent
 ```
 
-### 認証
+### 认证
 
 ```bash
 x-goog-api-key: ${GOOGLE_AI_API_KEY}
 ```
 
-### リクエスト形式
+### 请求格式
 
 ```json
 {
@@ -51,7 +51,7 @@ x-goog-api-key: ${GOOGLE_AI_API_KEY}
 }
 ```
 
-### レスポンス形式
+### 响应格式
 
 ```json
 {
@@ -73,32 +73,32 @@ x-goog-api-key: ${GOOGLE_AI_API_KEY}
 
 ---
 
-## デフォルト設定
+## 默认设置
 
-| 設定 | 値 | 説明 |
-|------|-----|------|
-| モデル | `gemini-3-pro-image-preview` | プロ品質（推奨） |
-| アスペクト比 | `16:9` | プレゼンテーション標準 |
-| 解像度 | `2K` | 2048px、標準品質 |
-| responseModalities | `["TEXT", "IMAGE"]` | テキスト説明 + 画像 |
+| 设置 | 值 | 说明 |
+|-----|-----|------|
+| 模型 | `gemini-3-pro-image-preview` | 专业品质（推荐） |
+| 宽高比 | `16:9` | 演示标准 |
+| 分辨率 | `2K` | 2048px，标准品质 |
+| responseModalities | `["TEXT", "IMAGE"]` | 文本说明 + 图片 |
 
-### アスペクト比オプション
+### 宽高比选项
 
-| 比率 | 用途 |
-|------|------|
-| `16:9` | プレゼン・スクリーン（推奨） |
-| `4:3` | 従来型プレゼン |
-| `1:1` | SNS投稿、アイコン用 |
+| 比例 | 用途 |
+|-----|------|
+| `16:9` | 演示・屏幕（推荐） |
+| `4:3` | 传统演示 |
+| `1:1` | SNS 发布、图标用 |
 
 ---
 
-## 3つのデザインパターン
+## 3种设计模式
 
 ### Pattern A: Minimalist
 
-**コンセプト**: 余白とタイポグラフィ主体。洗練された印象。
+**概念**: 以留白和排版为主体，展现精致印象。
 
-**プロンプトテンプレート**:
+**提示词模板**:
 
 ```
 Create a minimalist project introduction slide for "{project_name}".
@@ -117,7 +117,7 @@ Design style:
 Important: This is a single slide image, not a deck. Focus on clear visual hierarchy with the project name prominent and key value proposition visible.
 ```
 
-**視覚イメージ**:
+**视觉意象**:
 ```
 +------------------------------------------+
 |                                          |
@@ -136,9 +136,9 @@ Important: This is a single slide image, not a deck. Focus on clear visual hiera
 
 ### Pattern B: Infographic
 
-**コンセプト**: データやフローの可視化。情報量が多いが整理されている。
+**概念**: 数据和流程的可视化。信息量大但井井有条。
 
-**プロンプトテンプレート**:
+**提示词模板**:
 
 ```
 Create an infographic-style project introduction slide for "{project_name}".
@@ -158,7 +158,7 @@ Design style:
 Important: This is a single slide image. Organize information visually with icons, sections, and clear data hierarchy. Make the project's value immediately understandable through visual structure.
 ```
 
-**視覚イメージ**:
+**视觉意象**:
 ```
 +------------------------------------------+
 |  PROJECT NAME          [icon] [icon]     |
@@ -176,9 +176,9 @@ Important: This is a single slide image. Organize information visually with icon
 
 ### Pattern C: Hero Visual
 
-**コンセプト**: 大きなビジュアルとキャッチコピーでインパクト重視。
+**概念**: 以大视觉和醒目标语为主，重视冲击力。
 
-**プロンプトテンプレート**:
+**提示词模板**:
 
 ```
 Create a hero-style project introduction slide for "{project_name}".
@@ -197,7 +197,7 @@ Design style:
 Important: This is a single slide image. Prioritize visual impact and emotional resonance. The project name and core value should be immediately visible with a compelling visual backdrop.
 ```
 
-**視覚イメージ**:
+**视觉意象**:
 ```
 +------------------------------------------+
 |                                          |
@@ -215,59 +215,59 @@ Important: This is a single slide image. Prioritize visual impact and emotional 
 
 ---
 
-## プロンプト構成
+## 提示词构成
 
-### 基本構造
+### 基本结构
 
 ```
-[プロジェクト概要] + [デザインスタイル] + [品質指定] + [制約]
+[项目概述] + [设计风格] + [质量指定] + [约束]
 ```
 
-### トーン別の修飾語
+### 风格别修饰词
 
-| トーン | 修飾語 |
-|--------|--------|
-| テック | `dark theme, code-inspired, terminal aesthetic, neon accents` |
-| カジュアル | `bright colors, friendly, playful, approachable` |
-| コーポレート | `formal, trustworthy, blue tones, clean lines, business` |
-| クリエイティブ | `bold, artistic, gradient, unconventional layout` |
+| 风格 | 修饰词 |
+|-----|--------|
+| 科技 | `dark theme, code-inspired, terminal aesthetic, neon accents` |
+| 休闲 | `bright colors, friendly, playful, approachable` |
+| 企业 | `formal, trustworthy, blue tones, clean lines, business` |
+| 创意 | `bold, artistic, gradient, unconventional layout` |
 
-### 品質向上キーワード
+### 质量提升关键词
 
-| キーワード | 効果 |
-|-----------|------|
-| `professional presentation quality` | プレゼン品質 |
-| `clean design` | 不要要素の削減 |
-| `2K resolution` | 高解像度 |
-| `clear visual hierarchy` | 視覚的階層 |
-| `modern aesthetic` | 現代的デザイン |
+| 关键词 | 效果 |
+|-------|------|
+| `professional presentation quality` | 演示品质 |
+| `clean design` | 减少多余元素 |
+| `2K resolution` | 高分辨率 |
+| `clear visual hierarchy` | 视觉层次 |
+| `modern aesthetic` | 现代设计 |
 
-### 避けるべきプロンプト
+### 应避免的提示词
 
-| NG パターン | 理由 |
-|------------|------|
-| 曖昧な指示 | 「いい感じのスライド」→ 結果が不安定 |
-| 過度に複雑 | 要素が多すぎると品質低下 |
-| 長文テキスト指定 | AI 生成テキストは品質不安定。キーワード程度に留める |
-| 著作権物 | ブランドロゴ等は生成不可 |
+| NG 模式 | 理由 |
+|--------|------|
+| 模糊指示 | 「好看的感觉」→ 结果不稳定 |
+| 过度复杂 | 元素太多会降低质量 |
+| 长文本指定 | AI 生成文本质量不稳定。只保留关键词程度 |
+| 版权物 | 品牌 logo 等无法生成 |
 
 ---
 
-## Bash 実行例
+## Bash 执行示例
 
-### 環境変数確認
+### 环境变量确认
 
 ```bash
 test -n "$GOOGLE_AI_API_KEY" && echo "GOOGLE_AI_API_KEY is set" || { echo "GOOGLE_AI_API_KEY is not set"; exit 1; }
 ```
 
-### 出力ディレクトリ作成
+### 输出目录创建
 
 ```bash
 mkdir -p out/slides/selected
 ```
 
-### curl での画像生成
+### curl 图片生成
 
 ```bash
 PROMPT='Create a minimalist project introduction slide for "My Project". Clean whitespace-dominant layout, typography-driven, professional presentation quality, 2K resolution.'
@@ -292,13 +292,13 @@ curl -s -X POST \
   }" \
   -o /tmp/slide_response.json
 
-# Base64 デコードして PNG 保存
+# Base64 解码并保存为 PNG
 cat /tmp/slide_response.json | jq -r '.candidates[0].content.parts[] | select(.inline_data) | .inline_data.data' | head -1 | base64 -d > out/slides/minimalist_1.png
 ```
 
-> **注意**: 1回のリクエストで1枚の画像が生成されます。2枚必要な場合は2回リクエストを実行してください。
+> **注意**: 1次请求生成1张图片。需要2张时请执行2次请求。
 
-### 並列生成（6枚一括）
+### 并行生成（6张一次性）
 
 ```bash
 mkdir -p out/slides/selected
@@ -330,14 +330,14 @@ generate_slide() {
     }" \
     -o "/tmp/slide_${pattern}_${index}.json"
 
-  # Base64 デコード
+  # Base64 解码
   cat "/tmp/slide_${pattern}_${index}.json" \
     | jq -r '.candidates[0].content.parts[] | select(.inline_data) | .inline_data.data' \
     | head -1 \
     | base64 -d > "out/slides/${pattern}_${index}.png"
 }
 
-# 並列実行（バックグラウンドジョブ）
+# 并行执行（后台作业）
 generate_slide "minimalist" "1" "$MINIMALIST_PROMPT" &
 generate_slide "minimalist" "2" "$MINIMALIST_PROMPT" &
 generate_slide "infographic" "1" "$INFOGRAPHIC_PROMPT" &
@@ -346,79 +346,79 @@ generate_slide "hero" "1" "$HERO_PROMPT" &
 generate_slide "hero" "2" "$HERO_PROMPT" &
 wait
 
-echo "6枚の生成が完了しました"
+echo "6张生成完成"
 ```
 
 ---
 
-## 再生成時のプロンプト改善戦略
+## 重新生成时的提示词改进策略
 
-### 試行ごとの改善
+### 每次尝试的改进
 
-| 試行 | 改善戦略 |
-|------|---------|
-| 1回目 | 初期プロンプトで生成 |
-| 2回目 | 品質指摘を反映してプロンプト調整（具体的な修飾語を追加） |
-| 3回目 | スタイルを大幅変更、より具体的な構図指示を追加 |
+| 尝试 | 改进策略 |
+|-----|---------|
+| 第1次 | 使用初始提示词生成 |
+| 第2次 | 反映质量意见，调整提示词（添加具体修饰词） |
+| 第3次 | 大幅更改风格，添加更具体的构图指示 |
 
-### 問題カテゴリ別の改善
+### 问题类别别的改进
 
-| 問題 | 改善プロンプト追加 |
-|------|-------------------|
-| テキストが読めない | `no text elements, text-free design` を追加 |
-| レイアウトが崩れている | `balanced composition, grid-based layout` を追加 |
-| 情報量が不足 | 具体的な機能名・数値をプロンプトに明記 |
-| プロフェッショナル感が低い | `corporate quality, polished, refined` を追加 |
-| 色が合わない | 具体的な HEX カラーコードを指定 |
+| 问题 | 添加改进提示词 |
+|-----|---------------|
+| 文本不可读 | 添加 `no text elements, text-free design` |
+| 布局崩坏 | 添加 `balanced composition, grid-based layout` |
+| 信息量不足 | 在提示词中明确具体功能名・数值 |
+| 专业感低 | 添加 `corporate quality, polished, refined` |
+| 颜色不匹配 | 指定具体 HEX 颜色代码 |
 
 ---
 
-## エラーハンドリング
+## 错误处理
 
-### API エラー
+### API 错误
 
-| エラーコード | 原因 | 対処 |
-|-------------|------|------|
-| `400` | 不正なプロンプト | プロンプト内容を確認・修正 |
-| `401` | 認証失敗 | API キーを確認 |
-| `429` | レート制限 | 60秒待機して再試行 |
-| `500` | サーバーエラー | 30秒待機して再試行 |
+| 错误码 | 原因 | 处理 |
+|-------|------|------|
+| `400` | 无效提示词 | 确认提示词内容并修正 |
+| `401` | 认证失败 | 确认 API 密钥 |
+| `429` | 速率限制 | 等待60秒后重试 |
+| `500` | 服务器错误 | 等待30秒后重试 |
 
-### jq パースエラー
+### jq 解析错误
 
-レスポンスに画像データが含まれない場合:
+响应中不包含图片数据时:
 
 ```bash
-# レスポンス確認
+# 确认响应
 cat /tmp/slide_response.json | jq '.candidates[0].content.parts | length'
 
-# エラーメッセージ確認
+# 确认错误消息
 cat /tmp/slide_response.json | jq '.error'
 ```
 
 ---
 
-## コスト見積もり
+## 成本估算
 
-### 1回の実行あたり
+### 每次执行
 
 ```
-基本: 6枚 x ~$0.06 = ~$0.36（2K解像度）
-最大（全パターンリトライ3回）: 18枚 x ~$0.06 = ~$1.08
+基本: 6张 x ~$0.06 = ~$0.36（2K分辨率）
+最大（全模式重试3次）: 18张 x ~$0.06 = ~$1.08
 ```
 
-### 解像度別コスト
+### 分辨率别成本
 
-| 解像度 | 1枚あたり | 6枚（基本） | 18枚（最大） |
-|--------|----------|-------------|-------------|
+| 分辨率 | 每张 | 6张（基本） | 18张（最大） |
+|--------|-----|------------|-------------|
 | `1K` | ~$0.02 | ~$0.12 | ~$0.36 |
 | `2K` | ~$0.06 | ~$0.36 | ~$1.08 |
 | `4K` | ~$0.12 | ~$0.72 | ~$2.16 |
 
 ---
 
-## 関連ドキュメント
+## 相关文档
 
-- [slide-quality-check.md](./slide-quality-check.md) — 品質判定ロジック
-- [generate-video/references/image-generator.md](../../generate-video/references/image-generator.md) — API 共通仕様（詳細）
-- [generate-video/references/image-quality-check.md](../../generate-video/references/image-quality-check.md) — 動画用品質判定（参考）
+- [slide-quality-check.md](./slide-quality-check.md) — 质量判定逻辑
+- [generate-video/references/image-generator.md](../../generate-video/references/image-generator.md) — API 通用规格（详细）
+- [generate-video/references/image-quality-check.md](../../generate-video/references/image-quality-check.md) — 视频用质量判定（参考）

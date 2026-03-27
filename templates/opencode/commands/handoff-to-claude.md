@@ -1,56 +1,56 @@
 ---
-description: Claude Codeへの作業依頼プロンプトを生成
+description: 生成向Claude Code发出工作请求的提示词
 ---
 
 # /handoff-to-claude
 
-あなたは **OpenCode (PM)** です。Claude Code に渡す依頼文を、コピー&ペーストできる形で生成してください。
+你是 **OpenCode (PM)**。请生成可以复制粘贴的、传递给 Claude Code 的委托文本。
 
-## 入力
+## 输入
 
-- @Plans.md（対象タスクを特定）
-- 可能なら `git status -sb` と `git diff --name-only`
+- @Plans.md（确定目标任务）
+- 如果可以的话 `git status -sb` 和 `git diff --name-only`
 
-## 出力（そのままClaude Codeに貼る）
+## 输出（直接粘贴到 Claude Code）
 
-次の Markdown を出力してください：
+请输出以下 Markdown：
 
 ```markdown
 /claude-code-harness:core:work
-<!-- ultrathink: PM からの依頼は原則重要タスクのため、常に high effort を指定 -->
+<!-- ultrathink: PM 的请求原则上都是重要任务，因此始终指定 high effort -->
 ultrathink
 
-## 依頼
-以下を実装してください。
+## 请求
+请实现以下内容。
 
-- 対象タスク:
-  - （Plans.md から該当タスクを列挙）
+- 目标任务:
+  - （从 Plans.md 列出相关任务）
 
-## 制約
-- 既存のコードスタイルに従う
-- 変更は必要最小限
-- テスト/ビルド手順があれば提示
+## 约束
+- 遵循现有代码风格
+- 更改保持在最小限度
+- 如有测试/构建步骤请提供
 
-## 受入条件
-- （3〜5個）
+## 验收条件
+- （3-5个）
 
-## Evals（採点/検証）
-Plans.md の「評価（Evals）」に従って、**outcome/transcript を採点できる形**で進めてください。
+## Evals（评分/验证）
+按照 Plans.md 的「评价（Evals）」，以 **可对 outcome/transcript 进行评分的形式** 推进。
 
-- tasks（シナリオ）:
-  - （例: 具体的な入力/手順/期待結果）
-- trials（回数/集計）:
-  - （例: 3回、成功率 + 中央値）
-- graders（採点）:
+- tasks（场景）:
+  - （例: 具体输入/步骤/期待结果）
+- trials（次数/汇总）:
+  - （例: 3次、成功率 + 中位数）
+- graders（评分）:
   - outcome:
-    - （例: unit tests / typecheck / ファイル状態）
+    - （例: unit tests / typecheck / 文件状态）
   - transcript:
-    - （例: 禁止行為なし / 余計な変更なし）
-- 実行コマンド（可能なら）:
-  - （例: `npm test`, `./tests/validate-plugin.sh` など）
+    - （例: 无禁止行为 / 无多余更改）
+- 执行命令（如果可能）:
+  - （例: `npm test`, `./tests/validate-plugin.sh` 等）
 
 ## 参考
-- 関連ファイル（あれば）
+- 相关文件（如有）
 
-**作業完了後**: `/handoff-to-opencode` を実行して完了報告すること
+**工作完成后**: 请执行 `/handoff-to-opencode` 报告完成
 ```

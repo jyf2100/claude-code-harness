@@ -112,54 +112,54 @@ Use a version bump only when you are intentionally cutting a release.
 - **Local (recommended)**: run `./scripts/sync-version.sh check` before committing
 - **CI (recommended)**: run `./tests/validate-plugin.sh` and `./scripts/ci/check-consistency.sh` on PRs
 
-## CHANGELOG 記載ルール（必須）
+## CHANGELOG 记录规则（必读）
 
-**[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠**
+**遵循 [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) 格式**
 
-各バージョンエントリには以下のセクションを使用:
+每个版本条目使用以下章节：
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Added
-- 新機能について
+- 新功能说明
 
 ### Changed
-- 既存機能の変更について
+- 现有功能的变更说明
 
 ### Deprecated
-- 間もなく削除される機能について
+- 即将删除的功能说明
 
 ### Removed
-- 削除された機能について
+- 已删除的功能说明
 
 ### Fixed
-- バグ修正について
+- 错误修复说明
 
 ### Security
-- 脆弱性に関する場合
+- 漏洞相关说明
 
-#### Before/After（大きな変更時のみ）
+#### Before/After（仅用于重大变更）
 
 | Before | After |
 |--------|-------|
-| 変更前の状態 | 変更後の状態 |
+| 变更前的状态 | 变更后的状态 |
 ```
 
-**セクション使い分け**:
+**章节使用规则**：
 
-| セクション | 使うとき |
-|------------|----------|
-| Added | 完全に新しい機能を追加したとき |
-| Changed | 既存機能の動作や体験を変更したとき |
-| Deprecated | 将来削除予定の機能を告知するとき |
-| Removed | 機能やコマンドを削除したとき |
-| Fixed | バグや不具合を修正したとき |
-| Security | セキュリティ関連の修正をしたとき |
+| 章节 | 使用时机 |
+|------|----------|
+| Added | 添加全新的功能时 |
+| Changed | 更改现有功能的行为或体验时 |
+| Deprecated | 宣布即将删除的功能时 |
+| Removed | 删除功能或命令时 |
+| Fixed | 修复错误或缺陷时 |
+| Security | 进行安全相关的修复时 |
 
-**Before/After テーブル**: 大きな体験変化（コマンド廃止・統合、ワークフロー変更、破壊的変更）があるときのみ追加。軽微な修正では省略可。
+**Before/After 表格**：仅在体验发生重大变化（命令废弃/合并、工作流更改、破坏性变更）时添加。轻微修正可省略。
 
-**バージョン比較リンク**: CHANGELOG.md 末尾に `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z` 形式で追加
+**版本比较链接**：在 CHANGELOG.md 末尾以 `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z` 格式添加
 
 ---
 

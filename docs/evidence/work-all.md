@@ -1,41 +1,41 @@
 # `/harness-work all` Evidence Pack
 
-最終更新: 2026-03-06
+Last Updated: 2026-03-06
 
-この evidence pack は、`/harness-work all` の主張を「実行したら何が残るか」で確認するための最小セットです。
+This evidence pack is a minimal set for verifying `/harness-work all` claims by "what remains after execution".
 
 ## What is included
 
 | Scenario | Goal | Expected result |
 |----------|------|-----------------|
-| success | 小さな TODO repo を `work all` で完了させる | テストが green になり、追加コミットが残る |
-| failure | 不可能なタスクを投げて quality gate を確認する | テストは fail のまま、追加コミットは作られない |
+| success | Complete a small TODO repo via `work all` | Tests go green, additional commits remain |
+| failure | Throw an impossible task and verify quality gate | Tests stay failed, no additional commits created |
 
 ## Fixtures
 
 - `tests/fixtures/work-all-success/`
 - `tests/fixtures/work-all-failure/`
 
-どちらも baseline では `npm test` が失敗するように作ってあります。
+Both are built so `npm test` fails at baseline.
 
 ## Smoke vs Full
 
 | Mode | Command | What it does |
 |------|---------|--------------|
-| CI smoke | `./scripts/evidence/run-work-all-smoke.sh` | fixture の整合と baseline failure を確認し、Claude 実行コマンド preview を残す |
-| Local full | `./scripts/evidence/run-work-all-success.sh --full` | Claude CLI で success scenario を実行し、rate limit 時は replay overlay で artifact を完成させる |
-| Local full (strict) | `./scripts/evidence/run-work-all-success.sh --full --strict-live` | replay を使わず、live Claude 実行だけで success を証明する |
-| Local full | `./scripts/evidence/run-work-all-failure.sh --full` | Claude CLI で failure scenario を実行し、commit が増えないことを確認する |
+| CI smoke | `./scripts/evidence/run-work-all-smoke.sh` | Verify fixture integrity and baseline failure, leave Claude execution command preview |
+| Local full | `./scripts/evidence/run-work-all-success.sh --full` | Run success scenario with Claude CLI, complete artifact via replay overlay when rate limited |
+| Local full (strict) | `./scripts/evidence/run-work-all-success.sh --full --strict-live` | Prove success with live Claude execution only, without replay |
+| Local full | `./scripts/evidence/run-work-all-failure.sh --full` | Run failure scenario with Claude CLI, verify no commit increase |
 
-artifact は既定で `out/evidence/work-all/` に保存されます。
+Artifacts are saved to `out/evidence/work-all/` by default.
 
 ## Prerequisites for full runs
 
-- `claude --version` が通ること（strict live を使う場合は必須）
-- Claude Code で認証済みであること
-- この repo の root から実行すること
+- `claude --version` works (required for strict live)
+- Authenticated in Claude Code
+- Run from this repo's root
 
-full mode は次のコマンドを内部で使います。
+Full mode uses these commands internally:
 
 ```bash
 claude --plugin-dir /path/to/claude-code-harness \
@@ -60,16 +60,16 @@ claude --plugin-dir /path/to/claude-code-harness \
 - `execution-mode.txt`
 - `fallback-reason.txt`
 - `rate-limit-detected.txt`
-- `replay.log`（rate limit fallback が発生したとき）
+- `replay.log` (when rate limit fallback occurs)
 
 ## Interpretation
 
-- success で `post_test_status=0` かつ `final_commits > baseline_commits` なら、最小シナリオでは「完走して commit まで到達した」証拠になる
-- failure で `post_test_status!=0` かつ `final_commits == baseline_commits` なら、少なくとも「失敗を隠して commit はしなかった」証拠になる
-- 失敗 fixture でテスト改ざんが起きた場合も diff artifact に残るので、quality gate の振る舞いをレビューしやすい
+- For success: if `post_test_status=0` and `final_commits > baseline_commits`, this is evidence of "completed to commit in minimum scenario"
+- For failure: if `post_test_status!=0` and `final_commits == baseline_commits`, this is at minimum evidence of "didn't hide failure and commit"
+- If test tampering occurs in failure fixture, it remains in diff artifact, making quality gate behavior easy to review
 
 ## Live vs Replay
 
-- `execution_mode=live` なら、Claude CLI がそのまま success scenario を完走した artifact
-- `execution_mode=replay-after-rate-limit` なら、Claude 実行は rate limit で止まり、fixture に同梱した replay overlay を適用して happy path artifact を作ったことを示す
-- 公開文面で「live Claude run で証明済み」と言いたい場合は `--strict-live` の成功 artifact を別途取る
+- If `execution_mode=live`, this is an artifact where Claude CLI completed the success scenario as-is
+- If `execution_mode=replay-after-rate-limit`, this indicates Claude execution stopped due to rate limit and happy path artifact was created by applying replay overlay bundled with fixture
+- To claim "proven with live Claude run" in public text, obtain separate `--strict-live` success artifact

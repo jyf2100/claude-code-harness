@@ -1,32 +1,32 @@
 # Plans Maintenance
 
-最終更新: 2026-03-06
+Last Updated: 2026-03-06
 
-`Plans.md` は正本ですが、長期間そのまま伸ばし続けると「過去の完了表現」と「現在の repo 状態」がずれやすくなります。
-この文書は drift を減らすための最小運用ルールです。
+`Plans.md` is the master copy, but leaving it to grow indefinitely causes drift between "past completion expressions" and "current repo state".
+This document describes minimal operational rules to reduce drift.
 
 ## Lightweight Rule
 
-1. 新しい大きな改善フェーズを始める前に、直近 1〜2 phase だけを active zone として扱う
-2. それより古い完了フェーズは、必要なら `docs/plans-history/` などの履歴置き場へ退避する
-3. 「削除」「移行完了」など current tree と衝突しやすい文言は、後続フェーズで状態が変わった時点で補正文を入れる
-4. README / docs / `.gitignore` / build scripts の扱いを変えたときは、同じ commit で `Plans.md` の表現も直す
+1. Before starting a new major improvement phase, treat only the most recent 1-2 phases as active zone
+2. For older completed phases, archive to `docs/plans-history/` or similar if needed
+3. For phrases that conflict with current tree like "deleted", "migration complete", add correction notes when state changes in subsequent phases
+4. When changing README / docs / `.gitignore` / build scripts handling, fix `Plans.md` expressions in the same commit
 
 ## When to Archive
 
-次のどれかを満たしたら、古い完了フェーズのアーカイブを検討する。
+Consider archiving old completed phases when any of these apply:
 
-- `Plans.md` の主要作業対象が 3 phase 以上前まで見に行かないと分からない
-- 「削除済み」「統合済み」などの語が current repo と誤解を生む
-- sync-status のたびに過去履歴の読み込みコストが気になる
+- Main work targets in `Plans.md` require looking back 3+ phases
+- Words like "Deleted", "Integrated" cause misunderstandings with current repo
+- Loading cost of past history becomes noticeable during sync-status
 
 ## Recommended Shape
 
-- `Plans.md`: 現在の active phase と、直近の完了 phase のみ
-- `docs/plans-history/`: 過去 phase の固定スナップショット
-- `docs/distribution-scope.md`: 残置物や配布境界の current truth
+- `Plans.md`: Current active phase and recent completed phases only
+- `docs/plans-history/`: Fixed snapshots of past phases
+- `docs/distribution-scope.md`: Current truth about residue and distribution boundaries
 
 ## Phase 21 Decision
 
-- 今回は archive までは実施せず、まずは **誤解を生む完了表現の補正** を優先した
-- 次の大きな phase 追加前に、Phase 17 以前の完了履歴を `docs/plans-history/` へ退避するのが推奨
+- This time, archiving was not implemented; prioritized **correcting misleading completion expressions** first
+- Before the next major phase addition, archiving Phase 17 and earlier completion history to `docs/plans-history/` is recommended

@@ -1,5 +1,5 @@
 ---
-description: 2エージェントワークフローの基本ルール
+description: 2代理工作流的基本规则
 alwaysApply: true
 _harness_template: "rules/workflow.md.template"
 _harness_version: "2.5.27"
@@ -7,42 +7,42 @@ _harness_version: "2.5.27"
 
 # 2-Agent Workflow Rules
 
-このプロジェクトは **PM ↔ Impl** の2ロールワークフローを採用しています。
-PMは **Cursor** でも **PM Claude** でもOKです（ソロ運用では PM Claude を推奨）。
+本项目采用 **PM ↔ Impl** 的2角色工作流。
+PM 可以是 **Cursor** 也可以是 **PM Claude**（单人运营推荐 PM Claude）。
 
-## 役割分担
+## 角色分工
 
-| エージェント | 責務 |
+| 代理 | 职责 |
 |-------------|------|
-| **PM（Cursor / PM Claude）** | 計画・レビュー・意思決定・（必要なら）本番デプロイ |
-| **Impl（Claude Code / Impl Claude）** | 実装・テスト・コミット・（必要なら）staging |
+| **PM（Cursor / PM Claude）** | 计划、审查、决策、（必要时）生产部署 |
+| **Impl（Claude Code / Impl Claude）** | 实现、测试、提交、（必要时）staging |
 
-## タスク管理
+## 任务管理
 
-- タスクは `Plans.md` で一元管理
-- マーカーでステータスを追跡:
-  - `pm:依頼中` → PM から依頼（互換: `cursor:依頼中`）
-  - `cc:WIP` → Claude Code 作業中
-  - `cc:完了` → Claude Code 完了
-  - `pm:確認済` → PM レビュー完了（互換: `cursor:確認済`）
+- 任务在 `Plans.md` 中集中管理
+- 用标记跟踪状态:
+  - `pm:依頼中` → PM 请求（兼容: `cursor:依頼中`）
+  - `cc:WIP` → Claude Code 工作中
+  - `cc:完了` → Claude Code 完成
+  - `pm:確認済` → PM 审查完成（兼容: `cursor:確認済`）
 
-## ハンドオフプロトコル
+## 交接协议
 
 ### PM → Impl
-1. Plans.md にタスクを記載し `pm:依頼中` マーカー（互換: `cursor:依頼中`）
-2. **PM Claude の場合**: `/handoff-to-impl-claude` で依頼文を生成
-3. **Cursor の場合**: `/handoff-to-claude`（Cursor側コマンド）で依頼文を生成
-4. Impl Claude（Claude Code）へ貼り付け
+1. 在 Plans.md 中记录任务并标记 `pm:依頼中`（兼容: `cursor:依頼中`）
+2. **PM Claude 时**: 用 `/handoff-to-impl-claude` 生成请求文档
+3. **Cursor 时**: 用 `/handoff-to-claude`（Cursor 端命令）生成请求文档
+4. 粘贴给 Impl Claude（Claude Code）
 
 ### Impl → PM
-1. 作業完了後 `cc:完了` マーカーを付与
-2. **PM Claude の場合**: `/handoff-to-pm-claude` で完了報告を生成
-3. **Cursor の場合**: `/handoff-to-cursor` で完了報告を生成
-4. PMへ貼り付けてレビュー依頼（レビュー後に `pm:確認済`）
+1. 完成工作后添加 `cc:完了` 标记
+2. **PM Claude 时**: 用 `/handoff-to-pm-claude` 生成完成报告
+3. **Cursor 时**: 用 `/handoff-to-cursor` 生成完成报告
+4. 粘贴给 PM 请求审查（审查后 `pm:確認済`）
 
-## 禁止事項
+## 禁止事项
 
-- ❌ 開発用ファイルの外部公開（CLAUDE.md, AGENTS.md, Plans.md）
-- ❌ 明示的な依頼なしの大規模リファクタリング
-- ❌ テストなしの機能追加
-- ❌ 本番環境への直接デプロイ（PM の承認必須）
+- ❌ 对外公开开发文件（CLAUDE.md, AGENTS.md, Plans.md）
+- ❌ 未经明确请求的大规模重构
+- ❌ 没有测试的功能添加
+- ❌ 直接部署到生产环境（必须 PM 批准）

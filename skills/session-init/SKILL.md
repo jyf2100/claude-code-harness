@@ -1,27 +1,27 @@
 ---
 name: session-init
-description: "環境チェックとタスク状況概要でセッション初期化。Use when user mentions starting a session, beginning work, or status checks. Do NOT load for: implementation work, reviews, or mid-session tasks."
+description: "通过环境检查和任务状况概览初始化会话。触发短语：开始会话、开始工作、状态检查。不用于：实现工作、审查、会话中途任务。"
 description-en: "Initializes session with environment checks and task status overview. Use when user mentions starting a session, beginning work, or status checks. Do NOT load for: implementation work, reviews, or mid-session tasks."
-description-ja: "環境チェックとタスク状況概要でセッション初期化。Use when user mentions starting a session, beginning work, or status checks. Do NOT load for: implementation work, reviews, or mid-session tasks."
+description-zh: "通过环境检查和任务状况概览初始化会话。触发短语：开始会话、开始工作、状态检查。不用于：实现工作、审查、会话中途任务。"
 allowed-tools: ["Read", "Write", "Bash"]
 user-invocable: false
 ---
 
-# Session Init Skill
+# Session Init 技能
 
-セッション開始時の環境確認と現在のタスク状況把握を行うスキル。
+会话开始时进行环境确认和当前任务状况把握的技能。
 
 ---
 
-## トリガーフレーズ
+## 触发短语
 
-このスキルは以下のフレーズで起動します：
+此技能由以下短语启动：
 
-- 「セッション開始」
-- 「作業開始」
-- 「今日の作業を始める」
-- 「状況を確認して」
-- 「何をすればいい？」
+- "开始会话"
+- "开始工作"
+- "开始今天的工作"
+- "确认状况"
+- "应该做什么？"
 - "start session"
 - "what should I work on?"
 
@@ -29,150 +29,150 @@ user-invocable: false
 
 ## 概要
 
-Session Init スキルは、Claude Code セッション開始時に自動的に以下を確認します：
+Session Init 技能会在 Claude Code 会话开始时自动确认以下内容：
 
-1. **Git 状態**: 現在のブランチ、未コミットの変更
-2. **Plans.md**: 進行中タスク、依頼されたタスク
-3. **AGENTS.md**: 役割分担、禁止事項の確認
-4. **前回セッション**: 引き継ぎ事項の確認
-5. **最新 snapshot**: 進捗スナップショットの要約と前回差分
+1. **Git 状态**: 当前分支、未提交的变更
+2. **Plans.md**: 进行中的任务、被请求的任务
+3. **AGENTS.md**: 角色分配、禁止事项的确认
+4. **上次会话**: 交接事项的确认
+5. **最新快照**: 进度快照摘要与上次差异
 
 ---
 
-## 実行手順
+## 执行步骤
 
-### Step 0: ファイル状態チェック（自動整理）
+### Step 0: 文件状态检查（自动整理）
 
-セッション開始前にファイルサイズをチェック：
+会话开始前检查文件大小：
 
 ```bash
-# Plans.md の行数チェック
+# 检查 Plans.md 行数
 if [ -f "Plans.md" ]; then
   lines=$(wc -l < Plans.md)
   if [ "$lines" -gt 200 ]; then
-    echo "⚠️ Plans.md が ${lines} 行です。「整理して」で整理を推奨"
+    echo "⚠️ Plans.md 有 ${lines} 行。建议用"整理"命令整理"
   fi
 fi
 
-# session-log.md の行数チェック
+# 检查 session-log.md 行数
 if [ -f ".claude/memory/session-log.md" ]; then
   lines=$(wc -l < .claude/memory/session-log.md)
   if [ "$lines" -gt 500 ]; then
-    echo "⚠️ session-log.md が ${lines} 行です。「セッションログを整理して」で整理を推奨"
+    echo "⚠️ session-log.md 有 ${lines} 行。建议用"整理会话日志"命令整理"
   fi
 fi
 ```
 
-整理が必要な場合は提案を表示（作業には影響しない）。
+需要整理时显示建议（不影响工作）。
 
-### Step 0.5: 旧ローカルメモリ互換の扱い（任意）
+### Step 0.5: 旧本地内存兼容处理（可选）
 
-現在の標準は Step 0.7 の Unified Harness Memory です。
-旧ローカルメモリ互換の確認は原則不要で、特別な移行確認が必要な場合だけ個別に参照します。
+当前标准是 Step 0.7 的 Unified Harness Memory。
+旧本地内存兼容确认原则上不需要，只在特别需要迁移确认时个别参考。
 
-> **注**: 通常運用ではこのステップをスキップし、共通DB の Resume Pack を唯一の再開導線として扱います。
+> **注**: 常规运营中跳过此步骤，以公共 DB 的 Resume Pack 作为唯一的恢复路径。
 
-### Step 0.7: Unified Harness Memory Resume Pack（必須）
+### Step 0.7: Unified Harness Memory Resume Pack（必须）
 
-Codex / Claude / OpenCode 共通DB（`~/.harness-mem/harness-mem.db`）から再開文脈を取得する。
+从 Codex / Claude / OpenCode 公共 DB（`~/.harness-mem/harness-mem.db`）获取恢复上下文。
 
-必須呼び出し:
+必须调用：
 
 ```text
 harness_mem_resume_pack(project, session_id?, limit=5, include_private=false)
 ```
 
-運用ルール:
-- `project` は必ず現在プロジェクト名を指定
-- `session_id` は `$CLAUDE_SESSION_ID` → `.claude/state/session.json` の `.session_id` の順で取得する
-- `harness_mem_sessions_list(project, limit=1)` の先頭利用は read-only（resume確認）に限定し、`record_checkpoint` / `finalize_session` での書き込みには使わない
-- 取得結果はセッション開始時コンテキストに注入
-- 取得失敗時は `harness_mem_health()` で daemon 状態を確認し、失敗を明示して続行
-- 復旧は `scripts/harness-memd doctor` → `scripts/harness-memd cleanup-stale` → `scripts/harness-memd start` の順で行う
+运营规则：
+- `project` 必须指定当前项目名
+- `session_id` 按 `$CLAUDE_SESSION_ID` → `.claude/state/session.json` 的 `.session_id` 顺序获取
+- `harness_mem_sessions_list(project, limit=1)` 的顶部使用仅限于只读（恢复确认），不用于 `record_checkpoint` / `finalize_session` 的写入
+- 获取结果注入到会话开始时的上下文
+- 获取失败时用 `harness_mem_health()` 确认守护进程状态，明确失败后继续
+- 恢复按 `scripts/harness-memd doctor` → `scripts/harness-memd cleanup-stale` → `scripts/harness-memd start` 顺序进行
 
-### Step 1: 環境確認
+### Step 1: 环境确认
 
-以下を並列で実行：
+并行执行以下内容：
 
 ```bash
-# Git状態
+# Git 状态
 git status -sb
 git log --oneline -3
 ```
 
 ```bash
 # Plans.md
-cat Plans.md 2>/dev/null || echo "Plans.md not found"
+cat Plans.md 2>/dev/null || echo "未找到 Plans.md"
 ```
 
 ```bash
-# AGENTS.md の要点
-head -50 AGENTS.md 2>/dev/null || echo "AGENTS.md not found"
+# AGENTS.md 要点
+head -50 AGENTS.md 2>/dev/null || echo "未找到 AGENTS.md"
 ```
 
-### Step 2: タスク状況の把握
+### Step 2: 把握任务状况
 
-Plans.md から以下を抽出：
+从 Plans.md 提取以下内容：
 
-- `cc:WIP` - 前回から継続中のタスク
-- `pm:依頼中` - PM から新規依頼されたタスク（互換: cursor:依頼中）
-- `cc:TODO` - 未着手だが割り当て済みのタスク
+- `cc:WIP` - 从上次继续中的任务
+- `pm:依赖中` - PM 新请求的任务（兼容：cursor:依赖中）
+- `cc:TODO` - 未开始但已分配的任务
 
-### Step 3: 状況レポートの出力
+### Step 3: 输出状况报告
 
 ```markdown
-## 🚀 セッション開始
+## 🚀 会话开始
 
-**日時**: {{YYYY-MM-DD HH:MM}}
-**ブランチ**: {{branch}}
-**セッションID**: ${CLAUDE_SESSION_ID}
-
----
-
-### 📋 今日のタスク
-
-**優先タスク**:
-- {{pm:依頼中（互換: cursor:依頼中） または cc:WIP のタスク}}
-
-**その他のタスク**:
-- {{cc:TODO のタスク一覧}}
+**日期时间**: {{YYYY-MM-DD HH:MM}}
+**分支**: {{branch}}
+**会话 ID**: ${CLAUDE_SESSION_ID}
 
 ---
 
-### ⚠️ 注意事項
+### 📋 今天的任务
 
-{{AGENTS.md からの重要な制約・禁止事項}}
+**优先任务**:
+- {{pm:依赖中（兼容：cursor:依赖中）或 cc:WIP 的任务}}
+
+**其他任务**:
+- {{cc:TODO 任务列表}}
 
 ---
 
-**作業を開始しますか？**
+### ⚠️ 注意事项
+
+{{AGENTS.md 中的重要约束/禁止事项}}
+
+---
+
+**开始工作吗？**
 ```
 
 ---
 
-## 出力フォーマット
+## 输出格式
 
-セッション開始時は、以下の情報を簡潔に提示：
+会话开始时，简洁提示以下信息：
 
-| 項目 | 内容 |
-|------|------|
-| 現在のブランチ | `staging` など |
-| 優先タスク | 最も重要な 1-2 件 |
-| 注意事項 | 禁止事項の要約 |
-| 次のアクション | 具体的な提案 |
-
----
-
-## 関連コマンド
-
-- `/work` - タスク実行（並列実行対応）
-- `/sync-status` - Plans.md の進捗サマリー
-- `/maintenance` - ファイルの自動整理
+| 项目 | 内容 |
+|-----|------|
+| 当前分支 | `staging` 等 |
+| 优先任务 | 最重要的 1-2 件 |
+| 注意事项 | 禁止事项摘要 |
+| 下一步操作 | 具体建议 |
 
 ---
 
-## 注意事項
+## 相关命令
 
-- **AGENTS.md を必ず確認**: 役割分担を把握してから作業開始
-- **Plans.md が無い場合**: `/harness-init` を案内
-- **前回の作業が中断している場合**: 継続するか確認
+- `/work` - 任务执行（支持并行执行）
+- `/sync-status` - Plans.md 进度摘要
+- `/maintenance` - 文件自动整理
+
+---
+
+## 注意事项
+
+- **务必确认 AGENTS.md**: 开始工作前把握角色分配
+- **Plans.md 不存在时**: 引导使用 `/harness-init`
+- **上次工作中断时**: 确认是否继续

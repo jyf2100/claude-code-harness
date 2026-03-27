@@ -1,58 +1,58 @@
 #!/bin/bash
 # stop-cleanup-check.sh
-# Stop Hook 用: セッション終了時にクリーンアップを推奨するか判定
+# Stop Hook 用：在会话结束时判断是否建议清理
 #
-# Claude Code 2.1.1 互換: prompt タイプの代わりに command タイプで実装
-# 出力: JSON 形式 {"decision": "approve", "reason": "...", "systemMessage": "..."}
+# Claude Code 2.1.1 兼容：使用 command 类型而非 prompt 类型实现
+# 输出：JSON 格式 {"decision": "approve", "reason": "...", "systemMessage": "..."}
 
 set -euo pipefail
 
-# 判定用変数
+# 判断用变量
 RECOMMEND_CLEANUP="false"
 REASON=""
 MESSAGE=""
 
-# Plans.md の分析
+# 分析 Plans.md
 if [ -f "Plans.md" ]; then
   PLANS_LINES=$(wc -l < "Plans.md" | tr -d ' ')
   COMPLETED_TASKS=$(grep -c "\[x\].*cc:完了\|pm:確認済\|cursor:確認済" Plans.md 2>/dev/null || echo "0")
 
-  # 判定条件1: 完了タスク10件以上
+  # 判断条件1：已完成任务超过10件
   if [ "$COMPLETED_TASKS" -ge 10 ]; then
     RECOMMEND_CLEANUP="true"
     REASON="completed_tasks >= 10"
-    MESSAGE="整理推奨: 完了タスクが${COMPLETED_TASKS}件あります（「整理して」で maintenance スキル起動）"
+    MESSAGE="建议整理：已完成任务有 ${COMPLETED_TASKS} 件（输入「整理」启动 maintenance 技能）"
   fi
 
-  # 判定条件2: Plans.md が200行超え
+  # 判断条件2：Plans.md 超过200行
   if [ "$PLANS_LINES" -gt 200 ]; then
     RECOMMEND_CLEANUP="true"
     REASON="Plans.md > 200 lines"
-    MESSAGE="整理推奨: Plans.md が${PLANS_LINES}行と肥大化しています（「整理して」で maintenance スキル起動）"
+    MESSAGE="建议整理：Plans.md 已膨胀至 ${PLANS_LINES} 行（输入「整理」启动 maintenance 技能）"
   fi
 fi
 
-# 判定条件3: session-log.md が500行超え
+# 判断条件3：session-log.md 超过500行
 if [ -f ".claude/memory/session-log.md" ]; then
   SESSION_LOG_LINES=$(wc -l < ".claude/memory/session-log.md" | tr -d ' ')
   if [ "$SESSION_LOG_LINES" -gt 500 ]; then
     RECOMMEND_CLEANUP="true"
     REASON="session-log.md > 500 lines"
-    MESSAGE="整理推奨: session-log.md が${SESSION_LOG_LINES}行と肥大化しています（「整理して」で maintenance スキル起動）"
+    MESSAGE="建议整理：session-log.md 已膨胀至 ${SESSION_LOG_LINES} 行（输入「整理」启动 maintenance 技能）"
   fi
 fi
 
-# 判定条件4: CLAUDE.md が100行超え
+# 判断条件4：CLAUDE.md 超过100行
 if [ -f "CLAUDE.md" ]; then
   CLAUDE_MD_LINES=$(wc -l < "CLAUDE.md" | tr -d ' ')
   if [ "$CLAUDE_MD_LINES" -gt 100 ]; then
     RECOMMEND_CLEANUP="true"
     REASON="CLAUDE.md > 100 lines"
-    MESSAGE="整理推奨: CLAUDE.md が${CLAUDE_MD_LINES}行あります（.claude/rules/ への分割を検討）"
+    MESSAGE="建议整理：CLAUDE.md 有 ${CLAUDE_MD_LINES} 行（建议拆分到 .claude/rules/）"
   fi
 fi
 
-# JSON 出力
+# JSON 输出
 if [ "$RECOMMEND_CLEANUP" = "true" ]; then
   cat << EOF
 {"decision": "approve", "reason": "$REASON", "systemMessage": "$MESSAGE"}

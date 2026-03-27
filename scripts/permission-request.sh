@@ -35,8 +35,8 @@ print(f"COMMAND={shlex.quote(command)}")
 ' 2>/dev/null)"
 fi
 
-# Edit/Write は bypassPermissions 相当で自動承認
-# （bypassPermissions モードでもプロンプトが出る Claude Code の動作を補完）
+# Edit/Write 相当于 bypassPermissions，自动批准
+# （补充 Claude Code 在 bypassPermissions 模式下仍会弹出提示的行为）
 if [ "$TOOL_NAME" = "Edit" ] || [ "$TOOL_NAME" = "Write" ]; then
   printf '%s' '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}'
   exit 0

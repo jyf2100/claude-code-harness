@@ -1,33 +1,33 @@
 #!/bin/bash
 # pretooluse-inbox-check.sh
-# PreToolUse Hook: ツール実行前に未読メッセージをチェック
+# PreToolUse Hook: 在工具执行前检查未读消息
 #
-# Write|Edit 実行前に他セッションからのメッセージを確認し、
-# 重要な変更通知を見逃さないようにする
+# 在 Write|Edit 执行前检查来自其他会话的消息，
+# 确保不会错过重要的变更通知
 #
-# 入力: stdin から JSON
-# 出力: JSON (hookSpecificOutput)
+# 输入: 从 stdin 读取 JSON
+# 输出: JSON (hookSpecificOutput)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ===== 設定 =====
+# ===== 配置 =====
 SESSIONS_DIR=".claude/sessions"
 BROADCAST_FILE="${SESSIONS_DIR}/broadcast.md"
 SESSION_FILE=".claude/state/session.json"
 CHECK_INTERVAL_FILE="${SESSIONS_DIR}/.last_inbox_check"
-CHECK_INTERVAL=300  # 5分ごとにチェック（頻繁すぎる通知を防ぐ）
+CHECK_INTERVAL=300  # 每5分钟检查一次（防止通知过于频繁）
 
-# ===== stdin から JSON 入力を読み取り =====
+# ===== 从 stdin 读取 JSON 输入 =====
 INPUT=""
 if [ -t 0 ]; then
-  : # stdin が TTY の場合は入力なし
+  : # stdin 是 TTY 时无输入
 else
   INPUT=$(cat 2>/dev/null || true)
 fi
 
-# ===== チェック間隔の確認 =====
+# ===== 检查间隔确认 =====
 current_time=$(date +%s)
 last_check=0
 
@@ -37,44 +37,44 @@ fi
 
 time_since_check=$((current_time - last_check))
 
-# チェック間隔内の場合はスキップ（何も出力しない → 権限判定に影響しない）
+# 在检查间隔内则跳过（不输出任何内容 → 不影响权限判定）
 if [ "$time_since_check" -lt "$CHECK_INTERVAL" ]; then
   exit 0
 fi
 
-# チェック時刻を更新
+# 更新检查时间
 mkdir -p "$SESSIONS_DIR"
 echo "$current_time" > "$CHECK_INTERVAL_FILE"
 
-# ===== 未読メッセージをチェック =====
+# ===== 检查未读消息 =====
 if [ ! -f "$BROADCAST_FILE" ]; then
   exit 0
 fi
 
-# inbox-check スクリプトを使用
+# 使用 inbox-check 脚本
 UNREAD_COUNT=$(bash "$SCRIPT_DIR/session-inbox-check.sh" --count 2>/dev/null || echo "0")
 
 if [ "$UNREAD_COUNT" -gt 0 ]; then
-  # 未読メッセージの内容を取得（最大5件）
-  # session-inbox-check.sh の出力から実際のメッセージ行を抽出
+  # 获取未读消息内容（最多5条）
+  # 从 session-inbox-check.sh 的输出中提取实际消息行
   INBOX_MESSAGES=$(bash "$SCRIPT_DIR/session-inbox-check.sh" 2>/dev/null | grep -E '^\[' | head -5 || echo "")
 
   if [ -n "$INBOX_MESSAGES" ]; then
-    # メッセージ内容をエスケープ処理
+    # 对消息内容进行转义处理
     ESCAPED_MESSAGES=$(echo "$INBOX_MESSAGES" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
 
-    # メッセージ内容を直接表示（permissionDecision: "allow" で権限判定に影響しない）
+    # 直接显示消息内容（permissionDecision: "allow" 不影响权限判定）
     cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 他セッションからのメッセージ ${UNREAD_COUNT}件:\\n---\\n${ESCAPED_MESSAGES}\\n---"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 来自其他会话的消息 ${UNREAD_COUNT}件:\\n---\\n${ESCAPED_MESSAGES}\\n---"}}
 EOF
   else
-    # メッセージ抽出に失敗した場合はフォールバック
+    # 消息提取失败时的回退处理
     cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 他セッションからのメッセージが ${UNREAD_COUNT}件 あります"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 来自其他会话的消息有 ${UNREAD_COUNT}件"}}
 EOF
   fi
 else
-  # 未読なし → 何も出力しない（権限判定に影響しない）
+  # 无未读消息 → 不输出任何内容（不影响权限判定）
   :
 fi
 

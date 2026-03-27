@@ -1,14 +1,14 @@
 #!/bin/bash
 # review-ai-residuals.sh
-# 差分または対象ファイルから AI 実装の残骸候補を静的検出する。
+# 从差分或目标文件中静态检测 AI 实现的残留代码。
 #
 # Usage:
 #   bash scripts/review-ai-residuals.sh --base-ref <git-ref>
 #   bash scripts/review-ai-residuals.sh path/to/file.ts path/to/config.sh
 #
 # Exit:
-#   0: 検出有無にかかわらず正常終了（review 側で verdict を判定する）
-#   2: 使い方エラー
+#   0: 无论是否检测到问题都正常退出（由 review 侧判定 verdict）
+#   2: 使用方法错误
 
 set -euo pipefail
 
@@ -19,8 +19,8 @@ Usage:
   bash scripts/review-ai-residuals.sh <file> [<file> ...]
 
 Options:
-  --base-ref <git-ref>  git diff で変更ファイルを自動収集する
-  --help                このヘルプを表示する
+  --base-ref <git-ref>  通过 git diff 自动收集变更文件
+  --help                显示此帮助信息
 
 Output:
   Stable JSON:
@@ -257,15 +257,15 @@ scan_file() {
       append_observation "$severity" "$rule" "$location" "$issue" "$suggestion" "$match_text"
     done < <("${SEARCH_TOOL}" --no-config -n -I --pcre2 "$pattern" -- "$file" 2>/dev/null || true)
   done <<'EOF'
-test-skip	major	\b(it|describe|test)\.skip\s*\(	無効化されたテストが残っています。レビューをすり抜ける可能性があります。	skip を外すか、どうしても必要なら理由をコメントと issue に残してください。
-localhost-reference	major	\b(localhost|127\.0\.0\.1|0\.0\.0\.0)\b	ローカル専用の接続先が残っています。本番や共有環境で誤設定になりやすい状態です。	環境変数または公開設定から URL / host を注入してください。
-hardcoded-secret	major	(?i)\b(api[_-]?key|secret|token|password|passwd|client[_-]?secret)\b[^:=\n]{0,20}[:=][[:space:]]*['"][^'"]{8,}['"]	秘密情報らしき値がハードコードされています。漏えいと環境固定の両面で危険です。	環境変数、秘密情報ストア、または安全な設定注入に置き換えてください。
-hardcoded-env-url	major	https?://(dev|staging|internal|sandbox)[.-][A-Za-z0-9._/-]+	環境依存 URL がコードに固定されています。出荷先の誤接続につながります。	環境ごとの設定に切り出してください。
-mock-data	minor	\bmockData\b	mock 用の値名が残っています。仮データの持ち込みかどうか確認が必要です。	実データに置き換えるか、必要ならテスト専用であることを明確にしてください。
-dummy-value	minor	\bdummy[A-Za-z0-9_]*\b	dummy という仮値が残っています。	実値に置き換えるか、意図が分かる名前へ変更してください。
-fake-data	minor	\bfake(Data)?\b	fake データ由来の名前が残っています。	本番コードなら実装へ置き換え、テストコードなら用途を明確にしてください。
-todo-fixme	minor	\b(TODO|FIXME)\b	未完了の TODO / FIXME が残っています。	出荷前に解消するか、追跡先をコメントに残してください。
-provisional-comment	recommendation	(?i)(temporary implementation|stub implementation|placeholder implementation|replace later|hardcoded for now|wire real service)	仮実装コメントが残っています。今すぐ事故とは限りませんが、意図を明確にした方が安全です。	期限・追跡先・恒久対応の方針をコメントや issue に残してください。
+test-skip	major	\b(it|describe|test)\.skip\s*\(	被禁用的测试仍然存在。可能会绕过代码审查。	移除 skip，或者如果确实必要，请在注释和 issue 中说明原因。
+localhost-reference	major	\b(localhost|127\.0\.0\.1|0\.0\.0\.0)\b	仅限本地的连接目标仍然存在。在生产或共享环境中容易导致配置错误。	请通过环境变量或公共配置注入 URL / host。
+hardcoded-secret	major	(?i)\b(api[_-]?key|secret|token|password|passwd|client[_-]?secret)\b[^:=\n]{0,20}[:=][[:space:]]*['"][^'"]{8,}['"]	疑似密钥信息被硬编码。存在泄露和环境固定的双重风险。	请替换为环境变量、密钥存储或安全的配置注入。
+hardcoded-env-url	major	https?://(dev|staging|internal|sandbox)[.-][A-Za-z0-9._/-]+	环境依赖的 URL 被固定在代码中。会导致部署目标连接错误。	请拆分为各环境的配置。
+mock-data	minor	\bmockData\b	mock 用变量名仍然存在。需要确认是否是临时数据。	请替换为真实数据，或者如果必要，请明确标识为测试专用。
+dummy-value	minor	\bdummy[A-Za-z0-9_]*\b	dummy 临时值仍然存在。	请替换为实际值，或改为意图明确的变量名。
+fake-data	minor	\bfake(Data)?\b	fake 数据来源的名称仍然存在。	如果是生产代码请替换为实现，如果是测试代码请明确用途。
+todo-fixme	minor	\b(TODO|FIXME)\b	未完成的 TODO / FIXME 仍然存在。	请在发布前解决，或在注释中留下追踪链接。
+provisional-comment	recommendation	(?i)(temporary implementation|stub implementation|placeholder implementation|replace later|hardcoded for now|wire real service)	临时实现的注释仍然存在。虽然不一定会立即出问题，但明确意图会更安全。	请在注释或 issue 中记录截止日期、追踪链接和永久解决方案的计划。
 EOF
 }
 

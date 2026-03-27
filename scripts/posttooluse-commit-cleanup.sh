@@ -40,7 +40,7 @@ if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])git[[:space:]]+commit([[:space:]]
       rm -f "$REVIEW_STATE_FILE" 2>/dev/null
 
       # Log the cleanup
-      echo "[Commit Guard] レビュー承認状態をクリアしました。次回のコミット前に再度 /harness-review を実行してください。" >&2
+      echo "[Commit Guard] 已清除审查批准状态。下次提交前请再次执行 /harness-review。" >&2
     fi
   fi
 fi

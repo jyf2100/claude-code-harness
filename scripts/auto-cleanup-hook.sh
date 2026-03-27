@@ -1,19 +1,19 @@
 #!/bin/bash
 # auto-cleanup-hook.sh
-# PostToolUse Hook: Plans.md 等への書き込み後に自動でサイズチェック
+# PostToolUse Hook: 写入 Plans.md 等文件后自动进行大小检查
 #
-# 入力: stdin から JSON（tool_name, tool_input 等）
-# 出力: additionalContext でフィードバック
+# 输入: 从 stdin 读取 JSON（tool_name, tool_input 等）
+# 输出: 通过 additionalContext 提供反馈
 
 set +e
 
-# 入力JSONを読み取り（Claude Code hooks は stdin で JSON を渡す）
+# 读取输入 JSON（Claude Code hooks 通过 stdin 传递 JSON）
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# stdin JSON から file_path / cwd を取得（jq がなければ python3 を試す）
+# 从 stdin JSON 获取 file_path / cwd（如果没有 jq 则尝试 python3）
 FILE_PATH=""
 CWD=""
 if [ -n "$INPUT" ]; then
@@ -39,35 +39,35 @@ print(f"FILE_PATH_FROM_STDIN={shlex.quote(file_path)}")
   fi
 fi
 
-# file_path が空なら終了
+# 如果 file_path 为空则退出
 if [ -z "$FILE_PATH" ]; then
   exit 0
 fi
 
-# 可能ならプロジェクト相対パスへ正規化（絶対パスでも動作するが判定が安定する）
+# 如果可能则规范化为项目相对路径（绝对路径也能工作，但相对路径判断更稳定）
 if [ -n "$CWD" ] && [[ "$FILE_PATH" == "$CWD/"* ]]; then
   FILE_PATH="${FILE_PATH#$CWD/}"
 fi
 
-# デフォルト閾値
+# 默认阈值
 PLANS_MAX_LINES=${PLANS_MAX_LINES:-200}
 SESSION_LOG_MAX_LINES=${SESSION_LOG_MAX_LINES:-500}
 CLAUDE_MD_MAX_LINES=${CLAUDE_MD_MAX_LINES:-100}
 
-# フィードバックを格納する変数
+# 存储反馈的变量
 FEEDBACK=""
 
-# Plans.md のチェック
+# 检查 Plans.md
 if [[ "$FILE_PATH" == *"Plans.md"* ]] || [[ "$FILE_PATH" == *"plans.md"* ]]; then
   if [ -f "$FILE_PATH" ]; then
     lines=$(wc -l < "$FILE_PATH" | tr -d ' ')
     if [ "$lines" -gt "$PLANS_MAX_LINES" ]; then
-      FEEDBACK="⚠️ Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。/maintenance で古いタスクをアーカイブすることを推奨します。"
+      FEEDBACK="⚠️ Plans.md 已达 ${lines} 行（上限: ${PLANS_MAX_LINES} 行）。建议使用 /maintenance 将旧任务归档。"
     fi
 
-    # Plans.md クリーンアップ（アーカイブ移動）検知時の SSOT 同期チェック
-    # アーカイブセクションへの編集がある場合、/memory sync の事前実行を確認
-    if grep -q "📦 アーカイブ\|## アーカイブ\|Archive" "$FILE_PATH" 2>/dev/null; then
+    # Plans.md 清理（归档移动）检测时的 SSOT 同步检查
+    # 如果编辑了归档部分，确认已预先执行 /memory sync
+    if grep -q "📦 归档\|## 归档\|Archive" "$FILE_PATH" 2>/dev/null; then
       # Resolve repository root for consistent state directory lookup
       CWD="${CWD:-$(pwd)}"  # Fallback to pwd if empty
       REPO_ROOT=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$CWD"
@@ -76,8 +76,8 @@ if [[ "$FILE_PATH" == *"Plans.md"* ]] || [[ "$FILE_PATH" == *"plans.md"* ]]; the
       SSOT_FLAG="${STATE_DIR}/.ssot-synced-this-session"
 
       if [ ! -f "$SSOT_FLAG" ]; then
-        # フラグがない場合、SSOT 同期を促す警告を追加
-        SSOT_WARNING="**Plans.md クリーンアップ前に /memory sync を実行してください** - 重要な決定や学習事項が SSOT (decisions.md/patterns.md) に反映されていない可能性があります。"
+        # 如果标志不存在，添加警告以提示 SSOT 同步
+        SSOT_WARNING="**Plans.md 清理前请执行 /memory sync** - 重要决定或学习内容可能尚未反映到 SSOT (decisions.md/patterns.md)。"
 
         if [ -n "$FEEDBACK" ]; then
           FEEDBACK="${FEEDBACK} | ${SSOT_WARNING}"
@@ -89,30 +89,30 @@ if [[ "$FILE_PATH" == *"Plans.md"* ]] || [[ "$FILE_PATH" == *"plans.md"* ]]; the
   fi
 fi
 
-# session-log.md のチェック
+# 检查 session-log.md
 if [[ "$FILE_PATH" == *"session-log.md"* ]]; then
   if [ -f "$FILE_PATH" ]; then
     lines=$(wc -l < "$FILE_PATH" | tr -d ' ')
     if [ "$lines" -gt "$SESSION_LOG_MAX_LINES" ]; then
-      FEEDBACK="⚠️ session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。/maintenance で月別に分割することを推奨します。"
+      FEEDBACK="⚠️ session-log.md 已达 ${lines} 行（上限: ${SESSION_LOG_MAX_LINES} 行）。建议使用 /maintenance 按月份分割。"
     fi
   fi
 fi
 
-# CLAUDE.md のチェック
+# 检查 CLAUDE.md
 if [[ "$FILE_PATH" == *"CLAUDE.md"* ]] || [[ "$FILE_PATH" == *"claude.md"* ]]; then
   if [ -f "$FILE_PATH" ]; then
     lines=$(wc -l < "$FILE_PATH" | tr -d ' ')
     if [ "$lines" -gt "$CLAUDE_MD_MAX_LINES" ]; then
-      FEEDBACK="⚠️ CLAUDE.md が ${lines} 行です。.claude/rules/ への分割、または docs/ に移動して @docs/filename.md で参照することを検討してください。"
+      FEEDBACK="⚠️ CLAUDE.md 已达 ${lines} 行。请考虑将其拆分到 .claude/rules/，或移动到 docs/ 并通过 @docs/filename.md 引用。"
     fi
   fi
 fi
 
-# フィードバックがあれば JSON で出力
+# 如果有反馈则以 JSON 格式输出
 if [ -n "$FEEDBACK" ]; then
   echo "{\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"$FEEDBACK\"}}"
 fi
 
-# 常に成功で終了
+# 始终以成功状态退出
 exit 0

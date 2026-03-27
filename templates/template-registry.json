@@ -1,133 +1,133 @@
 {
   "$schema": "./template-registry.schema.json",
-  "description": "テンプレートと出力先のマッピング。templateVersion はテンプレート更新時に更新する。",
+  "description": "模板与输出目标的映射。templateVersion 在模板更新时更新。",
   "templates": {
     "CLAUDE.md.template": {
       "output": "CLAUDE.md",
       "templateVersion": "2.5.23",
-      "description": "プロジェクト指針",
+      "description": "项目指南",
       "tracked": true
     },
     "AGENTS.md.template": {
       "output": "AGENTS.md",
       "templateVersion": "2.5.23",
-      "description": "エージェント設定",
+      "description": "代理设置",
       "tracked": true
     },
     "Plans.md.template": {
       "output": "Plans.md",
       "templateVersion": "2.5.23",
-      "description": "タスク管理",
+      "description": "任务管理",
       "tracked": true
     },
     "rules/workflow.md.template": {
       "output": ".claude/rules/workflow.md",
       "templateVersion": "2.5.23",
-      "description": "ワークフロールール",
+      "description": "工作流规则",
       "tracked": true
     },
     "rules/coding-standards.md.template": {
       "output": ".claude/rules/coding-standards.md",
       "templateVersion": "2.5.23",
-      "description": "コーディング規約",
+      "description": "编码规范",
       "tracked": true
     },
     "rules/testing.md.template": {
       "output": ".claude/rules/testing.md",
       "templateVersion": "2.5.23",
-      "description": "テストルール",
+      "description": "测试规则",
       "tracked": true
     },
     "rules/plans-management.md.template": {
       "output": ".claude/rules/plans-management.md",
       "templateVersion": "2.5.23",
-      "description": "Plans.md管理ルール",
+      "description": "Plans.md 管理规则",
       "tracked": true
     },
     "rules/ui-debugging-agent-browser.md.template": {
       "output": ".claude/rules/ui-debugging-agent-browser.md",
       "templateVersion": "2.7.13",
-      "description": "UI デバッグルール（agent-browser 優先）",
+      "description": "UI 调试规则（agent-browser 优先）",
       "tracked": true
     },
     "rules/test-quality.md.template": {
       "output": ".claude/rules/test-quality.md",
       "templateVersion": "2.5.30",
-      "description": "テスト品質保護ルール（改ざん防止）",
+      "description": "测试质量保护规则（防止篡改）",
       "tracked": true
     },
     "rules/implementation-quality.md.template": {
       "output": ".claude/rules/implementation-quality.md",
       "templateVersion": "2.5.30",
-      "description": "実装品質ルール（形骸化防止）",
+      "description": "实现质量规则（防止形式化）",
       "tracked": true
     },
     "rules/skills-gate.md.template": {
       "output": ".claude/rules/skills-gate.md",
       "templateVersion": "2.6.0",
-      "description": "Skills Gate ルール（スキル使用促進）",
+      "description": "Skills Gate 规则（促进技能使用）",
       "tracked": true,
       "condition": "skills_gate.enabled"
     },
     "rules/memory-integration.md.template": {
       "output": ".claude/rules/memory-integration.md",
       "templateVersion": "2.6.0",
-      "description": "Memory Integration ルール（Claude-mem 連携）",
+      "description": "Memory Integration 规则（Claude-mem 集成）",
       "tracked": true,
       "condition": "claude_mem.enabled"
     },
     "memory/decisions.md.template": {
       "output": ".claude/memory/decisions.md",
       "templateVersion": "2.5.23",
-      "description": "決定事項記録",
+      "description": "决策记录",
       "tracked": true
     },
     "memory/patterns.md.template": {
       "output": ".claude/memory/patterns.md",
       "templateVersion": "2.5.23",
-      "description": "再利用パターン",
+      "description": "可复用模式",
       "tracked": true
     },
     "memory/session-log.md.template": {
       "output": ".claude/memory/session-log.md",
       "templateVersion": "2.5.23",
-      "description": "セッションログ",
+      "description": "会话日志",
       "tracked": false
     },
     "claude/settings.local.json.template": {
       "output": ".claude/settings.local.json",
       "templateVersion": "2.5.23",
-      "description": "ローカル設定",
+      "description": "本地设置",
       "tracked": true
     },
     "claude/settings.security.json.template": {
       "output": ".claude/settings.json",
       "templateVersion": "2.5.23",
-      "description": "セキュリティ設定",
+      "description": "安全设置",
       "tracked": true
     },
     "state/skills-policy.json.template": {
       "output": ".claude/state/skills-policy.json",
       "templateVersion": "2.5.23",
-      "description": "スキルポリシー",
+      "description": "技能策略",
       "tracked": false
     },
     "state/skills-config.json.template": {
       "output": ".claude/state/skills-config.json",
       "templateVersion": "2.5.23",
-      "description": "スキル設定",
+      "description": "技能设置",
       "tracked": false
     },
     ".claude-code-harness.config.yaml.template": {
       "output": ".claude-code-harness.config.yaml",
       "templateVersion": "2.5.23",
-      "description": "プラグイン設定",
+      "description": "插件设置",
       "tracked": true
     },
     ".claude-code-harness-version.template": {
       "output": ".claude-code-harness-version",
       "templateVersion": "2.5.23",
-      "description": "バージョンファイル",
+      "description": "版本文件",
       "tracked": false
     }
   }

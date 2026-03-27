@@ -1,7 +1,7 @@
 #!/bin/bash
 # fix-proposal-injector.sh
-# UserPromptSubmit フックで pending な fix proposal を通知し、
-# 承認/却下プロンプトを受けたら Plans.md へ反映する。
+# 在 UserPromptSubmit 钩子中通知 pending 状态的 fix proposal，
+# 收到批准/拒绝指令后将其反映到 Plans.md。
 
 set +e
 
@@ -231,12 +231,12 @@ path_has_symlink_component_within_root() {
 }
 
 if path_has_symlink_component_within_root "${STATE_DIR}" "${PROJECT_ROOT}" || [ -L "${PENDING_FIX_PROPOSALS_FILE}" ]; then
-  emit_system_message "⚠️ fix proposal state path が symlink のため処理を中止しました。"
+  emit_system_message "⚠️ 由于 fix proposal 状态路径是符号链接，处理已中止。"
   exit 0
 fi
 
 if [ -e "${PLANS_PATH}" ] && path_has_symlink_component_within_root "${PLANS_PATH}" "${PROJECT_ROOT}"; then
-  emit_system_message "⚠️ Plans.md path が symlink のため fix proposal を反映できません。"
+  emit_system_message "⚠️ 由于 Plans.md 路径是符号链接，无法反映 fix proposal。"
   exit 0
 fi
 
@@ -269,7 +269,7 @@ case "${LOWER_LINE}" in
 esac
 
 if [ -n "${ACTION}" ] && [ -z "${TARGET_ID}" ] && [ "${PENDING_COUNT}" != "1" ]; then
-  emit_system_message "⚠️ 未処理の fix proposal が ${PENDING_COUNT} 件あります。approve fix <task_id> または reject fix <task_id> を使って対象を明示してください。"
+  emit_system_message "⚠️ 有 ${PENDING_COUNT} 个未处理的 fix proposal。请使用 approve fix <task_id> 或 reject fix <task_id> 明确指定目标。"
   exit 0
 fi
 
@@ -277,7 +277,7 @@ SELECT_STATUS=0
 PROPOSAL_JSON="$(select_proposal_json "${TARGET_ID}")" || SELECT_STATUS=$?
 
 if [ "${SELECT_STATUS}" -eq 2 ] && [ -n "${TARGET_ID}" ]; then
-  emit_system_message "⚠️ 指定された fix proposal が見つかりません: ${TARGET_ID}"
+  emit_system_message "⚠️ 未找到指定的 fix proposal: ${TARGET_ID}"
   exit 0
 fi
 
@@ -305,15 +305,15 @@ if [ "${ACTION}" = "approve" ]; then
   case "${APPLY_RESULT}" in
     applied|already_present)
       consume_proposal "${SOURCE_TASK_ID}" >/dev/null 2>&1 || true
-      emit_system_message "✅ fix proposal を反映しました: ${FIX_TASK_ID}\n内容: ${PROPOSAL_SUBJECT}"
+      emit_system_message "✅ fix proposal 已反映: ${FIX_TASK_ID}\n内容: ${PROPOSAL_SUBJECT}"
       exit 0
       ;;
     plans_missing)
-      emit_system_message "⚠️ fix proposal を反映できませんでした。Plans.md が見つかりません。"
+      emit_system_message "⚠️ 无法反映 fix proposal。未找到 Plans.md。"
       exit 0
       ;;
     *)
-      emit_system_message "⚠️ fix proposal の反映に失敗しました。対象タスク ${SOURCE_TASK_ID} が Plans.md で見つかりません。"
+      emit_system_message "⚠️ fix proposal 反映失败。在 Plans.md 中未找到目标任务 ${SOURCE_TASK_ID}。"
       exit 0
       ;;
   esac
@@ -321,18 +321,18 @@ fi
 
 if [ "${ACTION}" = "reject" ]; then
   consume_proposal "${SOURCE_TASK_ID}" >/dev/null 2>&1 || true
-  emit_system_message "ℹ️ fix proposal を却下しました: ${FIX_TASK_ID}"
+  emit_system_message "ℹ️ fix proposal 已拒绝: ${FIX_TASK_ID}"
   exit 0
 fi
 
-REMINDER="[FIX PROPOSAL] 未処理の修正タスク案があります (${PENDING_COUNT}件)\n"
-REMINDER="${REMINDER}対象: ${FIX_TASK_ID} — ${PROPOSAL_SUBJECT}\n"
-REMINDER="${REMINDER}失敗カテゴリ: ${FAILURE_CATEGORY}\n"
+REMINDER="[FIX PROPOSAL] 有未处理的修正任务案 (${PENDING_COUNT}个)\n"
+REMINDER="${REMINDER}目标: ${FIX_TASK_ID} — ${PROPOSAL_SUBJECT}\n"
+REMINDER="${REMINDER}失败类别: ${FAILURE_CATEGORY}\n"
 REMINDER="${REMINDER}DoD: ${PROPOSAL_DOD}\n"
 if [ -n "${RECOMMENDED_ACTION}" ]; then
-  REMINDER="${REMINDER}推奨アクション: ${RECOMMENDED_ACTION}\n"
+  REMINDER="${REMINDER}推荐操作: ${RECOMMENDED_ACTION}\n"
 fi
-REMINDER="${REMINDER}承認: approve fix ${SOURCE_TASK_ID}\n"
-REMINDER="${REMINDER}却下: reject fix ${SOURCE_TASK_ID}"
+REMINDER="${REMINDER}批准: approve fix ${SOURCE_TASK_ID}\n"
+REMINDER="${REMINDER}拒绝: reject fix ${SOURCE_TASK_ID}"
 emit_system_message "${REMINDER}"
 exit 0

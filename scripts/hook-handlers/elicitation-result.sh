@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # elicitation-result.sh
-# ElicitationResult フックハンドラ
-# Elicitation の結果が MCP サーバーに返された後に発火
-# 軽量ロギングのみ
+# ElicitationResult 钩子处理器
+# 在 Elicitation 结果返回给 MCP 服务器后触发
+# 仅进行轻量级日志记录
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
@@ -10,30 +10,30 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ログファイル
+# 日志文件
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 LOG_FILE="${STATE_DIR}/elicitation-events.jsonl"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行）
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -48,19 +48,19 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"ElicitationResult: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 MCP_SERVER=""
 ELICITATION_ID=""
 RESULT_STATUS=""
@@ -87,7 +87,7 @@ except:
   RESULT_STATUS="$(echo "${_parsed}" | sed -n '3p')"
 fi
 
-# === ログ記録 ===
+# === 日志记录 ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
@@ -118,6 +118,6 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === レスポンス ===
+# === 响应 ===
 echo '{"decision":"approve","reason":"ElicitationResult tracked"}'
 exit 0

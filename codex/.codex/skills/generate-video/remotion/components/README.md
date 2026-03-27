@@ -1,12 +1,12 @@
 # Remotion Visual Components
 
-Phase 5: 視覚コンポーネント実装
+Phase 5: 视觉组件实现
 
 ## Components
 
 ### 1. EmphasisBox
 
-3段階の強調表示コンポーネント。
+三级强调显示组件。
 
 **Features**:
 - 3 levels: `high`, `medium`, `low`
@@ -47,7 +47,7 @@ import { EmphasisBox } from './components';
 
 ### 2. TransitionWrapper
 
-4種類のトランジションエフェクトでコンテンツをラップ。
+用 4 种过渡效果包装内容。
 
 **Features**:
 - 4 types: `fade`, `slideIn`, `zoom`, `cut`
@@ -97,7 +97,7 @@ import { TransitionWrapper, TransitionPresets } from './components';
 
 ### 3. ProgressIndicator
 
-セクション位置表示コンポーネント。
+章节位置显示组件。
 
 **Features**:
 - 3 styles: `bar`, `dots`, `minimal`
@@ -153,7 +153,7 @@ interface Section {
 
 ### 4. BackgroundLayer
 
-5種類のアニメーション背景レイヤー。
+5 种动画背景层。
 
 **Features**:
 - 5 types: `neutral`, `highlight`, `dramatic`, `tech`, `warm`

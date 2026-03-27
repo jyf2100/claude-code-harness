@@ -1,28 +1,28 @@
 #!/bin/bash
 # worktree-remove.sh — WorktreeRemove hook handler
-# Breezing サブエージェント終了時の worktree 固有リソースをクリーンアップ
+# 清理 Breezing 子代理终止时 worktree 特定的资源
 #
-# 入力 (stdin JSON):
+# 输入 (stdin JSON):
 #   session_id, cwd, hook_event_name
 #
-# 設計: worktree 固有の一時ファイルのみ担当
-#       セッション全体のクリーンアップは SessionEnd が担当
+# 设计: 仅负责 worktree 特定的临时文件
+#       会话整体清理由 SessionEnd 负责
 
 set -euo pipefail
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"WorktreeRemove: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 SESSION_ID=""
 CWD=""
 
@@ -55,19 +55,19 @@ if [ -z "${SESSION_ID}" ]; then
   exit 0
 fi
 
-# === worktree 固有の一時ファイルをクリーンアップ ===
+# === 清理 worktree 特定的临时文件 ===
 
-# Codex プロンプト一時ファイル（セッション固有のものを優先）
+# Codex 提示词临时文件（优先清理会话特定的文件）
 rm -f /tmp/codex-prompt-*.md 2>/dev/null || true
 
-# Harness Codex ログ（セッション固有）
+# Harness Codex 日志（会话特定）
 rm -f /tmp/harness-codex-*.log 2>/dev/null || true
 
-# worktree-info.json のクリーンアップ
+# worktree-info.json 的清理
 if [ -n "${CWD}" ] && [ -f "${CWD}/.claude/state/worktree-info.json" ]; then
   rm -f "${CWD}/.claude/state/worktree-info.json" 2>/dev/null || true
 fi
 
-# === レスポンス ===
+# === 响应 ===
 echo '{"decision":"approve","reason":"WorktreeRemove: cleaned up worktree resources"}'
 exit 0

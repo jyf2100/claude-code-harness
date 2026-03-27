@@ -1,186 +1,186 @@
 ---
 name: agent-browser
-description: "ブラウザを手足のように操る。ページ遷移、フォーム入力、スクショ、なんでもこい。Use when users ask to navigate websites, fill forms, take screenshots, extract web data, test web apps, or automate browser workflows. Trigger phrases include 'go to [url]', 'click on', 'fill out the form', 'take a screenshot', 'scrape', 'automate', 'test the website', 'log into', or any browser interaction request. Do NOT load for: sharing URLs, embedding links, screenshot image files."
+description: "像手脚一样操控浏览器。页面导航、表单输入、截图，无所不能。Use when users ask to navigate websites, fill forms, take screenshots, extract web data, test web apps, or automate browser workflows. Trigger phrases include 'go to [url]', 'click on', 'fill out the form', 'take a screenshot', 'scrape', 'automate', 'test the website', 'log into', or any browser interaction request. Do NOT load for: sharing URLs, embedding links, screenshot image files."
 description-en: "Control browser like hands and feet. Navigate, fill forms, screenshot, bring it on. Use when users ask to navigate websites, fill forms, take screenshots, extract web data, test web apps, or automate browser workflows. Trigger phrases include 'go to [url]', 'click on', 'fill out the form', 'take a screenshot', 'scrape', 'automate', 'test the website', 'log into', or any browser interaction request. Do NOT load for: sharing URLs, embedding links, screenshot image files."
-description-ja: "ブラウザを手足のように操る。ページ遷移、フォーム入力、スクショ、なんでもこい。Use when users ask to navigate websites, fill forms, take screenshots, extract web data, test web apps, or automate browser workflows. Trigger phrases include 'go to [url]', 'click on', 'fill out the form', 'take a screenshot', 'scrape', 'automate', 'test the website', 'log into', or any browser interaction request. Do NOT load for: sharing URLs, embedding links, screenshot image files."
+description-zh: "像手脚一样操控浏览器。页面导航、表单输入、截图，无所不能。触发短语：打开页面、点击、填写表单、截图、抓取、自动化、测试网站、登录。不用于：分享 URL、嵌入链接、截图图片文件。"
 allowed-tools: ["Bash", "Read"]
 user-invocable: false
 context: fork
 argument-hint: "[url] [--headless]"
 ---
 
-# Agent Browser Skill
+# Agent Browser 技能
 
-ブラウザ自動化を行うスキル。agent-browser CLI を使用して、UI デバッグ・検証・自動操作を実行します。
+浏览器自动化技能。使用 agent-browser CLI 执行 UI 调试、验证、自动操作。
 
 ---
 
-## トリガーフレーズ
+## 触发短语
 
-このスキルは以下のフレーズで自動起動します：
+此技能在以下短语时自动启动：
 
-- 「ページを開いて」「URLを確認して」
-- 「クリックして」「入力して」「フォームに」
-- 「スクリーンショットを撮って」
-- 「UIを確認して」「画面をテストして」
+- "打开页面""确认 URL"
+- "点击""输入""表单"
+- "截图"
+- "确认 UI""测试画面"
 - "open this page", "click on", "fill the form", "screenshot"
 
 ---
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **ブラウザ自動化** | See [references/browser-automation.md](${CLAUDE_SKILL_DIR}/references/browser-automation.md) |
-| **AI スナップショットワークフロー** | See [references/ai-snapshot-workflow.md](${CLAUDE_SKILL_DIR}/references/ai-snapshot-workflow.md) |
+| **浏览器自动化** | 见 [references/browser-automation.md](${CLAUDE_SKILL_DIR}/references/browser-automation.md) |
+| **AI 快照工作流** | 见 [references/ai-snapshot-workflow.md](${CLAUDE_SKILL_DIR}/references/ai-snapshot-workflow.md) |
 
-## 実行手順
+## 执行步骤
 
-### Step 0: agent-browser の確認
+### Step 0: 确认 agent-browser
 
 ```bash
-# インストール確認
+# 安装确认
 which agent-browser
 
-# 未インストールの場合
+# 未安装时
 npm install -g agent-browser
 agent-browser install
 ```
 
-### Step 1: ユーザーのリクエストを分類
+### Step 1: 分类用户请求
 
-| リクエストタイプ | 対応アクション |
-|----------------|---------------|
-| URL を開く | `agent-browser open <url>` |
-| 要素をクリック | スナップショット → `agent-browser click @ref` |
-| フォーム入力 | スナップショット → `agent-browser fill @ref "text"` |
-| 状態確認 | `agent-browser snapshot -i -c` |
-| スクリーンショット | `agent-browser screenshot <path>` |
-| デバッグ | `agent-browser --headed open <url>` |
+| 请求类型 | 对应操作 |
+|---------|---------|
+| 打开 URL | `agent-browser open <url>` |
+| 点击元素 | 快照 → `agent-browser click @ref` |
+| 表单输入 | 快照 → `agent-browser fill @ref "text"` |
+| 状态确认 | `agent-browser snapshot -i -c` |
+| 截图 | `agent-browser screenshot <path>` |
+| 调试 | `agent-browser --headed open <url>` |
 
-### Step 2: AI スナップショットワークフロー（推奨）
+### Step 2: AI 快照工作流（推荐）
 
-ほとんどの操作で、まず**スナップショットを取得**してから要素参照で操作します：
+大多数操作中，首先**获取快照**然后通过元素引用操作：
 
 ```bash
-# 1. ページを開く
+# 1. 打开页面
 agent-browser open https://example.com
 
-# 2. スナップショット取得（AI 向け、インタラクティブ要素のみ）
+# 2. 获取快照（面向 AI，仅交互元素）
 agent-browser snapshot -i -c
 
-# 出力例:
+# 输出示例:
 # - link "Home" [ref=e1]
 # - button "Login" [ref=e2]
 # - input "Email" [ref=e3]
 # - input "Password" [ref=e4]
 # - button "Submit" [ref=e5]
 
-# 3. 要素参照で操作
-agent-browser click @e2           # Login ボタンをクリック
+# 3. 通过元素引用操作
+agent-browser click @e2           # 点击登录按钮
 agent-browser fill @e3 "user@example.com"
 agent-browser fill @e4 "password123"
-agent-browser click @e5           # Submit
+agent-browser click @e5           # 提交
 ```
 
-### Step 3: 結果の確認
+### Step 3: 确认结果
 
 ```bash
-# 現在の状態をスナップショットで確認
+# 用快照确认当前状态
 agent-browser snapshot -i -c
 
-# または URL を確認
+# 或确认 URL
 agent-browser get url
 
-# スクリーンショットを取得
+# 获取截图
 agent-browser screenshot result.png
 ```
 
 ---
 
-## クイックリファレンス
+## 快速参考
 
 ### 基本操作
 
-| コマンド | 説明 |
-|---------|------|
-| `open <url>` | URL を開く |
-| `snapshot -i -c` | AI 向けスナップショット |
-| `click @e1` | 要素をクリック |
-| `fill @e1 "text"` | フォームに入力 |
-| `type @e1 "text"` | テキストを入力 |
-| `press Enter` | キーを押す |
-| `screenshot [path]` | スクリーンショット |
-| `close` | ブラウザを閉じる |
+| 命令 | 说明 |
+|------|------|
+| `open <url>` | 打开 URL |
+| `snapshot -i -c` | 面向 AI 的快照 |
+| `click @e1` | 点击元素 |
+| `fill @e1 "text"` | 输入表单 |
+| `type @e1 "text"` | 输入文本 |
+| `press Enter` | 按键 |
+| `screenshot [path]` | 截图 |
+| `close` | 关闭浏览器 |
 
-### ナビゲーション
+### 导航
 
-| コマンド | 説明 |
-|---------|------|
-| `back` | 戻る |
-| `forward` | 進む |
-| `reload` | リロード |
+| 命令 | 说明 |
+|------|------|
+| `back` | 后退 |
+| `forward` | 前进 |
+| `reload` | 刷新 |
 
-### 情報取得
+### 信息获取
 
-| コマンド | 説明 |
-|---------|------|
-| `get text @e1` | テキスト取得 |
-| `get html @e1` | HTML 取得 |
-| `get url` | 現在の URL |
-| `get title` | ページタイトル |
+| 命令 | 说明 |
+|------|------|
+| `get text @e1` | 获取文本 |
+| `get html @e1` | 获取 HTML |
+| `get url` | 当前 URL |
+| `get title` | 页面标题 |
 
-### 待機
+### 等待
 
-| コマンド | 説明 |
-|---------|------|
-| `wait @e1` | 要素を待機 |
-| `wait 1000` | 1秒待機 |
+| 命令 | 说明 |
+|------|------|
+| `wait @e1` | 等待元素 |
+| `wait 1000` | 等待 1 秒 |
 
-### デバッグ
+### 调试
 
-| コマンド | 説明 |
-|---------|------|
-| `--headed` | ブラウザを表示 |
-| `console` | コンソールログ |
-| `errors` | ページエラー |
-| `highlight @e1` | 要素をハイライト |
+| 命令 | 说明 |
+|------|------|
+| `--headed` | 显示浏览器 |
+| `console` | 控制台日志 |
+| `errors` | 页面错误 |
+| `highlight @e1` | 高亮元素 |
 
 ---
 
-## セッション管理
+## 会话管理
 
-複数のタブ/セッションを並列管理：
+并行管理多个标签页/会话：
 
 ```bash
-# セッションを指定
+# 指定会话
 agent-browser --session admin open https://admin.example.com
 agent-browser --session user open https://example.com
 
-# セッション一覧
+# 会话列表
 agent-browser session list
 
-# 特定セッションで操作
+# 在特定会话中操作
 agent-browser --session admin snapshot -i -c
 ```
 
 ---
 
-## MCP ブラウザツールとの使い分け
+## 与 MCP 浏览器工具的区别
 
-| ツール | 推奨度 | 用途 |
-|--------|--------|------|
-| **agent-browser** | ★★★ | 第一選択。AI 向けスナップショットが強力 |
-| chrome-devtools MCP | ★★☆ | Chrome が既に開いている場合 |
-| playwright MCP | ★★☆ | 複雑な E2E テスト |
+| 工具 | 推荐度 | 用途 |
+|------|--------|------|
+| **agent-browser** | ★★★ | 首选。面向 AI 的快照功能强大 |
+| chrome-devtools MCP | ★★☆ | Chrome 已打开时 |
+| playwright MCP | ★★☆ | 复杂的 E2E 测试 |
 
-**原則**: まず agent-browser を試し、うまくいかない場合のみ MCP ツールを使用。
+**原则**: 首先尝试 agent-browser，不顺利时才使用 MCP 工具。
 
 ---
 
-## 注意事項
+## 注意事项
 
-- agent-browser はヘッドレスモードがデフォルト
-- `--headed` オプションでブラウザを表示可能
-- セッションは明示的に `close` するまで維持される
-- 認証が必要なサイトはセッションを活用
+- agent-browser 默认为无头模式
+- `--headed` 选项可显示浏览器
+- 会话在显式 `close` 前保持
+- 需要认证的站点请使用会话

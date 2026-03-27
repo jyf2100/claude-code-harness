@@ -1,21 +1,21 @@
 #!/bin/bash
 # posttooluse-log-toolname.sh
-# Phase0: 全ツール名をログに記録（tool_name ディスカバリ用）
-# + LSP追跡: LSP関連ツールを検出して tooling-policy.json を更新
+# Phase0: 记录所有工具名到日志（用于 tool_name 发现）
+# + LSP追踪: 检测 LSP 相关工具并更新 tooling-policy.json
 #
-# Usage: PostToolUse hook から自動実行（matcher="*"）
+# Usage: 从 PostToolUse hook 自动执行（matcher="*"）
 # Input: stdin JSON (Claude Code hooks)
 # Output:
-#   - .claude/state/tool-events.jsonl にJSONL追記 (Phase0ログ有効時のみ)
-#   - .claude/state/tooling-policy.json 更新 (LSP関連ツール検出時、常に)
+#   - 追加 JSONL 到 .claude/state/tool-events.jsonl（仅 Phase0 日志启用时）
+#   - 更新 .claude/state/tooling-policy.json（LSP 相关工具检测时，始终执行）
 #
-# 制御: CC_HARNESS_PHASE0_LOG=1 がある時のみログ収集を実行
-#       （tool_name確定後は無効化して、ログ肥大化を防ぐ）
-#       LSP追跡は常に実行（matcher "LSP" に依存せず、詰みを防ぐ）
+# 控制: 仅当 CC_HARNESS_PHASE0_LOG=1 时执行日志收集
+#       （tool_name 确定后禁用，防止日志膨胀）
+#       LSP 追踪始终执行（不依赖 matcher "LSP"，防止遗漏）
 
 set +e
 
-# ===== 定数 =====
+# ===== 常量 =====
 STATE_DIR=".claude/state"
 LOG_FILE="${STATE_DIR}/tool-events.jsonl"
 LOCK_FILE="${STATE_DIR}/tool-events.lock"
@@ -26,22 +26,22 @@ MAX_SIZE_BYTES=262144  # 256KB
 MAX_LINES=2000
 MAX_GENERATIONS=5
 
-# ===== ユーティリティ =====
+# ===== 工具函数 =====
 
-# ロックを取得（flock優先、なければmkdirロック）
+# 获取锁（优先使用 flock，否则使用 mkdir 锁）
 acquire_lock() {
   local lockfile="$1"
   local timeout=5
   local waited=0
 
-  # flock が使えるなら flock を使う
+  # 如果 flock 可用则使用 flock
   if command -v flock >/dev/null 2>&1; then
     exec 200>"$lockfile"
     flock -w "$timeout" 200 || return 1
     return 0
   fi
 
-  # flock が無いなら mkdir ロック（原子的）
+  # 如果 flock 不可用则使用 mkdir 锁（原子操作）
   while ! mkdir "$lockfile" 2>/dev/null; do
     sleep 0.1
     waited=$((waited + 1))
@@ -52,7 +52,7 @@ acquire_lock() {
   return 0
 }
 
-# ロックを解放
+# 释放锁
 release_lock() {
   local lockfile="$1"
 
@@ -63,32 +63,32 @@ release_lock() {
   fi
 }
 
-# ローテーション実行
+# 执行日志轮转
 rotate_log() {
   local logfile="$1"
 
-  # 最古を削除
+  # 删除最旧的文件
   [ -f "${logfile}.${MAX_GENERATIONS}" ] && rm -f "${logfile}.${MAX_GENERATIONS}"
 
-  # 順にリネーム（.4 → .5, .3 → .4, ...）
+  # 依次重命名（.4 → .5, .3 → .4, ...）
   for i in $(seq $((MAX_GENERATIONS - 1)) -1 1); do
     [ -f "${logfile}.${i}" ] && mv "${logfile}.${i}" "${logfile}.$((i + 1))"
   done
 
-  # 現行を .1 へ
+  # 将当前日志移动到 .1
   [ -f "$logfile" ] && mv "$logfile" "${logfile}.1"
 
-  # 新しいログファイルを作成
+  # 创建新的日志文件
   touch "$logfile"
 }
 
-# ローテーションが必要かチェック
+# 检查是否需要轮转
 needs_rotation() {
   local logfile="$1"
 
   [ ! -f "$logfile" ] && return 1
 
-  # サイズチェック
+  # 检查文件大小
   local size
   if command -v stat >/dev/null 2>&1; then
     # macOS/BSD
@@ -101,7 +101,7 @@ needs_rotation() {
     return 0
   fi
 
-  # 行数チェック
+  # 检查行数
   local lines
   lines=$(wc -l < "$logfile" 2>/dev/null || echo 0)
   if [ "$lines" -ge "$MAX_LINES" ]; then
@@ -111,12 +111,12 @@ needs_rotation() {
   return 1
 }
 
-# ===== メイン処理 =====
+# ===== 主处理 =====
 
-# stateディレクトリ作成
+# 创建 state 目录
 mkdir -p "$STATE_DIR"
 
-# stdin から JSON 入力を読み取る
+# 从 stdin 读取 JSON 输入
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
@@ -126,7 +126,7 @@ if [ -z "$INPUT" ]; then
   exit 0
 fi
 
-# JSON から必要なフィールドを抽出（jq優先、なければpython3）
+# 从 JSON 中提取所需字段（优先使用 jq，否则使用 python3）
 TOOL_NAME=""
 SESSION_ID=""
 FILE_PATH=""
@@ -156,10 +156,10 @@ print(f"COMMAND={shlex.quote(command)}")
 ' 2>/dev/null)"
 fi
 
-# tool_name が無ければスキップ
+# 如果没有 tool_name 则跳过
 [ -z "$TOOL_NAME" ] && exit 0
 
-# prompt_seq を session.json から取得
+# 从 session.json 获取 prompt_seq
 PROMPT_SEQ=0
 if [ -f "$SESSION_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
@@ -169,8 +169,8 @@ if [ -f "$SESSION_FILE" ]; then
   fi
 fi
 
-# ===== LSP追跡（常に実行、matcher依存を回避） =====
-# LSP関連ツールを検出（tool_nameに "lsp" または "LSP" が含まれる場合）
+# ===== LSP 追踪（始终执行，避免依赖 matcher） =====
+# 检测 LSP 相关工具（tool_name 包含 "lsp" 或 "LSP" 时）
 if echo "$TOOL_NAME" | grep -iq "lsp"; then
   TOOLING_POLICY_FILE="${STATE_DIR}/tooling-policy.json"
   if [ -f "$TOOLING_POLICY_FILE" ]; then
@@ -197,36 +197,36 @@ PY
   fi
 fi
 
-# ===== Phase0ログ収集（CC_HARNESS_PHASE0_LOG=1 の時のみ） =====
+# ===== Phase0 日志收集（仅当 CC_HARNESS_PHASE0_LOG=1 时） =====
 if [ "${CC_HARNESS_PHASE0_LOG:-0}" = "1" ]; then
-  # タイムスタンプ（UTC ISO8601）
+  # 时间戳（UTC ISO8601）
   TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
 
-  # JSONL エントリ作成（最小フィールドのみ）
+  # 创建 JSONL 条目（仅包含最小字段）
   JSONL_ENTRY=$(cat <<EOF
 {"v":1,"ts":"$TIMESTAMP","session_id":"$SESSION_ID","prompt_seq":$PROMPT_SEQ,"hook_event_name":"PostToolUse","tool_name":"$TOOL_NAME"}
 EOF
   )
 
-  # ロック取得
+  # 获取锁
   if ! acquire_lock "$LOCK_FILE"; then
-    # ロックが取れなければスキップ（失敗しても問題ない）
+    # 如果无法获取锁则跳过（失败也无妨）
     exit 0
   fi
 
-  # ローテーションチェック
+  # 检查是否需要轮转
   if needs_rotation "$LOG_FILE"; then
     rotate_log "$LOG_FILE"
   fi
 
-  # ログ追記（原子的でないが、ロックで保護されている）
+  # 追加日志（非原子操作，但受锁保护）
   echo "$JSONL_ENTRY" >> "$LOG_FILE"
 
-  # ロック解放
+  # 释放锁
   release_lock "$LOCK_FILE"
 fi
 
-# ===== セッションイベントログ（重要ツールのみ） =====
+# ===== 会话事件日志（仅重要工具） =====
 is_important_tool() {
   case "$1" in
     Write|Edit|Bash|Task|Skill|SlashCommand) return 0 ;;
@@ -251,12 +251,12 @@ append_session_event() {
 
   [ ! -f "$SESSION_FILE" ] && return 0
 
-  # ロック取得
+  # 获取锁
   if ! acquire_lock "$EVENT_LOCK_FILE"; then
     return 0
   fi
 
-  # イベントログ初期化
+  # 初始化事件日志
   touch "$EVENT_LOG_FILE" 2>/dev/null || true
 
   if command -v jq >/dev/null 2>&1; then
@@ -268,7 +268,7 @@ append_session_event() {
     event_id=$(printf "event-%06d" "$seq")
     current_state=$(jq -r '.state // "executing"' "$SESSION_FILE" 2>/dev/null)
 
-    # session.json を更新
+    # 更新 session.json
     tmp_file=$(mktemp)
     jq --arg updated_at "$timestamp" \
        --arg event_id "$event_id" \
@@ -276,7 +276,7 @@ append_session_event() {
        '.updated_at = $updated_at | .last_event_id = $event_id | .event_seq = $event_seq' \
        "$SESSION_FILE" > "$tmp_file" && mv "$tmp_file" "$SESSION_FILE"
 
-    # event log 追記（SESSION_ORCHESTRATION.md 統一スキーマ）
+    # 追加事件日志（SESSION_ORCHESTRATION.md 统一模式）
     if [ -n "$data_json" ]; then
       echo "{\"id\":\"$event_id\",\"type\":\"tool.$tool\",\"ts\":\"$timestamp\",\"state\":\"$current_state\",\"data\":$data_json}" >> "$EVENT_LOG_FILE"
     else
@@ -303,25 +303,25 @@ if is_important_tool "$TOOL_NAME"; then
 fi
 
 
-# ===== Skill追跡（セッション単位でスキル使用を記録） =====
+# ===== Skill 追踪（按会话记录技能使用） =====
 SESSION_SKILLS_USED_FILE="${STATE_DIR}/session-skills-used.json"
 
 if [ "$TOOL_NAME" = "Skill" ]; then
   mkdir -p "$STATE_DIR"
-  
-  # ファイルが存在しない場合は初期化
+
+  # 如果文件不存在则初始化
   if [ ! -f "$SESSION_SKILLS_USED_FILE" ]; then
     echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
   fi
-  
+
   if command -v jq >/dev/null 2>&1; then
-    # スキル名を tool_input から取得
+    # 从 tool_input 获取技能名
     SKILL_NAME=""
     if [ -n "$INPUT" ]; then
       SKILL_NAME=$(printf '%s' "$INPUT" | jq -r '.tool_input.skill // "unknown"' 2>/dev/null)
     fi
-    
-    # used 配列に追加
+
+    # 添加到 used 数组
     temp_file=$(mktemp)
     jq --arg skill "$SKILL_NAME" \
        --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \

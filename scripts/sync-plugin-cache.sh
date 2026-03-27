@@ -1,25 +1,25 @@
 #!/bin/bash
 # sync-plugin-cache.sh
-# プラグインソースとキャッシュの整合性を確認し、必要に応じて同期
+# 检查插件源和缓存的一致性，必要时进行同步
 #
-# 使用方法: SessionStart hook から自動実行
-# 
-# 処理フロー:
-# 1. プラグインソースのバージョンを取得
-# 2. キャッシュのバージョン/ファイルハッシュを比較
-# 3. 差分があれば同期
+# 使用方法：从 SessionStart hook 自动执行
+#
+# 处理流程：
+# 1. 获取插件源的版本
+# 2. 比较缓存的版本/文件哈希
+# 3. 如果有差异则同步
 
 set -euo pipefail
 
-# ===== カラー定義 =====
+# ===== 颜色定义 =====
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# ===== パス設定 =====
-# プラグインソースを検出
+# ===== 路径设置 =====
+# 检测插件源位置
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load cross-platform path utilities (if available)
@@ -46,14 +46,14 @@ fi
 # Note: Removed hardcoded development paths for cross-platform compatibility
 # If you need to override in development, set CLAUDE_PLUGIN_ROOT environment variable
 
-# プラグイン情報
+# 插件信息
 PLUGIN_NAME="claude-code-harness"
 MARKETPLACE_NAME="claude-code-harness-marketplace"
 
-# キャッシュディレクトリ
+# 缓存目录
 CACHE_BASE="$HOME/.claude/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME"
 
-# ===== バージョン取得 =====
+# ===== 版本获取 =====
 get_source_version() {
   if [ -f "$PLUGIN_SOURCE/VERSION" ]; then
     cat "$PLUGIN_SOURCE/VERSION" | tr -d '[:space:]'
@@ -63,7 +63,7 @@ get_source_version() {
 }
 
 get_cache_version() {
-  # キャッシュ内の最新バージョンディレクトリを取得
+  # 获取缓存中的最新版本目录
   if [ -d "$CACHE_BASE" ]; then
     ls -1 "$CACHE_BASE" 2>/dev/null | sort -V | tail -1
   else
@@ -71,7 +71,7 @@ get_cache_version() {
   fi
 }
 
-# ===== ファイルハッシュ比較 =====
+# ===== 文件哈希比较 =====
 get_file_hash() {
   local file="$1"
   if [ -f "$file" ]; then
@@ -80,7 +80,7 @@ get_file_hash() {
     elif command -v md5 >/dev/null 2>&1; then
       md5 -q "$file"
     else
-      # フォールバック: ファイルサイズ
+      # 回退方案：文件大小
       wc -c < "$file" | tr -d '[:space:]'
     fi
   else
@@ -101,7 +101,7 @@ files_differ() {
   [ "$source_hash" != "$cache_hash" ]
 }
 
-# ===== 同期処理 =====
+# ===== 同步处理 =====
 sync_file() {
   local rel_path="$1"
   local cache_dir="$2"  # Explicit argument instead of global variable
@@ -117,10 +117,10 @@ sync_file() {
 
 sync_critical_files() {
   local cache_dir="$1"
-  local plugin_source="$2"  # 明示的にソースディレクトリを受け取る
+  local plugin_source="$2"  # 显式接收源目录
   local synced=0
 
-  # 同期対象ファイル（重要なスクリプト）
+  # 需要同步的文件（关键脚本）
   local critical_files=(
     "scripts/run-script.js"
     "scripts/path-utils.sh"
@@ -163,25 +163,25 @@ sync_critical_files() {
   printf "%d" "$synced"
 }
 
-# ===== メイン処理 =====
-# 注意: Claude Code はフックの stderr のみを表示するため、出力は stderr に
+# ===== 主处理 =====
+# 注意：Claude Code 只显示 hook 的 stderr，因此输出到 stderr
 main() {
   local SOURCE_VERSION=$(get_source_version)
 
-  # デバッグ情報（環境変数で有効化）
+  # 调试信息（通过环境变量启用）
   if [ "${CC_HARNESS_DEBUG:-0}" = "1" ]; then
     echo -e "${BLUE}[Debug] Plugin source: $PLUGIN_SOURCE${NC}" >&2
     echo -e "${BLUE}[Debug] Source version: $SOURCE_VERSION${NC}" >&2
     echo -e "${BLUE}[Debug] Cache base: $CACHE_BASE${NC}" >&2
   fi
 
-  # キャッシュディレクトリが存在しない場合
+  # 如果缓存目录不存在
   if [ ! -d "$CACHE_BASE" ]; then
-    echo -e "${YELLOW}⚠️ キャッシュが見つかりません${NC}" >&2
+    echo -e "${YELLOW}⚠️ 未找到缓存${NC}" >&2
     return 0
   fi
 
-  # すべてのキャッシュバージョンに対して同期
+  # 对所有缓存版本进行同步
   local total_synced=0
   for cache_version_dir in "$CACHE_BASE"/*/; do
     [ ! -d "$cache_version_dir" ] && continue
@@ -193,7 +193,7 @@ main() {
       echo -e "${BLUE}[Debug] Checking cache: $cache_version${NC}" >&2
     fi
 
-    # ファイル差分をチェック（VERSION も含める）
+    # 检查文件差异（包含 VERSION）
     local needs_sync=false
     for rel_path in \
       "VERSION" \
@@ -215,14 +215,14 @@ main() {
     done
 
     if [ "$needs_sync" = true ]; then
-      echo -e "${YELLOW}🔄 キャッシュ v$cache_version を同期中...${NC}" >&2
+      echo -e "${YELLOW}🔄 正在同步缓存 v$cache_version...${NC}" >&2
       SYNCED=$(sync_critical_files "$CACHE_DIR" "$PLUGIN_SOURCE")
       total_synced=$((total_synced + SYNCED))
     fi
   done
 
   if [ "$total_synced" -gt 0 ]; then
-    echo -e "${GREEN}✅ 合計 $total_synced ファイルを同期しました${NC}" >&2
+    echo -e "${GREEN}✅ 已同步共 $total_synced 个文件${NC}" >&2
   fi
 }
 

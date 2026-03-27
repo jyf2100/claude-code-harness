@@ -1,57 +1,57 @@
 ---
 name: health-check
-description: "環境診断（依存/設定/利用可能機能の確認）。環境が正しくセットアップされているか確認したい場合に使用します。"
+description: "环境诊断（确认依赖/设置/可用功能）。在需要确认环境是否正确设置时使用。"
 allowed-tools: ["Read", "Bash"]
 ---
 
 # Health Check Skill
 
-プラグインを使用する前に、環境が正しくセットアップされているかを診断するスキル。
+在使用插件前，诊断环境是否正确设置的技能。
 
 ---
 
-## トリガーフレーズ
+## 触发短语
 
-- 「この環境で動くかチェックして」
-- 「何が足りない？」
-- 「環境を診断して」
-- 「使える機能を教えて」
+- "检查这个环境能否运行"
+- "缺少什么？"
+- "诊断环境"
+- "告诉我有什么可用功能"
 
 ---
 
-## チェック項目
+## 检查项目
 
-### 必須ツール
+### 必要工具
 - Git
-- Node.js / npm（該当する場合）
-- GitHub CLI（オプション）
+- Node.js / npm（适用时）
+- GitHub CLI（可选）
 
-### 設定ファイル
-- `claude-code-harness.config.json` の存在と妥当性
-- `.claude/settings.json` の存在
+### 设置文件
+- `claude-code-harness.config.json` 的存在和有效性
+- `.claude/settings.json` 的存在
 
-### ワークフローファイル
-- `Plans.md` の存在
-- `AGENTS.md` の存在
-- `CLAUDE.md` の存在
+### 工作流文件
+- `Plans.md` 的存在
+- `AGENTS.md` 的存在
+- `CLAUDE.md` 的存在
 
 ---
 
-## 出力形式
+## 输出格式
 
 ```
-## 環境診断レポート
+## 环境诊断报告
 
-### 必須ツール
+### 必要工具
 ✅ git (2.40.0)
 ✅ node (v20.10.0)
-⚠️ gh (未インストール - CI自動修正に必要)
+⚠️ gh (未安装 - CI 自动修正需要)
 
-### 設定ファイル
+### 设置文件
 ✅ claude-code-harness.config.json
 ✅ .claude/settings.json
 
-### 利用可能な機能
+### 可用功能
 ✅ $harness-work, $harness-plan, $harness-sync
-⚠️ CI自動修正 (gh が必要)
+⚠️ CI自动修正 (需要 gh)
 ```

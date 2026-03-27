@@ -1,15 +1,15 @@
 #!/bin/bash
 # session-monitor.sh
-# セッション開始時にプロジェクト状態を収集・表示
+# 在会话启动时收集并显示项目状态
 #
-# Usage: SessionStart hook から自動実行
-# Output: プロジェクト状態サマリー + 状態ファイル生成
+# Usage: 由 SessionStart hook 自动执行
+# Output: 项目状态摘要 + 状态文件生成
 
-# エラーで停止しない（Git エラー等を許容）
+# 遇到错误不停止（允许 Git 错误等）
 set +e
 
 # ================================
-# 設定
+# 配置
 # ================================
 STATE_DIR=".claude/state"
 STATE_FILE="$STATE_DIR/session.json"
@@ -17,7 +17,7 @@ TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
 EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 CONFIG_FILE=".claude-code-harness.config.yaml"
 
-# plansDirectory 設定を考慮して Plans.md のパスを取得
+# 考虑 plansDirectory 配置以获取 Plans.md 的路径
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/config-utils.sh" ]; then
   source "${SCRIPT_DIR}/config-utils.sh"
@@ -27,24 +27,24 @@ else
 fi
 
 # ================================
-# ヘルパー関数
+# 辅助函数
 # ================================
 
-# 相対時間を計算（秒数から「X分前」「X時間前」等）
+# 计算相对时间（从秒数转换为"X分钟前"、"X小时前"等）
 relative_time() {
   local seconds=$1
   if [ "$seconds" -lt 60 ]; then
     echo "${seconds}秒前"
   elif [ "$seconds" -lt 3600 ]; then
-    echo "$((seconds / 60))分前"
+    echo "$((seconds / 60))分钟前"
   elif [ "$seconds" -lt 86400 ]; then
-    echo "$((seconds / 3600))時間前"
+    echo "$((seconds / 3600))小时前"
   else
-    echo "$((seconds / 86400))日前"
+    echo "$((seconds / 86400))天前"
   fi
 }
 
-# Plans.md からタスク数をカウント
+# 从 Plans.md 统计任务数量
 count_tasks() {
   local marker=$1
   local count=0
@@ -56,14 +56,14 @@ count_tasks() {
 }
 
 # ================================
-# 状態収集
+# 状态收集
 # ================================
 
-# プロジェクト情報
+# 项目信息
 PROJECT_NAME=$(basename "$(pwd)")
 CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Git 情報
+# Git 信息
 if [ -d ".git" ]; then
   GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
   [ -z "$GIT_BRANCH" ] && GIT_BRANCH="unknown"
@@ -78,13 +78,13 @@ else
   GIT_LAST_COMMIT_TIME="0"
 fi
 
-# Plans.md 情報
+# Plans.md 信息
 if [ -f "$PLANS_FILE" ]; then
   PLANS_EXISTS="true"
   PLANS_MODIFIED=$(stat -f "%m" "$PLANS_FILE" 2>/dev/null || stat -c "%Y" "$PLANS_FILE" 2>/dev/null || echo "0")
   WIP_COUNT=$(count_tasks "cc:WIP")
   TODO_COUNT=$(count_tasks "cc:TODO")
-  # pm:* を正規。cursor:* は互換で同義扱い
+  # pm:* 为正式格式。cursor:* 为兼容格式，视为同义
   PENDING_COUNT=$(( $(count_tasks "pm:依頼中") + $(count_tasks "cursor:依頼中") ))
   COMPLETED_COUNT=$(count_tasks "cc:完了")
 else
@@ -96,7 +96,7 @@ else
   COMPLETED_COUNT="0"
 fi
 
-# Orchestration 設定の読み取り（簡易パース）
+# 读取 Orchestration 配置（简易解析）
 ORCH_MAX_RETRIES="3"
 ORCH_BACKOFF="10"
 if [ -f "$CONFIG_FILE" ]; then
@@ -110,14 +110,14 @@ if [ -f "$CONFIG_FILE" ]; then
   fi
 fi
 
-# 前回セッション情報
+# 上次会话信息
 LAST_SESSION_TIME="0"
 if [ -f "$STATE_FILE" ]; then
   LAST_SESSION_TIME=$(cat "$STATE_FILE" | grep -o '"started_at":"[^"]*"' | cut -d'"' -f4 | xargs -I{} date -j -f "%Y-%m-%dT%H:%M:%SZ" "{}" "+%s" 2>/dev/null || echo "0")
 fi
 
 # ================================
-# 状態ファイル生成
+# 状态文件生成
 # ================================
 # Security: refuse if STATE_DIR or its parent is a symlink (prevents symlink-based overwrites)
 if [ -L "$STATE_DIR" ] || [ -L "$(dirname "$STATE_DIR")" ]; then
@@ -126,7 +126,7 @@ if [ -L "$STATE_DIR" ] || [ -L "$(dirname "$STATE_DIR")" ]; then
 fi
 mkdir -p "$STATE_DIR"
 
-# 既存セッションが未終了なら resume を試みる
+# 如果现有会话未结束，则尝试恢复
 EXISTING_SESSION_ID=""
 EXISTING_ENDED_AT=""
 EXISTING_RESUME_TOKEN=""
@@ -172,7 +172,7 @@ if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
   RESUME_MODE="false"
 fi
 
-# イベントログ初期化
+# 初始化事件日志
 touch "$EVENT_LOG_FILE" 2>/dev/null || true
 
 gen_session_id() {
@@ -242,7 +242,7 @@ OLD_UMASK=$(umask)
 umask 077
 
 if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
-  # 既存セッションを更新（resume）
+  # 更新现有会话（恢复）
   if command -v jq >/dev/null 2>&1; then
     tmp_file=$(mktemp)
     jq --arg cwd "$(pwd)" \
@@ -284,7 +284,7 @@ if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
 
   append_event "session.resume" "initialized" "$CURRENT_TIME" ""
 else
-  # 新規セッション or fork
+  # 新会话或 fork
   NEW_SESSION_ID="$(gen_session_id)"
   RESUME_TOKEN="$(gen_resume_token)"
   PARENT_SESSION_ID="null"
@@ -342,7 +342,7 @@ fi
 # Restore original umask
 umask "$OLD_UMASK"
 
-# Resume / Fork 情報（表示用）
+# Resume / Fork 信息（用于显示）
 RESUME_INFO=""
 FORK_INFO=""
 if [ "$RESUME_MODE" = "true" ]; then
@@ -353,10 +353,10 @@ if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
 fi
 
 # ================================
-# Tooling Policy ファイル生成
+# Tooling Policy 文件生成
 # ================================
 
-# LSP 可用性の判定（公式LSPプラグイン導入状況）
+# 判定 LSP 可用性（官方 LSP 插件安装情况）
 LSP_AVAILABLE="false"
 LSP_PLUGINS=""
 PLUGIN_LIST=""
@@ -364,16 +364,16 @@ PLUGIN_COUNT="unknown"
 PLUGIN_ENABLED_ESTIMATE="unknown"
 PLUGIN_SOURCE=""
 
-# 既知の公式LSPプラグイン名（マーケットプレイス）
-# 全10種の公式プラグインをサポート
+# 已知的官方 LSP 插件名称（市场）
+# 支持全部 10 种官方插件
 OFFICIAL_LSP_PLUGINS="typescript-lsp pyright-lsp rust-analyzer-lsp gopls-lsp clangd-lsp jdtls-lsp swift-lsp lua-lsp php-lsp csharp-lsp"
 
 if command -v claude >/dev/null 2>&1; then
-  # claude plugin list でインストール済みプラグインを確認
+  # 通过 claude plugin list 确认已安装的插件
   PLUGIN_LIST=$(claude plugin list 2>/dev/null || true)
   INSTALLED_PLUGINS=$(echo "$PLUGIN_LIST" | grep -o '[a-z-]*lsp' || true)
 
-  # 公式LSPプラグインが1つでも導入されているかチェック
+  # 检查是否有任一官方 LSP 插件已安装
   for plugin in $OFFICIAL_LSP_PLUGINS; do
     if echo "$INSTALLED_PLUGINS" | grep -q "$plugin"; then
       LSP_AVAILABLE="true"
@@ -381,7 +381,7 @@ if command -v claude >/dev/null 2>&1; then
     fi
   done
 
-  # プラグイン数の推定
+  # 推算插件数量
   if [ -n "$PLUGIN_LIST" ]; then
     PLUGIN_COUNT=$(echo "$PLUGIN_LIST" | grep -E '^[[:space:]]*[a-z0-9][a-z0-9-]*@' | wc -l | tr -d ' ')
     PLUGIN_DISABLED=$(echo "$PLUGIN_LIST" | grep -Ei 'disabled|inactive' | grep -E '^[[:space:]]*[a-z0-9]' | wc -l | tr -d ' ')
@@ -519,7 +519,7 @@ if command -v jq >/dev/null 2>&1 && [ -n "$MCP_SOURCES" ]; then
   MCP_SOURCES_JSON=$(printf "%s\n" $MCP_SOURCES | jq -R . | jq -s '.' 2>/dev/null || echo "[]")
 fi
 
-# JSON用の数値/NULL整形
+# JSON 用的数值/NULL 整形
 json_number_or_null() {
   local value="$1"
   if [ -z "$value" ] || [ "$value" = "unknown" ]; then
@@ -538,10 +538,10 @@ format_count() {
   fi
 }
 
-# Skillsインデックスの生成（name + description）
+# Skills 索引生成（name + description）
 SKILLS_INDEX="[]"
 if [ -d "skills" ]; then
-  # JSONフォーマットでskillsを収集（jq優先、なければpythonでフォールバック）
+  # 以 JSON 格式收集 skills（优先使用 jq，否则回退到 python）
   if command -v jq >/dev/null 2>&1; then
     SKILLS_INDEX=$(
       find skills -name 'doc.md' -type f 2>/dev/null | while read -r doc_file; do
@@ -575,10 +575,10 @@ PY
   fi
 fi
 
-# LSP可用性を拡張子別にマッピング（簡略版）
+# LSP 可用性按扩展名映射（简化版）
 LSP_BY_EXT="{}"
 if [ "$LSP_AVAILABLE" = "true" ]; then
-  # 公式LSPプラグインが導入されている場合、対応拡張子をマッピング
+  # 如果已安装官方 LSP 插件，映射对应的扩展名
   if echo "$LSP_PLUGINS" | grep -q "typescript-lsp"; then
     LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"ts": true, "tsx": true, "js": true, "jsx": true}' 2>/dev/null || echo '{"ts":true,"tsx":true,"js":true,"jsx":true}')
   fi
@@ -611,7 +611,7 @@ if [ "$LSP_AVAILABLE" = "true" ]; then
   fi
 fi
 
-# tooling-policy.json を生成
+# 生成 tooling-policy.json
 cat > "$TOOLING_POLICY_FILE" << EOF
 {
   "lsp": {
@@ -646,22 +646,22 @@ cat > "$TOOLING_POLICY_FILE" << EOF
 EOF
 
 # ================================
-# サマリー出力
+# 摘要输出
 # ================================
 echo ""
-echo "📊 セッション開始 - プロジェクト状態"
+echo "📊 会话开始 - 项目状态"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📂 プロジェクト: $PROJECT_NAME"
-echo "🔀 ブランチ: $GIT_BRANCH"
+echo "📂 项目: $PROJECT_NAME"
+echo "🔀 分支: $GIT_BRANCH"
 
 if [ "$GIT_UNCOMMITTED" -gt 0 ]; then
-  echo "📝 未コミット: ${GIT_UNCOMMITTED}ファイル"
+  echo "📝 未提交: ${GIT_UNCOMMITTED} 个文件"
 fi
 
 if [ "$PLANS_EXISTS" = "true" ]; then
   TOTAL_ACTIVE=$((WIP_COUNT + TODO_COUNT + PENDING_COUNT))
   if [ "$TOTAL_ACTIVE" -gt 0 ]; then
-    echo "📋 Plans.md: WIP ${WIP_COUNT}件 / TODO $((TODO_COUNT + PENDING_COUNT))件"
+    echo "📋 Plans.md: WIP ${WIP_COUNT} 项 / TODO $((TODO_COUNT + PENDING_COUNT)) 项"
   fi
 fi
 
@@ -669,21 +669,21 @@ if [ "$CONTEXT_BUDGET_ENABLED" = "true" ]; then
   MCP_CONFIG_LABEL="$(format_count "$MCP_CONFIGURED")"
   MCP_ENABLED_LABEL="$(format_count "$MCP_ENABLED_ESTIMATE")"
   PLUGIN_LABEL="$(format_count "$PLUGIN_ENABLED_ESTIMATE")"
-  echo "🧠 コンテキスト予算（推定）: MCP ${MCP_ENABLED_LABEL}/${MCP_CONFIG_LABEL}, Plugins ${PLUGIN_LABEL}"
+  echo "🧠 上下文预算（推算）: MCP ${MCP_ENABLED_LABEL}/${MCP_CONFIG_LABEL}, 插件 ${PLUGIN_LABEL}"
 
   if [ "$MCP_ENABLED_ESTIMATE" != "unknown" ] && [ "$MCP_ENABLED_ESTIMATE" -gt "$CONTEXT_MAX_ENABLED_MCPS" ] 2>/dev/null; then
-    echo "⚠️ MCP 有効数の推定値が上限を超えています (${MCP_ENABLED_ESTIMATE}/${CONTEXT_MAX_ENABLED_MCPS})"
+    echo "⚠️ MCP 启用数的推算值超过上限 (${MCP_ENABLED_ESTIMATE}/${CONTEXT_MAX_ENABLED_MCPS})"
   fi
 
   if [ "$PLUGIN_ENABLED_ESTIMATE" != "unknown" ] && [ "$PLUGIN_ENABLED_ESTIMATE" -gt "$CONTEXT_MAX_INSTALLED_PLUGINS" ] 2>/dev/null; then
-    echo "⚠️ プラグイン数の推定値が上限を超えています (${PLUGIN_ENABLED_ESTIMATE}/${CONTEXT_MAX_INSTALLED_PLUGINS})"
+    echo "⚠️ 插件数的推算值超过上限 (${PLUGIN_ENABLED_ESTIMATE}/${CONTEXT_MAX_INSTALLED_PLUGINS})"
   fi
 fi
 
 if [ -n "$LAST_SESSION_TIME" ] && [ "$LAST_SESSION_TIME" != "0" ] && [ "$LAST_SESSION_TIME" -gt 0 ] 2>/dev/null; then
   NOW=$(date +%s)
   DIFF=$((NOW - LAST_SESSION_TIME))
-  echo "⏰ 前回セッション: $(relative_time $DIFF)"
+  echo "⏰ 上次会话: $(relative_time $DIFF)"
 fi
 
 if [ -n "$RESUME_INFO" ]; then

@@ -1,6 +1,6 @@
 ---
 name: ci
-description: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
+description: "CI 变红就叫我。管道消防队，出动。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 description-en: "CI red? Call us. Pipeline fire brigade deploys. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 description-ja: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 allowed-tools: ["Read", "Grep", "Bash", "Task"]
@@ -11,186 +11,186 @@ argument-hint: "[analyze|fix|run]"
 
 # CI/CD Skills
 
-CI/CD パイプラインに関する問題を解決するスキル群です。
+解决 CI/CD 管道相关问题的技能群。
 
 ---
 
-## 発動条件
+## 触发条件
 
-- 「CIが落ちた」「GitHub Actionsが失敗」
-- 「ビルドエラー」「テストが通らない」
-- 「パイプラインを直して」
+- "CI 失败了"、"GitHub Actions 失败"
+- "构建错误"、"测试不通过"
+- "修好管道"
 
 ---
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 | トリガー |
+| 功能 | 详情 | 触发 |
 |------|------|----------|
-| **失敗分析** | See [references/analyzing-failures.md](${CLAUDE_SKILL_DIR}/references/analyzing-failures.md) | 「ログを見て」「原因を調べて」 |
-| **テスト修正** | See [references/fixing-tests.md](${CLAUDE_SKILL_DIR}/references/fixing-tests.md) | 「テストを直して」「修正案を出して」 |
+| **失败分析** | See [references/analyzing-failures.md](${CLAUDE_SKILL_DIR}/references/analyzing-failures.md) | "看日志"、"调查原因" |
+| **测试修正** | See [references/fixing-tests.md](${CLAUDE_SKILL_DIR}/references/fixing-tests.md) | "修测试"、"提修正方案" |
 
 ---
 
-## 実行手順
+## 执行步骤
 
-1. **テスト vs 実装判定**（Step 0）
-2. ユーザーの意図を分類（分析 or 修正）
-3. 複雑度を判定（下記参照）
-4. 上記の「機能詳細」から適切な参照ファイルを読む、または ci-cd-fixer サブエージェント起動
-5. 結果を確認し、必要に応じて再実行
+1. **测试 vs 实现判定**（Step 0）
+2. 分类用户意图（分析或修正）
+3. 判定复杂度（见下）
+4. 从上述"功能详情"读取适当的参考文件，或启动 ci-cd-fixer 子代理
+5. 确认结果，必要时重新运行
 
-### Step 0: テスト vs 実装判定（品質判定ゲート）
+### Step 0: 测试 vs 实现判定（质量判定关卡）
 
-CI 失敗時、まず原因の切り分けを行う:
+CI 失败时，首先区分原因：
 
 ```
-CI 失敗報告
+CI 失败报告
     ↓
 ┌─────────────────────────────────────────┐
-│           テスト vs 実装判定             │
+│           测试 vs 实现判定             │
 ├─────────────────────────────────────────┤
-│  エラーの原因を分析:                    │
-│  ├── 実装が間違い → 実装を修正          │
-│  ├── テストが古い → ユーザーに確認      │
-│  └── 環境問題 → 環境修正                │
+│  分析错误原因:                    │
+│  ├── 实现错误 → 修正实现          │
+│  ├── 测试过时 → 向用户确认      │
+│  └── 环境问题 → 修正环境                │
 └─────────────────────────────────────────┘
 ```
 
-#### 禁止事項（改ざん防止）
+#### 禁止事项（篡改防止）
 
 ```markdown
-⚠️ CI 失敗時の禁止事項
+⚠️ CI 失败时的禁止事项
 
-以下の「解決策」は禁止です：
+以下"解决方案"是禁止的：
 
-| 禁止 | 例 | 正しい対応 |
+| 禁止 | 例 | 正确对应 |
 |------|-----|-----------|
-| テスト skip 化 | `it.skip(...)` | 実装を修正 |
-| アサーション削除 | `expect()` を消す | 期待値を確認 |
-| CI チェック迂回 | `continue-on-error` | 根本原因修正 |
-| lint ルール緩和 | `eslint-disable` | コードを修正 |
+| 跳过测试 | `it.skip(...)` | 修正实现 |
+| 删除断言 | 删除 `expect()` | 确认期望值 |
+| 绕过 CI 检查 | `continue-on-error` | 修复根本原因 |
+| 放宽 lint 规则 | `eslint-disable` | 修正代码 |
 ```
 
-#### 判断フロー
+#### 判断流程
 
 ```markdown
-🔴 CI が失敗しています
+🔴 CI 失败了
 
-**判断が必要です**:
+**需要判断**:
 
-1. **実装が間違い** → 実装を修正 ✅
-2. **テストの期待値が古い** → ユーザーに確認を求める
-3. **環境の問題** → 環境設定を修正
+1. **实现错误** → 修正实现 ✅
+2. **测试期望值过时** → 请求用户确认
+3. **环境问题** → 修正环境设置
 
-⚠️ テストの改ざん（skip化、アサーション削除）は禁止です
+⚠️ 禁止篡改测试（跳过、删除断言）
 
-どれに該当しますか？
+属于哪种情况？
 ```
 
-#### 承認が必要な場合
+#### 需要批准的情况
 
-テスト/設定の変更がやむを得ない場合:
+不得已需要更改测试/设置时：
 
 ```markdown
-## 🚨 テスト/設定変更の承認リクエスト
+## 🚨 测试/设置变更批准请求
 
 ### 理由
-[なぜこの変更が必要か]
+[为什么需要此变更]
 
-### 変更内容
-[差分]
+### 变更内容
+[差异]
 
-### 代替案の検討
-- [ ] 実装の修正で解決できないか確認した
+### 替代方案讨论
+- [ ] 已确认无法通过修正实现解决
 
-ユーザーの明示的な承認を待つ
+等待用户明确批准
 ```
 
-### Git log 拡張フラグの活用（CC 2.1.49+）
+### 利用 Git log 扩展标志（CC 2.1.49+）
 
-CI 失敗時の原因コミット特定に構造化ログを活用します。
+CI 失败时利用结构化日志定位原因提交。
 
-#### 原因コミットの特定
+#### 定位原因提交
 
 ```bash
-# 構造化フォーマットでコミット分析
+# 用结构化格式分析提交
 git log --format="%h|%s|%an|%ad" --date=short -10
 
-# トポロジカル順序で時系列分析
+# 用拓扑顺序进行时序分析
 git log --topo-order --oneline -20
 
-# 変更ファイルと原因の紐付け
+# 关联变更文件和原因
 git log --raw --oneline -5
 ```
 
-#### 主な活用場面
+#### 主要使用场景
 
-| 用途 | フラグ | 効果 |
+| 用途 | 标志 | 效果 |
 |------|--------|------|
-| **失敗原因の特定** | `--format="%h|%s"` | コミット一覧の構造化 |
-| **時系列での追跡** | `--topo-order` | マージ順序を考慮した追跡 |
-| **変更影響の把握** | `--raw` | ファイル変更の詳細表示 |
-| **マージ除外分析** | `--cherry-pick --no-merges` | 実コミットのみを抽出 |
+| **定位失败原因** | `--format="%h|%s"` | 结构化提交列表 |
+| **时序追踪** | `--topo-order` | 考虑合并顺序的追踪 |
+| **把握变更影响** | `--raw` | 详细显示文件变更 |
+| **排除合并分析** | `--cherry-pick --no-merges` | 仅提取实际提交 |
 
-#### 出力例
+#### 输出示例
 
 ```markdown
-🔍 CI 失敗原因分析
+🔍 CI 失败原因分析
 
-最近のコミット（構造化）:
+最近提交（结构化）:
 | Hash | Subject | Author | Date |
 |------|---------|--------|------|
 | a1b2c3d | feat: update API | Alice | 2026-02-04 |
 | e4f5g6h | test: add tests | Bob | 2026-02-03 |
 
-変更ファイル（--raw）:
-├── src/api/endpoint.ts (Modified) ← 型エラー発生
+变更文件（--raw）:
+├── src/api/endpoint.ts (Modified) ← 发生类型错误
 ├── tests/api.test.ts (Modified)
 └── package.json (Modified)
 
-→ a1b2c3d のコミットが原因の可能性大
-  型エラー: src/api/endpoint.ts:42
+→ a1b2c3d 提交可能是原因
+  类型错误: src/api/endpoint.ts:42
 ```
 
-## サブエージェント連携
+## 子代理协作
 
-以下の条件を満たす場合、Task tool で ci-cd-fixer を起動:
+满足以下条件时，用 Task tool 启动 ci-cd-fixer：
 
-- 修正 → 再実行 → 失敗のループが **2回以上** 発生
-- または、エラーが複数ファイルにまたがる複雑なケース
+- 修正 → 重新运行 → 失败的循环发生 **2 次以上**
+- 或错误跨多个文件的复杂情况
 
-**起動パターン:**
+**启动模式:**
 
 ```
 Task tool:
   subagent_type="ci-cd-fixer"
-  prompt="CI失敗を診断・修正してください。エラーログ: {error_log}"
+  prompt="请诊断并修正 CI 失败。错误日志: {error_log}"
 ```
 
-ci-cd-fixer は安全第一で動作（デフォルト dry-run モード）。
-詳細は `agents/ci-cd-fixer.md` を参照。
+ci-cd-fixer 以安全第一运行（默认 dry-run 模式）。
+详情请参考 `agents/ci-cd-fixer.md`。
 
 ---
 
-## VibeCoder 向け
+## VibeCoder 专用
 
 ```markdown
-🔧 CI が壊れたときの言い方
+🔧 CI 坏了时的说法
 
-1. **「CI が落ちた」「赤くなった」**
-   - 自動テストが失敗している状態
+1. **"CI 掉了"、"变红了"**
+   - 自动测试失败的状态
 
-2. **「なんで失敗してるの？」**
-   - 原因を調べてほしい
+2. **"为什么会失败？"**
+   - 希望调查原因
 
-3. **「直して」**
-   - 自動で修正を試みる
+3. **"修好它"**
+   - 尝试自动修正
 
-💡 重要: テストを「ごまかす」修正は禁止です
-   - ❌ テストを消す、スキップする
-   - ⭕ コードを正しく直す
+💡 重要: "糊弄"测试的修正是禁止的
+   - ❌ 删除测试、跳过测试
+   - ⭕ 正确修正代码
 
-「テストが間違ってそう」と思ったら、
-まず確認してから対応を決めましょう
+觉得"测试可能有问题"时，
+先确认再决定如何处理
 ```

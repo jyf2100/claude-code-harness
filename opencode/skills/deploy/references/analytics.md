@@ -1,37 +1,37 @@
 ---
 name: analytics
-description: "Analytics統合（GA/Vercel Analytics 等）。アクセス解析を導入したい場合に使用します。"
+description: "分析统计集成（GA/Vercel Analytics 等）。想要引入访问分析时使用。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
 # Analytics Skill
 
-Google Analytics または Vercel Analytics を統合するスキル。
+集成 Google Analytics 或 Vercel Analytics 的技能。
 
 ---
 
-## トリガーフレーズ
+## 触发短语
 
-- 「アクセス解析を入れて」
-- 「Google Analyticsを設定して」
-- 「Vercel Analyticsを追加して」
-- 「ページビューを追跡したい」
-
----
-
-## 機能
-
-- ページビュー追跡
-- イベント追跡
-- コンバージョン追跡
-- ユーザー行動分析
+- "加入访问分析"
+- "设置 Google Analytics"
+- "添加 Vercel Analytics"
+- "想跟踪页面浏览"
 
 ---
 
-## 実行フロー
+## 功能
 
-1. プロジェクト構成を確認（Next.js / React / etc）
-2. Google Analytics または Vercel Analytics を選択
-3. 必要なパッケージをインストール
-4. 設定ファイルを生成
-5. イベント追跡関数を作成
+- 页面浏览跟踪
+- 事件跟踪
+- 转化跟踪
+- 用户行为分析
+
+---
+
+## 执行流程
+
+1. 确认项目配置（Next.js / React / 等）
+2. 选择 Google Analytics 或 Vercel Analytics
+3. 安装必要的包
+4. 生成配置文件
+5. 创建事件跟踪函数

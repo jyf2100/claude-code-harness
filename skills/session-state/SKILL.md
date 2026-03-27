@@ -1,32 +1,32 @@
 ---
 name: session-state
-description: "SESSION_ORCHESTRATION.md に基づくセッション状態遷移管理。/work フェーズ境界での状態更新、エラー時の escalated 遷移、セッション再開時の initialized 復帰を制御。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
+description: "基于 SESSION_ORCHESTRATION.md 的会话状态迁移管理。控制 /work 阶段边界的状态更新、错误时的升级迁移、会话恢复时的初始化复原。内部工作流专用。不用于：用户会话管理、登录状态、应用状态处理。"
 description-en: "Manages session state transitions per SESSION_ORCHESTRATION.md. Controls state updates at /work phase boundaries, escalated transitions on error, and initialized restoration on session resume. Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
-description-ja: "SESSION_ORCHESTRATION.md に基づくセッション状態遷移管理。/work フェーズ境界での状態更新、エラー時の escalated 遷移、セッション再開時の initialized 復帰を制御。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
+description-zh: "基于 SESSION_ORCHESTRATION.md 的会话状态迁移管理。控制 /work 阶段边界的状态更新、错误时的升级迁移、会话恢复时的初始化复原。内部工作流专用。不用于：用户会话管理、登录状态、应用状态处理。"
 allowed-tools: ["Read", "Bash"]
 user-invocable: false
 ---
 
-# Session State Skill
+# Session State 技能
 
-セッション状態の遷移を管理する内部スキル。
-`docs/SESSION_ORCHESTRATION.md` に定義された状態機械に従って遷移を検証・実行する。
+管理会话状态迁移的内部技能。
+按 `docs/SESSION_ORCHESTRATION.md` 定义的状态机验证和执行迁移。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
-|------|------|
-| **状態遷移** | See [references/state-transition.md](${CLAUDE_SKILL_DIR}/references/state-transition.md) |
+| 功能 | 详情 |
+|-----|------|
+| **状态迁移** | 见 [references/state-transition.md](${CLAUDE_SKILL_DIR}/references/state-transition.md) |
 
-## 使用タイミング
+## 使用时机
 
-- `/work` フェーズ境界での状態更新
-- エラー発生時の `escalated` 遷移
-- セッション終了時の `stopped` 遷移
-- セッション再開時の `initialized` 復帰
+- `/work` 阶段边界的状态更新
+- 错误发生时的 `escalated` 迁移
+- 会话结束时的 `stopped` 迁移
+- 会话恢复时的 `initialized` 复原
 
-## 注意事項
+## 注意事项
 
-- このスキルは内部使用専用です
-- ユーザーが直接呼び出すことは想定していません
-- 状態遷移ルールは `docs/SESSION_ORCHESTRATION.md` で定義
+- 此技能仅供内部使用
+- 不假设用户直接调用
+- 状态迁移规则定义在 `docs/SESSION_ORCHESTRATION.md`

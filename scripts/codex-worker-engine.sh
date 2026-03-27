@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
 #
 # codex-worker-engine.sh
-# Codex Worker 実行エンジン
+# Codex Worker 执行引擎
 #
-# Usage: ./scripts/codex-worker-engine.sh --task "タスク内容" [--worktree PATH] [--dry-run]
+# Usage: ./scripts/codex-worker-engine.sh --task "任务内容" [--worktree PATH] [--dry-run]
 #
 
 set -euo pipefail
 
-# スクリプトディレクトリ
+# 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 共通ライブラリ読み込み
+# 加载通用库
 # shellcheck source=lib/codex-worker-common.sh
 source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 
 # ============================================
-# ローカル設定（main で初期化）
+# 本地配置（在 main 中初始化）
 # ============================================
 MAX_RETRIES=""
 APPROVAL_POLICY=""
 SANDBOX=""
 
-# 設定初期化（check_dependencies 後に呼び出す）
+# 配置初始化（在 check_dependencies 后调用）
 init_config() {
     validate_config || {
-        log_error "設定ファイルが不正です"
+        log_error "配置文件无效"
         exit 1
     }
     MAX_RETRIES=$(get_config "max_retries")
@@ -33,7 +33,7 @@ init_config() {
     SANDBOX=$(get_config "sandbox")
 }
 
-# グローバル変数
+# 全局变量
 TASK=""
 WORKTREE_PATH=""
 DRY_RUN=false
@@ -41,31 +41,31 @@ PROJECT_ROOT=""
 AGENTS_HASH=""
 CONTRACT_TEMPLATE="$SCRIPT_DIR/lib/codex-hardening-contract.txt"
 
-# 使用方法
+# 使用说明
 usage() {
     cat << EOF
-Usage: $0 --task "タスク内容" [OPTIONS]
+Usage: $0 --task "任务内容" [OPTIONS]
 
 Options:
-  --task TEXT       実行するタスク内容（必須）
-  --worktree PATH   Worktree パス（省略時はカレントディレクトリ）
-  --dry-run         ドライラン（実行せず内容を表示）
-  -h, --help        ヘルプ表示
+  --task TEXT       要执行的任务内容（必填）
+  --worktree PATH   Worktree 路径（省略时使用当前目录）
+  --dry-run         演练模式（不执行，仅显示内容）
+  -h, --help        显示帮助
 
 Examples:
-  $0 --task "ログイン機能を実装して"
-  $0 --task "APIエンドポイントを追加" --worktree ../worktree-task-1
-  $0 --task "テストを修正" --dry-run
+  $0 --task "实现登录功能"
+  $0 --task "添加 API 端点" --worktree ../worktree-task-1
+  $0 --task "修复测试" --dry-run
 EOF
 }
 
-# 引数解析
+# 参数解析
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --task)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--task には値が必要です"
+                    log_error "--task 需要指定值"
                     exit 1
                 fi
                 TASK="$2"
@@ -73,7 +73,7 @@ parse_args() {
                 ;;
             --worktree)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--worktree には値が必要です"
+                    log_error "--worktree 需要指定值"
                     exit 1
                 fi
                 WORKTREE_PATH="$2"
@@ -96,50 +96,50 @@ parse_args() {
     done
 
     if [[ -z "$TASK" ]]; then
-        log_error "--task は必須です"
+        log_error "--task 是必填项"
         usage
         exit 1
     fi
 }
 
-# プロジェクトルート検出
+# 项目根目录检测
 detect_project_root() {
     if [[ -n "$WORKTREE_PATH" ]]; then
-        # Security: worktree パス検証（repo 外 OK、同一リポジトリの worktree か確認）
+        # Security: worktree 路径验证（允许在仓库外，但需确认是同一仓库的 worktree）
         if ! validate_worktree_path "$WORKTREE_PATH"; then
-            log_error "無効な worktree パス: $WORKTREE_PATH"
+            log_error "无效的 worktree 路径: $WORKTREE_PATH"
             exit 1
         fi
         PROJECT_ROOT="$WORKTREE_PATH"
     else
         PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     fi
-    log_info "プロジェクトルート: $PROJECT_ROOT"
+    log_info "项目根目录: $PROJECT_ROOT"
 }
 
-# AGENTS.md ハッシュ計算
+# AGENTS.md 哈希计算
 compute_agents_hash() {
     local agents_file="$PROJECT_ROOT/AGENTS.md"
 
     if [[ ! -f "$agents_file" ]]; then
-        log_error "AGENTS.md が見つかりません: $agents_file"
-        log_error "AGENTS.md は必須です。Worker 実行を中断します。"
+        log_error "找不到 AGENTS.md: $agents_file"
+        log_error "AGENTS.md 是必需的。中断 Worker 执行。"
         exit 1
     fi
 
-    # BOM除去、LF正規化、SHA256先頭8文字（クロスプラットフォーム対応）
+    # 移除 BOM、LF 规范化、SHA256 前 8 位（跨平台兼容）
     AGENTS_HASH=$(calculate_file_hash "$agents_file" 8)
-    log_info "AGENTS.md ハッシュ: $AGENTS_HASH"
+    log_info "AGENTS.md 哈希: $AGENTS_HASH"
 }
 
-# Rules 連結（決定性のため名前順ソート）
+# Rules 合并（为确保确定性按名称排序）
 collect_rules() {
     local rules_dir="$PROJECT_ROOT/.claude/rules"
     local rules_content=""
     local rules_hash=""
 
     if [[ -d "$rules_dir" ]]; then
-        # Quality: 決定性のため名前順にソートして連結
+        # Quality: 为确保确定性按名称排序后合并
         local rule_files
         rule_files=$(find "$rules_dir" -name "*.md" -type f 2>/dev/null | sort)
 
@@ -151,12 +151,12 @@ collect_rules() {
                 fi
             done <<< "$rule_files"
 
-            # 連結結果のハッシュをログ出力（デバッグ用）
+            # 输出合并结果的哈希（用于调试）
             rules_hash=$(calculate_sha256 "$rules_content" 8 2>/dev/null || echo "unknown")
-            log_info "Rules ファイル収集: $(echo "$rule_files" | wc -l | tr -d ' ') 件 (hash: $rules_hash)"
+            log_info "Rules 文件收集: $(echo "$rule_files" | wc -l | tr -d ' ') 个 (hash: $rules_hash)"
         fi
     else
-        log_warn "Rules ディレクトリが見つかりません: $rules_dir"
+        log_warn "找不到 Rules 目录: $rules_dir"
     fi
 
     echo "$rules_content"
@@ -164,7 +164,7 @@ collect_rules() {
 
 generate_hardening_contract() {
     if [[ ! -f "$CONTRACT_TEMPLATE" ]]; then
-        log_error "hardening contract template が見つかりません: $CONTRACT_TEMPLATE"
+        log_error "找不到 hardening contract 模板: $CONTRACT_TEMPLATE"
         exit 1
     fi
     cat "$CONTRACT_TEMPLATE"
@@ -175,7 +175,7 @@ prepend_hardening_contract() {
     printf '%s\n\n---\n\n%s\n' "$(generate_hardening_contract)" "$body"
 }
 
-# base-instructions 生成
+# 生成 base-instructions
 generate_base_instructions() {
     local rules_content
     rules_content=$(collect_rules)
@@ -184,27 +184,27 @@ generate_base_instructions() {
     body=$(cat << EOF
 # Codex Worker Instructions
 
-## Rules（プロジェクト固有ルール）
+## Rules（项目特定规则）
 
 $rules_content
 
-## AGENTS.md 強制読み込み指示
+## AGENTS.md 强制读取指示
 
-最初に AGENTS.md を読み、以下の形式で証跡を出力してください:
+请先读取 AGENTS.md，并以以下格式输出凭证：
 
 \`\`\`
-AGENTS_SUMMARY: <1行要約> | HASH:<SHA256先頭8文字>
+AGENTS_SUMMARY: <1行摘要> | HASH:<SHA256前8位>
 \`\`\`
 
-証跡を出力せずに作業を開始しないでください。
-証跡のハッシュは AGENTS.md の内容から計算してください。
+请勿在未输出凭证的情况下开始工作。
+凭证中的哈希值应从 AGENTS.md 的内容计算得出。
 
 EOF
 )
     prepend_hardening_contract "$body"
 }
 
-# prompt 生成
+# 生成 prompt
 generate_prompt() {
     local body
     body=$(cat << EOF
@@ -212,40 +212,40 @@ $TASK
 
 ---
 
-重要: 作業開始前に、以下の形式で AGENTS.md の証跡を出力してください:
+重要：在开始工作之前，请以以下格式输出 AGENTS.md 的凭证：
 
-AGENTS_SUMMARY: <AGENTS.mdの1行要約> | HASH:<SHA256先頭8文字>
+AGENTS_SUMMARY: <AGENTS.md的1行摘要> | HASH:<SHA256前8位>
 
-この証跡がない場合、作業は無効とみなされます。
+如果没有此凭证，工作将被视为无效。
 EOF
 )
     prepend_hardening_contract "$body"
 }
 
-# 証跡検証（Claude Code 内から呼び出す想定、このスクリプト内では使用しない）
-# 実際の検証は codex-worker-quality-gate.sh の gate_evidence() で行う
+# 凭证验证（预期从 Claude Code 内部调用，本脚本内不使用）
+# 实际验证由 codex-worker-quality-gate.sh 的 gate_evidence() 执行
 verify_agents_summary() {
     local output="$1"
 
-    # 正規表現でマッチ（大文字小文字両対応）
+    # 使用正则表达式匹配（大小写兼容）
     if [[ "$output" =~ AGENTS_SUMMARY:[[:space:]]*(.+)[[:space:]]*\|[[:space:]]*HASH:([A-Fa-f0-9]{8}) ]]; then
         local summary="${BASH_REMATCH[1]}"
         local hash="${BASH_REMATCH[2]}"
 
         if [[ "${hash,,}" == "${AGENTS_HASH,,}" ]]; then
-            log_info "証跡検証: OK (ハッシュ一致, summary: ${summary:0:50}...)"
+            log_info "凭证验证: OK (哈希匹配, summary: ${summary:0:50}...)"
             return 0
         else
-            log_error "証跡検証: NG (ハッシュ不一致: 期待=$AGENTS_HASH, 実際=$hash)"
+            log_error "凭证验证: NG (哈希不匹配: 期望=$AGENTS_HASH, 实际=$hash)"
             return 1
         fi
     else
-        log_error "証跡検証: NG (AGENTS_SUMMARY が見つかりません)"
+        log_error "凭证验证: NG (找不到 AGENTS_SUMMARY)"
         return 1
     fi
 }
 
-# Codex Worker 呼び出し（CLI 経由）
+# 调用 Codex Worker（通过 CLI）
 invoke_codex_worker() {
     local base_instructions
     local prompt
@@ -257,16 +257,16 @@ invoke_codex_worker() {
     if [[ "$DRY_RUN" == true ]]; then
         echo ""
         echo "========================================"
-        echo "ドライラン: 以下の内容で Codex を呼び出します"
+        echo "演练模式：将使用以下内容调用 Codex"
         echo "========================================"
         echo ""
         echo "--- prompt ---"
         echo "$prompt"
         echo ""
-        echo "--- base-instructions (先頭500文字) ---"
+        echo "--- base-instructions (前500字符) ---"
         echo "${base_instructions:0:500}..."
         echo ""
-        echo "--- パラメータ ---"
+        echo "--- 参数 ---"
         echo "cwd: $cwd"
         echo "approval-policy: $APPROVAL_POLICY"
         echo "sandbox: $SANDBOX"
@@ -274,11 +274,11 @@ invoke_codex_worker() {
         return 0
     fi
 
-    log_step "Codex Worker を呼び出し中..."
+    log_step "正在调用 Codex Worker..."
 
-    # 注: 実際の codex exec 呼び出しは Claude Code 内から行う
-    # このスクリプトは base-instructions と prompt の生成を担当
-    # 出力をファイルに保存して Claude Code が読み取る
+    # 注：实际的 codex exec 调用从 Claude Code 内部进行
+    # 本脚本负责生成 base-instructions 和 prompt
+    # 将输出保存到文件供 Claude Code 读取
 
     local output_dir="$PROJECT_ROOT/.claude/state/codex-worker"
     mkdir -p "$output_dir"
@@ -300,27 +300,27 @@ invoke_codex_worker() {
             "sandbox": $sandbox
         }' > "$output_dir/codex-exec-params.json"
 
-    # 検証用情報を保存（注: agents_hash は含めない - セキュリティ上の理由）
-    # Worker が AGENTS.md を実際に読んで証跡を出力することを強制するため
+    # 保存验证信息（注：不包含 agents_hash - 安全原因）
+    # 强制 Worker 实际读取 AGENTS.md 并输出凭证
     cat > "$output_dir/verify-info.json" << EOF
 {
   "max_retries": $MAX_RETRIES,
   "verify_pattern": "AGENTS_SUMMARY:\\\\s*(.+?)\\\\s*\\\\|\\\\s*HASH:([A-Fa-f0-9]{8})",
-  "note": "agents_hash は quality-gate が検証時に計算する（Worker へのリーク防止）"
+  "note": "agents_hash 由 quality-gate 在验证时计算（防止泄露给 Worker）"
 }
 EOF
 
-    log_info "Codex CLI パラメータを保存: $output_dir/codex-exec-params.json"
-    log_info "検証情報を保存: $output_dir/verify-info.json"
+    log_info "Codex CLI 参数已保存: $output_dir/codex-exec-params.json"
+    log_info "验证信息已保存: $output_dir/verify-info.json"
     echo ""
-    log_info "次のステップ:"
-    log_info "  1. Claude Code から codex exec を呼び出す"
-    log_info "  2. 出力に AGENTS_SUMMARY 証跡があることを確認"
-    log_info "  3. ハッシュが $AGENTS_HASH と一致することを確認"
-    log_info "  4. 失敗時は最大 $MAX_RETRIES 回まで再試行"
+    log_info "后续步骤:"
+    log_info "  1. 从 Claude Code 调用 codex exec"
+    log_info "  2. 确认输出中包含 AGENTS_SUMMARY 凭证"
+    log_info "  3. 确认哈希与 $AGENTS_HASH 匹配"
+    log_info "  4. 失败时最多重试 $MAX_RETRIES 次"
 }
 
-# メイン処理
+# 主处理
 main() {
     parse_args "$@"
 
@@ -329,23 +329,23 @@ main() {
     echo "========================================"
     echo ""
 
-    log_step "1. プロジェクトルート検出"
+    log_step "1. 检测项目根目录"
     detect_project_root
 
-    log_step "2. 依存コマンドチェック"
+    log_step "2. 检查依赖命令"
     check_dependencies
 
-    log_step "2.5. 設定初期化"
+    log_step "2.5. 初始化配置"
     init_config
 
-    log_step "3. AGENTS.md ハッシュ計算"
+    log_step "3. 计算 AGENTS.md 哈希"
     compute_agents_hash
 
-    log_step "4. Codex Worker 呼び出し準備"
+    log_step "4. 准备调用 Codex Worker"
     invoke_codex_worker
 
     echo ""
-    log_info "完了"
+    log_info "完成"
 }
 
 main "$@"

@@ -1,8 +1,8 @@
 #!/bin/bash
 # posttooluse-clear-pending.sh
-# PostToolUse/Skill 時に pending-skills を解消
+# PostToolUse/Skill 时清除 pending-skills
 #
-# Usage: PostToolUse hook から自動実行（Skill マッチャー）
+# Usage: PostToolUse hook 自动执行（Skill 匹配器）
 # Input: stdin JSON (Claude Code hooks)
 # Output: JSON (continue)
 
@@ -11,11 +11,11 @@ set +e
 STATE_DIR=".claude/state"
 PENDING_DIR="${STATE_DIR}/pending-skills"
 
-# pending ディレクトリが無ければスキップ
+# 如果 pending 目录不存在则跳过
 [ ! -d "$PENDING_DIR" ] && { echo '{"continue":true}'; exit 0; }
 
-# pending ファイルがあれば全て解消
-# （Skill呼び出し = 品質ゲート実行済みとみなす）
+# 如果存在 pending 文件则全部清除
+# （Skill 调用 = 视为已执行质量门检查）
 PENDING_FILES=$(ls "$PENDING_DIR"/*.pending 2>/dev/null || true)
 
 if [ -n "$PENDING_FILES" ]; then

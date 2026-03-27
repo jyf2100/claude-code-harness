@@ -1,39 +1,39 @@
-# Asset Customization Guide
+# 素材自定义指南
 
-ユーザーカスタムアセット（背景、効果音、フォント、画像）の上書き方法とベストプラクティス。
-
----
-
-## 概要
-
-動画生成で使用するアセットは以下の優先順位で読み込まれます：
-
-```
-1. ユーザーアセット (~/.harness/video/assets/)    ← 最優先
-2. スキルデフォルト (skills/generate-video/assets/) ← フォールバック
-3. ビルトインデフォルト (ハードコード)              ← 最終手段
-```
-
-この仕組みにより、スキル本体を変更せずに自分好みのアセットを使用できます。
+用户自定义素材（背景、效果音、字体、图像）的覆盖方法和最佳实践。
 
 ---
 
-## ディレクトリ構造
+## 概述
 
-### ユーザーアセットディレクトリ
+视频生成中使用的素材按以下优先级加载：
+
+```
+1. 用户素材 (~/.harness/video/assets/)    ← 最高优先
+2. 技能默认 (skills/generate-video/assets/) ← 回退
+3. 内置默认（硬编码）              ← 最后手段
+```
+
+通过此机制，无需更改技能本体即可使用自己喜欢的素材。
+
+---
+
+## 目录结构
+
+### 用户素材目录
 
 ```
 ~/.harness/video/assets/
-├── README.md                    # 使い方ガイド（自動生成）
+├── README.md                    # 使用指南（自动生成）
 ├── backgrounds/
-│   ├── backgrounds.json         # カスタム背景定義
-│   └── my-custom-bg.png         # カスタム背景画像（オプション）
+│   ├── backgrounds.json         # 自定义背景定义
+│   └── my-custom-bg.png         # 自定义背景图像（可选）
 ├── sounds/
-│   ├── sounds.json              # カスタム効果音定義
-│   ├── impact.mp3               # 高強調音
-│   ├── pop.mp3                  # 中強調音
-│   ├── transition.mp3           # 場面転換音
-│   └── subtle.mp3               # 低強調音
+│   ├── sounds.json              # 自定义效果音定义
+│   ├── impact.mp3               # 高强调音
+│   ├── pop.mp3                  # 中强调音
+│   ├── transition.mp3           # 场景切换音
+│   └── subtle.mp3               # 低强调音
 ├── fonts/
 │   ├── MyBrand-Bold.ttf
 │   └── MyBrand-Regular.ttf
@@ -42,15 +42,15 @@
     └── icon.png
 ```
 
-### 初期化
+### 初始化
 
-ユーザーアセットディレクトリを作成:
+创建用户素材目录:
 
 ```bash
 node scripts/load-assets.js init
 ```
 
-または手動で作成:
+或手动创建:
 
 ```bash
 mkdir -p ~/.harness/video/assets/{backgrounds,sounds,fonts,images}
@@ -58,20 +58,20 @@ mkdir -p ~/.harness/video/assets/{backgrounds,sounds,fonts,images}
 
 ---
 
-## カスタマイズ方法
+## 自定义方法
 
-### 1. 背景のカスタマイズ
+### 1. 背景自定义
 
-#### 手順
+#### 步骤
 
-1. **デフォルト設定をコピー**:
+1. **复制默认设置**:
 
 ```bash
 cp skills/generate-video/assets/backgrounds/backgrounds.json \
    ~/.harness/video/assets/backgrounds/
 ```
 
-2. **設定を編集**:
+2. **编辑设置**:
 
 ```json
 {
@@ -105,7 +105,7 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 }
 ```
 
-3. **動画生成で使用**:
+3. **在视频生成中使用**:
 
 ```json
 {
@@ -115,26 +115,26 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 }
 ```
 
-#### 背景タイプ
+#### 背景类型
 
-| Type | Description | Fields |
+| Type | 描述 | 字段 |
 |------|-------------|--------|
-| `gradient` | グラデーション背景 | `colors`, `gradient` |
-| `pattern` | パターン背景（グリッド等） | `colors`, `gradient`, `pattern` |
-| `solid` | 単色背景 | `colors.primary` |
-| `image` | 画像背景 | `file` (path to image) |
+| `gradient` | 渐变背景 | `colors`, `gradient` |
+| `pattern` | 图案背景（网格等） | `colors`, `gradient`, `pattern` |
+| `solid` | 单色背景 | `colors.primary` |
+| `image` | 图像背景 | `file` (path to image) |
 
-#### グラデーションタイプ
+#### 渐变类型
 
 ```json
-// Linear gradient
+// 线性渐变
 "gradient": {
   "type": "linear",
   "angle": 135,
   "stops": [...]
 }
 
-// Radial gradient
+// 径向渐变
 "gradient": {
   "type": "radial",
   "stops": [...]
@@ -143,26 +143,26 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 
 ---
 
-### 2. 効果音のカスタマイズ
+### 2. 效果音自定义
 
-#### 手順
+#### 步骤
 
-1. **デフォルト設定をコピー**:
+1. **复制默认设置**:
 
 ```bash
 cp skills/generate-video/assets/sounds/sounds.json \
    ~/.harness/video/assets/sounds/
 ```
 
-2. **効果音ファイルを配置**:
+2. **放置效果音文件**:
 
 ```bash
-# FreeSoundからダウンロード（CC0ライセンス推奨）
+# 从 FreeSound 下载（推荐 CC0 许可）
 cp ~/Downloads/my-impact.mp3 ~/.harness/video/assets/sounds/impact.mp3
 cp ~/Downloads/my-pop.mp3 ~/.harness/video/assets/sounds/pop.mp3
 ```
 
-3. **設定を編集**:
+3. **编辑设置**:
 
 ```json
 {
@@ -189,36 +189,36 @@ cp ~/Downloads/my-pop.mp3 ~/.harness/video/assets/sounds/pop.mp3
 }
 ```
 
-#### 推奨形式
+#### 推荐格式
 
-| Format | Sample Rate | Bit Depth | Notes |
+| Format | 采样率 | 位深度 | 备注 |
 |--------|-------------|-----------|-------|
-| MP3 | 44100 Hz | 16-bit | 推奨（互換性高） |
-| WAV | 44100 Hz | 16-bit | 高品質（ファイルサイズ大） |
-| OGG | 44100 Hz | - | 軽量（ブラウザ互換性注意） |
+| MP3 | 44100 Hz | 16-bit | 推荐（兼容性高） |
+| WAV | 44100 Hz | 16-bit | 高品质（文件大） |
+| OGG | 44100 Hz | - | 轻量（注意浏览器兼容性） |
 
-#### ボリューム推奨値
+#### 音量推荐值
 
-| Context | Volume Range | Notes |
+| 上下文 | 音量范围 | 备注 |
 |---------|--------------|-------|
-| ナレーションあり | 0.15 - 0.4 | 音声を邪魔しない |
-| BGMあり | 0.25 - 0.6 | BGMをダッキング |
-| 音声なし | 0.3 - 1.0 | フル音量OK |
+| 有旁白 | 0.15 - 0.4 | 不干扰语音 |
+| 有 BGM | 0.25 - 0.6 | BGM 闪避 |
+| 无音频 | 0.3 - 1.0 | 可全音量 |
 
 ---
 
-### 3. フォントのカスタマイズ
+### 3. 字体自定义
 
-#### 手順
+#### 步骤
 
-1. **フォントファイルを配置**:
+1. **放置字体文件**:
 
 ```bash
 cp ~/Downloads/MyFont-Bold.ttf ~/.harness/video/assets/fonts/
 cp ~/Downloads/MyFont-Regular.ttf ~/.harness/video/assets/fonts/
 ```
 
-2. **シーン設定で参照**:
+2. **在场景设置中引用**:
 
 ```json
 {
@@ -235,12 +235,12 @@ cp ~/Downloads/MyFont-Regular.ttf ~/.harness/video/assets/fonts/
 }
 ```
 
-#### Remotionでの使用
+#### 在 Remotion 中使用
 
 ```typescript
 import { loadFont } from '@remotion/google-fonts/Inter';
 
-// カスタムフォント読み込み
+// 加载自定义字体
 const fontFamily = loadFont({
   src: '~/.harness/video/assets/fonts/MyFont-Bold.ttf',
   fontFamily: 'MyFont',
@@ -248,28 +248,28 @@ const fontFamily = loadFont({
 });
 ```
 
-#### 推奨形式
+#### 推荐格式
 
-| Format | Web Safe | Notes |
+| Format | Web Safe | 备注 |
 |--------|----------|-------|
-| TTF | ✅ Yes | 推奨（最も互換性が高い） |
-| OTF | ✅ Yes | OpenType機能が使える |
-| WOFF/WOFF2 | ✅ Yes | Web最適化（軽量） |
+| TTF | ✅ Yes | 推荐（兼容性最高） |
+| OTF | ✅ Yes | 可用 OpenType 功能 |
+| WOFF/WOFF2 | ✅ Yes | Web 优化（轻量） |
 
 ---
 
-### 4. 画像のカスタマイズ
+### 4. 图像自定义
 
-#### 手順
+#### 步骤
 
-1. **画像ファイルを配置**:
+1. **放置图像文件**:
 
 ```bash
 cp ~/Downloads/logo.png ~/.harness/video/assets/images/
 cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 ```
 
-2. **シーン設定で参照**:
+2. **在场景设置中引用**:
 
 ```json
 {
@@ -283,18 +283,18 @@ cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 }
 ```
 
-#### 推奨形式
+#### 推荐格式
 
-| Format | Use Case | Notes |
+| Format | 用例 | 备注 |
 |--------|----------|-------|
-| PNG | ロゴ、アイコン | 透過対応 |
-| JPG | 写真、背景 | 圧縮率高 |
-| SVG | ベクター図形 | 拡大しても綺麗 |
-| WebP | モダン環境 | 軽量高品質 |
+| PNG | Logo、图标 | 支持透明 |
+| JPG | 照片、背景 | 压缩率高 |
+| SVG | 矢量图形 | 放大也清晰 |
+| WebP | 现代环境 | 轻量高质 |
 
-#### サイズガイドライン
+#### 尺寸指南
 
-| Asset Type | Recommended Size | Max Size |
+| 素材类型 | 推荐尺寸 | 最大尺寸 |
 |------------|------------------|----------|
 | Logo | 500x500 px | 1000x1000 px |
 | Icon | 128x128 px | 512x512 px |
@@ -303,35 +303,35 @@ cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 
 ---
 
-## 優先順位の詳細
+## 优先级详情
 
-### 読み込み順序
+### 加载顺序
 
-`scripts/load-assets.js` は以下の順序でアセットを検索:
+`scripts/load-assets.js` 按以下顺序搜索素材:
 
 ```javascript
-// 1. ユーザーアセット
+// 1. 用户素材
 const userPath = '~/.harness/video/assets/{category}/{file}';
 if (exists(userPath)) return userPath;
 
-// 2. スキルデフォルト
+// 2. 技能默认
 const skillPath = 'skills/generate-video/assets/{category}/{file}';
 if (exists(skillPath)) return skillPath;
 
-// 3. ビルトインデフォルト
+// 3. 内置默认
 return getBuiltInDefault();
 ```
 
-### 部分上書き
+### 部分覆盖
 
-一部のアセットだけ上書き可能:
+仅覆盖部分素材:
 
 ```bash
-# 背景だけカスタマイズ（効果音はデフォルト使用）
+# 仅自定义背景（效果音使用默认）
 cp my-backgrounds.json ~/.harness/video/assets/backgrounds/backgrounds.json
 ```
 
-### JSON内の部分上書き
+### JSON 内的部分覆盖
 
 ```json
 // ~/.harness/video/assets/backgrounds/backgrounds.json
@@ -341,36 +341,36 @@ cp my-backgrounds.json ~/.harness/video/assets/backgrounds/backgrounds.json
     {
       "id": "my-brand",
       "name": "My Brand"
-      // ... カスタム設定
+      // ... 自定义设置
     }
-    // "neutral", "highlight" 等は省略 → デフォルトから読み込まれる
+    // "neutral", "highlight" 等省略 → 从默认加载
   ]
 }
 ```
 
-**注意**: 同じ `id` がある場合、ユーザー設定が優先されます。
+**注意**: 有相同 `id` 时，用户设置优先。
 
 ---
 
-## 動作確認
+## 动作确认
 
-### テストコマンド
+### 测试命令
 
 ```bash
-# アセット読み込みテスト
+# 素材加载测试
 node scripts/load-assets.js test
 
-# 背景設定表示
+# 背景设置显示
 node scripts/load-assets.js backgrounds
 
-# 効果音設定表示
+# 效果音设置显示
 node scripts/load-assets.js sounds
 
-# 検索パス表示
+# 搜索路径显示
 node scripts/load-assets.js paths
 ```
 
-### 期待される出力
+### 预期输出
 
 ```
 🧪 Testing asset loader...
@@ -390,104 +390,104 @@ node scripts/load-assets.js paths
 
 ---
 
-## トラブルシューティング
+## 故障排除
 
-### 問題: アセットが読み込まれない
+### 问题: 素材未加载
 
-**原因**: ファイルパスが間違っている
+**原因**: 文件路径错误
 
-**解決策**:
+**解决方案**:
 ```bash
-# パスを確認
+# 确认路径
 node scripts/load-assets.js paths
 
-# ファイルの存在確認
+# 确认文件存在
 ls -la ~/.harness/video/assets/backgrounds/
 ```
 
-### 問題: JSON解析エラー
+### 问题: JSON 解析错误
 
-**原因**: JSON形式が不正
+**原因**: JSON 格式无效
 
-**解決策**:
+**解决方案**:
 ```bash
-# JSONの妥当性チェック
+# 检查 JSON 有效性
 cat ~/.harness/video/assets/backgrounds/backgrounds.json | jq .
 
-# エラーメッセージを確認
+# 确认错误信息
 node scripts/load-assets.js test
 ```
 
-### 問題: 効果音が再生されない
+### 问题: 效果音不播放
 
-**原因**: ファイル形式が非対応
+**原因**: 文件格式不支持
 
-**解決策**:
+**解决方案**:
 ```bash
-# MP3に変換
+# 转换为 MP3
 ffmpeg -i input.wav -codec:a libmp3lame -b:a 192k output.mp3
 
-# ファイル情報確認
+# 确认文件信息
 ffprobe output.mp3
 ```
 
-### 問題: フォントが表示されない
+### 问题: 字体不显示
 
-**原因**: フォントファイルパスが解決できない
+**原因**: 字体文件路径无法解析
 
-**解決策**:
+**解决方案**:
 ```typescript
-// 絶対パスを使用
+// 使用绝对路径
 const fontPath = path.join(os.homedir(), '.harness/video/assets/fonts/MyFont.ttf');
 ```
 
 ---
 
-## ベストプラクティス
+## 最佳实践
 
-### 1. バージョン管理
+### 1. 版本管理
 
-カスタムアセットをGit管理したい場合:
+想要 Git 管理自定义素材时:
 
 ```bash
-# プロジェクトルートに配置
+# 放置在项目根目录
 project-root/
 ├── .video-assets/
 │   ├── backgrounds/
 │   ├── sounds/
 │   └── fonts/
-└── .gitignore  # .harness/ は除外
+└── .gitignore  # 排除 .harness/
 
-# シンボリックリンク作成
+# 创建符号链接
 ln -s $(pwd)/.video-assets ~/.harness/video/assets
 ```
 
-### 2. チーム共有
+### 2. 团队共享
 
-チームで共通のアセットを使用:
+团队使用共同素材:
 
 ```bash
-# 共有リポジトリ
+# 共享仓库
 git clone https://github.com/company/video-assets.git ~/.harness/video/assets
 ```
 
-### 3. プロジェクト別アセット
+### 3. 按项目区分素材
 
-プロジェクトごとに異なるアセット:
+按项目使用不同素材:
 
 ```bash
-# 環境変数で切り替え
+# 用环境变量切换
 export VIDEO_ASSETS_DIR=/path/to/project-specific/assets
 
-# load-assets.js で環境変数を参照
+# load-assets.js 引用环境变量
 const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 ```
 
-### 4. ライセンス管理
+### 4. 许可证管理
 
 ```
 ~/.harness/video/assets/
-└── LICENSES.md    # 各アセットのライセンス情報
+└── LICENSES.md    # 各素材的许可证信息
 ```
 
 ```markdown
@@ -505,9 +505,9 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 
 ---
 
-## サンプル集
+## 示例集
 
-### ブランドカラー背景
+### 品牌色背景
 
 ```json
 {
@@ -532,7 +532,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 }
 ```
 
-### カスタム効果音セット
+### 自定义效果音集
 
 ```json
 {
@@ -554,7 +554,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 }
 ```
 
-### 企業ロゴ
+### 企业 Logo
 
 ```json
 {
@@ -571,16 +571,16 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 
 ---
 
-## 参照
+## 参考
 
-- **Asset Loader**: `scripts/load-assets.js`
-- **Default Backgrounds**: `assets/backgrounds/backgrounds.json`
-- **Default Sounds**: `assets/sounds/sounds.json`
-- **BackgroundLayer Component**: `remotion/src/components/BackgroundLayer.tsx`
+- **素材加载器**: `scripts/load-assets.js`
+- **默认背景**: `assets/backgrounds/backgrounds.json`
+- **默认效果音**: `assets/sounds/sounds.json`
+- **BackgroundLayer 组件**: `remotion/src/components/BackgroundLayer.tsx`
 - **Plans.md**: Phase 7 - Asset Foundation
 
 ---
 
-## 更新履歴
+## 更新历史
 
-- **2026-02-02**: 初版作成（Phase 7実装）
+- **2026-02-02**: 初版创建（Phase 7 实现）

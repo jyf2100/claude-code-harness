@@ -13,13 +13,13 @@ JSON Schema definitions for the video generation workflow. These schemas define 
 ## Schema Overview
 
 ```
-Scenario (高レベル構造)
+Scenario (高级结构)
     │
-    ├── Section 1 (イントロ)
+    ├── Section 1 (开场)
     │   ├── Scene 1.1
     │   └── Scene 1.2
     │
-    ├── Section 2 (デモ)
+    ├── Section 2 (演示)
     │   ├── Scene 2.1
     │   ├── Scene 2.2
     │   └── Scene 2.3

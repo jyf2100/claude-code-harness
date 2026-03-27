@@ -1,359 +1,359 @@
 <!-- Generated from CLAUDE.md by build-opencode.js -->
 <!-- codex compatible version of Claude Code Harness -->
 
-# AGENTS.md - Codex harness 開発ガイド
+# AGENTS.md - Codex Harness 开发指南
 
-このファイルは Codex CLI がこのリポジトリで作業する際の指針です。
+此文件为 Codex CLI 在本仓库中工作时提供指导。
 
-## プロジェクト概要
+## 项目概述
 
-**Harness** は、Codex CLI を「Plan → Work → Review」の型で運用するためのガイドです。
+**Harness** 是一个用于以"计划 → 执行 → 审查"模式运行 Codex CLI 的指南。
 
-**特殊な点**: このプロジェクトは「ハーネス自身を使ってハーネスを改善する」自己参照的な構成です。
+**特殊之处**: 本项目采用"使用 Harness 自身来改进 Harness"的自指式结构。
 
-## Codex CLI の前提
+## Codex CLI 前提条件
 
-- Codex は `${CODEX_HOME:-~/.codex}/skills/<skill-name>/SKILL.md`（ユーザーベース）と `.codex/skills/...`（プロジェクト上書き）を読み込み、`$skill-name` で明示呼び出しする
-- Codex は `AGENTS.override.md` を優先し、次に `AGENTS.md`、必要なら設定された fallback 名を参照する
-- Hooks は未対応のため、暫定ガードは `.codex/rules/*.rules` の `prefix_rule()` で行う
+- Codex 会加载 `${CODEX_HOME:-~/.codex}/skills/<skill-name>/SKILL.md`（用户级）和 `.codex/skills/...`（项目覆盖），并通过 `$skill-name` 进行显式调用
+- Codex 优先使用 `AGENTS.override.md`，然后是 `AGENTS.md`，必要时会参考配置的 fallback 名称
+- 由于暂不支持 Hooks，临时防护通过 `.codex/rules/*.rules` 的 `prefix_rule()` 实现
 
-## 開発ルール
+## 开发规则
 
-### コミットメッセージ
+### 提交信息
 
-[Conventional Commits](https://www.conventionalcommits.org/) に従う:
+遵循 [Conventional Commits](https://www.conventionalcommits.org/):
 
-- `feat:` - 新機能
-- `fix:` - バグ修正
-- `docs:` - ドキュメント変更
-- `refactor:` - リファクタリング
-- `test:` - テスト追加/更新
-- `chore:` - メンテナンス
+- `feat:` - 新功能
+- `fix:` - 错误修复
+- `docs:` - 文档更改
+- `refactor:` - 重构
+- `test:` - 测试添加/更新
+- `chore:` - 维护
 
-### バージョン管理
+### 版本管理
 
-バージョンは `VERSION` がソース・オブ・トゥルース。
-通常の機能追加・docs 更新・CI 修正では `VERSION` と `.claude-plugin/plugin.json` を変更しない。
-変更履歴は `CHANGELOG.md` の `[Unreleased]` に追記し、release を切るときだけ `./scripts/sync-version.sh bump` を使用する。
+版本的真实来源是 `VERSION` 文件。
+普通的功能添加、docs 更新、CI 修正时不要修改 `VERSION` 和 `.claude-plugin/plugin.json`。
+变更历史记录在 `CHANGELOG.md` 的 `[Unreleased]` 部分，仅在创建 release 时使用 `./scripts/sync-version.sh bump`。
 
-### CHANGELOG 記載ルール（必須）
+### CHANGELOG 记录规则（必填）
 
-**[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠**
+**遵循 [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) 格式**
 
-各バージョンエントリには以下のセクションを使用:
+每个版本条目应使用以下部分:
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Added
-- 新機能について
+- 关于新功能
 
 ### Changed
-- 既存機能の変更について
+- 关于现有功能的更改
 
 ### Deprecated
-- 間もなく削除される機能について
+- 即将删除的功能
 
 ### Removed
-- 削除された機能について
+- 已删除的功能
 
 ### Fixed
-- バグ修正について
+- 关于错误修复
 
 ### Security
-- 脆弱性に関する場合
+- 与漏洞相关的内容
 
-#### Before/After（大きな変更時のみ）
+#### Before/After（仅用于重大更改）
 
 | Before | After |
 |--------|-------|
-| 変更前の状態 | 変更後の状態 |
+| 更改前的状态 | 更改后的状态 |
 ```
 
-**セクション使い分け**:
+**部分使用区分**:
 
-| セクション | 使うとき |
+| 部分 | 使用时机 |
 |------------|----------|
-| Added | 完全に新しい機能を追加したとき |
-| Changed | 既存機能の動作や体験を変更したとき |
-| Deprecated | 将来削除予定の機能を告知するとき |
-| Removed | 機能やコマンドを削除したとき |
-| Fixed | バグや不具合を修正したとき |
-| Security | セキュリティ関連の修正をしたとき |
+| Added | 添加全新功能时 |
+| Changed | 更改现有功能的行为或体验时 |
+| Deprecated | 告知将来计划删除的功能时 |
+| Removed | 删除功能或命令时 |
+| Fixed | 修复错误或缺陷时 |
+| Security | 进行安全相关修复时 |
 
-**Before/After テーブル**: 大きな体験変化（コマンド廃止・統合、ワークフロー変更、破壊的変更）があるときのみ追加。軽微な修正では省略可。
+**Before/After 表格**: 仅在有重大体验变化（命令废弃/整合、工作流更改、破坏性更改）时添加。轻微修正可省略。
 
-**バージョン比較リンク**: CHANGELOG.md 末尾に `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z` 形式で追加
+**版本比较链接**: 在 CHANGELOG.md 末尾以 `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z` 格式添加
 
-### コードスタイル
+### 代码风格
 
-- 明確で説明的な名前を使う
-- 複雑なロジックにはコメントを追加
-- コマンド/エージェント/スキルは単一責任に保つ
+- 使用清晰且描述性的名称
+- 为复杂逻辑添加注释
+- 保持命令/代理/技能单一职责
 
-## リポジトリ構成
+## 仓库结构
 
 ```
 claude-code-harness/
-├── codex/              # Codex CLI 配布物
-├── commands/           # Claude Code 向けコマンド
-├── agents/             # サブエージェント定義（Task tool で並列起動可能）
-├── skills/             # エージェントスキル
-├── scripts/            # シェルスクリプト（ガード、自動化）
-├── templates/          # テンプレートファイル
-├── docs/               # ドキュメント
-└── tests/              # 検証スクリプト
+├── codex/              # Codex CLI 分发物
+├── commands/           # Claude Code 命令
+├── agents/             # 子代理定义（可通过 Task tool 并行启动）
+├── skills/             # 代理技能
+├── scripts/            # Shell 脚本（防护、自动化）
+├── templates/          # 模板文件
+├── docs/               # 文档
+└── tests/              # 验证脚本
 ```
 
-## スキルの活用（重要）
+## 技能使用（重要）
 
-### スキル評価フロー
+### 技能评估流程
 
-> 💡 重いタスク（並列レビュー、CI修正ループ）では、スキルが `agents/` のサブエージェントを Task tool で並列起動します。
+> 💡 对于繁重任务（并行审查、CI 修正循环），技能会通过 Task tool 并行启动 `agents/` 中的子代理。
 
-**作業を開始する前に、必ず以下のフローを実行すること:**
+**开始工作前，务必执行以下流程:**
 
-1. **評価**: 利用可能なスキルを確認し、今回の依頼に該当するものがあるか評価
-2. **起動**: 該当するスキルがあれば、Skill ツールで起動してから作業開始
-3. **実行**: スキルの手順に従って作業を進める
+1. **评估**: 确认可用技能，评估是否有适用于本次请求的技能
+2. **启动**: 如有相关技能，先用 Skill 工具启动后再开始工作
+3. **执行**: 按照技能的步骤进行工作
 
 ```
-ユーザーの依頼
+用户的请求
     ↓
-スキルを評価（該当するものがあるか？）
+评估技能（是否有适用的？）
     ↓
-YES → Skill ツールで起動 → スキルの手順に従う
-NO  → 通常の推論で対応
+YES → 使用 Skill 工具启动 → 遵循技能步骤
+NO  → 使用常规推理处理
 ```
 
-### スキルの階層構造
+### 技能层次结构
 
-スキルは **親スキル（カテゴリ）** と **子スキル（具体的な機能）** の階層構造になっています。
+技能采用 **父技能（类别）** 和 **子技能（具体功能）** 的层次结构。
 
 ```
 skills/
-├── impl/                  # 実装（機能追加、テスト作成）
-├── harness-review/        # レビュー（品質、セキュリティ、パフォーマンス）
-├── verify/                # 検証（ビルド、エラー復旧、修正適用）
-├── setup/                 # セットアップ（CLAUDE.md、Plans.md生成）
-├── 2agent/                # 2エージェント設定（PM連携、Cursor設定）
-├── memory/                # メモリ管理（SSOT、decisions.md、patterns.md）
-├── principles/            # 原則・ガイドライン（VibeCoder、差分編集）
-├── auth/                  # 認証・決済（Clerk、Supabase、Stripe）
-├── deploy/                # デプロイ（Vercel、Netlify、アナリティクス）
-├── ui/                    # UI（コンポーネント、フィードバック）
-├── handoff/               # ワークフロー（ハンドオフ、自動修正）
-├── notebookLM/            # ドキュメント（NotebookLM、YAML）
-├── ci/                    # CI/CD（失敗分析、テスト修正）
-└── maintenance/           # メンテナンス（クリーンアップ）
+├── impl/                  # 实现（功能添加、测试编写）
+├── harness-review/        # 审查（质量、安全、性能）
+├── verify/                # 验证（构建、错误恢复、修正应用）
+├── setup/                 # 设置（CLAUDE.md、Plans.md 生成）
+├── 2agent/                # 2代理设置（PM 协调、Cursor 设置）
+├── memory/                # 内存管理（SSOT、decisions.md、patterns.md）
+├── principles/            # 原则·指南（VibeCoder、差异编辑）
+├── auth/                  # 认证·支付（Clerk、Supabase、Stripe）
+├── deploy/                # 部署（Vercel、Netlify、分析）
+├── ui/                    # UI（组件、反馈）
+├── handoff/               # 工作流（交接、自动修正）
+├── notebookLM/            # 文档（NotebookLM、YAML）
+├── ci/                    # CI/CD（失败分析、测试修正）
+└── maintenance/           # 维护（清理）
 ```
 
-**使い方:**
-1. 親スキルを Skill ツールで起動
-2. 親スキルがユーザーの意図に応じて適切な子スキル（doc.md）にルーティング
-3. 子スキルの手順に従って作業実行
+**使用方法:**
+1. 使用 Skill 工具启动父技能
+2. 父技能根据用户意图路由到适当的子技能（doc.md）
+3. 按照子技能的步骤执行工作
 
-### 開発用スキル（非公開）
+### 开发用技能（非公开）
 
-以下のスキルは開発・実験用であり、リポジトリには含まれません（.gitignore で除外）：
+以下技能用于开发/实验，不包含在仓库中（通过 .gitignore 排除）：
 
 ```
 skills/
-├── test-*/      # テスト用スキル
-└── x-promo/     # X投稿作成スキル（開発用）
+├── test-*/      # 测试用技能
+└── x-promo/     # X 发布创建技能（开发用）
 ```
 
-これらのスキルは個別の開発環境でのみ使用し、プラグイン配布には含めないこと。
+这些技能仅在个人开发环境中使用，不应包含在插件分发中。
 
-### 主要スキルカテゴリ
+### 主要技能类别
 
-| カテゴリ | 用途 | トリガー例 |
+| 类别 | 用途 | 触发示例 |
 |---------|------|-----------|
-| harness-plan | 計画、タスク分解、Plans.md 更新 | 「計画して」「タスク追加」「今どこ」 |
-| harness-sync | 実装と Plans.md の同期 | 「進捗確認」「どこまで終わった」 |
-| harness-work / breezing | 実装、並列実行、チーム実行 | 「実装して」「全部やって」「チームで進めて」 |
-| harness-review | コードレビュー、品質チェック | 「レビューして」「セキュリティ」「パフォーマンス」 |
-| harness-setup | プロジェクト初期化、Codex 配布更新 | 「セットアップ」「Codex設定」「初期化」 |
-| 2agent | 2エージェント運用設定 | 「2-Agent」「Cursor設定」「PM連携」 |
-| memory | SSOT管理、メモリ初期化 | 「SSOT」「decisions.md」「マージ」 |
-| principles | 開発原則、ガイドライン | 「原則」「VibeCoder」「安全性」 |
-| auth | 認証、決済機能 | 「ログイン」「Clerk」「Stripe」「決済」 |
-| deploy | デプロイ、アナリティクス | 「デプロイ」「Vercel」「GA」 |
-| ui | UIコンポーネント生成 | 「コンポーネント」「ヒーロー」「フォーム」 |
-| handoff | ハンドオフ、自動修正 | 「ハンドオフ」「PMに報告」「自動修正」 |
-| notebookLM | ドキュメント生成 | 「ドキュメント」「NotebookLM」「スライド」 |
-| ci | CI/CD問題解決 | 「CIが落ちた」「テスト失敗」 |
-| maintenance | ファイル整理 | 「整理して」「クリーンアップ」 |
+| harness-plan | 计划、任务分解、Plans.md 更新 | "计划"、"任务添加"、"现在在哪" |
+| harness-sync | 实现与 Plans.md 的同步 | "进度确认"、"完成了多少" |
+| harness-work / breezing | 实现、并行执行、团队执行 | "实现"、"全部做完"、"团队推进" |
+| harness-review | 代码审查、质量检查 | "审查"、"安全"、"性能" |
+| harness-setup | 项目初始化、Codex 分发更新 | "设置"、"Codex 配置"、"初始化" |
+| 2agent | 2代理运行设置 | "2-Agent"、"Cursor 设置"、"PM 协调" |
+| memory | SSOT 管理、内存初始化 | "SSOT"、"decisions.md"、"合并" |
+| principles | 开发原则、指南 | "原则"、"VibeCoder"、"安全性" |
+| auth | 认证、支付功能 | "登录"、"Clerk"、"Stripe"、"支付" |
+| deploy | 部署、分析 | "部署"、"Vercel"、"GA" |
+| ui | UI 组件生成 | "组件"、"hero"、"表单" |
+| handoff | 交接、自动修正 | "交接"、"向 PM 报告"、"自动修正" |
+| notebookLM | 文档生成 | "文档"、"NotebookLM"、"幻灯片" |
+| ci | CI/CD 问题解决 | "CI 失败了"、"测试失败" |
+| maintenance | 文件整理 | "整理"、"清理" |
 
-## 開発フロー
+## 开发流程
 
-1. **計画**: `$harness-plan` でタスクを Plans.md に落とす
-2. **同期**: `$harness-sync` で現状と Plans.md のズレを確認する
-3. **実装**: `$harness-work` または `$breezing` で Plans.md のタスクを実行
-3. **レビュー**: `$harness-review` で品質チェック
-4. **検証**: `./tests/validate-plugin.sh` で構造検証
+1. **计划**: 使用 `$harness-plan` 将任务写入 Plans.md
+2. **同步**: 使用 `$harness-sync` 确认现状与 Plans.md 的偏差
+3. **实现**: 使用 `$harness-work` 或 `$breezing` 执行 Plans.md 中的任务
+4. **审查**: 使用 `$harness-review` 进行质量检查
+5. **验证**: 使用 `./tests/validate-plugin.sh` 进行结构验证
 
-## テスト方法
+## 测试方法
 
 ```bash
-# プラグイン構造の検証
+# 插件结构验证
 ./tests/validate-plugin.sh
 ./scripts/ci/check-consistency.sh
 
-# Codex CLI での確認（手動）
-# - `${CODEX_HOME:-~/.codex}/skills` または `.codex/skills` が読み込まれること
-# - `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, `$harness-review` が認識されること
+# Codex CLI 确认（手动）
+# - 确认 `${CODEX_HOME:-~/.codex}/skills` 或 `.codex/skills` 被加载
+# - 确认 `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, `$harness-review` 被识别
 ```
 
-## 注意事項
+## 注意事项
 
-- **自己参照に注意**: このリポジトリで `$harness-work` / `$breezing` を実行すると、自分自身のコードを編集することになる
-- **Hooks は未対応**: Codex では `.codex/rules/` で暫定ガードを行う
-- **VERSION 同期**: 通常 PR では VERSION を触らず、release 時だけ更新
-- **古い skill は退避される**: setup script は削除済み legacy Harness skill を `~/.codex/backups/` に移し、古いコマンドが残留しないようにする
+- **注意自指性**: 在此仓库中运行 `$harness-work` / `$breezing` 会编辑自身的代码
+- **暂不支持 Hooks**: Codex 中通过 `.codex/rules/` 进行临时防护
+- **VERSION 同步**: 普通 PR 中不要触碰 VERSION，仅在 release 时更新
+- **旧 skill 会被归档**: setup script 会将已删除的 legacy Harness skill 移动到 `~/.codex/backups/`，防止旧命令残留
 
-## 主要コマンド（開発時に使用）
+## 主要命令（开发时使用）
 
-| コマンド | 用途 |
+| 命令 | 用途 |
 |---------|------|
-| `$harness-plan` | 改善タスクを Plans.md に追加 |
-| `$harness-sync` | 実装と Plans.md の状態を同期 |
-| `$harness-work` | タスクを実装（必要に応じて並列化） |
-| `$breezing` | Lead/Worker/Reviewer のチーム実行 |
-| `$harness-review` | 変更内容をレビュー |
-| `$harness-setup codex` | Codex 配布物を更新し、古い skill を整理 |
+| `$harness-plan` | 将改进任务添加到 Plans.md |
+| `$harness-sync` | 同步实现与 Plans.md 的状态 |
+| `$harness-work` | 实现任务（必要时并行化） |
+| `$breezing` | Lead/Worker/Reviewer 的团队执行 |
+| `$harness-review` | 审查变更内容 |
+| `$harness-setup codex` | 更新 Codex 分发物并整理旧 skill |
 
-### ハンドオフ
+### 交接
 
-| コマンド | 用途 |
+| 命令 | 用途 |
 |---------|------|
-| `$handoff-to-cursor` | Cursor 運用時の完了報告 |
+| `$handoff-to-cursor` | Cursor 运行时的完成报告 |
 
-**スキル（会話で自動起動）**:
-- `handoff-to-impl` - 「実装役に渡して」→ PM → Impl への依頼
-- `handoff-to-pm` - 「PMに完了報告」→ Impl → PM への完了報告
+**技能（对话中自动启动）**:
+- `handoff-to-impl` - "交给实现者" → PM → Impl 的请求
+- `handoff-to-pm` - "向 PM 报告完成" → Impl → PM 的完成报告
 
 ## SSOT（Single Source of Truth）
 
-- `.claude/memory/decisions.md` - 決定事項（Why）
-- `.claude/memory/patterns.md` - 再利用パターン（How）
+- `.claude/memory/decisions.md` - 决策事项（Why）
+- `.claude/memory/patterns.md` - 可复用模式（How）
 
-## テスト改ざん防止（品質保証）
+## 测试篡改预防（质量保证）
 
-> 詳細: [D9: テスト改ざん防止の3層防御戦略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
+> 详情: [D9: 测试篡改预防的3层防御策略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
 
-Coding Agent がテスト失敗時に「楽をする」傾向（テスト改ざん、lint 緩和、形骸化実装）を防ぐための仕組みです。
+这是为了防止 Coding Agent 在测试失败时"偷懒"（测试篡改、lint 放宽、形骸化实现）倾向的机制。
 
-### 3層防御戦略
+### 3层防御策略
 
-| 層 | 仕組み | 強制力 |
+| 层 | 机制 | 强制力 |
 |----|--------|--------|
-| 第1層: Rules | `.codex/rules/harness.rules`（暫定） | 事前確認（prompt） |
-| 第2層: Skills | `impl`, `verify` スキルに品質ガードレール内蔵 | 文脈的強制（スキル使用時） |
-| 第3層: Hooks | 未対応（対応後に置換予定） | - |
+| 第1层: Rules | `.codex/rules/harness.rules`（临时） | 事前确认（prompt） |
+| 第2层: Skills | `impl`, `verify` 技能内置质量护栏 | 上下文强制（使用技能时） |
+| 第3层: Hooks | 未支持（支持后替换） | - |
 
-### 禁止パターン
+### 禁止模式
 
-**テスト改ざん**:
-- `it.skip()`, `test.skip()` への変更
-- アサーションの削除・緩和
-- eslint-disable コメントの追加
+**测试篡改**:
+- 更改为 `it.skip()`, `test.skip()`
+- 删除/放宽断言
+- 添加 eslint-disable 注释
 
-**形骸化実装**:
-- テスト期待値のハードコード
-- スタブ・モック・空実装
-- 特定入力のみ動作するコード
+**形骸化实现**:
+- 硬编码测试期望值
+- stub/mock/空实现
+- 仅对特定输入有效的代码
 
-### 困難な場合の対応フロー
+### 遇到困难时的处理流程
 
 ```
-1. 正直に報告（「この方法では実装が困難です」）
-2. 理由を説明（技術的制約、前提条件の不備）
-3. 選択肢を提示（代替案、段階的実装）
-4. ユーザーの判断を仰ぐ
+1. 诚实报告（"此方法难以实现"）
+2. 说明理由（技术限制、前提条件不足）
+3. 提供选项（替代方案、分阶段实现）
+4. 请用户判断
 ```
 
-> ⚠️ **絶対にしてはいけないこと**: テストを改ざんして「成功」を偽装すること
+> ⚠️ **绝对禁止事项**: 篡改测试以伪造"成功"
 
 <!-- sync-rules-to-agents: start -->
 
 ## Rules (from .claude/rules/)
 
-> このセクションは `scripts/codex/sync-rules-to-agents.sh` によって自動生成されます。
-> 直接編集しないでください。SSOT は `.claude/rules/` です。
+> 本节由 `scripts/codex/sync-rules-to-agents.sh` 自动生成。
+> 请勿直接编辑。SSOT 为 `.claude/rules/`。
 
-| ルールファイル | 説明 |
+| 规则文件 | 说明 |
 |--------------|------|
-| `cc-update-policy.md` | CC アプデ追従時の品質ポリシー |
+| `cc-update-policy.md` | CC 更新跟踪时的质量策略 |
 | `codex-cli-only.md` | Codex CLI Only Rule |
 | `command-editing.md` | Brief description |
 | `github-release.md` | GitHub Release Notes Rules |
 | `hooks-editing.md` | Rules for editing hook configuration (hooks.json) |
-| `implementation-quality.md` | 実装品質ルール - 形骸化実装を禁止し、本質的な実装を促す |
+| `implementation-quality.md` | 实现质量规则 - 禁止形骸化实现，促进本质性实现 |
 | `shell-scripts.md` | Rules for editing shell scripts |
 | `skill-editing.md` | "English description for auto-loading. Include trigger phrases." |
-| `test-quality.md` | テスト品質保護ルール - テスト改ざんを禁止し、正しい実装を促す |
-| `v3-architecture.md` | v3 アーキテクチャ詳細 |
-| `versioning.md` | バージョニングルール |
+| `test-quality.md` | 测试质量保护规则 - 禁止测试篡改，促进正确实现 |
+| `v3-architecture.md` | v3 架构详细 |
+| `versioning.md` | 版本管理规则 |
 
 ### cc-update-policy
 
 
-# CC アップデート追従ポリシー
+# CC 更新跟踪策略
 
-Claude Code の新バージョン対応時に Feature Table を更新する際の品質基準。
+Claude Code 新版本对应时更新 Feature Table 的质量标准。
 
-## 基本原則
+## 基本原则
 
-Feature Table への追加は、**対応する実装変更**または**カテゴリ C（CC 自動継承）の明示的分類**を伴わなければならない。
+Feature Table 的添加必须伴随**相应的实现更改**或**类别 C（CC 自动继承）的明确分类**。
 
-「Feature Table に行を足しただけ」の状態で PR をマージしてはならない。
+不允许在"仅向 Feature Table 添加行"的状态下合并 PR。
 
-## 3 カテゴリ分類
+## 3 类别分类
 
-| カテゴリ | 定義 | PR マージ |
+| 类别 | 定义 | PR 合并 |
 |---------|------|----------|
-| **(A) 実装あり** | hooks / scripts / agents / skills / core に対応する実装変更がある | 可 |
-| **(B) 書いただけ** | Feature Table のみ変更。実装なし | **不可** -- 実装案の提示が必須 |
-| **(C) CC 自動継承** | CC 本体の修正で Harness 側の変更不要（パフォーマンス改善、バグ修正等） | 可（Feature Table に「CC 自動継承」と明記） |
+| **(A) 有实现** | hooks / scripts / agents / skills / core 有相应的实现更改 | 可 |
+| **(B) 仅书写** | 仅更改 Feature Table。无实现 | **不可** -- 必须提出实现方案 |
+| **(C) CC 自动继承** | CC 本体的修复，Harness 侧无需更改（性能改进、错误修复等） | 可（在 Feature Table 中明确标注"CC 自动继承"） |
 
-## ルール
+## 规则
 
-### 1. Feature Table 追加には実装または分類を伴うこと
+### 1. Feature Table 添加必须伴随实现或分类
 
-Feature Table に新行を追加する場合、以下のいずれかを満たすこと:
+向 Feature Table 添加新行时，必须满足以下任一条件:
 
-- **(A)** 同じ PR 内に対応する実装ファイルの変更が含まれている
-- **(C)** Feature Table 内で「CC 自動継承」であることが明記されている
+- **(A)** 同一 PR 内包含相应的实现文件更改
+- **(C)** Feature Table 中明确标注为"CC 自动继承"
 
-いずれにも該当しない場合、その項目はカテゴリ B（書いただけ）と判定される。
+若均不符合，则该项目被判定为类别 B（仅书写）。
 
-### 2. カテゴリ B 検出時は PR をブロックし実装案を要求
+### 2. 检测到类别 B 时阻止 PR 并要求实现方案
 
-カテゴリ B の項目が 1 件でも存在する場合:
+若存在 1 件及以上类别 B 的项目:
 
-- PR のマージを**ブロック**する
-- 各カテゴリ B 項目について、以下を含む**実装案**の提示を要求する:
-  - Harness ならではの付加価値の説明
-  - 変更対象ファイルと具体的な変更内容
-  - ユーザー体験の改善（今まで / 今後）
+- **阻止** PR 的合并
+- 对每个类别 B 项目，要求提出包含以下内容的**实现方案**:
+  - Harness 独有附加价值的说明
+  - 变更目标文件和具体变更内容
+  - 用户体验的改善（以前 / 以后）
 
-実装案が承認された後、実装を含む追加コミットまたは後続 PR を作成すること。
+实现方案获得批准后，创建包含实现的额外提交或后续 PR。
 
-### 3. 「付加価値」列の追加を推奨
+### 3. 推荐添加"附加价值"列
 
-Feature Table に A / B / C の分類を可視化する「付加価値」列の追加を推奨する。
+推荐在 Feature Table 中添加可视化 A / B / C 分类的"附加价值"列。
 
 ```markdown
-| Feature | Skill | Purpose | 付加価値 |
+| Feature | Skill | Purpose | 附加价值 |
 |---------|-------|---------|---------|
-| PostCompact フック | hooks | コンテキスト再注入 | A: 実装あり |
+| PostCompact 钩子 | hooks | 上下文再注入 | A: 有实现 |
 
 <!-- 全文: .claude/rules/cc-update-policy.md -->
 
 ### codex-cli-only
 
-> このルールは Claude Code 向けです。Codex 環境では適用しません。
+> 此规则适用于 Claude Code。在 Codex 环境中不适用。
 
 <!-- 全文: .claude/rules/codex-cli-only.md -->
 
@@ -430,40 +430,40 @@ Generated with [Claude Code](https://claude.com/claude-code)
 
 ### Language
 
-- **GitHub Release**: English required（公開リポジトリのため）
-- **CHANGELOG.md**: **日本語**で詳細な Before/After 形式（後述）
+- **GitHub Release**: English required（公开仓库）
+- **CHANGELOG.md**: **日语**详细 Before/After 形式（后述）
 - Keep descriptions user-focused
 
-## CHANGELOG フォーマット（日本語・詳細 Before/After）
+## CHANGELOG 格式（日语·详细 Before/After）
 
-CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述する:
+CHANGELOG 以各功能"至今 → 今后"形式具体描述:
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
-### テーマ: [変更全体を一言で]
+### 主题: [一句话概括整体变更]
 
-**[ユーザーにとっての価値を1〜2文で]**
+**[用户价值 1-2 句]**
 
 ---
 
-#### 1. [機能名]
+#### 1. [功能名]
 
-**今まで**: [旧動作。ユーザーが体験していた不便を具体的に描写]
+**至今**: [旧行为。具体描述用户体验到的不便]
 
-**今後**: [新動作。何が解決するか + 具体例]
+**今后**: [新行为。解决了什么 + 具体例子]
 
-```出力例やコマンド例```
+```输出示例或命令示例```
 
-#### 2. [次の機能名]
+#### 2. [下一个功能名]
 
-**今まで**: ...
-**今後**: ...
+**至今**: ...
+**今后**: ...
 ```
 
-**書き方ルール**:
-- 各機能を `#### N. 機能名` で独立セクションにする
-- 「今まで」は**課題描写**（「〜する必要がありました」形式）
+**写作规则**:
+- 每个功能用 `#### N. 功能名` 作为独立章节
+- "至今"是**问题描述**（以"需要做~"的形式）
 
 <!-- 全文: .claude/rules/github-release.md -->
 
@@ -496,19 +496,19 @@ hooks/hooks.json           ← Source file (for development)
 
 ## Hook Types
 
-4 つのタイプが利用可能です: `command`（汎用）、`http`（外部連携）、`prompt`（LLM 単一判断）、`agent`（LLM エージェント判断）。後者2つは v2.1.63+ で全イベント対応。
+4 种类型可用: `command`（通用）、`http`（外部集成）、`prompt`（LLM 单一判断）、`agent`（LLM 代理判断）。后两者在 v2.1.63+ 支持所有事件。
 
-> **CC v2.1.69+**: `InstructionsLoaded` イベント、`agent_id` / `agent_type` フィールド、`{"continue": false, "stopReason": "..."}` レスポンスが追加されました。
+> **CC v2.1.69+**: 添加了 `InstructionsLoaded` 事件、`agent_id` / `agent_type` 字段、`{"continue": false, "stopReason": "..."}` 响应。
 >
-> **CC v2.1.76+**: `Elicitation`、`ElicitationResult`、`PostCompact` イベントが追加されました。
-> MCP Elicitation はバックグラウンドエージェントでは UI 対話不能なため、フックで自動処理が必要です。
-> PostCompact は PreCompact と対になり、コンパクション後のコンテキスト再注入に使用します。
+> **CC v2.1.76+**: 添加了 `Elicitation`、`ElicitationResult`、`PostCompact` 事件。
+> MCP Elicitation 在后台代理中无法进行 UI 对话，需要通过钩子自动处理。
+> PostCompact 与 PreCompact 配对，用于压缩后的上下文再注入。
 >
-> **CC v2.1.77+**: PreToolUse フックが `"allow"` を返しても、settings.json の `deny` ルールが優先されるようになりました。
-> フック内で allow しても deny 設定があれば拒否されます。guardrail 設計時はこの優先順位に注意してください。
+> **CC v2.1.77+**: 即使 PreToolUse 钩子返回 `"allow"`，settings.json 的 `deny` 规则也会优先生效。
+> 即使在钩子中 allow，如果有 deny 设置也会被拒绝。设计 guardrail 时请注意此优先级。
 >
-> **CC v2.1.78+**: `StopFailure` イベントが追加されました。API エラー（レート制限、認証失敗等）で
-> セッション停止が失敗した際に発火します。エラーログと復旧処理に使用します。
+> **CC v2.1.78+**: 添加了 `StopFailure` 事件。当 API 错误（速率限制、认证失败等）
+> 导致会话停止失败时触发。用于错误日志和恢复处理。
 
 ### command Type (General Purpose)
 
@@ -524,23 +524,23 @@ Available for all events:
 
 ### implementation-quality
 
-## 絶対禁止事項
+## 绝对禁止事项
 
-### 1. 形骸化実装（テストを通すだけの実装）
+### 1. 形骸化实现（仅为了通过测试的实现）
 
-以下のパターンは**絶対に禁止**です：
+以下模式**绝对禁止**：
 
-| 禁止パターン | 例 | なぜダメか |
+| 禁止模式 | 例 | 为什么不行 |
 |------------|-----|-----------|
-| ハードコード | テスト期待値をそのまま返す | 他の入力で動作しない |
-| スタブ実装 | `return null`, `return []` | 機能していない |
-| 決め打ち実装 | テストケースの値だけ対応 | 汎用性がない |
-| コピペ実装 | テストの期待値辞書 | 意味のあるロジックがない |
+| 硬编码 | 直接返回测试期望值 | 其他输入无法工作 |
+| 存根实现 | `return null`, `return []` | 没有功能 |
+| 特定值实现 | 只对应测试用例的值 | 没有通用性 |
+| 复制粘贴实现 | 测试期望值字典 | 没有有意义的逻辑 |
 
-### 禁止例：テスト期待値のハードコード
+### 禁止例：测试期望值的硬编码
 
 ```python
-# ❌ 絶対禁止
+# ❌ 绝对禁止
 def slugify(text: str) -> str:
     answers_for_tests = {
         "HelloWorld": "hello-world",
@@ -551,7 +551,7 @@ def slugify(text: str) -> str:
 ```
 
 ```python
-# ✅ 正しい実装
+# ✅ 正确的实现
 def slugify(text: str) -> str:
     import re
     text = text.strip().lower()
@@ -560,30 +560,30 @@ def slugify(text: str) -> str:
     return text
 ```
 
-### 2. 見かけだけの実装
+### 2. 仅表面的实现
 
 ```typescript
-// ❌ 禁止：何もしていない
+// ❌ 禁止：什么都没做
 async function processData(data: Data[]): Promise<Result> {
   // TODO: implement later
   return {} as Result;
 }
 
-// ❌ 禁止：エラーを握りつぶす
+// ❌ 禁止：吞掉错误
 async function fetchUser(id: string): Promise<User | null> {
   try {
     // ...
   } catch {
-    return null; // エラーを隠蔽
+    return null; // 隐藏错误
   }
 }
 ```
 
 ---
 
-## 実装時のセルフチェック
+## 实现时的自查
 
-実装を完了する前に、以下を確認してください：
+实现完成前，请确认以下内容：
 
 <!-- 全文: .claude/rules/implementation-quality.md -->
 
@@ -664,14 +664,14 @@ PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 
 | Guideline | Recommendation |
 |-----------|----------------|
-| SKILL.md | 推奨 500 行以下 |
+| SKILL.md | 推荐 500 行以下 |
 | Large content | Split into `references/` files |
 | References | Use descriptive filenames |
 
-> **Note (CC 2.1.32+)**: スキルの文字バジェットはコンテキスト窓の **2%** に自動スケールされます。
-> 500 行はあくまで推奨値であり、実効上限はモデルのコンテキスト窓サイズに依存します。
-> 大きなスキルファイルは自動的にトリミングされる可能性があるため、
-> 重要な情報は SKILL.md の先頭付近に配置し、詳細は `references/` に分割してください。
+> **Note (CC 2.1.32+)**: 技能的字符预算会自动缩放到上下文窗口的 **2%**。
+> 500 行只是推荐值，实际上限取决于模型的上下文窗口大小。
+> 大型技能文件可能会被自动裁剪，因此
+> 请将重要信息放在 SKILL.md 的开头附近，详细内容请分割到 `references/` 中。
 
 ### 5. Description Best Practices
 
@@ -699,36 +699,36 @@ description: "CI skill"
 
 ### test-quality
 
-## 絶対禁止事項
+## 绝对禁止事项
 
-### 1. テスト改ざん（テストを通すための変更）
+### 1. 测试篡改（为了通过测试的更改）
 
-以下の行為は**絶対に禁止**です：
+以下行为**绝对禁止**：
 
-| 禁止パターン | 例 | 正しい対応 |
+| 禁止模式 | 例 | 正确对应 |
 |------------|-----|-----------|
-| テストを `skip` / `only` 化 | `it.skip(...)`, `describe.only(...)` | 実装を修正する |
-| アサーションの削除・緩和 | `expect(x).toBe(y)` を削除 | 期待値が正しいか確認し、実装を修正 |
-| 期待値の雑な書き換え | エラーに合わせて期待値を変更 | なぜテストが失敗しているか理解する |
-| テストケースの削除 | 失敗するテストを消す | 実装が仕様を満たすよう修正 |
-| モックの過剰使用 | 本来テストすべき部分をモック | 必要最小限のモックに留める |
+| 测试 `skip` / `only` 化 | `it.skip(...)`, `describe.only(...)` | 修正实现 |
+| 删除/放宽断言 | 删除 `expect(x).toBe(y)` | 确认期望值是否正确，修正实现 |
+| 随意改写期望值 | 根据错误更改期望值 | 理解测试为什么失败 |
+| 删除测试用例 | 删除失败的测试 | 修正实现以满足规格 |
+| 过度使用 mock | mock 本应测试的部分 | 保持最小限度的 mock |
 
-### 2. 設定ファイル改ざん
+### 2. 配置文件篡改
 
-以下のファイルの**緩和変更は禁止**です：
+以下文件的**放宽更改禁止**：
 
 ```
-.eslintrc.*         # ルールを disable にしない
-.prettierrc*        # フォーマットを緩めない
-tsconfig.json       # strict を緩めない
-biome.json          # lint ルールを無効化しない
-.husky/**           # pre-commit フックを迂回しない
-.github/workflows/** # CI チェックをスキップしない
+.eslintrc.*         # 不要 disable 规则
+.prettierrc*        # 不要放宽格式
+tsconfig.json       # 不要放宽 strict
+biome.json          # 不要禁用 lint 规则
+.husky/**           # 不要绕过 pre-commit 钩子
+.github/workflows/** # 不要跳过 CI 检查
 ```
 
-### 3. 例外を設ける場合（必須手順）
+### 3. 设置例外时（必须步骤）
 
-やむを得ず上記を変更する場合は、**必ず以下の形式で承認を得てから**実行：
+不得已更改上述内容时，**必须先按以下格式获得批准**：
 
 ```markdown
 

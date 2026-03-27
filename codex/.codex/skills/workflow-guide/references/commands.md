@@ -1,41 +1,41 @@
-# コマンドリファレンス
+# 命令参考
 
-2エージェントワークフローで使用するコマンドの詳細。
+2-Agent 工作流中使用的命令详情。
 
 ---
 
-## Codex 側コマンド
+## Codex 侧命令
 
 ### $harness-setup init
 
-プロジェクトの初期セットアップ。
+项目初始设置。
 
 ```
 $harness-setup init
 ```
 
-**生成されるファイル**:
-- Plans.md - タスク管理
-- AGENTS.md - 役割分担定義
-- CLAUDE.md - Claude Code 設定
-- .claude/rules/ - プロジェクトルール
+**生成的文件**:
+- Plans.md - 任务管理
+- AGENTS.md - 角色分工定义
+- CLAUDE.md - Claude Code 设置
+- .claude/rules/ - 项目规则
 
 ---
 
 ### $harness-setup codex
 
-Codex CLI 用の Harness 設定を**ユーザーベース**（`${CODEX_HOME:-~/.codex}`）に導入・更新。
+向用户级别（`${CODEX_HOME:-~/.codex}`）导入/更新 Codex CLI 用的 Harness 设置。
 
 ```
 $harness-setup codex
 ```
 
-**生成されるファイル（デフォルト）**:
+**生成的文件（默认）**:
 - ${CODEX_HOME:-~/.codex}/skills/
 - ${CODEX_HOME:-~/.codex}/rules/
-- (optional) ${CODEX_HOME:-~/.codex}/config.toml
+- (可选) ${CODEX_HOME:-~/.codex}/config.toml
 
-**project モード時のみ**:
+**仅 project 模式时**:
 - .codex/skills/
 - .codex/rules/
 - AGENTS.md
@@ -44,113 +44,114 @@ $harness-setup codex
 
 ### $harness-plan
 
-タスクの計画・分解。
+任务的规划・分解。
 
 ```
-$harness-plan [タスク説明]
+$harness-plan [任务说明]
 ```
 
-**例**:
+**示例**:
 ```
-$harness-plan ユーザー認証機能を実装したい
+$harness-plan 想实现用户认证功能
 ```
 
-**出力**: Plans.md にタスクが追加される
+**输出**: 任务被添加到 Plans.md
 
 ---
 
 ### $harness-work
 
-Plans.md のタスクを実行。
+执行 Plans.md 的任务。
 
 ```
 $harness-work
 ```
 
-**機能**:
-- `cc:TODO` または `pm:依頼中` のタスクを自動検出
-- 複数タスクの並列実行に対応
-- 完了時に `cc:完了` に自動更新
+**功能**:
+- 自动检测 `cc:TODO` 或 `pm:依頼中` 的任务
+- 支持多任务并行执行
+- 完成时自动更新为 `cc:完了`
 
 ---
 
 ### $harness-sync
 
-現在の状態サマリーを出力。
+输出当前状态摘要。
 
 ```
 $harness-sync
 ```
 
-**出力例**:
+**输出示例**:
 ```
-📊 現在の状態
-- 進行中: 2件
-- 未着手: 5件
-- 完了（確認待ち）: 1件
+📊 当前状态
+- 进行中: 2件
+- 未开始: 5件
+- 完成（等待确认）: 1件
 ```
 
 ---
 
 ### /handoff-to-cursor
 
-Cursor PM への完了報告。
+向 Cursor PM 的完成报告。
 
 ```
 /handoff-to-cursor
 ```
 
-**含まれる情報**:
-- 完了したタスク一覧
-- 変更されたファイル
-- テスト結果
-- 次のアクション提案
+**包含的信息**:
+- 已完成任务列表
+- 变更文件
+- 测试结果
+- 下一步行动建议
 
 ---
 
-## Cursor 側コマンド（参考）
+## Cursor 侧命令（参考）
 
 ### /handoff-to-claude
 
-Claude Code へのタスク依頼。
+向 Claude Code 的任务请求。
 
 ### /review-cc-work
 
-Claude Code の完了報告をレビュー。
-承認できない場合（request_changes）は Plans.md を更新し、**`/claude-code-harness/handoff-to-claude` で修正依頼文を生成してそのまま渡す**。
+审查 Claude Code 的完成报告。
+无法批准时（request_changes）更新 Plans.md，
+**用 `/claude-code-harness/handoff-to-claude` 生成修正请求文并直接传递**。
 
 ---
 
-## スキル（会話で自動起動）
+## 技能（会话中自动启动）
 
 ### handoff-to-pm
 
-**トリガー**: 「PMに完了報告」「作業完了を報告」
+**触发**: "向 PM 报告完成"、"报告工作完成"
 
-Worker → PM への完了報告を生成。
+生成 Worker → PM 的完成报告。
 
 ### handoff-to-impl
 
-**トリガー**: 「実装役に渡して」「Claude Code に依頼」
+**触发**: "交给实现者"、"向 Claude Code 请求"
 
-PM → Worker へのタスク依頼を整形。
+整理 PM → Worker 的任务请求。
 
 ---
 
-## コマンド使用フロー
+## 命令使用流程
 
 ```
-[セッション開始]
+[会话开始]
     │
     ▼
-$harness-sync  ←── 現状確認
+$harness-sync  ←── 现状确认
     │
     ▼
-$harness-work  ←── タスク実行
+$harness-work  ←── 任务执行
     │
     ▼
-/handoff-to-cursor  ←── 完了報告
+/handoff-to-cursor  ←── 完成报告
     │
     ▼
-[セッション終了]
+[会话结束]
 ```

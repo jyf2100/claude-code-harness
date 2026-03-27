@@ -1,33 +1,33 @@
 # Naming Conventions for Video Generation Schemas
 
-This document defines the unified naming conventions for all JSON schemas in the video generation system.
+本文档定义视频生成系统中所有 JSON schema 的统一命名规范。
 
-## Version
+## 版本
 **1.0.0** - 2026-02-03
 
 ---
 
-## 1. Time Units
+## 1. 时间单位
 
-### Rule
-**All time durations MUST use milliseconds (`_ms` suffix)**
+### 规则
+**所有时间长度必须使用毫秒（`_ms` 后缀）**
 
-### Rationale
-- Milliseconds provide sufficient precision for video timing
-- Frame counts are FPS-dependent and should be calculated at runtime
-- Consistency across all schemas
+### 理由
+- 毫秒为视频时序提供足够的精度
+- 帧数依赖 FPS，应在运行时计算
+- 所有 schema 保持一致性
 
-### Examples
+### 示例
 
 ```json
-// ✅ Correct
+// ✅ 正确
 {
   "duration_ms": 5000,
   "start_offset_ms": 1000,
   "fade_in_ms": 500
 }
 
-// ❌ Incorrect
+// ❌ 错误
 {
   "duration_frames": 150,
   "duration": 5,
@@ -35,39 +35,39 @@ This document defines the unified naming conventions for all JSON schemas in the
 }
 ```
 
-### Conversion at Runtime
+### 运行时转换
 ```javascript
-// FPS is provided in output_settings
+// FPS 在 output_settings 中提供
 const fps = 30;
 const durationMs = 5000;
-const durationFrames = Math.floor((durationMs / 1000) * fps); // 150 frames
+const durationFrames = Math.floor((durationMs / 1000) * fps); // 150 帧
 ```
 
 ---
 
-## 2. Transition Types
+## 2. 过渡类型
 
-### Rule
-**Transition enums MUST use snake_case values**
+### 规则
+**过渡枚举值必须使用 snake_case**
 
-### Standard Enum
+### 标准枚举
 ```json
 {
   "enum": ["fade", "slide_in", "zoom", "cut"]
 }
 ```
 
-### Definitions
+### 定义
 
-| Value | Description | Use Case |
-|-------|-------------|----------|
-| `fade` | Gradual opacity change | Default, subtle transitions |
-| `slide_in` | Slide from direction | Dynamic scene changes |
-| `zoom` | Scale in/out | Emphasis, dramatic reveals |
-| `cut` | Instant cut (no transition) | Fast-paced content |
+| 值 | 说明 | 用途 |
+|---|------|------|
+| `fade` | 渐变透明度变化 | 默认、柔和过渡 |
+| `slide_in` | 从方向滑入 | 动态场景变化 |
+| `zoom` | 缩放进出 | 强调、戏剧性展示 |
+| `cut` | 即时切换（无过渡） | 快节奏内容 |
 
-### Direction Property (for slide_in)
-When `transition.type === "slide_in"`, use the `direction` property:
+### 方向属性（用于 slide_in）
+当 `transition.type === "slide_in"` 时，使用 `direction` 属性:
 
 ```json
 {
@@ -79,24 +79,24 @@ When `transition.type === "slide_in"`, use the `direction` property:
 }
 ```
 
-**Valid directions**: `"left"`, `"right"`, `"top"`, `"bottom"`
+**有效方向**: `"left"`, `"right"`, `"top"`, `"bottom"`
 
 ---
 
-## 3. Property Naming Case
+## 3. 属性命名大小写
 
-### Rule
-**All property names MUST use snake_case**
+### 规则
+**所有属性名必须使用 snake_case**
 
-### Rationale
-- Consistency with existing codebase conventions
-- Better readability for multi-word properties
-- Alignment with JSON Schema best practices
+### 理由
+- 与现有代码库规范一致
+- 多词属性可读性更好
+- 符合 JSON Schema 最佳实践
 
-### Examples
+### 示例
 
 ```json
-// ✅ Correct
+// ✅ 正确
 {
   "primary_color": "#3B82F6",
   "secondary_color": "#10B981",
@@ -107,7 +107,7 @@ When `transition.type === "slide_in"`, use the `direction` property:
   "glow_intensity": 20
 }
 
-// ❌ Incorrect
+// ❌ 错误
 {
   "primaryColor": "#3B82F6",
   "fontSize": 48,
@@ -118,56 +118,56 @@ When `transition.type === "slide_in"`, use the `direction` property:
 
 ---
 
-## 4. Enum Values
+## 4. 枚举值
 
-### Rule
-**Enum values MUST use lowercase with hyphens for multi-word values**
+### 规则
+**枚举值必须使用小写，多词值用连字符连接**
 
-### Standard Patterns
+### 标准模式
 
-#### Scene Types
+#### 场景类型
 ```json
 ["intro", "ui-demo", "architecture", "code-highlight", "changelog", "cta"]
 ```
 
-#### Visual Styles
+#### 视觉风格
 ```json
 ["minimalist", "technical", "modern", "gradient", "flat", "3d"]
 ```
 
-#### Animation Easing
+#### 动画缓动
 ```json
 ["linear", "ease-in", "ease-out", "ease-in-out", "ease-in-quad", "ease-out-quad"]
 ```
 
-#### Background Types
+#### 背景类型
 ```json
 ["cyberpunk", "corporate", "minimal", "gradient", "particles"]
 ```
 
 ---
 
-## 5. ID Patterns
+## 5. ID 模式
 
-### Rule
-**IDs MUST use kebab-case (lowercase with hyphens)**
+### 规则
+**ID 必须使用 kebab-case（小写加连字符）**
 
-### Pattern
+### 模式
 ```regex
 ^[a-z0-9-]+$
 ```
 
-### Examples
+### 示例
 
 ```json
-// ✅ Correct
+// ✅ 正确
 {
   "scene_id": "intro-hero",
   "section_id": "feature-highlights",
   "character_id": "expert-reviewer"
 }
 
-// ❌ Incorrect
+// ❌ 错误
 {
   "scene_id": "introHero",
   "section_id": "feature_highlights",
@@ -177,35 +177,35 @@ When `transition.type === "slide_in"`, use the `direction` property:
 
 ---
 
-## 6. Color Format
+## 6. 颜色格式
 
-### Rule
-**Colors MUST use uppercase HEX format with `#` prefix**
+### 规则
+**颜色必须使用大写 HEX 格式，带 `#` 前缀**
 
-### Pattern
+### 模式
 ```regex
 ^#[0-9A-F]{6}$
 ```
 
-### Examples
+### 示例
 
 ```json
-// ✅ Correct
+// ✅ 正确
 {
   "primary_color": "#3B82F6",
   "accent_color": "#F59E0B"
 }
 
-// ❌ Incorrect
+// ❌ 错误
 {
-  "primary_color": "#3b82f6",  // lowercase
-  "accent_color": "3B82F6",    // missing #
-  "text_color": "rgb(59, 130, 246)"  // not HEX
+  "primary_color": "#3b82f6",  // 小写
+  "accent_color": "3B82F6",    // 缺少 #
+  "text_color": "rgb(59, 130, 246)"  // 不是 HEX
 }
 ```
 
-### RGBA Exception
-For transparency, use `rgba()` format:
+### RGBA 例外
+对于透明度，使用 `rgba()` 格式:
 
 ```json
 {
@@ -215,31 +215,31 @@ For transparency, use `rgba()` format:
 
 ---
 
-## 7. Reserved Keywords
+## 7. 保留关键字
 
-### Audio Properties
-- `fade_in_ms` / `fade_out_ms` - Audio fade durations
-- `start_offset_ms` - Delay before audio/narration starts
-- `master_volume` - Global volume (0.0 - 1.0)
+### 音频属性
+- `fade_in_ms` / `fade_out_ms` - 音频淡入淡出长度
+- `start_offset_ms` - 音频/解说开始前延迟
+- `master_volume` - 全局音量（0.0 - 1.0）
 
-### Visual Properties
-- `duration_ms` - Duration in milliseconds
-- `transition` - Transition configuration object
-- `emphasis` - Emphasis/highlighting configuration
-- `background` - Background configuration
+### 视觉属性
+- `duration_ms` - 长度（毫秒）
+- `transition` - 过渡配置对象
+- `emphasis` - 强调/高亮配置
+- `background` - 背景配置
 
-### Metadata Properties
-- `created_at` / `updated_at` - ISO 8601 timestamps
-- `version` - Semantic version (e.g., "1.0.0")
-- `description` - Human-readable description
+### 元数据属性
+- `created_at` / `updated_at` - ISO 8601 时间戳
+- `version` - 语义版本（如 "1.0.0"）
+- `description` - 人类可读描述
 
 ---
 
-## 8. Migration Guide
+## 8. 迁移指南
 
-### From `duration_frames` to `duration_ms`
+### 从 `duration_frames` 到 `duration_ms`
 
-**Before:**
+**之前:**
 ```json
 {
   "transition": {
@@ -249,7 +249,7 @@ For transparency, use `rgba()` format:
 }
 ```
 
-**After:**
+**之后:**
 ```json
 {
   "transition": {
@@ -259,14 +259,14 @@ For transparency, use `rgba()` format:
 }
 ```
 
-**Conversion formula** (assuming 30 FPS):
+**转换公式**（假设 30 FPS）:
 ```
 duration_ms = (duration_frames / 30) * 1000
 ```
 
-### From `slideIn` to `slide_in`
+### 从 `slideIn` 到 `slide_in`
 
-**Before:**
+**之前:**
 ```json
 {
   "transition": {
@@ -276,7 +276,7 @@ duration_ms = (duration_frames / 30) * 1000
 }
 ```
 
-**After:**
+**之后:**
 ```json
 {
   "transition": {
@@ -287,9 +287,9 @@ duration_ms = (duration_frames / 30) * 1000
 }
 ```
 
-### From camelCase to snake_case
+### 从 camelCase 到 snake_case
 
-**Before:**
+**之前:**
 ```json
 {
   "background": {
@@ -299,7 +299,7 @@ duration_ms = (duration_frames / 30) * 1000
 }
 ```
 
-**After:**
+**之后:**
 ```json
 {
   "background": {
@@ -311,31 +311,31 @@ duration_ms = (duration_frames / 30) * 1000
 
 ---
 
-## 9. Schema Validation
+## 9. Schema 验证
 
-All schemas MUST validate against these conventions:
+所有 schema 必须验证以下规范:
 
-### Checklist
-- [ ] No `duration_frames` properties (use `duration_ms`)
-- [ ] Transition enums: `["fade", "slide_in", "zoom", "cut"]`
-- [ ] All properties use `snake_case`
-- [ ] All enum values use `lowercase-with-hyphens`
-- [ ] All IDs match pattern `^[a-z0-9-]+$`
-- [ ] All HEX colors match pattern `^#[0-9A-F]{6}$`
-
----
-
-## 10. Exceptions
-
-### Character Schema (Phase 10+)
-The `character.schema.json` may retain some camelCase properties for compatibility with TTS provider APIs (e.g., `overshootClamping` for spring animations).
-
-### External APIs
-When interfacing with external APIs (Remotion, TTS providers), conversion layers should handle naming differences.
+### 检查清单
+- [ ] 无 `duration_frames` 属性（使用 `duration_ms`）
+- [ ] 过渡枚举: `["fade", "slide_in", "zoom", "cut"]`
+- [ ] 所有属性使用 `snake_case`
+- [ ] 所有枚举值使用 `lowercase-with-hyphens`
+- [ ] 所有 ID 匹配模式 `^[a-z0-9-]+$`
+- [ ] 所有 HEX 颜色匹配模式 `^#[0-9A-F]{6}$`
 
 ---
 
-## Related Documentation
+## 10. 例外
+
+### Character Schema（Phase 10+）
+`character.schema.json` 可能保留一些 camelCase 属性，以兼容 TTS 提供商 API（如弹簧动画的 `overshootClamping`）。
+
+### 外部 API
+与外部 API（Remotion、TTS 提供商）对接时，转换层应处理命名差异。
+
+---
+
+## 相关文档
 
 - [Schema Phase Plan](../PLANS.md) - Phase 11.2: Naming & Unit Standardization
 - [Animation Schema](../schemas/animation.schema.json)

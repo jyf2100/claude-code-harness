@@ -1,237 +1,237 @@
 <!-- Generated from CLAUDE.md by build-opencode.js -->
 <!-- opencode.ai compatible version of Claude Code Harness -->
 
-# AGENTS.md - Claude harness 開発ガイド
+# AGENTS.md - Claude Harness 开发指南
 
-このファイルは Claude Code がこのリポジトリで作業する際の指針です。
+此文件为 Claude Code 在本仓库中工作时提供指导。
 
-## プロジェクト概要
+## 项目概述
 
-**Claude harness** は、Claude Code を「Plan → Work → Review」の型で自律運用するためのプラグインです。
+**Claude Harness** 是一个用于以"计划 → 执行 → 审查"模式自主运行 Claude Code 的插件。
 
-**特殊な点**: このプロジェクトは「ハーネス自身を使ってハーネスを改善する」自己参照的な構成です。
+**特殊之处**: 本项目采用"使用 Harness 自身来改进 Harness"的自指式结构。
 
-## Claude Code 2.1.49+ 新機能活用ガイド
+## Claude Code 2.1.49+ 新功能使用指南
 
-Harness は Claude Code 2.1.49 の新機能をフル活用しています。
+Harness 充分利用了 Claude Code 2.1.49 的新功能。
 
-| 機能 | 活用スキル | 用途 |
+| 功能 | 使用技能 | 用途 |
 |------|-----------|------|
-| **Task tool メトリクス** | parallel-workflows | サブエージェントのトークン/ツール/時間を集計 |
-| **`/debug` コマンド** | troubleshoot | 複雑なセッション問題の診断 |
-| **PDF ページ範囲** | notebookLM, harness-review | 大型ドキュメントの効率的な処理 |
-| **Git log フラグ** | harness-review, CI, release-harness | 構造化されたコミット分析 |
-| **OAuth 認証** | codex-review | DCR 非対応 MCP サーバーの設定 |
-| **68% メモリ最適化** | session-memory, session | `--resume` の積極的活用 |
-| **サブエージェント MCP** | task-worker | 並列実行時の MCP ツール共有 |
-| **Reduced Motion** | harness-ui | アクセシビリティ設定 |
-| **TeammateIdle/TaskCompleted Hook** | breezing | チーム監視の自動化 |
-| **Agent Memory (memory frontmatter)** | task-worker, code-reviewer | 永続的学習 |
-| **Fast mode (Opus 4.6)** | 全スキル | 高速出力モード |
-| **自動メモリ記録** | session-memory | セッション間知識の自動永続化 |
-| **スキルバジェットスケーリング** | 全スキル | コンテキスト窓の 2% に自動調整 |
-| **Task(agent_type) 制限** | agents/ | サブエージェント種類制限 |
-| **Plugin settings.json** | setup | init トークン削減・即時セキュリティ保護 |
-| **Worktree isolation** | breezing, parallel-workflows | 同一ファイル並列書き込み安全化 |
-| **Background agents** | generate-video | 非同期シーン生成 |
-| **ConfigChange hook** | hooks | 設定変更監査 |
-| **last_assistant_message** | session-memory | セッション品質評価 |
-| **Sonnet 4.6 (1M context)** | 全スキル | 大規模コンテキスト処理 |
+| **Task tool 指标** | parallel-workflows | 汇总子代理的 token/工具/时间 |
+| **`/debug` 命令** | troubleshoot | 复杂会话问题的诊断 |
+| **PDF 页面范围** | notebookLM, harness-review | 大型文档的高效处理 |
+| **Git log 标志** | harness-review, CI, release-harness | 结构化提交分析 |
+| **OAuth 认证** | codex-review | 不支持 DCR 的 MCP 服务器设置 |
+| **68% 内存优化** | session-memory, session | 积极使用 `--resume` |
+| **子代理 MCP** | task-worker | 并行执行时的 MCP 工具共享 |
+| **Reduced Motion** | harness-ui | 无障碍设置 |
+| **TeammateIdle/TaskCompleted Hook** | breezing | 团队监控自动化 |
+| **Agent Memory (memory frontmatter)** | task-worker, code-reviewer | 持久化学习 |
+| **Fast mode (Opus 4.6)** | 所有技能 | 高速输出模式 |
+| **自动内存记录** | session-memory | 跨会话知识的自动持久化 |
+| **技能预算缩放** | 所有技能 | 自动调整为上下文窗口的 2% |
+| **Task(agent_type) 限制** | agents/ | 子代理种类限制 |
+| **Plugin settings.json** | setup | 减少 init token、即时安全保护 |
+| **Worktree isolation** | breezing, parallel-workflows | 同一文件并行写入安全化 |
+| **Background agents** | generate-video | 异步场景生成 |
+| **ConfigChange hook** | hooks | 配置更改审计 |
+| **last_assistant_message** | session-memory | 会话质量评估 |
+| **Sonnet 4.6 (1M context)** | 所有技能 | 大规模上下文处理 |
 
-詳細は各スキルの SKILL.md を参照してください。
+详情请参阅各技能的 SKILL.md。
 
-## 開発ルール
+## 开发规则
 
-### コミットメッセージ
+### 提交信息
 
-[Conventional Commits](https://www.conventionalcommits.org/) に従う:
+遵循 [Conventional Commits](https://www.conventionalcommits.org/):
 
-- `feat:` - 新機能
-- `fix:` - バグ修正
-- `docs:` - ドキュメント変更
-- `refactor:` - リファクタリング
-- `test:` - テスト追加/更新
-- `chore:` - メンテナンス
+- `feat:` - 新功能
+- `fix:` - 错误修复
+- `docs:` - 文档更改
+- `refactor:` - 重构
+- `test:` - 测试添加/更新
+- `chore:` - 维护
 
-### バージョン管理
+### 版本管理
 
-バージョンは 2 箇所で定義（同期必須）:
-- `VERSION` - ソース・オブ・トゥルース
-- `.claude-plugin/plugin.json` - プラグインシステム用
+版本在两处定义（必须同步）:
+- `VERSION` - 真实来源
+- `.claude-plugin/plugin.json` - 插件系统用
 
-通常の機能追加・docs 更新・CI 修正ではこの 2 ファイルを変更しない。
-変更履歴は `CHANGELOG.md` の `[Unreleased]` に追記し、release を切るときだけ `./scripts/sync-version.sh bump` を使用する。
+普通的功能添加、docs 更新、CI 修正时不要修改这两个文件。
+变更历史记录在 `CHANGELOG.md` 的 `[Unreleased]` 部分，仅在创建 release 时使用 `./scripts/sync-version.sh bump`。
 
-### CHANGELOG 記載ルール
+### CHANGELOG 记录规则
 
-詳細: [.claude/rules/changelog.md](.claude/rules/changelog.md)
+详情: [.claude/rules/changelog.md](.claude/rules/changelog.md)
 
-- [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠
-- セクション: Added / Changed / Deprecated / Removed / Fixed / Security
-- 大きな変更時は Before/After テーブルを追加
+- 遵循 [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) 格式
+- 部分: Added / Changed / Deprecated / Removed / Fixed / Security
+- 重大更改时添加 Before/After 表格
 
-### 言語設定
+### 语言设置
 
-すべての応答は **日本語** で行うこと（`context: fork` スキル含む）。
+所有回复必须使用**中文**（包括 `context: fork` 技能）。
 
-### コードスタイル
+### 代码风格
 
-- 明確で説明的な名前を使う
-- 複雑なロジックにはコメントを追加
-- コマンド/エージェント/スキルは単一責任に保つ
+- 使用清晰且描述性的名称
+- 为复杂逻辑添加注释
+- 保持命令/代理/技能单一职责
 
-## リポジトリ構成
+## 仓库结构
 
 ```
 claude-code-harness/
-├── .claude-plugin/     # プラグインマニフェスト
-├── commands/           # スラッシュコマンド（ユーザー向け）
-├── agents/             # サブエージェント定義（Task tool で並列起動可能）
-├── skills/             # エージェントスキル
-├── hooks/              # ライフサイクルフック
-├── scripts/            # シェルスクリプト（ガード、自動化）
-├── templates/          # テンプレートファイル
-├── docs/               # ドキュメント
-└── tests/              # 検証スクリプト
+├── .claude-plugin/     # 插件清单
+├── commands/           # 斜杠命令（面向用户）
+├── agents/             # 子代理定义（可通过 Task tool 并行启动）
+├── skills/             # 代理技能
+├── hooks/              # 生命周期钩子
+├── scripts/            # Shell 脚本（防护、自动化）
+├── templates/          # 模板文件
+├── docs/               # 文档
+└── tests/              # 验证脚本
 ```
 
-## スキルの活用（重要）
+## 技能使用（重要）
 
-### スキル評価フロー
+### 技能评估流程
 
-> 💡 重いタスク（並列レビュー、CI修正ループ）では、スキルが `agents/` のサブエージェントを Task tool で並列起動します。
+> 💡 对于繁重任务（并行审查、CI 修正循环），技能会通过 Task tool 并行启动 `agents/` 中的子代理。
 
-**作業を開始する前に、必ず以下のフローを実行すること:**
+**开始工作前，务必执行以下流程:**
 
-1. **評価**: 利用可能なスキルを確認し、今回の依頼に該当するものがあるか評価
-2. **起動**: 該当するスキルがあれば、Skill ツールで起動してから作業開始
-3. **実行**: スキルの手順に従って作業を進める
+1. **评估**: 确认可用技能，评估是否有适用于本次请求的技能
+2. **启动**: 如有相关技能，先用 Skill 工具启动后再开始工作
+3. **执行**: 按照技能的步骤进行工作
 
 ```
-ユーザーの依頼
+用户的请求
     ↓
-スキルを評価（該当するものがあるか？）
+评估技能（是否有适用的？）
     ↓
-YES → Skill ツールで起動 → スキルの手順に従う
-NO  → 通常の推論で対応
+YES → 使用 Skill 工具启动 → 遵循技能步骤
+NO  → 使用常规推理处理
 ```
 
-### スキルの階層構造
+### 技能层次结构
 
-スキルは **親スキル（カテゴリ）** と **子スキル（具体的な機能）** の階層構造になっています。
+技能采用 **父技能（类别）** 和 **子技能（具体功能）** 的层次结构。
 
 ```
 skills/
-├── impl/                  # 実装（機能追加、テスト作成）
-├── harness-review/        # レビュー（品質、セキュリティ、パフォーマンス）
-├── verify/                # 検証（ビルド、エラー復旧、修正適用）
-├── setup/                 # 統合セットアップ（プロジェクト初期化、ツール設定、2-Agent、harness-mem、Codex CLI、ルールローカライズ）
-├── memory/                # メモリ管理（SSOT、decisions.md、patterns.md、SSOT昇格、記憶検索）
-├── troubleshoot/          # 診断・修復（エラー、CI障害含む）
-├── principles/            # 原則・ガイドライン（VibeCoder、差分編集）
-├── auth/                  # 認証・決済（Clerk、Supabase、Stripe）
-├── deploy/                # デプロイ（Vercel、Netlify、アナリティクス）
-├── ui/                    # UI（コンポーネント、フィードバック）
-├── handoff/               # ワークフロー（ハンドオフ、自動修正）
-├── notebookLM/            # ドキュメント（NotebookLM、YAML）
-└── maintenance/           # メンテナンス（クリーンアップ）
+├── impl/                  # 实现（功能添加、测试编写）
+├── harness-review/        # 审查（质量、安全、性能）
+├── verify/                # 验证（构建、错误恢复、修正应用）
+├── setup/                 # 集成设置（项目初始化、工具配置、2-Agent、harness-mem、Codex CLI、规则本地化）
+├── memory/                # 内存管理（SSOT、decisions.md、patterns.md、SSOT 提升、记忆搜索）
+├── troubleshoot/          # 诊断·修复（包括错误、CI 故障）
+├── principles/            # 原则·指南（VibeCoder、差异编辑）
+├── auth/                  # 认证·支付（Clerk、Supabase、Stripe）
+├── deploy/                # 部署（Vercel、Netlify、分析）
+├── ui/                    # UI（组件、反馈）
+├── handoff/               # 工作流（交接、自动修正）
+├── notebookLM/            # 文档（NotebookLM、YAML）
+└── maintenance/           # 维护（清理）
 ```
 
-**使い方:**
-1. 親スキルを Skill ツールで起動
-2. 親スキルがユーザーの意図に応じて適切な子スキル（doc.md）にルーティング
-3. 子スキルの手順に従って作業実行
+**使用方法:**
+1. 使用 Skill 工具启动父技能
+2. 父技能根据用户意图路由到适当的子技能（doc.md）
+3. 按照子技能的步骤执行工作
 
-### 開発用スキル（非公開）
+### 开发用技能（非公开）
 
-以下のスキルは開発・実験用であり、リポジトリには含まれません（.gitignore で除外）：
+以下技能用于开发/实验，不包含在仓库中（通过 .gitignore 排除）：
 
 ```
 skills/
-├── test-*/      # テスト用スキル
-└── x-promo/     # X投稿作成スキル（開発用）
+├── test-*/      # 测试用技能
+└── x-promo/     # X 发布创建技能（开发用）
 ```
 
-これらのスキルは個別の開発環境でのみ使用し、プラグイン配布には含めないこと。
+这些技能仅在个人开发环境中使用，不应包含在插件分发中。
 
-### 主要スキルカテゴリ
+### 主要技能类别
 
-| カテゴリ | 用途 | トリガー例 |
+| 类别 | 用途 | 触发示例 |
 |---------|------|-----------|
-| work | タスク実装（スコープ自動判断、--codex 対応） | 「実装して」「全部やって」「/work」 |
-| breezing | Agent Teams で完全自動完走（--codex 対応） | 「チームで完走」「breezing」 |
-| impl | 実装、機能追加、テスト作成 | 「実装して」「機能追加」「コードを書いて」 |
-| harness-review | コードレビュー、品質チェック | 「レビューして」「セキュリティ」「パフォーマンス」 |
-| verify | ビルド検証、エラー復旧 | 「ビルド」「エラー復旧」「検証して」 |
-| setup | セットアップ統合ハブ（プロジェクト初期化、ツール設定、2-Agent、harness-mem、Codex CLI、ルールローカライズ） | 「セットアップ」「CLAUDE.md」「初期化」「CI setup」「2-Agent」「Cursor設定」「harness-mem」「codex-setup」 |
-| memory | SSOT管理、記憶検索、SSOT昇格、Cursor連携メモリ | 「SSOT」「decisions.md」「マージ」「SSOT昇格」「記憶検索」「harness-mem」 |
-| principles | 開発原則、ガイドライン | 「原則」「VibeCoder」「安全性」 |
-| auth | 認証、決済機能 | 「ログイン」「Clerk」「Stripe」「決済」 |
-| deploy | デプロイ、アナリティクス | 「デプロイ」「Vercel」「GA」 |
-| ui | UIコンポーネント生成 | 「コンポーネント」「ヒーロー」「フォーム」 |
-| handoff | ハンドオフ、自動修正 | 「ハンドオフ」「PMに報告」「自動修正」 |
-| notebookLM | ドキュメント生成 | 「ドキュメント」「NotebookLM」「スライド」 |
-| troubleshoot | 診断と修復（CI障害含む） | 「動かない」「エラー」「CIが落ちた」 |
-| maintenance | ファイル整理 | 「整理して」「クリーンアップ」 |
+| work | 任务实现（自动范围检测，--codex 支持） | "实现"、"全部做完"、"/work" |
+| breezing | Agent Teams 完全自动完跑（--codex 支持） | "团队完跑"、"breezing" |
+| impl | 实现、功能添加、测试编写 | "实现"、"功能添加"、"写代码" |
+| harness-review | 代码审查、质量检查 | "审查"、"安全"、"性能" |
+| verify | 构建验证、错误恢复 | "构建"、"错误恢复"、"验证" |
+| setup | 设置集成中心（项目初始化、工具配置、2-Agent、harness-mem、Codex CLI、规则本地化） | "设置"、"CLAUDE.md"、"初始化"、"CI setup"、"2-Agent"、"Cursor 设置"、"harness-mem"、"codex-setup" |
+| memory | SSOT 管理、记忆搜索、SSOT 提升、Cursor 联动内存 | "SSOT"、"decisions.md"、"合并"、"SSOT 提升"、"记忆搜索"、"harness-mem" |
+| principles | 开发原则、指南 | "原则"、"VibeCoder"、"安全性" |
+| auth | 认证、支付功能 | "登录"、"Clerk"、"Stripe"、"支付" |
+| deploy | 部署、分析 | "部署"、"Vercel"、"GA" |
+| ui | UI 组件生成 | "组件"、"hero"、"表单" |
+| handoff | 交接、自动修正 | "交接"、"向 PM 报告"、"自动修正" |
+| notebookLM | 文档生成 | "文档"、"NotebookLM"、"幻灯片" |
+| troubleshoot | 诊断与修复（包括 CI 故障） | "不工作"、"错误"、"CI 失败了" |
+| maintenance | 文件整理 | "整理"、"清理" |
 
-## 開発フロー
+## 开发流程
 
-1. **計画**: `/plan-with-agent` でタスクを Plans.md に落とす
-2. **実装**: `/work` (Claude が実装) or `/breezing` (チームで完走)。両方 `--codex` 対応
-3. **レビュー**: 自動実行（手動は `/harness-review`）
-4. **検証**: `./tests/validate-plugin.sh` で構造検証
+1. **计划**: 使用 `/plan-with-agent` 将任务写入 Plans.md
+2. **实现**: `/work`（Claude 实现）或 `/breezing`（团队完跑）。两者都支持 `--codex`
+3. **审查**: 自动执行（手动使用 `/harness-review`）
+4. **验证**: 使用 `./tests/validate-plugin.sh` 进行结构验证
 
-## テスト方法
+## 测试方法
 
 ```bash
-# プラグイン構造の検証
+# 插件结构验证
 ./tests/validate-plugin.sh
 ./scripts/ci/check-consistency.sh
 
-# 別プロジェクトでローカルテスト
+# 在其他项目中本地测试
 cd /path/to/test-project
 claude --plugin-dir /path/to/claude-code-harness
 ```
 
-## 注意事項
+## 注意事项
 
-- **自己参照に注意**: このプラグインの `/work` を実行すると、自分自身のコードを編集することになる
-- **Hooks は自動実行**: PreToolUse/PostToolUse で自動ガードが働く
-- **VERSION 同期**: 通常 PR では VERSION を触らず、release 時だけ更新
+- **注意自指性**: 在此插件上运行 `/work` 会编辑自身的代码
+- **Hooks 自动运行**: PreToolUse/PostToolUse 防护处于活动状态
+- **VERSION 同步**: 普通 PR 中不要触碰 VERSION，仅在 release 时更新
 
-## 主要コマンド（開発時に使用）
+## 主要命令（开发时使用）
 
-| コマンド | 用途 |
+| 命令 | 用途 |
 |---------|------|
-| `/plan-with-agent` | 改善タスクを Plans.md に追加 |
-| `/work` | タスクを実装（スコープ自動判断、--codex 対応） |
-| `/breezing` | Agent Teams でチーム並列完走（--codex 対応） |
-| `/harness-review` | 変更内容をレビュー |
-| `/validate` | プラグイン検証 |
-| `/remember` | 学習事項を記録 |
+| `/plan-with-agent` | 将改进任务添加到 Plans.md |
+| `/work` | 实现任务（自动范围检测，--codex 支持） |
+| `/breezing` | Agent Teams 团队并行完跑（--codex 支持） |
+| `/harness-review` | 审查变更内容 |
+| `/validate` | 验证插件 |
+| `/remember` | 记录学习内容 |
 
-### ハンドオフ
+### 交接
 
-| コマンド | 用途 |
+| 命令 | 用途 |
 |---------|------|
-| `/handoff-to-cursor` | Cursor 運用時の完了報告 |
+| `/handoff-to-cursor` | Cursor 运行时的完成报告 |
 
-**スキル（会話で自動起動）**:
-- `handoff-to-impl` - 「実装役に渡して」→ PM → Impl への依頼
-- `handoff-to-pm` - 「PMに完了報告」→ Impl → PM への完了報告
+**技能（对话中自动启动）**:
+- `handoff-to-impl` - "交给实现者" → PM → Impl 的请求
+- `handoff-to-pm` - "向 PM 报告完成" → Impl → PM 的完成报告
 
 ## SSOT（Single Source of Truth）
 
-- `.claude/memory/decisions.md` - 決定事項（Why）
-- `.claude/memory/patterns.md` - 再利用パターン（How）
+- `.claude/memory/decisions.md` - 决策事项（Why）
+- `.claude/memory/patterns.md` - 可复用模式（How）
 
-## テスト改ざん防止（品質保証）
+## 测试篡改预防（质量保证）
 
-詳細: [D9: テスト改ざん防止の3層防御戦略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
+详情: [D9: 测试篡改预防的3层防御策略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
 
-| ルールファイル | 内容 |
+| 规则文件 | 内容 |
 |---------------|------|
-| [test-quality.md](.claude/rules/test-quality.md) | テスト改ざん禁止パターン |
-| [implementation-quality.md](.claude/rules/implementation-quality.md) | 形骸化実装禁止パターン |
+| [test-quality.md](.claude/rules/test-quality.md) | 测试篡改禁止模式 |
+| [implementation-quality.md](.claude/rules/implementation-quality.md) | 形骸化实现禁止模式 |
 
-> ⚠️ **絶対禁止**: テストを改ざんして「成功」を偽装すること
+> ⚠️ **绝对禁止**: 篡改测试以伪造"成功"

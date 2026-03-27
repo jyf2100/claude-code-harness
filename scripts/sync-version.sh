@@ -1,17 +1,17 @@
 #!/bin/bash
-# sync-version.sh - release metadata の VERSION / plugin.json を同期
+# sync-version.sh - 同步 release 元数据的 VERSION / plugin.json
 #
-# 使い方:
-#   ./scripts/sync-version.sh check    # 不一致をチェック
-#   ./scripts/sync-version.sh sync     # plugin.json を VERSION に合わせる
-#   ./scripts/sync-version.sh bump     # release 用に patch version を上げる
+# 用法:
+#   ./scripts/sync-version.sh check    # 检查不一致
+#   ./scripts/sync-version.sh sync     # 将 plugin.json 与 VERSION 同步
+#   ./scripts/sync-version.sh bump     # 为 release 升级 patch 版本号
 
 set -euo pipefail
 
 VERSION_FILE="VERSION"
 PLUGIN_JSON=".claude-plugin/plugin.json"
 
-# 現在のバージョンを取得
+# 获取当前版本
 get_version() {
     cat "$VERSION_FILE" | tr -d '\n'
 }
@@ -20,43 +20,43 @@ get_plugin_version() {
     grep '"version"' "$PLUGIN_JSON" | sed 's/.*"version": "\([^"]*\)".*/\1/'
 }
 
-# バージョン不一致チェック
+# 检查版本不一致
 check_version() {
     local v1=$(get_version)
     local v2=$(get_plugin_version)
 
     if [ "$v1" != "$v2" ]; then
-        echo "❌ バージョン不一致:"
+        echo "❌ 版本不一致:"
         echo "   VERSION:     $v1"
         echo "   plugin.json: $v2"
         return 1
     else
-        echo "✅ バージョン一致: $v1"
+        echo "✅ 版本一致: $v1"
         return 0
     fi
 }
 
-# plugin.json を VERSION に同期
+# 将 plugin.json 与 VERSION 同步
 sync_version() {
     local version=$(get_version)
     local current=$(get_plugin_version)
 
     if [ "$version" = "$current" ]; then
-        echo "✅ 既に同期済み: $version"
+        echo "✅ 已同步: $version"
         return 0
     fi
 
-    # macOS と Linux 両対応
+    # 兼容 macOS 和 Linux
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s/\"version\": \"$current\"/\"version\": \"$version\"/" "$PLUGIN_JSON"
     else
         sed -i "s/\"version\": \"$current\"/\"version\": \"$version\"/" "$PLUGIN_JSON"
     fi
 
-    echo "✅ plugin.json を更新: $current → $version"
+    echo "✅ plugin.json 已更新: $current → $version"
 }
 
-# パッチバージョンを上げる
+# 升级 patch 版本号
 bump_version() {
     local current=$(get_version)
     local major=$(echo "$current" | cut -d. -f1)
@@ -67,12 +67,12 @@ bump_version() {
     local new_version="$major.$minor.$new_patch"
 
     echo "$new_version" > "$VERSION_FILE"
-    echo "✅ VERSION を更新: $current → $new_version"
+    echo "✅ VERSION 已更新: $current → $new_version"
 
     sync_version
 }
 
-# メイン
+# 主函数
 case "${1:-check}" in
     check)
         check_version
@@ -84,7 +84,7 @@ case "${1:-check}" in
         bump_version
         ;;
     *)
-        echo "Usage: $0 {check|sync|bump}"
+        echo "用法: $0 {check|sync|bump}"
         exit 1
         ;;
 esac

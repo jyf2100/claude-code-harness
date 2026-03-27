@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # notification-handler.sh
-# Notification フックハンドラ
-# Claude Code が通知を発行する際に発火
-# permission_prompt, idle_prompt, auth_success 等のイベントを記録
+# Notification 钩子处理器
+# Claude Code 发出通知时触发
+# 记录 permission_prompt、idle_prompt、auth_success 等事件
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
@@ -10,19 +10,19 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ログファイル（CLAUDE_PLUGIN_DATA 使用時はプロジェクト別にスコープ）
+# 日志文件（使用 CLAUDE_PLUGIN_DATA 时按项目隔离）
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   _project_hash="$(printf '%s' "${PROJECT_ROOT}" | { shasum -a 256 2>/dev/null || sha256sum 2>/dev/null || echo "default  -"; } | cut -c1-12)"
   [ -z "${_project_hash}" ] && _project_hash="default"
@@ -32,7 +32,7 @@ else
 fi
 LOG_FILE="${STATE_DIR}/notification-events.jsonl"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   local state_parent
@@ -51,7 +51,7 @@ ensure_state_dir() {
   return 0
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行）
 rotate_jsonl() {
   local file="$1"
 
@@ -72,18 +72,18 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 NOTIFICATION_TYPE=""
 SESSION_ID=""
 AGENT_TYPE=""
@@ -110,7 +110,7 @@ except:
   AGENT_TYPE="$(echo "${_parsed}" | sed -n '3p')"
 fi
 
-# === ログ記録 ===
+# === 日志记录 ===
 if ! ensure_state_dir; then
   exit 0
 fi
@@ -147,18 +147,18 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === Breezing 中の重要通知検出 ===
-# Breezing のバックグラウンド Worker では UI 操作が不能
-# ログに記録することで事後分析を可能にする
+# === Breezing 中的重要通知检测 ===
+# Breezing 的后台 Worker 无法进行 UI 操作
+# 通过日志记录使事后分析成为可能
 
-# permission_prompt: Worker が権限ダイアログに応答できない
+# permission_prompt：Worker 无法响应权限对话框
 if [ "${NOTIFICATION_TYPE}" = "permission_prompt" ] && [ -n "${AGENT_TYPE}" ]; then
   echo "Notification: permission_prompt for agent_type=${AGENT_TYPE}" >&2
 fi
 
-# elicitation_dialog: MCP サーバーからの入力要求（v2.1.76+）
-# バックグラウンド Worker では Elicitation フォームに応答不能
-# Elicitation フックで自動スキップ済みだが、通知ログにも残す
+# elicitation_dialog：MCP 服务器的输入请求（v2.1.76+）
+# 后台 Worker 无法响应 Elicitation 表单
+# Elicitation 钩子已自动跳过，但通知日志中仍保留
 if [ "${NOTIFICATION_TYPE}" = "elicitation_dialog" ] && [ -n "${AGENT_TYPE}" ]; then
   echo "Notification: elicitation_dialog for agent_type=${AGENT_TYPE} (auto-skipped in background)" >&2
 fi

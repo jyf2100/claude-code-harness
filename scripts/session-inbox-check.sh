@@ -1,24 +1,24 @@
 #!/bin/bash
 # session-inbox-check.sh
-# セッション間メッセージの受信チェック
+# 跨会话消息接收检查
 #
 # 使用方法:
-#   ./session-inbox-check.sh           # 未読メッセージを表示
-#   ./session-inbox-check.sh --count   # 未読件数のみ表示
-#   ./session-inbox-check.sh --mark    # 既読にマーク
+#   ./session-inbox-check.sh           # 显示未读消息
+#   ./session-inbox-check.sh --count   # 仅显示未读数量
+#   ./session-inbox-check.sh --mark    # 标记为已读
 #
-# 出力: 未読メッセージ一覧またはJSON（hooks用）
+# 输出: 未读消息列表或JSON（hooks用）
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ===== 設定 =====
+# ===== 配置 =====
 SESSIONS_DIR=".claude/sessions"
 BROADCAST_FILE="${SESSIONS_DIR}/broadcast.md"
 SESSION_FILE=".claude/state/session.json"
 
-# ===== ヘルパー関数 =====
+# ===== 辅助函数 =====
 get_session_id() {
   if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
     jq -r '.session_id // "unknown"' "$SESSION_FILE" 2>/dev/null
@@ -47,12 +47,12 @@ mark_as_read() {
   date -u +%Y-%m-%dT%H:%M:%SZ > "$last_read_file"
 }
 
-# ===== メイン処理 =====
+# ===== 主处理 =====
 main() {
   local mode="list"
   local hook_output="false"
 
-  # 引数解析
+  # 参数解析
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --count)
@@ -82,31 +82,31 @@ main() {
     esac
   done
 
-  # ブロードキャストファイルが存在しない場合
+  # 广播文件不存在的情况
   if [ ! -f "$BROADCAST_FILE" ]; then
     if [ "$hook_output" = "true" ]; then
       echo '{"hookSpecificOutput":{"hookEventName":"InboxCheck","additionalContext":""}}'
     elif [ "$mode" = "count" ]; then
       echo "0"
     else
-      echo "📭 メッセージはありません"
+      echo "📭 没有消息"
     fi
     exit 0
   fi
 
-  # 既読マーク処理
+  # 已读标记处理
   if [ "$mode" = "mark" ]; then
     mark_as_read
-    echo "✅ すべてのメッセージを既読にしました"
+    echo "✅ 所有消息已标记为已读"
     exit 0
   fi
 
-  # 最終読み取り時刻を取得
+  # 获取最后读取时间
   local last_read=$(get_last_read_time)
   local current_session=$(get_session_id)
   local short_current="${current_session:0:12}"
 
-  # 未読メッセージを抽出
+  # 提取未读消息
   local unread_messages=""
   local unread_count=0
   local in_message=false
@@ -116,7 +116,7 @@ main() {
 
   while IFS= read -r line || [ -n "$line" ]; do
     if [[ "$line" =~ ^##\ ([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)\ \[([^\]]+)\] ]]; then
-      # 前のメッセージを処理
+      # 处理前一条消息
       if [ "$in_message" = true ] && [ -n "$current_content" ]; then
         if [[ "$current_timestamp" > "$last_read" ]] && [[ "$current_sender" != "$short_current" ]]; then
           unread_count=$((unread_count + 1))
@@ -124,7 +124,7 @@ main() {
         fi
       fi
 
-      # 新しいメッセージを開始
+      # 开始新消息
       current_timestamp="${BASH_REMATCH[1]}"
       current_sender="${BASH_REMATCH[2]}"
       current_content=""
@@ -134,7 +134,7 @@ main() {
     fi
   done < "$BROADCAST_FILE"
 
-  # 最後のメッセージを処理
+  # 处理最后一条消息
   if [ "$in_message" = true ] && [ -n "$current_content" ]; then
     if [[ "$current_timestamp" > "$last_read" ]] && [[ "$current_sender" != "$short_current" ]]; then
       unread_count=$((unread_count + 1))
@@ -142,26 +142,26 @@ main() {
     fi
   fi
 
-  # 出力
+  # 输出
   if [ "$mode" = "count" ]; then
     echo "$unread_count"
   elif [ "$hook_output" = "true" ]; then
     if [ "$unread_count" -gt 0 ]; then
       local escaped_messages=$(echo -e "$unread_messages" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
       cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"InboxCheck","additionalContext":"📨 未読メッセージ ${unread_count}件:\\n${escaped_messages}"}}
+{"hookSpecificOutput":{"hookEventName":"InboxCheck","additionalContext":"📨 未读消息 ${unread_count}条:\\n${escaped_messages}"}}
 EOF
     else
       echo '{"hookSpecificOutput":{"hookEventName":"InboxCheck","additionalContext":""}}'
     fi
   else
     if [ "$unread_count" -gt 0 ]; then
-      echo "📨 未読メッセージ ${unread_count}件:"
+      echo "📨 未读消息 ${unread_count}条:"
       echo -e "$unread_messages"
       echo ""
-      echo "💡 /session inbox --mark で既読にできます"
+      echo "💡 使用 /session inbox --mark 标记为已读"
     else
-      echo "📭 未読メッセージはありません"
+      echo "📭 没有未读消息"
     fi
   fi
 }

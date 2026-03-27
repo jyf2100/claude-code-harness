@@ -1,19 +1,19 @@
 #!/bin/bash
 # setup-hook.sh
-# Setup Hook: claude --init / --maintenance 時のセットアップ処理
+# Setup Hook: claude --init / --maintenance 时的设置处理
 #
 # Usage:
-#   setup-hook.sh init        # 初回セットアップ
-#   setup-hook.sh maintenance # メンテナンス処理
+#   setup-hook.sh init        # 首次设置
+#   setup-hook.sh maintenance # 维护处理
 #
-# 出力: JSON形式で hookSpecificOutput を出力
+# 输出: JSON 格式输出 hookSpecificOutput
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="${1:-init}"
 
-# ===== SIMPLE モード検出 =====
+# ===== SIMPLE 模式检测 =====
 SIMPLE_MODE="false"
 if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   # shellcheck source=./check-simple-mode.sh
@@ -24,13 +24,13 @@ if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   fi
 fi
 
-# stdin から JSON 入力を読み取り（Claude Code v2.1.10+）
+# 从 stdin 读取 JSON 输入（Claude Code v2.1.10+）
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT=$(cat 2>/dev/null || true)
 fi
 
-# ===== 共通ヘルパー =====
+# ===== 通用辅助函数 =====
 output_json() {
   local message="$1"
   cat <<EOF
@@ -38,39 +38,39 @@ output_json() {
 EOF
 }
 
-# ===== Init モード: 初回セットアップ =====
+# ===== Init 模式: 首次设置 =====
 run_init() {
   local messages=()
 
-  # 1. プラグインキャッシュの同期
+  # 1. 插件缓存同步
   if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
     bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
-    messages+=("プラグインキャッシュ同期完了")
+    messages+=("插件缓存同步完成")
   fi
 
-  # 2. 状態ディレクトリの初期化
+  # 2. 状态目录初始化
   STATE_DIR=".claude/state"
   mkdir -p "$STATE_DIR"
 
-  # 3. デフォルト設定ファイルの生成（存在しない場合）
+  # 3. 生成默认配置文件（如不存在）
   CONFIG_FILE=".claude-code-harness.config.yaml"
   if [ ! -f "$CONFIG_FILE" ]; then
     if [ -f "$SCRIPT_DIR/../templates/.claude-code-harness.config.yaml.template" ]; then
       cp "$SCRIPT_DIR/../templates/.claude-code-harness.config.yaml.template" "$CONFIG_FILE"
-      messages+=("設定ファイル生成完了")
+      messages+=("配置文件生成完成")
     fi
   fi
 
-  # 4. CLAUDE.md の生成（存在しない場合）
+  # 4. 生成 CLAUDE.md（如不存在）
   if [ ! -f "CLAUDE.md" ]; then
     if [ -f "$SCRIPT_DIR/../templates/CLAUDE.md.template" ]; then
       cp "$SCRIPT_DIR/../templates/CLAUDE.md.template" "CLAUDE.md"
-      messages+=("CLAUDE.md 生成完了")
+      messages+=("CLAUDE.md 生成完成")
     fi
   fi
 
-  # 5. Plans.md の生成（存在しない場合）
-  # plansDirectory 設定を考慮
+  # 5. 生成 Plans.md（如不存在）
+  # 考虑 plansDirectory 设置
   if [ -f "$SCRIPT_DIR/config-utils.sh" ]; then
     source "$SCRIPT_DIR/config-utils.sh"
     PLANS_PATH=$(get_plans_file_path)
@@ -79,29 +79,29 @@ run_init() {
   fi
 
   if [ ! -f "$PLANS_PATH" ]; then
-    # ディレクトリが存在しない場合は作成
+    # 如目录不存在则创建
     PLANS_DIR=$(dirname "$PLANS_PATH")
     [ "$PLANS_DIR" != "." ] && mkdir -p "$PLANS_DIR"
 
     if [ -f "$SCRIPT_DIR/../templates/Plans.md.template" ]; then
       cp "$SCRIPT_DIR/../templates/Plans.md.template" "$PLANS_PATH"
-      messages+=("Plans.md 生成完了")
+      messages+=("Plans.md 生成完成")
     fi
   fi
 
-  # 6. テンプレートトラッカーの初期化
+  # 6. 模板跟踪器初始化
   if [ -f "$SCRIPT_DIR/template-tracker.sh" ]; then
     bash "$SCRIPT_DIR/template-tracker.sh" init >/dev/null 2>&1 || true
   fi
 
-  # SIMPLE モード警告を追加
+  # 添加 SIMPLE 模式警告
   if [ "$SIMPLE_MODE" = "true" ]; then
     messages+=("WARNING: CLAUDE_CODE_SIMPLE mode — skills/agents/memory disabled, hooks only")
   fi
 
-  # 結果出力
+  # 输出结果
   if [ ${#messages[@]} -eq 0 ]; then
-    output_json "[Setup:init] ハーネスは既に初期化済みです"
+    output_json "[Setup:init] Harness 已经初始化完成"
   else
     local msg_str
     msg_str=$(IFS=', '; echo "${messages[*]}")
@@ -109,63 +109,63 @@ run_init() {
   fi
 }
 
-# ===== Maintenance モード: メンテナンス処理 =====
+# ===== Maintenance 模式: 维护处理 =====
 run_maintenance() {
   local messages=()
 
-  # 1. プラグインキャッシュの同期
+  # 1. 插件缓存同步
   if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
     bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
-    messages+=("キャッシュ同期完了")
+    messages+=("缓存同步完成")
   fi
 
-  # 2. 古いセッションファイルのクリーンアップ
+  # 2. 清理旧会话文件
   STATE_DIR=".claude/state"
   ARCHIVE_DIR="$STATE_DIR/sessions"
 
   if [ -d "$ARCHIVE_DIR" ]; then
-    # 7日以上前のセッションアーカイブを削除
+    # 删除 7 天前的会话归档
     find "$ARCHIVE_DIR" -name "session-*.json" -mtime +7 -delete 2>/dev/null || true
-    messages+=("古いセッションアーカイブ削除")
+    messages+=("已删除旧会话归档")
   fi
 
-  # 3. 一時ファイルのクリーンアップ
+  # 3. 清理临时文件
   if [ -d "$STATE_DIR" ]; then
-    # .tmp ファイルを削除
+    # 删除 .tmp 文件
     find "$STATE_DIR" -name "*.tmp" -delete 2>/dev/null || true
   fi
 
-  # 4. テンプレート更新チェック
+  # 4. 模板更新检查
   if [ -f "$SCRIPT_DIR/template-tracker.sh" ]; then
     CHECK_RESULT=$(bash "$SCRIPT_DIR/template-tracker.sh" check 2>/dev/null || echo '{"needsCheck": false}')
     if command -v jq >/dev/null 2>&1; then
       NEEDS_UPDATE=$(echo "$CHECK_RESULT" | jq -r '.needsCheck // false')
       if [ "$NEEDS_UPDATE" = "true" ]; then
         UPDATES_COUNT=$(echo "$CHECK_RESULT" | jq -r '.updatesCount // 0')
-        messages+=("テンプレート更新あり: ${UPDATES_COUNT}件")
+        messages+=("有模板更新: ${UPDATES_COUNT}项")
       fi
     fi
   fi
 
-  # 5. SIMPLE モード警告を追加
+  # 5. 添加 SIMPLE 模式警告
   if [ "$SIMPLE_MODE" = "true" ]; then
     messages+=("WARNING: CLAUDE_CODE_SIMPLE mode — skills/agents/memory disabled, hooks only")
   fi
 
-  # 6. 設定ファイルの検証
+  # 6. 配置文件验证
   CONFIG_FILE=".claude-code-harness.config.yaml"
   if [ -f "$CONFIG_FILE" ]; then
-    # 基本的な YAML 構文チェック
+    # 基本的 YAML 语法检查
     if command -v python3 >/dev/null 2>&1; then
       if ! python3 -c "import yaml; yaml.safe_load(open('$CONFIG_FILE'))" 2>/dev/null; then
-        messages+=("警告: 設定ファイルの構文エラー")
+        messages+=("警告: 配置文件语法错误")
       fi
     fi
   fi
 
-  # 結果出力
+  # 输出结果
   if [ ${#messages[@]} -eq 0 ]; then
-    output_json "[Setup:maintenance] メンテナンス完了（変更なし）"
+    output_json "[Setup:maintenance] 维护完成（无变更）"
   else
     local msg_str
     msg_str=$(IFS=', '; echo "${messages[*]}")
@@ -173,7 +173,7 @@ run_maintenance() {
   fi
 }
 
-# ===== メイン処理 =====
+# ===== 主处理 =====
 case "$MODE" in
   init)
     run_init
@@ -182,7 +182,7 @@ case "$MODE" in
     run_maintenance
     ;;
   *)
-    output_json "[Setup] 不明なモード: $MODE"
+    output_json "[Setup] 未知模式: $MODE"
     exit 1
     ;;
 esac

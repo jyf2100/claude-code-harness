@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # progress-snapshot.sh
-# .claude/state/snapshots/progress-*.json から最新スナップショット要約を生成する共通関数
+# 从 .claude/state/snapshots/progress-*.json 生成最新快照摘要的公共函数
 #
 
 if [[ -n "${_PROGRESS_SNAPSHOT_LIB_LOADED:-}" ]]; then
@@ -29,8 +29,8 @@ if not files:
 latest = json.loads(files[-1].read_text())
 previous = json.loads(files[-2].read_text()) if len(files) > 1 else None
 
-phase = latest.get("phase", "不明")
-ts = latest.get("timestamp", "不明")
+phase = latest.get("phase", "未知")
+ts = latest.get("timestamp", "未知")
 progress = latest.get("progress", {})
 done = int(progress.get("done", 0) or 0)
 wip = int(progress.get("wip", 0) or 0)
@@ -39,7 +39,7 @@ rate = latest.get("progress_rate", 0)
 
 lines = [
     f"💾 最新 snapshot: {ts} ({phase})",
-    f"   進捗率 {rate}% / 完了 {done} / WIP {wip} / TODO {todo}",
+    f"   进度率 {rate}% / 完成 {done} / WIP {wip} / TODO {todo}",
 ]
 
 if previous:
@@ -49,8 +49,8 @@ if previous:
     prev_todo = int(prev_progress.get("todo", 0) or 0)
     prev_rate = int(previous.get("progress_rate", 0) or 0)
     lines.append(
-        "   前回比: "
-        f"進捗率 {rate - prev_rate:+d}%pt / 完了 {done - prev_done:+d} / "
+        "   较上次: "
+        f"进度率 {rate - prev_rate:+d}%pt / 完成 {done - prev_done:+d} / "
         f"WIP {wip - prev_wip:+d} / TODO {todo - prev_todo:+d}"
     )
 

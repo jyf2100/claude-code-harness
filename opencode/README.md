@@ -1,73 +1,73 @@
 # Harness for OpenCode
 
-Claude Code Harness の opencode.ai 互換版です。
+这是 Claude Code Harness 的 opencode.ai 兼容版。
 
-## セットアップ方法
+## 设置方法
 
-### 方法 1: ワンコマンドセットアップ（推奨）
+### 方法 1: 一键设置（推荐）
 
-Claude Code を持っていなくても、以下のコマンドでセットアップできます：
+即使没有 Claude Code，也可以使用以下命令进行设置：
 
 ```bash
 cd your-project
 curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/setup-opencode.sh | bash
 ```
 
-Unified Memory まで一気に設定する場合:
+一次性设置包括 Unified Memory：
 
 ```bash
 cd your-project
 /path/to/claude-code-harness/scripts/harness-mem setup --platform opencode
 ```
 
-### 方法 2: Claude Code からセットアップ
+### 方法 2: 从 Claude Code 设置
 
-Claude Code を使っている場合は、コマンド一つでセットアップ：
+如果正在使用 Claude Code，一条命令即可设置：
 
 ```bash
-# Claude Code 内で実行
+# 在 Claude Code 内执行
 /opencode-setup
 ```
 
-### 方法 3: 手動セットアップ
+### 方法 3: 手动设置
 
 ```bash
-# Harness をクローン
+# 克隆 Harness
 git clone https://github.com/Chachamaru127/claude-code-harness.git
 
-# opencode 用コマンドをコピー
+# 复制 opencode 用命令
 cp -r claude-code-harness/opencode/commands/ your-project/.opencode/commands/
 cp claude-code-harness/opencode/AGENTS.md your-project/AGENTS.md
 ```
 
 ---
 
-## MCP サーバーセットアップ（オプション）
+## MCP 服务器设置（可选）
 
-MCP サーバーを使うと、opencode から Harness のワークフローツールを直接呼び出せます。
+使用 MCP 服务器可以直接从 opencode 调用 Harness 的工作流工具。
 
 ```bash
-# MCP サーバーをビルド
+# 构建 MCP 服务器
 cd claude-code-harness/mcp-server
 npm install
 npm run build
 
-# opencode.json をプロジェクトにコピーしてパスを調整
+# 复制 opencode.json 到项目并调整路径
 cp claude-code-harness/opencode/opencode.json your-project/
-# opencode.json 内のパスを実際のパスに変更
+# 更改 opencode.json 内的路径为实际路径
 ```
 
-Unified memory daemon（共通DB）も併用する場合:
+同时使用 Unified memory daemon（共享DB）时：
 
 ```bash
-# memory daemon 起動
+# 启动 memory daemon
 ./scripts/harness-memd start
 
-# health 確認
+# 确认 health
 ./scripts/harness-mem-client.sh health
 ```
 
-または `harness-mem` で診断まで実行:
+或使用 `harness-mem` 执行诊断：
 
 ```bash
 /path/to/claude-code-harness/scripts/harness-mem doctor --platform opencode --fix
@@ -75,32 +75,32 @@ Unified memory daemon（共通DB）も併用する場合:
 
 ---
 
-## 利用可能なコマンド
+## 可用命令
 
-| コマンド | 説明 |
+| 命令 | 说明 |
 |----------|------|
-| `/harness-init` | プロジェクトセットアップ |
-| `/plan-with-agent` | 開発プラン作成 |
-| `/work` | タスク実行 |
-| `/harness-review` | コードレビュー |
-| `/sync-status` | 進捗確認 |
-| `/handoff-to-opencode` | OpenCode PM への完了報告生成 |
+| `/harness-init` | 项目设置 |
+| `/plan-with-agent` | 开发计划创建 |
+| `/work` | 任务执行 |
+| `/harness-review` | 代码审查 |
+| `/sync-status` | 进度确认 |
+| `/handoff-to-opencode` | 生成给 OpenCode PM 的完成报告 |
 
 ---
 
-## PM モード (OpenCode で計画管理)
+## PM 模式（在 OpenCode 中进行计划管理）
 
-OpenCode を PM (Project Manager) として使用する場合のコマンド:
+将 OpenCode 作为 PM (Project Manager) 使用时的命令：
 
-| コマンド | 説明 |
+| 命令 | 说明 |
 |----------|------|
-| `/start-session` | セッション開始（状況把握→計画） |
-| `/plan-with-cc` | 計画作成（Evals含む） |
-| `/project-overview` | プロジェクト概要把握 |
-| `/handoff-to-claude` | Claude Code への依頼生成 |
-| `/review-cc-work` | 作業レビュー・承認 |
+| `/start-session` | 会话开始（情况把握→计划） |
+| `/plan-with-cc` | 计划创建（包含 Evals） |
+| `/project-overview` | 项目概要把握 |
+| `/handoff-to-claude` | 生成给 Claude Code 的委托 |
+| `/review-cc-work` | 作业审查·批准 |
 
-### ワークフロー（PM モード）
+### 工作流（PM 模式）
 
 ```
 OpenCode (PM)                    Claude Code (Impl)
@@ -112,54 +112,54 @@ OpenCode (PM)                    Claude Code (Impl)
     |                                   | /handoff-to-opencode
     | <─────────────────────────────────|
     | /review-cc-work                   |
-    |    ├── approve → 次タスク ────────>|
+    |    ├── approve → 下一任务 ────────>|
     |    └── request_changes ──────────>|
 ```
 
 ---
 
-## MCP ツール
+## MCP 工具
 
-MCP サーバー経由で以下のツールが利用可能です：
+通过 MCP 服务器可以使用以下工具：
 
-| ツール | 説明 |
+| 工具 | 说明 |
 |--------|------|
-| `harness_workflow_plan` | プラン作成 |
-| `harness_workflow_work` | タスク実行 |
-| `harness_workflow_review` | コードレビュー |
-| `harness_session_broadcast` | セッション間通知 |
-| `harness_status` | 状態確認 |
-| `harness_mem_resume_pack` | 再開コンテキスト取得 |
-| `harness_mem_search` | 共通メモリ検索 |
-| `harness_mem_record_checkpoint` | チェックポイント記録 |
-| `harness_mem_finalize_session` | セッション確定 |
+| `harness_workflow_plan` | 计划创建 |
+| `harness_workflow_work` | 任务执行 |
+| `harness_workflow_review` | 代码审查 |
+| `harness_session_broadcast` | 会话间通知 |
+| `harness_status` | 状态确认 |
+| `harness_mem_resume_pack` | 获取恢复上下文 |
+| `harness_mem_search` | 共享内存搜索 |
+| `harness_mem_record_checkpoint` | 记录检查点 |
+| `harness_mem_finalize_session` | 确定会话 |
 
 ---
 
-## 使い方
+## 使用方法
 
 ```bash
-# opencode を起動
+# 启动 opencode
 cd your-project
 opencode
 
-# コマンドを実行
-/plan-with-agent  # プラン作成
-/work             # タスク実行
-/harness-review   # コードレビュー
+# 执行命令
+/plan-with-agent  # 计划创建
+/work             # 任务执行
+/harness-review   # 代码审查
 ```
 
 ---
 
-## 制限事項
+## 限制事项
 
-- Harness プラグインシステム（`.claude-plugin/`）は opencode では使用できません
-- memory hooks は `opencode/plugins/harness-memory/index.ts` で提供します（`chat.message` / `session.idle` / `session.compacted`）
-- `description-en` フィールドは自動削除されます
+- Harness 插件系统（`.claude-plugin/`）在 opencode 中无法使用
+- memory hooks 通过 `opencode/plugins/harness-memory/index.ts` 提供（`chat.message` / `session.idle` / `session.compacted`）
+- `description-en` 字段会被自动删除
 
 ---
 
-## 関連リンク
+## 相关链接
 
 - [Claude Code Harness](https://github.com/Chachamaru127/claude-code-harness)
 - [OpenCode Documentation](https://opencode.ai/docs/)

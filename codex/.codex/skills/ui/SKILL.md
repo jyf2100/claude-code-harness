@@ -1,79 +1,79 @@
 ---
 name: ui
-description: "UIコンポーネントとフィードバックフォームを生成。Use when user mentions components, UI, hero sections, forms, feedback, or contact requests. Do NOT load for: authentication features, backend implementation, database operations, or business logic."
+description: "UI组件和反馈表单生成。Use when user mentions components, UI, hero sections, forms, feedback, or contact requests. Do NOT load for: authentication features, backend implementation, database operations, or business logic."
 description-en: "Generates UI components and feedback forms. Use when user mentions components, UI, hero sections, forms, feedback, or contact requests. Do NOT load for: authentication features, backend implementation, database operations, or business logic."
-description-ja: "UIコンポーネントとフィードバックフォームを生成。Use when user mentions components, UI, hero sections, forms, feedback, or contact requests. Do NOT load for: authentication features, backend implementation, database operations, or business logic."
+description-ja: "生成 UI 组件和反馈表单。Use when user mentions components, UI, hero sections, forms, feedback, or contact requests. Do NOT load for: authentication features, backend implementation, database operations, or business logic."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 user-invocable: false
 ---
 
 # UI Skills
 
-UIコンポーネントとフォームの生成を担当するスキル群です。
+负责 UI 组件和表单生成的技能群。
 
-## 制約の優先順位と適用条件
+## 约束优先级和适用条件
 
-1. 基本は `${CLAUDE_SKILL_DIR}/references/ui-skills.md` の制約を最優先で適用する。
-2. `${CLAUDE_SKILL_DIR}/references/frontend-design.md` は「尖った/独自/表現強め/ブランド強化」などが**明示**された場合のみ適用する。
-3. UI Skills の MUST/NEVER は原則維持。ただし**ユーザーが明示的に要求した場合のみ**以下の例外を許可する:
-   - グラデーション、発光、強い装飾
-   - アニメーション（追加・拡張）
-   - カスタム easing
+1. 基本上最优先适用 `${CLAUDE_SKILL_DIR}/references/ui-skills.md` 的约束。
+2. `${CLAUDE_SKILL_DIR}/references/frontend-design.md` 仅在**明确**指定「尖锐/独特/表现强/品牌强化」时适用。
+3. UI Skills 的 MUST/NEVER 原则上保持。但**仅在用户明确要求时**允许以下例外：
+   - 渐变、发光、强装饰
+   - 动画（添加・扩展）
+   - 自定义 easing
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **制約セット** | See [references/ui-skills.md](${CLAUDE_SKILL_DIR}/references/ui-skills.md) / [references/frontend-design.md](${CLAUDE_SKILL_DIR}/references/frontend-design.md) |
-| **コンポーネント生成** | See [references/component-generation.md](${CLAUDE_SKILL_DIR}/references/component-generation.md) |
-| **フィードバックフォーム** | See [references/feedback-forms.md](${CLAUDE_SKILL_DIR}/references/feedback-forms.md) |
+| **约束集** | See [references/ui-skills.md](${CLAUDE_SKILL_DIR}/references/ui-skills.md) / [references/frontend-design.md](${CLAUDE_SKILL_DIR}/references/frontend-design.md) |
+| **组件生成** | See [references/component-generation.md](${CLAUDE_SKILL_DIR}/references/component-generation.md) |
+| **反馈表单** | See [references/feedback-forms.md](${CLAUDE_SKILL_DIR}/references/feedback-forms.md) |
 
-## 実行手順
+## 执行步骤
 
-1. **制約セットを適用**（優先順位に従う）
-2. **品質判定ゲート**（Step 0）
-3. ユーザーのリクエストを分類
-4. 上記の「機能詳細」から適切な参照ファイルを読む
-5. その内容に従って生成
+1. **适用约束集**（按优先级）
+2. **质量判定关卡**（Step 0）
+3. 分类用户请求
+4. 从上述「功能详情」读取适当的参考文件
+5. 按其内容生成
 
-### Step 0: 品質判定ゲート（a11y チェックリスト）
+### Step 0: 质量判定关卡（a11y 检查清单）
 
-UI コンポーネント生成時は、アクセシビリティを確保:
+生成 UI 组件时，确保可访问性：
 
 ```markdown
-♿ アクセシビリティチェックリスト
+♿ 可访问性检查清单
 
-生成する UI は以下を満たすことを推奨：
+生成的 UI 建议满足以下内容：
 
-### 必須項目
-- [ ] 画像に alt 属性を設定
-- [ ] フォーム要素に label を関連付け
-- [ ] キーボード操作可能（Tab でフォーカス移動）
-- [ ] フォーカス状態が視覚的に分かる
+### 必填项
+- [ ] 为图片设置 alt 属性
+- [ ] 为表单元素关联 label
+- [ ] 可用键盘操作（Tab 移动焦点）
+- [ ] 焦点状态视觉可见
 
-### 推奨項目
-- [ ] 色だけに依存しない情報伝達
-- [ ] コントラスト比 4.5:1 以上（テキスト）
-- [ ] aria-label / aria-describedby の適切な使用
-- [ ] 見出し構造（h1 → h2 → h3）が論理的
+### 推荐项
+- [ ] 不只依赖颜色传递信息
+- [ ] 对比度 4.5:1 以上（文本）
+- [ ] 适当使用 aria-label / aria-describedby
+- [ ] 标题结构（h1 → h2 → h3）逻辑合理
 
-### インタラクティブ要素
-- [ ] ボタンに適切なラベル（「詳細」ではなく「製品詳細を見る」）
-- [ ] モーダル/ダイアログのフォーカストラップ
-- [ ] エラーメッセージがスクリーンリーダーで読まれる
+### 交互元素
+- [ ] 按钮有适当标签（不是「详情」而是「查看产品详情」）
+- [ ] 模态/对话框的焦点陷阱
+- [ ] 错误信息可被屏幕阅读器读取
 ```
 
-### VibeCoder 向け
+### VibeCoder 向
 
 ```markdown
-♿ 誰でも使えるデザインにするために
+♿ 为了让任何人都能使用的设计
 
-1. **画像には説明をつける**
-   - 「商品画像」ではなく「赤いスニーカー、正面から」
+1. **为图片添加说明**
+   - 不是「商品图片」而是「红色运动鞋，正面」
 
-2. **クリックできる場所はキーボードでも操作可能に**
-   - Tab キーで移動、Enter で決定
+2. **可点击的地方也要能用键盘操作**
+   - Tab 键移动，Enter 键确定
 
-3. **色だけで判断させない**
-   - 赤=エラー だけでなく、アイコン+テキストも
+3. **不只让颜色来判断**
+   - 红=错误 之外，也加上图标+文本
 ```

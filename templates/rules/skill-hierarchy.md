@@ -3,18 +3,18 @@ _harness_template: rules/skill-hierarchy.md
 _harness_version: 2.6.1
 ---
 
-# Skill の階層構造ガイドライン
+# Skill 层次结构指南
 
 ## 概要
 
-claude-code-harness のスキルは **親スキル（カテゴリ）** と **子スキル（具体的な機能）** の2層構造になっています。
+claude-code-harness 的技能采用 **父技能（类别）** 和 **子技能（具体功能）** 的2层结构。
 
 ```
 skills/
-├── impl/                      # 親スキル（SKILL.md）
-│   ├── SKILL.md              # カテゴリ概要・ルーティング
-│   └── work-impl-feature/    # 子スキル
-│       └── doc.md            # 具体的な手順
+├── impl/                      # 父技能（SKILL.md）
+│   ├── SKILL.md              # 类别概要・路由
+│   └── work-impl-feature/    # 子技能
+│       └── doc.md            # 具体步骤
 ├── harness-review/
 │   ├── SKILL.md
 │   ├── code-review/
@@ -24,48 +24,48 @@ skills/
 ...
 ```
 
-## 必須ルール
+## 必须规则
 
-### 1. 親スキルを読んだら、子スキルも読む
+### 1. 读取父技能后，也要读取子技能
 
-Skill ツールで親スキルを起動した後、**ユーザーの意図に該当する子スキル（doc.md）も必ず Read すること**。
+使用 Skill 工具启动父技能后，**必须用 Read 工具读取与用户意图对应的子技能（doc.md）**。
 
 ```
-✅ 正しい流れ:
-1. Skill ツールで "impl" を起動 → SKILL.md の内容を取得
-2. ユーザーの意図を判断（例: 機能実装）
-3. Read ツールで work-impl-feature/doc.md を読む
-4. doc.md の手順に従って作業
+✅ 正确流程:
+1. 用 Skill 工具启动 "impl" → 获取 SKILL.md 内容
+2. 判断用户意图（例: 功能实现）
+3. 用 Read 工具读取 work-impl-feature/doc.md
+4. 按照 doc.md 的步骤作业
 
-❌ 間違い:
-1. Skill ツールで "impl" を起動
-2. SKILL.md だけ読んで作業開始（子スキルを無視）
+❌ 错误:
+1. 用 Skill 工具启动 "impl"
+2. 只读 SKILL.md 就开始作业（忽略子技能）
 ```
 
-### 2. 子スキルの選び方
+### 2. 子技能的选择方法
 
-| ユーザーの意図 | 起動するスキル | 読むべき子スキル |
+| 用户意图 | 启动的技能 | 应读取的子技能 |
 |---------------|---------------|-----------------|
-| 「機能を実装して」 | impl | work-impl-feature/doc.md |
-| 「コードレビューして」 | harness-review | code-review/doc.md |
-| 「セキュリティチェック」 | harness-review | security-review/doc.md |
-| 「ビルドして」 | verify | build-verify/doc.md |
+| "实现功能" | impl | work-impl-feature/doc.md |
+| "进行代码审查" | harness-review | code-review/doc.md |
+| "安全检查" | harness-review | security-review/doc.md |
+| "构建验证" | verify | build-verify/doc.md |
 
-### 3. 複数の子スキルが該当する場合
+### 3. 多个子技能都适用时
 
-ユーザーに確認するか、最も関連性の高いものを1つ選んで開始。
-
----
-
-## なぜ重要か？
-
-- 親 SKILL.md は「概要とルーティング」のみ
-- 子 doc.md に「具体的な手順・チェックリスト・パターン集」がある
-- 子スキルを読まないと、不完全な作業になる
+向用户确认，或选择最相关的1个开始。
 
 ---
 
-## PostToolUse Hook との連携
+## 为什么重要？
 
-Skill ツール使用後に自動でリマインダーが表示されます。
-表示された子スキル一覧から、該当するものを Read してください。
+- 父 SKILL.md 只有"概要和路由"
+- 子 doc.md 包含"具体步骤、检查清单、模式集"
+- 不读取子技能会导致作业不完整
+
+---
+
+## 与 PostToolUse Hook 的联动
+
+Skill 工具使用后会自动显示提醒。
+从显示的子技能列表中，用 Read 读取相应的技能。

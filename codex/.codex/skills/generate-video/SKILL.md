@@ -1,8 +1,8 @@
 ---
 name: generate-video
-description: "プロダクトデモ動画を自動生成。百聞は一見にしかず、を体現。Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
+description: "自动生成产品演示视频。百闻不如一见。Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
 description-en: "Auto-generate product demo videos. A picture worth thousand words, embodied. Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
-description-ja: "プロダクトデモ動画を自動生成。百聞は一見にしかず、を体現。Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
+description-zh: "自动生成产品演示视频。百闻不如一见，体现得淋漓尽致。触发短语：/generate-video、视频生成、产品演示、视觉文档。不用于：嵌入视频播放器、实时演示、视频播放功能。需要 Remotion 设置。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUserQuestion", "WebFetch"]
 disable-model-invocation: true
 argument-hint: "[demo|arch|release]"
@@ -11,168 +11,168 @@ context: fork
 
 # Generate Video Skill
 
-プロダクト説明動画の自動生成を担当するスキル群です。
+负责产品演示视频自动生成的技能群。
 
 ---
 
-## 概要
+## 概述
 
-`/generate-video` コマンドの内部で使用されるスキルです。
-コードベース分析 → シナリオ提案 → 並列生成のフローを実行します。
+在 `/generate-video` 命令内部使用的技能。
+执行代码库分析 → 场景提案 → 并行生成的流程。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **ベストプラクティス** | See [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md) |
-| **コードベース分析** | See [references/analyzer.md](${CLAUDE_SKILL_DIR}/references/analyzer.md) |
-| **シナリオプランニング** | See [references/planner.md](${CLAUDE_SKILL_DIR}/references/planner.md) |
-| **並列シーン生成** | See [references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md) |
-| **視覚効果ライブラリ** | See [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md) |
-| **AI画像生成** | See [references/image-generator.md](${CLAUDE_SKILL_DIR}/references/image-generator.md) |
-| **画像品質判定** | See [references/image-quality-check.md](${CLAUDE_SKILL_DIR}/references/image-quality-check.md) |
+| **最佳实践** | See [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md) |
+| **代码库分析** | See [references/analyzer.md](${CLAUDE_SKILL_DIR}/references/analyzer.md) |
+| **场景规划** | See [references/planner.md](${CLAUDE_SKILL_DIR}/references/planner.md) |
+| **并行场景生成** | See [references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md) |
+| **视觉效果库** | See [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md) |
+| **AI图像生成** | See [references/image-generator.md](${CLAUDE_SKILL_DIR}/references/image-generator.md) |
+| **图像质量判定** | See [references/image-quality-check.md](${CLAUDE_SKILL_DIR}/references/image-quality-check.md) |
 
 ## Prerequisites
 
-- Remotion がセットアップ済み（`/remotion-setup`）
+- Remotion 已安装（`/remotion-setup`）
 - Node.js 18+
-- （オプション）`GOOGLE_AI_API_KEY` - AI画像生成用
+- （可选）`GOOGLE_AI_API_KEY` - AI图像生成用
 
-## `/generate-video` フロー
+## `/generate-video` 流程
 
 ```
 /generate-video
     │
     ├─[Step 1] 分析（analyzer.md）
-    │   ├─ フレームワーク検出
-    │   ├─ 主要機能検出
-    │   ├─ UIコンポーネント検出
-    │   └─ プロジェクト資産解析（Plans.md, CHANGELOG等）
+    │   ├─ 框架检测
+    │   ├─ 主要功能检测
+    │   ├─ UI组件检测
+    │   └─ 项目资产解析（Plans.md, CHANGELOG等）
     │
-    ├─[Step 2] シナリオ提案（planner.md）
-    │   ├─ 動画タイプ自動判定
-    │   ├─ シーン構成提案
-    │   └─ ユーザー確認
+    ├─[Step 2] 场景提案（planner.md）
+    │   ├─ 视频类型自动判定
+    │   ├─ 场景构成提案
+    │   └─ 用户确认
     │
     ├─[Step 2.5] 素材生成（image-generator.md）← NEW
-    │   ├─ 素材必要判定（イントロ、CTA等）
-    │   ├─ Nano Banana Pro で2枚生成
-    │   ├─ Claude が品質判定（image-quality-check.md）
-    │   └─ OK → 採用 / NG → 再生成（最大3回）
+    │   ├─ 素材必要判定（Intro、CTA等）
+    │   ├─ Nano Banana Pro 生成2张图像
+    │   ├─ Claude 质量判定（image-quality-check.md）
+    │   └─ OK → 采用 / NG → 重新生成（最多3次）
     │
-    └─[Step 3] 並列生成（generator.md）
-        ├─ シーン並列生成（Task tool）
-        ├─ 統合 + トランジション
-        └─ 最終レンダリング
+    └─[Step 3] 并行生成（generator.md）
+        ├─ 场景并行生成（Task tool）
+        ├─ 整合 + 转场
+        └─ 最终渲染
 ```
 
-## 実行手順
+## 执行步骤
 
-1. ユーザーが `/generate-video` を実行
-2. Remotion セットアップ確認
-3. `analyzer.md` でコードベース分析
-4. `planner.md` でシナリオ提案 + ユーザー確認
-5. `generator.md` で並列生成
-6. 完了報告
+1. 用户执行 `/generate-video`
+2. Remotion 安装确认
+3. 使用 `analyzer.md` 进行代码库分析
+4. 使用 `planner.md` 进行场景提案 + 用户确认
+5. 使用 `generator.md` 进行并行生成
+6. 完成报告
 
-## 動画タイプ（ファネル別）
+## 视频类型（按漏斗分类）
 
-| タイプ | ファネル | 長さ目安 | 自動判定条件 | 構成の芯 |
+| 类型 | 漏斗 | 时长参考 | 自动判定条件 | 构成核心 |
 |--------|----------|----------|--------------|----------|
-| **LP/広告ティザー** | 認知〜興味 | 30-90秒 | 新規プロジェクト | 痛み→結果→CTA |
-| **Introデモ** | 興味→検討 | 2-3分 | UI変更検出 | 1ユースケース完走 |
-| **リリースノート** | 検討→確信 | 1-3分 | CHANGELOG更新 | Before/After重視 |
-| **アーキテクチャ解説** | 確信→決裁 | 5-30分 | 大規模構造変更 | 実運用+証拠 |
-| **オンボーディング** | 継続・活用 | 30秒-数分 | 初回セットアップ | Aha体験への最短パス |
+| **LP/广告预告片** | 认知〜兴趣 | 30-90秒 | 新项目 | 痛点→结果→CTA |
+| **Intro演示** | 兴趣→考虑 | 2-3分 | UI变更检测 | 1个用例完整演示 |
+| **发布说明** | 考虑→确信 | 1-3分 | CHANGELOG更新 | Before/After重视 |
+| **架构讲解** | 确信→决策 | 5-30分 | 大规模结构变更 | 实际使用+证据 |
+| **入门指南** | 继续・利用 | 30秒-数分 | 首次设置 | Aha体验的最短路径 |
 
-> 詳細: [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md)
+> 详情: [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md)
 
-## シーンテンプレート
+## 场景模板
 
-### 90秒ティザー（LP/広告向け）
+### 90秒预告片（LP/广告用）
 
-| 時間 | シーン | 内容 |
+| 时间 | 场景 | 内容 |
 |------|--------|------|
-| 0-5秒 | Hook | 痛み or 望む結果 |
-| 5-15秒 | Problem+Promise | 対象ユーザーと約束 |
-| 15-55秒 | Workflow | 象徴ワークフロー |
-| 55-70秒 | Differentiator | 差別化の根拠 |
-| 70-90秒 | CTA | 次の一手 |
+| 0-5秒 | Hook | 痛点 or 期望的结果 |
+| 5-15秒 | Problem+Promise | 目标用户和承诺 |
+| 15-55秒 | Workflow | 象征性工作流 |
+| 55-70秒 | Differentiator | 差异化依据 |
+| 70-90秒 | CTA | 下一步行动 |
 
-### 3分Introデモ（検討向け）
+### 3分钟Intro演示（考虑用）
 
-| 時間 | シーン | 内容 |
+| 时间 | 场景 | 内容 |
 |------|--------|------|
-| 0-10秒 | Hook | 結論+痛み |
-| 10-30秒 | UseCase | ユースケース宣言 |
-| 30-140秒 | Demo | 実画面で完走 |
-| 140-170秒 | Objection | よくある不安1つ潰す |
-| 170-180秒 | CTA | 行動喚起 |
+| 0-10秒 | Hook | 结论+痛点 |
+| 10-30秒 | UseCase | 用例宣言 |
+| 30-140秒 | Demo | 实画面完整演示 |
+| 140-170秒 | Objection | 解决一个常见顾虑 |
+| 170-180秒 | CTA | 行动号召 |
 
-### 共通シーン
+### 通用场景
 
-| シーン | 推奨時間 | 内容 |
+| 场景 | 推荐时长 | 内容 |
 |--------|----------|------|
-| イントロ | 3-5秒 | ロゴ + タグライン |
-| 機能デモ | 10-30秒 | Playwrightキャプチャ |
-| アーキテクチャ図 | 10-20秒 | Mermaid → アニメーション |
-| CTA | 3-5秒 | URL + 連絡先 |
+| Intro | 3-5秒 | Logo + 标语 |
+| 功能演示 | 10-30秒 | Playwright 录屏 |
+| 架构图 | 10-20秒 | Mermaid → 动画 |
+| CTA | 3-5秒 | URL + 联系方式 |
 
-> 詳細テンプレート: [${CLAUDE_SKILL_DIR}/references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md#テンプレート)
+> 详细模板: [${CLAUDE_SKILL_DIR}/references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md#模板)
 
-## 音声同期ルール（重要）
+## 音频同步规则（重要）
 
-ナレーション付き動画では以下を厳守:
+带旁白的视频必须遵守以下规则:
 
-| ルール | 値 |
+| 规则 | 值 |
 |--------|-----|
-| 音声開始 | シーン開始 + 30f（1秒待機） |
-| シーン長さ | 30f + 音声長さ + 20f余白 |
-| トランジション | 15f（隣接シーンとオーバーラップ） |
-| シーン開始計算 | 前シーン開始 + 前シーン長 - 15f |
+| 音频开始 | 场景开始 + 30f（1秒等待） |
+| 场景长度 | 30f + 音频长度 + 20f余白 |
+| 转场 | 15f（与相邻场景重叠） |
+| 场景开始计算 | 前场景开始 + 前场景长 - 15f |
 
-**事前確認**: `ffprobe` で音声長さを確認してからシーン設計
+**预先确认**: 使用 `ffprobe` 确认音频长度后再设计场景
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#音声同期ルール重要)
+> 详情: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#音频同步规则重要)
 
-## BGM サポート
+## BGM 支持
 
-| 項目 | 推奨値 |
+| 项目 | 推荐值 |
 |------|--------|
-| ナレーションあり | bgmVolume: 0.20 - 0.30 |
-| ナレーションなし | bgmVolume: 0.50 - 0.80 |
-| ファイル配置 | `public/BGM/` |
+| 有旁白 | bgmVolume: 0.20 - 0.30 |
+| 无旁白 | bgmVolume: 0.50 - 0.80 |
+| 文件位置 | `public/BGM/` |
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#bgm-サポート)
+> 详情: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#bgm支持)
 
-## 字幕サポート
+## 字幕支持
 
-| ルール | 値 |
+| 规则 | 值 |
 |--------|-----|
-| 字幕開始 | 音声開始と同じ |
-| 字幕duration | 音声長 + 10f |
-| フォント | Base64埋め込み推奨 |
+| 字幕开始 | 与音频开始相同 |
+| 字幕duration | 音频长 + 10f |
+| 字体 | Base64嵌入推荐 |
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#字幕サポート)
+> 详情: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#字幕支持)
 
-## 視覚効果ライブラリ
+## 视觉效果库
 
-インパクトのある動画向けエフェクト集:
+有冲击力的视频特效集:
 
-| エフェクト | 用途 |
+| 特效 | 用途 |
 |-----------|------|
-| GlitchText | Hook、タイトル |
-| Particles | 背景、CTA収束 |
+| GlitchText | Hook、标题 |
+| Particles | 背景、CTA收敛 |
 | ScanLine | 解析中演出 |
-| ProgressBar | 並列処理表示 |
-| 3D Parallax | カード表示 |
+| ProgressBar | 并行处理显示 |
+| 3D Parallax | 卡片显示 |
 
-> 詳細: [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md)
+> 详情: [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md)
 
 ## Notes
 
-- Remotion未セットアップの場合は `/remotion-setup` を案内
-- 並列生成数はシーン数に応じて自動調整（max 5）
-- 生成された動画は `out/` ディレクトリに出力
-- AI生成画像は `out/assets/generated/` に保存
-- `GOOGLE_AI_API_KEY` 未設定時は画像生成をスキップ（既存素材 or プレースホルダー使用）
+- Remotion未安装时引导 `/remotion-setup`
+- 并行生成数根据场景数自动调整（max 5）
+- 生成的视频输出到 `out/` 目录
+- AI生成图像保存到 `out/assets/generated/`
+- `GOOGLE_AI_API_KEY` 未设置时跳过图像生成（使用现有素材或占位符）

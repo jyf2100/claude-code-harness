@@ -1,110 +1,110 @@
-# Video Generator - 並列シーン生成エンジン
+# Video Generator - 并行场景生成引擎
 
-シナリオに基づいて、マルチエージェントで並列にシーンを生成します。
+基于场景规划，使用多代理并行生成场景。
 
 ---
 
 ## 概要
 
-`/generate-video` の Step 3 で実行される生成エンジンです。
-planner.md のシナリオを受けて、各シーンを並列で生成し、最終的に統合します。
+在 `/generate-video` 的 Step 3 中执行的生成引擎。
+接收 planner.md 的场景规划，并行生成各场景，最终整合。
 
-## 入力
+## 输入
 
-planner.md からのシナリオ:
-- シーンリスト（id, name, duration, template, content）
-- 動画設定（resolution, fps）
+来自 planner.md 的场景规划:
+- 场景列表（id, name, duration, template, content）
+- 视频设置（resolution, fps）
 
-## 並列生成アーキテクチャ
+## 并行生成架构
 
 ```
-シナリオ（N シーン）
+场景规划（N 个场景）
     │
-    ├─[素材生成フェーズ] ← NEW
-    │   ├── 各シーンの素材必要判定
-    │   ├── Nano Banana Pro で画像生成（2枚: 2回リクエスト）
-    │   ├── Claude が品質判定
-    │   └── OK → 採用 / NG → 再生成（最大3回）
+    ├─[素材生成阶段] ← NEW
+    │   ├── 各场景的素材必要性判定
+    │   ├── Nano Banana Pro 生成图片（2张: 2次请求）
+    │   ├── Claude 进行质量判定
+    │   └─ OK → 采用 / NG → 重新生成（最多3次）
     │
-    ├─[並列数決定]
-    │   └─ min(シーン数, 5) を並列数とする
+    ├─[并行数决定]
+    │   └─ min(场景数, 5) 作为并行数
     │
-    ├─[並列生成フェーズ]
-    │   ├── Agent 1: シーン 1 生成
-    │   ├── Agent 2: シーン 2 生成
-    │   ├── Agent 3: シーン 3 生成
-    │   └── ... (max 5 並列)
+    ├─[并行生成阶段]
+    │   ├── Agent 1: 场景 1 生成
+    │   ├── Agent 2: 场景 2 生成
+    │   ├── Agent 3: 场景 3 生成
+    │   └── ... (最多 5 个并行)
     │
-    ├─[統合フェーズ]
-    │   ├── シーン結合
-    │   ├── トランジション追加
-    │   └── 音声同期（オプション）
+    ├─[整合阶段]
+    │   ├── 场景连接
+    │   ├── 过渡效果添加
+    │   └─ 音频同步（可选）
     │
-    └─[レンダリングフェーズ]
-        └── 最終出力（mp4/webm/gif）
+    └─[渲染阶段]
+        └── 最终输出（mp4/webm/gif）
 ```
 
 ---
 
-## 素材生成フェーズ（Nano Banana Pro）
+## 素材生成阶段（Nano Banana Pro）
 
-シーン生成前に、必要な素材画像を自動生成します。
+在场景生成前，自动生成所需的素材图片。
 
-### 素材必要判定
+### 素材必要性判定
 
-| シーンタイプ | 素材必要 | 理由 |
-|-------------|---------|------|
-| intro | ✅ 必要 | ロゴ、タイトルカード |
-| cta | ✅ 必要 | アクションバナー |
-| architecture | ✅ 必要 | 概念図、ダイアグラム |
-| ui-demo | ❌ 不要 | Playwright キャプチャ使用 |
-| changelog | ❌ 不要 | テキストベース |
+| 场景类型 | 需要素材 | 理由 |
+|---------|---------|------|
+| intro | ✅ 需要 | Logo、标题卡片 |
+| cta | ✅ 需要 | 行动号召横幅 |
+| architecture | ✅ 需要 | 概念图、图表 |
+| ui-demo | ❌ 不需要 | 使用 Playwright 截图 |
+| changelog | ❌ 不需要 | 基于文本 |
 
-### 判定ロジック
+### 判定逻辑
 
 ```javascript
 const needsGeneratedAsset = (scene) => {
-  // 既存素材がある場合はスキップ
+  // 有现有素材时跳过
   if (scene.existingAssets?.length > 0) return false;
 
-  // Playwright キャプチャ対象はスキップ
+  // Playwright 截图对象跳过
   if (scene.template === 'ui-demo') return false;
 
-  // テキストベースシーンはスキップ
+  // 基于文本的场景跳过
   if (scene.template === 'changelog') return false;
 
-  // それ以外は生成対象
+  // 其他为生成对象
   return ['intro', 'cta', 'architecture', 'feature-highlight'].includes(scene.template);
 };
 ```
 
-### 生成フロー
+### 生成流程
 
 ```
-各シーンに対して:
+对于每个场景:
     │
     ├── needsGeneratedAsset(scene) = false
-    │   └─ スキップ → 次のシーンへ
+    │   └─ 跳过 → 进入下一个场景
     │
     └── needsGeneratedAsset(scene) = true
         │
-        ├── [Step 1] プロンプト生成
-        │   └─ シーン情報 + ブランド情報からプロンプト構築
+        ├── [Step 1] 提示词生成
+        │   └─ 从场景信息 + 品牌信息构建提示词
         │
-        ├── [Step 2] 画像生成（2枚: 2回リクエスト）
-        │   └─ Nano Banana Pro API 呼び出し（generateContent × 2）
-        │   └─ → image-generator.md 参照
+        ├── [Step 2] 图片生成（2张: 2次请求）
+        │   └─ Nano Banana Pro API 调用（generateContent × 2）
+        │   └─ → 参考 image-generator.md
         │
-        ├── [Step 3] 品質判定
-        │   └─ Claude が2枚を評価・選択
-        │   └─ → image-quality-check.md 参照
+        ├── [Step 3] 质量判定
+        │   └─ Claude 评估并选择2张中的最佳
+        │   └─ → 参考 image-quality-check.md
         │
-        └── [Step 4] 結果処理
+        └── [Step 4] 结果处理
             ├── 成功 → out/assets/generated/{scene_name}.png
-            └── 失敗 → 再生成（最大3回）or フォールバック
+            └── 失败 → 重新生成（最多3次）或回退
 ```
 
-### 生成画像の保存先
+### 生成图片的保存位置
 
 ```
 out/
@@ -116,53 +116,53 @@ out/
         └── feature-highlight.png
 ```
 
-### シーンへの組み込み
+### 集成到场景
 
-生成した画像は、シーン生成エージェントに渡されます:
+生成的图片会传递给场景生成代理:
 
 ```
 Task:
   subagent_type: "video-scene-generator"
   prompt: |
-    シーン情報:
-    - 名前: intro
-    - テンプレート: intro
-    - 生成画像: out/assets/generated/intro.png  ← 追加
+    场景信息:
+    - 名称: intro
+    - 模板: intro
+    - 生成图片: out/assets/generated/intro.png  ← 添加
 
-    生成画像を背景またはメイン要素として使用してください。
+    请将生成图片作为背景或主要元素使用。
 ```
 
-### 詳細ドキュメント
+### 详细文档
 
-- [image-generator.md](./image-generator.md) - API 呼び出し、プロンプト設計
-- [image-quality-check.md](./image-quality-check.md) - 品質判定ロジック
+- [image-generator.md](./image-generator.md) - API 调用、提示词设计
+- [image-quality-check.md](./image-quality-check.md) - 质量判定逻辑
 
 ---
 
-## 並列数決定ロジック
+## 并行数决定逻辑
 
-| シーン数 | 並列数 | 理由 |
-|---------|--------|------|
-| 1-2 | 1-2 | オーバーヘッドが利益を上回る |
-| 3-4 | 3 | 最適なバランス |
-| 5+ | 5 | これ以上はリソース競合 |
+| 场景数 | 并行数 | 理由 |
+|-------|-------|------|
+| 1-2 | 1-2 | 开销大于收益 |
+| 3-4 | 3 | 最佳平衡 |
+| 5+ | 5 | 更多会导致资源竞争 |
 
-**実装**:
+**实现**:
 ```javascript
 const parallelCount = Math.min(scenes.length, 5);
 ```
 
 ---
 
-## Task Tool による並列JSON生成
+## Task Tool 并行 JSON 生成
 
-### 新しい生成フロー（JSON-schema駆動）
+### 新的生成流程（JSON-schema 驱动）
 
 ```
-シナリオ（scenario.json）
+场景规划（scenario.json）
     ↓
 ┌─────────────────────────────────────────────┐
-│     Task並列起動（各シーン → JSON出力）      │
+│     Task 并行启动（各场景 → JSON 输出）       │
 ├─────────────────────────────────────────────┤
 │ Agent 1 → scenes/intro.json                 │
 │ Agent 2 → scenes/auth-demo.json             │
@@ -172,74 +172,74 @@ const parallelCount = Math.min(scenes.length, 5);
 └─────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────┐
-│         scenes/*.json → マージ               │
+│         scenes/*.json → 合并                 │
 ├─────────────────────────────────────────────┤
-│ - section_id + order でソート               │
-│ - 競合検出（同一scene_id = Critical error） │
-│ - 欠落検出（セクションにシーンなし）         │
+│ - 按 section_id + order 排序                │
+│ - 冲突检测（相同 scene_id = Critical error）│
+│ - 缺失检测（章节内无场景）                   │
 └─────────────────────────────────────────────┘
     ↓
-video-script.json（全シーン統合）
+video-script.json（全场景整合）
     ↓
-Remotion rendering
+Remotion 渲染
 ```
 
-### シーン生成エージェント起動（JSON出力）
+### 场景生成代理启动（JSON 输出）
 
 ```
-各シーンに対して Task tool を起動:
+对于每个场景启动 Task tool:
 
 Task:
   subagent_type: "video-scene-generator"
   run_in_background: true
   prompt: |
-    以下のシーンのJSONを scene.schema.json に従って生成してください。
+    请按照 scene.schema.json 生成以下场景的 JSON。
 
-    シーン情報:
+    场景信息:
     - scene_id: {scene.id}
     - section_id: {section.id}
-    - order: {scene.order} （セクション内の順序）
+    - order: {scene.order} （章节内的顺序）
     - type: {scene.type}
     - duration_ms: {scene.duration_ms}
     - content: {scene.content}
 
-    出力先: out/video-{date}-{id}/scenes/{scene_id}.json
+    输出位置: out/video-{date}-{id}/scenes/{scene_id}.json
 
-    必須項目:
+    必需项目:
     - scene_id, section_id, order, type, content
-    - content.duration_ms（音声長 + 余白を考慮）
+    - content.duration_ms（考虑音频长度 + 余量）
     - direction（transition, emphasis, background, timing）
-    - assets（使用する画像・音声ファイル）
+    - assets（使用的图片・音频文件）
 
-    バリデーション:
+    验证:
     ```bash
     node scripts/validate-scene.js out/video-{date}-{id}/scenes/{scene_id}.json
     ```
 
-    完了報告:
-    - ファイルパス
-    - バリデーション結果（PASS/FAIL）
-    - 警告があれば報告
+    完成报告:
+    - 文件路径
+    - 验证结果（PASS/FAIL）
+    - 如有警告请报告
 ```
 
-### 進捗モニタリング
+### 进度监控
 
 ```
-🎬 並列JSON生成中... (3/5 完了)
+🎬 并行 JSON 生成中... (3/5 完成)
 
 ├── [Agent 1] intro.json ✅ PASS
 ├── [Agent 2] auth-demo.json ✅ PASS
 ├── [Agent 3] dashboard.json ⏳ 生成中...
-├── [Agent 4] features.json 🔜 待機中
-└── [Agent 5] cta.json 🔜 待機中
+├── [Agent 4] features.json 🔜 等待中
+└── [Agent 5] cta.json 🔜 等待中
 ```
 
-### 結果収集（JSON）
+### 结果收集（JSON）
 
 ```
-TaskOutput で各エージェントの結果を収集:
+用 TaskOutput 收集各代理的结果:
 
-結果:
+结果:
   - scene_id: "intro"
     file: "out/video-20260202-001/scenes/intro.json"
     validation: "PASS"
@@ -249,16 +249,16 @@ TaskOutput で各エージェントの結果を収集:
     file: "out/video-20260202-001/scenes/auth-demo.json"
     validation: "PASS"
     status: "success"
-    warnings: ["duration_ms が音声長より短い可能性"]
+    warnings: ["duration_ms 可能短于音频长度"]
 ```
 
-### JSON出力仕様
+### JSON 输出规格
 
-**出力ファイル**: `out/video-{date}-{id}/scenes/{scene_id}.json`
+**输出文件**: `out/video-{date}-{id}/scenes/{scene_id}.json`
 
-**スキーマ**: `schemas/scene.schema.json`
+**Schema**: `schemas/scene.schema.json`
 
-**必須フィールド**:
+**必需字段**:
 ```json
 {
   "scene_id": "intro",
@@ -267,7 +267,7 @@ TaskOutput で各エージェントの結果を収集:
   "type": "intro",
   "content": {
     "title": "MyApp",
-    "subtitle": "タスク管理を簡単に",
+    "subtitle": "让任务管理变简单",
     "duration_ms": 5000
   },
   "direction": {
@@ -294,24 +294,24 @@ TaskOutput で各エージェントの結果を収集:
 }
 ```
 
-### マージフェーズ
+### 合并阶段
 
-全エージェントの完了後、`scripts/merge-scenes.js` を実行:
+所有代理完成后，执行 `scripts/merge-scenes.js`:
 
 ```bash
 node scripts/merge-scenes.js out/video-20260202-001/
 ```
 
-**処理内容**:
-1. `scenes/*.json` を読み込み
-2. `section_id` + `order` でソート
-3. 競合検出（同一 `scene_id` → Critical error）
-4. 欠落検出（セクションにシーンなし → Critical error）
-5. `video-script.json` を生成
+**处理内容**:
+1. 读取 `scenes/*.json`
+2. 按 `section_id` + `order` 排序
+3. 冲突检测（相同 `scene_id` → Critical error）
+4. 缺失检测（章节内无场景 → Critical error）
+5. 生成 `video-script.json`
 
-**出力**: `out/video-20260202-001/video-script.json`
+**输出**: `out/video-20260202-001/video-script.json`
 
-**フォーマット**:
+**格式**:
 ```json
 {
   "scenes": [
@@ -329,9 +329,9 @@ node scripts/merge-scenes.js out/video-20260202-001/
 
 ---
 
-## シーン生成テンプレート
+## 场景生成模板
 
-### intro テンプレート
+### intro 模板
 
 ```tsx
 // remotion/src/scenes/intro.tsx
@@ -358,7 +358,7 @@ export const IntroScene: React.FC<{
 export const DURATION = 150; // 5秒 @ 30fps
 ```
 
-### ui-demo テンプレート（Playwright連携）
+### ui-demo 模板（Playwright 联动）
 
 ```tsx
 // remotion/src/scenes/ui-demo.tsx
@@ -382,7 +382,7 @@ export const UIDemoScene: React.FC<{
 };
 ```
 
-### cta テンプレート
+### cta 模板
 
 ```tsx
 // remotion/src/scenes/cta.tsx
@@ -412,47 +412,47 @@ export const DURATION = 150; // 5秒 @ 30fps
 
 ---
 
-## 音声同期ルール（重要）
+## 音频同步规则（重要）
 
-ナレーション付き動画を生成する際は、以下のルールを厳守すること。
+生成带解说的视频时，请严格遵守以下规则。
 
-### 1. 音声ファイル長さの事前確認
+### 1. 事先确认音频文件长度
 
 ```bash
-# 各音声ファイルの長さを確認
+# 确认各音频文件的长度
 for f in public/audio/*.wav; do
   name=$(basename "$f" .wav)
   dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f")
   frames=$(echo "$dur * 30" | bc | cut -d. -f1)
-  echo "$name: ${dur}秒 = ${frames}フレーム"
+  echo "$name: ${dur}秒 = ${frames}帧"
 done
 ```
 
-### 2. シーン長さの計算式
+### 2. 场景长度计算公式
 
 ```
-シーン長さ = 1秒待機(30f) + 音声長さ + トランジション前余白(20f以上)
+场景长度 = 1秒等待(30f) + 音频长度 + 过渡前余量(20f以上)
 ```
 
-| 要素 | フレーム数 | 説明 |
-|------|-----------|------|
-| 1秒待機 | 30f | シーン開始後、視覚的に落ち着いてから音声開始 |
-| 音声長さ | 可変 | ffprobe で事前確認 |
-| 余白 | 20f以上 | トランジション開始前に音声終了 |
+| 要素 | 帧数 | 说明 |
+|-----|------|------|
+| 1秒等待 | 30f | 场景开始后，视觉稳定后再开始音频 |
+| 音频长度 | 可变 | 使用 ffprobe 事先确认 |
+| 余量 | 20f以上 | 在过渡开始前音频结束 |
 
-### 3. 音声開始タイミング
-
-```
-音声開始 = シーン開始フレーム + 30フレーム（1秒待機）
-```
-
-### 4. シーン開始フレームの計算（TransitionSeries使用時）
+### 3. 音频开始时机
 
 ```
-シーン開始フレーム = 前シーン開始 + 前シーン長さ - トランジション長さ
+音频开始 = 场景开始帧 + 30帧（1秒等待）
 ```
 
-**例（トランジション15フレームの場合）**:
+### 4. 场景开始帧计算（使用 TransitionSeries 时）
+
+```
+场景开始帧 = 前场景开始 + 前场景长度 - 过渡长度
+```
+
+**示例（过渡15帧时）**:
 ```
 hook:       0
 problem:    175 - 15 = 160
@@ -461,42 +461,42 @@ workPlan:   560 + 340 - 15 = 885
 ...
 ```
 
-### 5. 実装テンプレート
+### 5. 实现模板
 
 ```tsx
 const SCENE_DURATIONS = {
-  hook: 175,      // 30 + 121(音声) + 24(余白)
-  problem: 415,   // 30 + 360(音声) + 25(余白)
-  solution: 340,  // 30 + 286(音声) + 24(余白)
+  hook: 175,      // 30 + 121(音频) + 24(余量)
+  problem: 415,   // 30 + 360(音频) + 25(余量)
+  solution: 340,  // 30 + 286(音频) + 24(余量)
   // ...
 };
 const TRANSITION = 15;
 
-// シーン開始フレーム（累積計算）
+// 场景开始帧（累积计算）
 // hook:0, problem:160, solution:560, ...
 
 const audioTimings = {
-  hook: 30,       // シーン0 + 30
-  problem: 190,   // シーン160 + 30
-  solution: 590,  // シーン560 + 30
+  hook: 30,       // 场景0 + 30
+  problem: 190,   // 场景160 + 30
+  solution: 590,  // 场景560 + 30
   // ...
 };
 ```
 
-### 6. よくある問題と対策
+### 6. 常见问题与对策
 
-| 問題 | 原因 | 対策 |
-|------|------|------|
-| 音声が被る | 前の音声終了前に次の音声開始 | 音声長さを確認し、シーン長さを調整 |
-| スライド変更と音声がずれる | TransitionSeriesのオーバーラップ未考慮 | シーン開始 = 前シーン開始 + 前シーン長 - トランジション長 |
-| 音声が途中で切れる | シーン長さ < 音声長さ | シーン長さを音声長さ + 余白に調整 |
-| 無音時間が長い | 音声開始が遅すぎる | シーン開始 + 30f で統一 |
+| 问题 | 原因 | 对策 |
+|-----|------|------|
+| 音频重叠 | 前一个音频未结束就开始下一个 | 确认音频长度，调整场景长度 |
+| 幻灯片切换与音频不同步 | 未考虑 TransitionSeries 的重叠 | 场景开始 = 前场景开始 + 前场景长 - 过渡长 |
+| 音频中途被切断 | 场景长度 < 音频长度 | 将场景长度调整为音频长度 + 余量 |
+| 静音时间过长 | 音频开始太晚 | 统一使用场景开始 + 30f |
 
 ---
 
-## 統合フェーズ
+## 整合阶段
 
-### シーン結合
+### 场景连接
 
 ```tsx
 // remotion/src/FullVideo.tsx
@@ -509,23 +509,23 @@ export const FullVideo: React.FC = () => {
   return (
     <Series>
       <Series.Sequence durationInFrames={150}>
-        <IntroScene title="MyApp" tagline="タスク管理を簡単に" />
+        <IntroScene title="MyApp" tagline="让任务管理变简单" />
       </Series.Sequence>
       <Series.Sequence durationInFrames={450}>
         <UIDemoScene screenshots={[...]} duration={450} />
       </Series.Sequence>
       <Series.Sequence durationInFrames={150}>
-        <CTAScene url="https://myapp.com" text="今すぐ試す" />
+        <CTAScene url="https://myapp.com" text="立即试用" />
       </Series.Sequence>
     </Series>
   );
 };
 ```
 
-### トランジション追加
+### 添加过渡
 
 ```tsx
-// トランジションコンポーネント
+// 过渡组件
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 
@@ -545,103 +545,103 @@ import { fade } from "@remotion/transitions/fade";
 
 ---
 
-## レンダリングフェーズ
+## 渲染阶段
 
-### コマンド実行
+### 命令执行
 
 ```bash
-# MP4 レンダリング
+# MP4 渲染
 npx remotion render remotion/index.ts FullVideo out/video.mp4
 
-# GIF レンダリング（短い動画向け）
+# GIF 渲染（适合短视频）
 npx remotion render remotion/index.ts FullVideo out/video.gif
 
-# WebM レンダリング（Web向け）
+# WebM 渲染（适合 Web）
 npx remotion render remotion/index.ts FullVideo out/video.webm --codec=vp8
 ```
 
-### 出力オプション
+### 输出选项
 
-| フォーマット | 推奨用途 | オプション |
-|-------------|---------|-----------|
-| MP4 | 汎用、SNS | `--codec=h264` |
-| WebM | Web埋め込み | `--codec=vp8` |
-| GIF | 短いループ | 15秒以下推奨 |
+| 格式 | 推荐用途 | 选项 |
+|-----|---------|------|
+| MP4 | 通用、SNS | `--codec=h264` |
+| WebM | Web 嵌入 | `--codec=vp8` |
+| GIF | 短循环 | 推荐15秒以下 |
 
 ---
 
-## 完了報告
+## 完成报告
 
 ```markdown
-✅ **動画生成完了**
+✅ **视频生成完成**
 
-📁 **出力ファイル**:
+📁 **输出文件**:
 - `out/video.mp4` (45秒, 1080p, 12.3MB)
 
-📊 **生成統計**:
-| 項目 | 値 |
-|------|-----|
-| シーン数 | 4 |
-| 並列エージェント数 | 3 |
-| 生成時間 | 45秒 |
-| レンダリング時間 | 30秒 |
+📊 **生成统计**:
+| 项目 | 值 |
+|-----|-----|
+| 场景数 | 4 |
+| 并行代理数 | 3 |
+| 生成时间 | 45秒 |
+| 渲染时间 | 30秒 |
 
-🎬 **プレビュー**:
+🎬 **预览**:
 - Studio: `npm run remotion` → http://localhost:3000
-- ファイル: `open out/video.mp4`
+- 文件: `open out/video.mp4`
 ```
 
 ---
 
-## エラーハンドリング
+## 错误处理
 
-### シーン生成失敗
-
-```
-⚠️ シーン生成エラー
-
-シーン「auth-demo」の生成に失敗しました。
-原因: Playwright キャプチャ失敗 - アプリが起動していません
-
-対処:
-1. アプリを起動してください: `npm run dev`
-2. 再生成: 「auth-demo を再生成」
-3. スキップ: 「このシーンをスキップ」
-```
-
-### レンダリング失敗
+### 场景生成失败
 
 ```
-⚠️ レンダリングエラー
+⚠️ 场景生成错误
 
-原因: メモリ不足
+场景「auth-demo」生成失败。
+原因: Playwright 截图失败 - 应用未启动
 
-対処:
-1. 並列数を減らす: `--concurrency 2`
-2. 解像度を下げる: 720p で再試行
-3. シーンを分割: 長いシーンを短く分割
+处理:
+1. 请启动应用: `npm run dev`
+2. 重新生成: 「重新生成 auth-demo」
+3. 跳过: 「跳过此场景」
+```
+
+### 渲染失败
+
+```
+⚠️ 渲染错误
+
+原因: 内存不足
+
+处理:
+1. 减少并行数: `--concurrency 2`
+2. 降低分辨率: 720p 重试
+3. 分割场景: 将长场景分割成短片段
 ```
 
 ---
 
-## BGM サポート
+## BGM 支持
 
-### 実装方法
+### 实现方法
 
-コンポジションに `bgmPath` と `bgmVolume` プロパティを追加:
+在 composition 中添加 `bgmPath` 和 `bgmVolume` 属性:
 
 ```tsx
 export const VideoComposition: React.FC<{
   enableAudio?: boolean;
   volume?: number;
-  bgmPath?: string;      // BGMファイルパス（staticFile相対）
-  bgmVolume?: number;    // BGM音量（0.0-1.0）
+  bgmPath?: string;      // BGM 文件路径（staticFile 相对）
+  bgmVolume?: number;    // BGM 音量（0.0-1.0）
 }> = ({ enableAudio = true, volume = 1, bgmPath, bgmVolume = 0.25 }) => {
   return (
     <AbsoluteFill>
-      {/* シーン内容 */}
+      {/* 场景内容 */}
 
-      {/* BGM（ナレーションより控えめに） */}
+      {/* BGM（比解说音量低） */}
       {enableAudio && bgmPath && (
         <Audio src={staticFile(bgmPath)} volume={bgmVolume} />
       )}
@@ -650,27 +650,27 @@ export const VideoComposition: React.FC<{
 };
 ```
 
-### BGM 音量ガイドライン
+### BGM 音量指南
 
-| ナレーション有無 | 推奨 bgmVolume |
-|-----------------|----------------|
-| あり | 0.20 - 0.30 |
-| なし | 0.50 - 0.80 |
+| 有无解说 | 推荐 bgmVolume |
+|---------|---------------|
+| 有 | 0.20 - 0.30 |
+| 无 | 0.50 - 0.80 |
 
-### 著作権フリー BGM 入手先
+### 免版权 BGM 获取源
 
-- [DOVA-SYNDROME](https://dova-s.jp/) - 日本語、無料
-- [甘茶の音楽工房](https://amachamusic.chagasi.com/) - 日本語、無料
-- [Pixabay Music](https://pixabay.com/music/) - 英語、無料
+- [DOVA-SYNDROME](https://dova-s.jp/) - 日语、免费
+- [甘茶的音乐工房](https://amachamusic.chagasi.com/) - 日语、免费
+- [Pixabay Music](https://pixabay.com/music/) - 英语、免费
 
 ---
 
-## 字幕サポート
+## 字幕支持
 
-### 実装方法
+### 实现方法
 
 ```tsx
-// フォント埋め込み（Base64推奨）
+// 字体嵌入（推荐 Base64）
 const FontStyle: React.FC = () => (
   <style>
     {`
@@ -684,7 +684,7 @@ const FontStyle: React.FC = () => (
   </style>
 );
 
-// 字幕コンポーネント
+// 字幕组件
 const Subtitle: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 10], [0, 1], {
@@ -727,34 +727,34 @@ const Subtitle: React.FC<{ text: string }> = ({ text }) => {
 };
 ```
 
-### 字幕タイミングルール
+### 字幕时机规则
 
-| 項目 | 値 |
-|------|-----|
-| 字幕開始 | 音声開始と同じタイミング |
-| 字幕duration | 音声長 + 10f（余白） |
+| 项目 | 值 |
+|-----|-----|
+| 字幕开始 | 与音频开始相同时机 |
+| 字幕 duration | 音频长 + 10f（余量） |
 
-### フォント埋め込み（Base64）
+### 字体嵌入（Base64）
 
-カスタムフォントを確実に読み込むには Base64 埋め込みを使用:
+为确保自定义字体可靠加载，请使用 Base64 嵌入:
 
 ```typescript
 // src/utils/custom-font.ts
 import fs from "fs";
 import path from "path";
 
-// ビルド時にBase64エンコード
+// 构建时 Base64 编码
 const fontPath = path.join(__dirname, "../../public/font/MyFont.otf");
 const fontBuffer = fs.readFileSync(fontPath);
 export const FONT_DATA_URL = `data:font/otf;base64,${fontBuffer.toString("base64")}`;
 ```
 
-### 字幕データ構造
+### 字幕数据结构
 
 ```tsx
 const SUBTITLES = [
-  { id: "hook", text: "字幕テキスト", start: 30, duration: 120 },
-  { id: "problem", text: "次の字幕", start: 175, duration: 178 },
+  { id: "hook", text: "字幕文本", start: 30, duration: 120 },
+  { id: "problem", text: "下一个字幕", start: 175, duration: 178 },
   // ...
 ];
 
@@ -770,54 +770,54 @@ const SUBTITLES = [
 
 ## Notes
 
-- 並列生成は独立したシーンに対してのみ有効
-- Playwright キャプチャは事前にアプリが起動している必要がある
-- 大きな動画（3分以上）は分割レンダリングを推奨
-- BGMはナレーションが聞こえるよう控えめに設定
-- カスタムフォントはBase64埋め込みで確実に読み込む
+- 并行生成仅适用于独立场景
+- Playwright 截图需要事先启动应用
+- 大型视频（3分钟以上）建议分割渲染
+- BGM 应保持低于解说音量
+- 自定义字体使用 Base64 嵌入确保可靠加载
 
 ---
 
-## Phase 10: 将来拡張（キャラクター対話動画）
+## Phase 10: 未来扩展（角色对话视频）
 
 ### 概要
 
-現在の動画生成は**単一ナレーション**形式ですが、将来的に以下のような**キャラクター対話動画**に拡張可能な設計にします：
+当前视频生成是**单一解说**形式，但未来设计可扩展为**角色对话视频**：
 
-| 現在 | Phase 10 拡張後 |
+| 当前 | Phase 10 扩展后 |
 |------|----------------|
-| 単一ナレーター | 複数キャラクターの対話 |
-| 静的スライド + 音声 | キャラクター表示 + 対話演出 |
-| TTS: 1音声のみ | TTS: キャラクター別音声 |
+| 单一解说员 | 多个角色的对话 |
+| 静态幻灯片 + 音频 | 角色显示 + 对话演出 |
+| TTS: 仅1个音频 | TTS: 角色别音频 |
 
-### ユースケース例
-
-```
-[導入動画の例]
-
-Narrator:  「今日は新機能を紹介します」
-User:      「これは何ができるの？」
-AI Guide:  「簡単に説明しましょう」
-```
+### 用例示例
 
 ```
-[技術解説動画の例]
+[介绍视频示例]
 
-Interviewer: 「このアーキテクチャの特徴は？」
-Expert:      「スケーラビリティを重視しています」
-Reviewer:    「具体的な数値を見てみましょう」
+Narrator:  「今天介绍新功能」
+User:      「这个能做什么？」
+AI Guide:  「让我简单说明一下」
 ```
 
-### 拡張ポイント（設計のみ）
+```
+[技术解说视频示例]
 
-#### 1. Character 定義（`schemas/character.schema.json`）
+Interviewer: 「这个架构的特点是什么？」
+Expert:      「我们重视可扩展性」
+Reviewer:    「让我们看看具体数字」
+```
 
-**既に実装済み**のスキーマで、以下を定義：
+### 扩展点（仅设计）
+
+#### 1. Character 定义（`schemas/character.schema.json`）
+
+**已实现**的 schema 定义:
 
 ```json
 {
   "character_id": "narrator",
-  "name": "ナレーター",
+  "name": "解说员",
   "role": "narrator",
   "voice": {
     "provider": "google-cloud-tts",
@@ -833,15 +833,15 @@ Reviewer:    「具体的な数値を見てみましょう」
 }
 ```
 
-**拡張項目**:
-- `voice`: TTS設定（プロバイダー、音声ID、スピード、スタイル）
-- `appearance`: ビジュアル設定（アバター、アイコン、位置）
-- `dialogue_style`: 対話演出（吹き出しスタイル、アニメーション）
-- `personality`: 性格特性（将来のAI対話生成用）
+**扩展项目**:
+- `voice`: TTS 设置（提供商、音色 ID、速度、风格）
+- `appearance`: 视觉设置（头像、图标、位置）
+- `dialogue_style`: 对话演出（气泡样式、动画）
+- `personality`: 性格特征（未来 AI 对话生成用）
 
-#### 2. Dialogue シーン定義（将来仕様）
+#### 2. Dialogue 场景定义（未来规格）
 
-**dialogue.json** の構造（実装は Phase 10 以降）:
+**dialogue.json** 的结构（Phase 10 以后实现）:
 
 ```json
 {
@@ -852,21 +852,21 @@ Reviewer:    「具体的な数値を見てみましょう」
     "exchanges": [
       {
         "character_id": "user",
-        "text": "この機能は何ができますか？",
+        "text": "这个功能能做什么？",
         "timing_ms": 0,
         "duration_ms": 3000,
         "emotion": "curious"
       },
       {
         "character_id": "guide",
-        "text": "簡単に説明します。まず...",
+        "text": "让我简单说明一下。首先...",
         "timing_ms": 3500,
         "duration_ms": 5000,
         "emotion": "friendly"
       },
       {
         "character_id": "narrator",
-        "text": "実際の画面を見てみましょう",
+        "text": "让我们看看实际画面",
         "timing_ms": 9000,
         "duration_ms": 3000,
         "emotion": "neutral"
@@ -891,23 +891,23 @@ Reviewer:    「具体的な数値を見てみましょう」
 }
 ```
 
-#### 3. TTS 連携の拡張方法
+#### 3. TTS 联动的扩展方法
 
-**現在（単一音声）**:
+**当前（单一音频）**:
 ```javascript
-// 1つの音声ファイルを再生
+// 播放一个音频文件
 <Audio src={staticFile('narration.wav')} />
 ```
 
-**Phase 10 拡張後（キャラクター別音声）**:
+**Phase 10 扩展后（角色别音频）**:
 ```javascript
-// キャラクター別にTTS呼び出し
+// 按角色调用 TTS
 async function generateDialogue(exchanges, characters) {
   const audioFiles = await Promise.all(
     exchanges.map(async (exchange) => {
       const character = characters.find(c => c.character_id === exchange.character_id);
 
-      // TTS APIを呼び出し（プロバイダーに応じて分岐）
+      // 调用 TTS API（根据提供商分支）
       const audioBuffer = await ttsProvider.synthesize({
         text: exchange.text,
         voiceId: character.voice.voice_id,
@@ -928,21 +928,21 @@ async function generateDialogue(exchanges, characters) {
 }
 ```
 
-**TTS プロバイダー連携**:
+**TTS 提供商联动**:
 
-| プロバイダー | API 呼び出し例 |
-|-------------|---------------|
+| 提供商 | API 调用示例 |
+|-------|-------------|
 | Google Cloud TTS | `textToSpeech.synthesizeSpeech({ voice, input })` |
 | ElevenLabs | `elevenlabs.textToSpeech({ voiceId, text })` |
 | OpenAI TTS | `openai.audio.speech.create({ voice, input })` |
 | AWS Polly | `polly.synthesizeSpeech({ VoiceId, Text })` |
 
-#### 4. ビジュアル演出の拡張
+#### 4. 视觉演出的扩展
 
-**キャラクター表示（Remotion コンポーネント例）**:
+**角色显示（Remotion 组件示例）**:
 
 ```tsx
-// 将来実装: DialogueScene.tsx
+// 未来实现: DialogueScene.tsx
 const DialogueScene: React.FC<{
   exchanges: Exchange[];
   characters: Character[];
@@ -954,18 +954,18 @@ const DialogueScene: React.FC<{
       {/* 背景 */}
       <Background />
 
-      {/* キャラクター表示 */}
+      {/* 角色显示 */}
       <CharacterDisplay
         characters={characters}
         activeCharacterId={getCurrentSpeaker(frame, exchanges)}
       />
 
-      {/* 対話テキスト（吹き出し） */}
+      {/* 对话文本（气泡） */}
       <DialogueBubble
         exchange={getCurrentExchange(frame, exchanges)}
       />
 
-      {/* 音声再生 */}
+      {/* 音频播放 */}
       {exchanges.map((ex, i) => (
         <Sequence from={ex.timing_ms / 33.33} durationInFrames={ex.duration_ms / 33.33}>
           <Audio src={staticFile(`dialogue/${ex.character_id}_${i}.wav`)} />
@@ -976,84 +976,84 @@ const DialogueScene: React.FC<{
 };
 ```
 
-**アニメーション例**:
-- 話している キャラクターをハイライト
-- 話していないキャラクターは半透明
-- 吹き出しがフェードイン/アウト
-- キャラクターアバターが口パク（オプション）
+**动画示例**:
+- 正在说话的角色高亮
+- 不在说话的角色半透明
+- 气泡淡入/淡出
+- 角色头像口型动画（可选）
 
-#### 5. 実装ロードマップ（Phase 10 以降）
+#### 5. 实现路线图（Phase 10 以后）
 
-| Phase | 実装内容 | 優先度 |
+| Phase | 实现内容 | 优先级 |
 |-------|---------|--------|
-| **Phase 10.1** | `character.schema.json` 実装 | ✅ 完了 |
-| **Phase 10.2** | TTS プロバイダー連携（Google Cloud TTS） | High |
-| **Phase 10.3** | `DialogueScene` Remotion コンポーネント | High |
-| **Phase 10.4** | `dialogue.json` スキーマ定義 | Medium |
-| **Phase 10.5** | キャラクター表示 UI（アバター/アイコン） | Medium |
-| **Phase 10.6** | 吹き出しアニメーション | Low |
-| **Phase 10.7** | 複数 TTS プロバイダー対応（ElevenLabs, OpenAI） | Low |
-| **Phase 10.8** | AI 対話生成（personality に基づく自動生成） | Future |
+| **Phase 10.1** | `character.schema.json` 实现 | ✅ 完成 |
+| **Phase 10.2** | TTS 提供商联动（Google Cloud TTS） | High |
+| **Phase 10.3** | `DialogueScene` Remotion 组件 | High |
+| **Phase 10.4** | `dialogue.json` schema 定义 | Medium |
+| **Phase 10.5** | 角色显示 UI（头像/图标） | Medium |
+| **Phase 10.6** | 气泡动画 | Low |
+| **Phase 10.7** | 多 TTS 提供商支持（ElevenLabs, OpenAI） | Low |
+| **Phase 10.8** | AI 对话生成（基于 personality 自动生成） | Future |
 
-#### 6. 互換性の維持
+#### 6. 兼容性的维持
 
-拡張は**後方互換性を保つ**設計：
+扩展设计**保持向后兼容**:
 
 ```
-既存の video-script.json（単一ナレーション）
-    ↓ そのまま動作
-新しい dialogue.json（対話形式）
-    ↓ 新しいシーンタイプとして追加
-両方が共存可能
+现有的 video-script.json（单一解说）
+    ↓ 正常工作
+新的 dialogue.json（对话形式）
+    ↓ 作为新场景类型添加
+两者可共存
 ```
 
-**scene.schema.json への追加**:
+**scene.schema.json 的添加**:
 ```json
 {
   "type": {
     "enum": [
       "intro",
       "ui-demo",
-      "dialogue",  // ← Phase 10 で追加
+      "dialogue",  // ← Phase 10 添加
       "..."
     ]
   }
 }
 ```
 
-#### 7. 参考実装
+#### 7. 参考实现
 
-既存プロジェクトの例:
-- **Manim Community**: キャラクターアニメーション
-- **Remotion Templates**: 対話形式テンプレート
-- **Google Cloud TTS**: 多言語・多音声対応
-
----
-
-### Phase 10 実装時のチェックリスト
-
-将来実装する際は以下を確認：
-
-- [ ] `character.schema.json` が有効（既に Phase 10.1 で完了）
-- [ ] TTS API キーが設定済み（Google Cloud TTS 推奨）
-- [ ] `dialogue.json` スキーマを定義
-- [ ] `DialogueScene.tsx` Remotion コンポーネント実装
-- [ ] キャラクター音声ファイルの命名規則統一
-- [ ] 吹き出しスタイルのブランド一貫性
-- [ ] 既存シーン（intro, ui-demo 等）との共存テスト
-- [ ] パフォーマンス: 複数音声の同時レンダリング最適化
+现有项目示例:
+- **Manim Community**: 角色动画
+- **Remotion Templates**: 对话形式模板
+- **Google Cloud TTS**: 多语言・多音色支持
 
 ---
 
-### まとめ（Phase 10）
+### Phase 10 实现时的检查清单
 
-**現状**: 単一ナレーション動画に対応
-**Phase 10 設計**: キャラクター対話動画への拡張ポイントを明確化
-**実装済み**: `character.schema.json`（キャラクター定義）
-**未実装**: TTS連携、対話シーン、ビジュアル演出（将来実装）
+未来实现时请确认:
 
-この設計により、将来的に以下が可能になります：
-- 複数キャラクターの対話形式動画
-- キャラクター別の音声スタイル
-- 視覚的なキャラクター表示と対話演出
-- AI による対話生成（personality 設定に基づく）
+- [ ] `character.schema.json` 有效（已在 Phase 10.1 完成）
+- [ ] TTS API 密钥已设置（推荐 Google Cloud TTS）
+- [ ] 定义 `dialogue.json` schema
+- [ ] 实现 `DialogueScene.tsx` Remotion 组件
+- [ ] 统一角色音频文件命名规范
+- [ ] 气泡样式的品牌一致性
+- [ ] 与现有场景（intro, ui-demo 等）的共存测试
+- [ ] 性能: 多音频同时渲染优化
+
+---
+
+### 总结（Phase 10）
+
+**现状**: 支持单一解说视频
+**Phase 10 设计**: 明确角色对话视频的扩展点
+**已实现**: `character.schema.json`（角色定义）
+**未实现**: TTS 联动、对话场景、视觉演出（未来实现）
+
+通过此设计，未来可实现:
+- 多角色对话形式视频
+- 角色别音频风格
+- 视觉角色显示与对话演出
+- AI 对话生成（基于 personality 设置）

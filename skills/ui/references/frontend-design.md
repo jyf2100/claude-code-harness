@@ -1,34 +1,34 @@
 ---
 name: frontend-design-summary
-description: "frontend-design の設計思考と美的指針の要約"
+description: "frontend-design 的设计思考和美学方针摘要"
 ---
 
 # Frontend Design Summary
 
-UI の独自性と美的完成度を高めるための設計指針。
-明示要求がある場合のみ適用する。
+提高 UI 独特性和美学完成度的设计方针。
+仅在有明显要求时应用。
 
-## 設計思考（最初に決める）
-- Purpose: 誰の何を解決する UI か
-- Tone: 大胆な方向性を 1 つ選ぶ（例: minimal / brutalist / editorial / playful）
-- Constraints: 技術制約と a11y
-- Differentiation: その UI の「記憶に残る 1 点」を決める
+## 设计思考（首先决定）
+- Purpose：为谁解决什么问题的 UI
+- Tone：选择 1 个大胆的方向（例：minimal / brutalist / editorial / playful）
+- Constraints：技术约束和 a11y
+- Differentiation：决定该 UI「令人印象深刻的 1 点」
 
-## 実装の品質基準
-- Production-grade で実際に動く
-- 視覚的に印象が強く、一貫した方向性
-- 細部の詰め（余白、階層、状態）
+## 实现的质量标准
+- 实际运行的 Production-grade
+- 视觉印象强烈，方向一致
+- 细节完善（留白、层次、状态）
 
-## デザイン指針
-- Typography: 目を引く display と読みやすい body のペア
-- Color: 主役色と鋭いアクセントを明確に
-- Motion: 大きな 1 回の演出に集中（分散しすぎない）
-- Space: 余白 or 高密度を意図的に選ぶ
-- Background: 雰囲気のあるレイヤーや質感（必要なら）
+## 设计方针
+- Typography：引人注目的 display 和易读的 body 配对
+- Color：明确主角色和鲜明强调色
+- Motion：集中在 1 次大型演出（不过度分散）
+- Space：有意选择留白或高密度
+- Background：有氛围的层次或质感（如需要）
 
 ## 注意
-- 方向性は「意図の強さ」が重要。派手さの有無ではない。
-- 実装の複雑さはデザインの方向性に合わせる。
+- 方向重要的是「意图的强度」。不是华丽与否。
+- 实现复杂度配合设计方向。
 
 ## Source
 - external frontend-design skill (Anthropic)

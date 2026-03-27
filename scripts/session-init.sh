@@ -1,18 +1,18 @@
 #!/bin/bash
 # session-init.sh
-# SessionStart Hook: セッション開始時の初期化処理
+# SessionStart Hook: 会话开始时的初始化处理
 #
-# 機能:
-# 1. プラグインキャッシュの整合性チェックと同期
-# 2. Skills Gate の初期化
-# 3. Plans.md の状態表示
+# 功能:
+# 1. 插件缓存的完整性检查和同步
+# 2. Skills Gate 的初始化
+# 3. Plans.md 的状态显示
 #
-# 出力: JSON形式で hookSpecificOutput.additionalContext に情報を出力
-#       → Claude Code が system-reminder として表示
+# 输出: JSON格式输出到 hookSpecificOutput.additionalContext
+#       → Claude Code 作为 system-reminder 显示
 
 set -euo pipefail
 
-# スクリプトディレクトリを取得
+# 获取脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROGRESS_SNAPSHOT_LIB="${SCRIPT_DIR}/lib/progress-snapshot.sh"
 if [ -f "${PROGRESS_SNAPSHOT_LIB}" ]; then
@@ -20,11 +20,11 @@ if [ -f "${PROGRESS_SNAPSHOT_LIB}" ]; then
   source "${PROGRESS_SNAPSHOT_LIB}"
 fi
 
-# ===== バナー表示（stderr でターミナルに表示） =====
+# ===== 横幅显示（通过 stderr 在终端显示） =====
 VERSION=$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo "unknown")
 echo -e "\033[0;36m[claude-code-harness v${VERSION}]\033[0m Session initialized" >&2
 
-# ===== SIMPLE モード検出 =====
+# ===== SIMPLE 模式检测 =====
 SIMPLE_MODE="false"
 if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   # shellcheck source=./check-simple-mode.sh
@@ -35,10 +35,10 @@ if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   fi
 fi
 
-# ===== stdin から JSON 入力を読み取り =====
+# ===== 从 stdin 读取 JSON 输入 =====
 INPUT=""
 if [ -t 0 ]; then
-  : # stdin が TTY の場合は入力なし
+  : # stdin 为 TTY 时无输入
 else
   INPUT=$(cat 2>/dev/null || true)
 fi
@@ -53,26 +53,26 @@ if [ -n "$INPUT" ]; then
   fi
 fi
 
-# サブエージェント時は軽量初期化（早期 return）
-# - プラグインキャッシュ同期をスキップ
-# - Skills Gate 初期化をスキップ
-# - Plans.md チェックをスキップ
-# - テンプレート更新チェックをスキップ
-# - 新規ルールファイルチェックをスキップ
-# - 古いフック設定検出をスキップ
+# 子代理时采用轻量初始化（早期 return）
+# - 跳过插件缓存同步
+# - 跳过 Skills Gate 初始化
+# - 跳过 Plans.md 检查
+# - 跳过模板更新检查
+# - 跳过新规则文件检查
+# - 跳过旧钩子配置检测
 if [ "$AGENT_TYPE" = "subagent" ]; then
   cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"[subagent] 軽量初期化完了"}}
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"[subagent] 轻量初始化完成"}}
 EOF
   exit 0
 fi
 
-# ===== Hook 使用状況記録 =====
+# ===== Hook 使用状况记录 =====
 if [ -x "$SCRIPT_DIR/record-usage.js" ] && command -v node >/dev/null 2>&1; then
   node "$SCRIPT_DIR/record-usage.js" hook session-init >/dev/null 2>&1 &
 fi
 
-# 出力メッセージを蓄積する変数
+# 累积输出消息的变量
 OUTPUT=""
 
 add_line() {
@@ -87,14 +87,14 @@ count_matches() {
   printf '%s' "${count:-0}"
 }
 
-# ===== Step 1: プラグインキャッシュ同期 =====
+# ===== Step 1: 插件缓存同步 =====
 if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
-  # 同期処理は静かに実行
+  # 同步处理静默执行
   bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
 fi
 
-# ===== Step 1.5: Symlink 健全性チェック（Windows 互換） =====
-# Windows の git clone で symlink が壊れる問題を自動修復
+# ===== Step 1.5: Symlink 健全性检查（Windows 兼容） =====
+# 自动修复 Windows git clone 时 symlink 损坏的问题
 SYMLINK_INFO=""
 if [ -f "$SCRIPT_DIR/fix-symlinks.sh" ]; then
   FIX_RESULT=$(bash "$SCRIPT_DIR/fix-symlinks.sh" 2>/dev/null || echo '{"fixed":0}')
@@ -102,13 +102,13 @@ if [ -f "$SCRIPT_DIR/fix-symlinks.sh" ]; then
     SYMLINK_FIXED=$(echo "$FIX_RESULT" | jq -r '.fixed // 0' 2>/dev/null)
     if [ "$SYMLINK_FIXED" -gt 0 ] 2>/dev/null; then
       SYMLINK_DETAILS=$(echo "$FIX_RESULT" | jq -r '.details | join(", ")' 2>/dev/null)
-      SYMLINK_INFO="🔧 Symlink 自動修復: ${SYMLINK_FIXED} 件修復 (${SYMLINK_DETAILS})"
+      SYMLINK_INFO="🔧 Symlink 自动修复: 已修复 ${SYMLINK_FIXED} 项 (${SYMLINK_DETAILS})"
       echo -e "\033[1;33m[FIX]\033[0m Broken symlinks repaired: ${SYMLINK_FIXED} skills" >&2
     fi
   fi
 fi
 
-# ===== Step 2: Skills Gate 初期化 =====
+# ===== Step 2: Skills Gate 初始化 =====
 # Resolve to git repository root for consistency with other hooks
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
 STATE_DIR="${REPO_ROOT}/.claude/state"
@@ -117,7 +117,7 @@ SESSION_SKILLS_USED_FILE="${STATE_DIR}/session-skills-used.json"
 
 mkdir -p "$STATE_DIR"
 
-# session-skills-used.json をリセット（新セッション開始）
+# 重置 session-skills-used.json（新会话开始）
 echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
 
 RESUME_CONTEXT_FILE="${STATE_DIR}/memory-resume-context.md"
@@ -164,28 +164,28 @@ consume_memory_resume_context() {
   printf '%s' "$out"
 }
 
-# SSOT 同期フラグをクリア（新セッション開始時）
-# このフラグは /sync-ssot-from-memory 実行時に作成され、
-# Plans.md クリーンアップ前の SSOT 同期確認に使用される
+# 清除 SSOT 同步标志（新会话开始时）
+# 此标志在执行 /sync-ssot-from-memory 时创建，
+# 用于 Plans.md 清理前的 SSOT 同步确认
 rm -f "${STATE_DIR}/.ssot-synced-this-session" 2>/dev/null || true
 
-# work 警告フラグをクリア（新セッション開始時）
-# このフラグは userprompt-inject-policy.sh で一度だけ警告するために使用される
-# 後方互換: 両方のフラグ名をクリア
+# 清除 work 警告标志（新会话开始时）
+# 此标志用于在 userprompt-inject-policy.sh 中仅警告一次
+# 向后兼容: 清除两个标志名
 rm -f "${STATE_DIR}/.work-review-warned" 2>/dev/null || true
 rm -f "${STATE_DIR}/.ultrawork-review-warned" 2>/dev/null || true
 
-# ===== Step 2.5: Harness セッション初期化 & CC session_id マッピング =====
+# ===== Step 2.5: Harness 会话初始化 & CC session_id 映射 =====
 SESSION_FILE="${STATE_DIR}/session.json"
 SESSION_MAP_FILE="${STATE_DIR}/session-map.json"
 ARCHIVE_DIR="${STATE_DIR}/sessions"
 mkdir -p "$ARCHIVE_DIR"
 
-# 新規セッション用の Harness session_id を生成
+# 为新会话生成 Harness session_id
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 HARNESS_SESSION_ID="session-$(date +%s)"
 
-# session.json を初期化（存在しない場合、または stopped 状態の場合）
+# 初始化 session.json（不存在时或处于 stopped 状态时）
 INIT_NEW_SESSION="false"
 if [ ! -f "$SESSION_FILE" ]; then
   INIT_NEW_SESSION="true"
@@ -209,16 +209,16 @@ if [ "$INIT_NEW_SESSION" = "true" ]; then
 }
 SESSEOF
 
-  # イベントログを初期化
+  # 初始化事件日志
   echo "{\"type\":\"session.start\",\"ts\":\"$NOW\",\"state\":\"initialized\",\"data\":{\"cc_session_id\":\"$CC_SESSION_ID\"}}" > "${STATE_DIR}/session.events.jsonl"
 else
-  # 既存セッションの session_id を取得
+  # 获取现有会话的 session_id
   if command -v jq >/dev/null 2>&1; then
     HARNESS_SESSION_ID="$(jq -r '.session_id // empty' "$SESSION_FILE" 2>/dev/null)"
   fi
 fi
 
-# CC session_id と Harness session_id のマッピングを保存
+# 保存 CC session_id 和 Harness session_id 的映射
 if [ -n "$CC_SESSION_ID" ] && [ -n "$HARNESS_SESSION_ID" ]; then
   if command -v jq >/dev/null 2>&1; then
     if [ -f "$SESSION_MAP_FILE" ]; then
@@ -231,13 +231,13 @@ if [ -n "$CC_SESSION_ID" ] && [ -n "$HARNESS_SESSION_ID" ]; then
   fi
 fi
 
-# ===== Step 2.6: セッション間通信用の登録 =====
-# active.json に自分を登録（他セッションから認識可能にする）
+# ===== Step 2.6: 会话间通信的注册 =====
+# 将自己注册到 active.json（使其他会话可以识别）
 if [ -f "$SCRIPT_DIR/session-register.sh" ]; then
   bash "$SCRIPT_DIR/session-register.sh" "$HARNESS_SESSION_ID" 2>/dev/null || true
 fi
 
-# skills-config.json の読み込みと表示
+# 读取和显示 skills-config.json
 SKILLS_INFO=""
 if [ -f "$SKILLS_CONFIG_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
@@ -245,13 +245,13 @@ if [ -f "$SKILLS_CONFIG_FILE" ]; then
     SKILLS_LIST=$(jq -r '.skills // [] | join(", ")' "$SKILLS_CONFIG_FILE" 2>/dev/null)
 
     if [ "$SKILLS_ENABLED" = "true" ] && [ -n "$SKILLS_LIST" ]; then
-      SKILLS_INFO="🎯 Skills Gate: 有効 (${SKILLS_LIST})"
+      SKILLS_INFO="🎯 Skills Gate: 已启用 (${SKILLS_LIST})"
     fi
   fi
 fi
 
-# ===== Step 3: Plans.md チェック =====
-# plansDirectory 設定を考慮
+# ===== Step 3: Plans.md 检查 =====
+# 考虑 plansDirectory 设置
 PLANS_PATH="Plans.md"
 if [ -f "${SCRIPT_DIR}/config-utils.sh" ]; then
   source "${SCRIPT_DIR}/config-utils.sh"
@@ -263,9 +263,9 @@ if [ -f "$PLANS_PATH" ]; then
   wip_count="$(count_matches "cc:WIP\\|pm:依頼中\\|cursor:依頼中" "$PLANS_PATH")"
   todo_count="$(count_matches "cc:TODO" "$PLANS_PATH")"
 
-  PLANS_INFO="📄 Plans.md: 進行中 ${wip_count} / 未着手 ${todo_count}"
+  PLANS_INFO="📄 Plans.md: 进行中 ${wip_count} / 未开始 ${todo_count}"
 else
-  PLANS_INFO="📄 Plans.md: 未検出"
+  PLANS_INFO="📄 Plans.md: 未检测到"
 fi
 
 SNAPSHOT_INFO=""
@@ -273,17 +273,17 @@ if declare -F progress_snapshot_summary >/dev/null 2>&1; then
   SNAPSHOT_INFO="$(progress_snapshot_summary "${STATE_DIR}" 2>/dev/null || true)"
 fi
 
-# ===== Step 4: テンプレート更新チェック =====
+# ===== Step 4: 模板更新检查 =====
 TEMPLATE_INFO=""
 TEMPLATE_TRACKER="$SCRIPT_DIR/template-tracker.sh"
 
 if [ -f "$TEMPLATE_TRACKER" ] && [ -f "$SCRIPT_DIR/../templates/template-registry.json" ]; then
-  # generated-files.json がない場合は初期化
+  # 如果 generated-files.json 不存在则初始化
   if [ ! -f "${STATE_DIR}/generated-files.json" ]; then
     bash "$TEMPLATE_TRACKER" init >/dev/null 2>&1 || true
-    TEMPLATE_INFO="📦 テンプレート追跡: 初期化完了"
+    TEMPLATE_INFO="📦 模板追踪: 初始化完成"
   else
-    # 更新チェック（JSON出力をパース）
+    # 更新检查（解析 JSON 输出）
     CHECK_RESULT=$(bash "$TEMPLATE_TRACKER" check 2>/dev/null || echo '{"needsCheck": false}')
 
     if command -v jq >/dev/null 2>&1; then
@@ -294,34 +294,34 @@ if [ -f "$TEMPLATE_TRACKER" ] && [ -f "$SCRIPT_DIR/../templates/template-registr
       if [ "$NEEDS_CHECK" = "true" ]; then
         parts=()
 
-        # 更新が必要なファイル
+        # 需要更新的文件
         if [ "$UPDATES_COUNT" -gt 0 ]; then
           LOCALIZED_COUNT=$(echo "$CHECK_RESULT" | jq '[.updates[] | select(.localized == true)] | length')
           OVERWRITE_COUNT=$((UPDATES_COUNT - LOCALIZED_COUNT))
 
           if [ "$OVERWRITE_COUNT" -gt 0 ]; then
-            parts+=("更新可: ${OVERWRITE_COUNT}")
+            parts+=("可更新: ${OVERWRITE_COUNT}")
           fi
           if [ "$LOCALIZED_COUNT" -gt 0 ]; then
-            parts+=("マージ要: ${LOCALIZED_COUNT}")
+            parts+=("需合并: ${LOCALIZED_COUNT}")
           fi
         fi
 
-        # 新規インストールが必要なファイル
+        # 需要新安装的文件
         if [ "$INSTALLS_COUNT" -gt 0 ]; then
-          parts+=("新規追加: ${INSTALLS_COUNT}")
+          parts+=("新增: ${INSTALLS_COUNT}")
         fi
 
         if [ ${#parts[@]} -gt 0 ]; then
-          TEMPLATE_INFO="⚠️ テンプレート更新: $(IFS=', '; echo "${parts[*]}") → \`/harness-update\` で確認"
+          TEMPLATE_INFO="⚠️ 模板更新: $(IFS=', '; echo "${parts[*]}") → 使用 \`/harness-update\` 确认"
         fi
       fi
     fi
   fi
 fi
 
-# ===== Step 5: 新規追加ルールファイルのチェック =====
-# 品質保護ルール（v2.5.30+）が未導入の場合に通知
+# ===== Step 5: 新增规则文件检查 =====
+# 当质量保护规则（v2.5.30+）未安装时进行通知
 MISSING_RULES_INFO=""
 RULES_DIR=".claude/rules"
 QUALITY_RULES=("test-quality.md" "implementation-quality.md")
@@ -335,26 +335,26 @@ if [ -d "$RULES_DIR" ]; then
   done
 
   if [ ${#MISSING_RULES[@]} -gt 0 ]; then
-    MISSING_RULES_INFO="⚠️ 品質保護ルール未導入: ${MISSING_RULES[*]} → \`/harness-update\` で追加可能"
+    MISSING_RULES_INFO="⚠️ 质量保护规则未安装: ${MISSING_RULES[*]} → 可通过 \`/harness-update\` 添加"
   fi
 elif [ -f ".claude-code-harness-version" ]; then
-  # ハーネス導入済みだが rules ディレクトリがない場合
-  MISSING_RULES_INFO="⚠️ 品質保護ルール未導入 → \`/harness-update\` で追加可能"
+  # 已安装 Harness 但 rules 目录不存在的情况
+  MISSING_RULES_INFO="⚠️ 质量保护规则未安装 → 可通过 \`/harness-update\` 添加"
 fi
 
-# ===== Step 6: 古いフック設定の検出 =====
-# コマンドパスに "claude-code-harness" を含むフックのみ検出（ユーザー独自フックは除外）
+# ===== Step 6: 旧版钩子配置检测 =====
+# 仅检测命令路径包含 "claude-code-harness" 的钩子（排除用户自定义钩子）
 OLD_HOOKS_INFO=""
 SETTINGS_FILE=".claude/settings.json"
 
 if [ -f "$SETTINGS_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
-    # プラグインが使用しているイベントタイプ
+    # 插件使用的事件类型
     PLUGIN_EVENTS=("PreToolUse" "SessionStart" "UserPromptSubmit" "PermissionRequest")
     OLD_HARNESS_EVENTS=()
 
-    for event in "${PLUGIN_EVENTS[@]}"; do
-      # イベントが存在し、かつコマンドに "claude-code-harness" が含まれる場合のみ
+    for event in "${PLUGIN_EVENTS[@]}"; then
+      # 仅当事件存在且命令包含 "claude-code-harness" 时
       if jq -e ".hooks.${event}" "$SETTINGS_FILE" >/dev/null 2>&1; then
         COMMANDS=$(jq -r ".hooks.${event}[]?.hooks[]?.command // .hooks.${event}[]?.command // empty" "$SETTINGS_FILE" 2>/dev/null)
         if echo "$COMMANDS" | grep -q "claude-code-harness"; then
@@ -364,18 +364,18 @@ if [ -f "$SETTINGS_FILE" ]; then
     done
 
     if [ ${#OLD_HARNESS_EVENTS[@]} -gt 0 ]; then
-      OLD_HOOKS_INFO="⚠️ 古いハーネスフック設定を検出: ${OLD_HARNESS_EVENTS[*]} → \`/harness-update\` で削除を推奨"
+      OLD_HOOKS_INFO="⚠️ 检测到旧版 Harness 钩子配置: ${OLD_HARNESS_EVENTS[*]} → 建议通过 \`/harness-update\` 删除"
     fi
   fi
 fi
 
-# ===== 出力メッセージの構築 =====
-add_line "# [claude-code-harness] セッション初期化"
+# ===== 构建输出消息 =====
+add_line "# [claude-code-harness] 会话初始化"
 add_line ""
 
-# SIMPLE モード警告（additionalContext にも出力 — check-simple-mode.sh の警告文を再利用）
+# SIMPLE 模式警告（也输出到 additionalContext — 复用 check-simple-mode.sh 的警告文本）
 if [ "$SIMPLE_MODE" = "true" ]; then
-  add_line "⚠️ **CLAUDE_CODE_SIMPLE モード検出** (CC v2.1.50+)"
+  add_line "⚠️ **CLAUDE_CODE_SIMPLE 模式检测** (CC v2.1.50+)"
   while IFS= read -r warning_line; do
     add_line "$warning_line"
   done <<< "$(simple_mode_warning ja)"
@@ -423,28 +423,28 @@ if [ -n "$SYMLINK_INFO" ]; then
 fi
 
 add_line ""
-add_line "## マーカー凡例"
-add_line "| マーカー | 状態 | 説明 |"
+add_line "## 标记图例"
+add_line "| 标记 | 状态 | 说明 |"
 add_line "|---------|------|------|"
-add_line "| \`cc:TODO\` | 未着手 | Impl（Claude Code）が実行予定 |"
-add_line "| \`cc:WIP\` | 作業中 | Impl が実装中 |"
-add_line "| \`cc:blocked\` | ブロック中 | 依存タスク待ち |"
-add_line "| \`pm:依頼中\` | PM から依頼 | 2-Agent 運用時 |"
+add_line "| \`cc:TODO\` | 未开始 | Impl（Claude Code）计划执行 |"
+add_line "| \`cc:WIP\` | 进行中 | Impl 正在实现 |"
+add_line "| \`cc:blocked\` | 阻塞中 | 等待依赖任务 |"
+add_line "| \`pm:依頼中\` | PM 请求 | 2-Agent 运作时 |"
 add_line ""
-add_line "> **互換**: \`cursor:依頼中\` / \`cursor:確認済\` は \`pm:*\` と同義として扱います。"
+add_line "> **兼容**: \`cursor:依頼中\` / \`cursor:確認済\` 与 \`pm:*\` 同义。"
 
-# ===== JSON 出力 =====
-# Claude Code の SessionStart hook は JSON 形式の hookSpecificOutput を受け付ける
-# additionalContext の内容が system-reminder として表示される
+# ===== JSON 输出 =====
+# Claude Code 的 SessionStart hook 接受 JSON 格式的 hookSpecificOutput
+# additionalContext 的内容作为 system-reminder 显示
 
-# エスケープ処理（JSON用）
-# 改行は \n、ダブルクォートは \"、バックスラッシュは \\
+# 转义处理（JSON用）
+# 换行为 \n，双引号为 \"，反斜杠为 \\
 escape_json() {
   local str="$1"
-  str="${str//\\/\\\\}"      # バックスラッシュ
-  str="${str//\"/\\\"}"      # ダブルクォート
-  str="${str//$'\n'/\\n}"    # 改行
-  str="${str//$'\t'/\\t}"    # タブ
+  str="${str//\\/\\\\}"      # 反斜杠
+  str="${str//\"/\\\"}"      # 双引号
+  str="${str//$'\n'/\\n}"    # 换行
+  str="${str//$'\t'/\\t}"    # 制表符
   echo "$str"
 }
 

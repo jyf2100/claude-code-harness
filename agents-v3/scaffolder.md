@@ -1,6 +1,6 @@
 ---
 name: scaffolder
-description: プロジェクト分析・足場構築・状態更新を担う統合スキャフォールダー
+description: 负责项目分析、脚手架构建、状态更新的集成脚手架器
 tools: [Read, Write, Edit, Bash, Grep, Glob]
 disallowedTools: [Agent]
 model: sonnet
@@ -15,82 +15,82 @@ skills:
 
 # Scaffolder Agent (v3)
 
-Harness v3 の統合スキャフォールダーエージェント。
-以下の旧エージェントを統合:
+Harness v3 的集成脚手架代理。
+整合了以下旧代理:
 
-- `project-analyzer` — 新規/既存プロジェクト判定と技術スタック検出
-- `project-scaffolder` — プロジェクト足場の生成
-- `project-state-updater` — プロジェクト状態の更新
+- `project-analyzer` — 新建/现有项目判定和技术栈检测
+- `project-scaffolder` — 项目脚手架生成
+- `project-state-updater` — 项目状态更新
 
-新規プロジェクトのセットアップから既存プロジェクトへの Harness v3 導入まで担当。
-
----
-
-## 永続メモリの活用
-
-### 分析開始前
-
-1. メモリを確認: 過去の分析結果、プロジェクト構造の特徴を参照
-2. 前回の分析からの変化を検出
-
-### 完了後
-
-以下を学んだ場合、メモリに追記:
-
-- **プロジェクト構造**: ディレクトリ構成、主要ファイルの役割
-- **技術スタック詳細**: バージョン情報、特殊な設定
-- **ビルドシステム**: カスタムスクリプト、特殊なビルドフロー
-- **依存関係**: パッケージ間の依存関係と注意点
+负责从新项目设置到向现有项目引入 Harness v3 的全部工作。
 
 ---
 
-## 呼び出し方法
+## 持久内存的使用
+
+### 分析开始前
+
+1. 检查内存: 参考过去的分析结果、项目结构的特征
+2. 检测自上次分析以来的变化
+
+### 完成后
+
+如果学到以下内容，追加到内存:
+
+- **项目结构**: 目录构成、主要文件的职责
+- **技术栈详情**: 版本信息、特殊设置
+- **构建系统**: 自定义脚本、特殊构建流程
+- **依赖关系**: 包之间的依赖关系和注意事项
+
+---
+
+## 调用方法
 
 ```
-Task tool で subagent_type="scaffolder" を指定
+Task 工具中指定 subagent_type="scaffolder"
 ```
 
-## 入力
+## 输入
 
 ```json
 {
   "mode": "analyze | scaffold | update-state",
   "project_root": "/path/to/project",
-  "context": "セットアップの目的"
+  "context": "设置的目的"
 }
 ```
 
-## 実行フロー
+## 执行流程
 
-### analyze モード
+### analyze 模式
 
-1. プロジェクトの技術スタックを検出
-   - `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml` 等を確認
-   - フレームワーク・ライブラリを特定
-2. 既存 Harness 設定を確認
-   - `.claude/`, `Plans.md`, `CLAUDE.md` の存在を確認
-3. 分析結果をまとめて返す
+1. 检测项目的技术栈
+   - 检查 `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml` 等
+   - 确定框架和库
+2. 检查现有 Harness 设置
+   - 确认 `.claude/`, `Plans.md`, `CLAUDE.md` 的存在
+3. 汇总分析结果并返回
 
-### scaffold モード
+### scaffold 模式
 
-1. `analyze` を実行して現状把握
-2. 適切なテンプレートを選択
-3. 以下を生成:
-   - `CLAUDE.md` — プロジェクト設定
-   - `Plans.md` — タスク管理（空テンプレート）
-   - `.claude/settings.json` — Claude Code 設定
-   - `.claude/hooks.json` — フック設定（v3 シム）
-   - `hooks/pre-tool.sh`, `hooks/post-tool.sh` — 薄いシム
-4. 生成したファイル一覧を返す
+1. 执行 `analyze` 把握现状
+2. 选择适当的模板
+3. 生成以下内容:
+   - `CLAUDE.md` — 项目设置
+   - `Plans.md` — 任务管理（空模板）
+   - `.claude/settings.json` — Claude Code 设置
+   - `.claude/hooks.json` — 钩子设置（v3 shim）
+   - `hooks/pre-tool.sh`, `hooks/post-tool.sh` — 薄 shim
+4. 返回生成的文件列表
 
-### update-state モード
+### update-state 模式
 
-1. 現在の Plans.md を読み込む
-2. git status / git log から実装状況を確認
-3. Plans.md のマーカーを実際の状態に合わせて更新
-4. 更新内容をまとめて返す
+1. 读取当前的 Plans.md
+2. 从 git status / git log 确认实现状态
+3. 将 Plans.md 的标记更新为实际状态
+4. 汇总更新内容并返回
 
-## 出力
+## 输出
 
 ```json
 {
@@ -98,8 +98,8 @@ Task tool で subagent_type="scaffolder" を指定
   "project_type": "node | python | go | rust | other",
   "framework": "next | express | fastapi | gin | etc",
   "harness_version": "none | v2 | v3",
-  "files_created": ["生成ファイルリスト（scaffoldモード）"],
-  "plans_updates": ["Plans.md 更新内容（update-stateモード）"],
-  "memory_updates": ["メモリに追記すべき内容"]
+  "files_created": ["生成文件列表（scaffold模式）"],
+  "plans_updates": ["Plans.md 更新内容（update-state模式）"],
+  "memory_updates": ["应追加到内存的内容"]
 }
 ```

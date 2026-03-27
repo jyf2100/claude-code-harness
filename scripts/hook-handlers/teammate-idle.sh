@@ -1,7 +1,7 @@
 #!/bin/bash
 # teammate-idle.sh
-# TeammateIdle フックハンドラ
-# Teammate がアイドル状態になった時にタイムラインに記録する
+# TeammateIdle 钩子处理器
+# 当 Teammate 进入空闲状态时记录到时间线
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
@@ -12,26 +12,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
-
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# タイムラインファイル
+# 时间线文件
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 TIMELINE_FILE="${STATE_DIR}/breezing-timeline.jsonl"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
-
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行)
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -46,19 +44,19 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
-  echo '{"decision":"approve","reason":"TeammateIdle: no payload"}'
+  echo '{"decision":"approve","reason":"TeammateIdle: 无载荷"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 TEAMMATE_NAME=""
 TEAM_NAME=""
 AGENT_ID=""
@@ -101,7 +99,7 @@ except:
   STOP_REASON="$(echo "${_parsed}" | sed -n '6p')"
 fi
 
-# === 重複抑制（同一 teammate の 5 秒以内の idle をスキップ） ===
+# === 重复抑制（跳过同一 teammate 5 秒内的重复 idle） ===
 ensure_state_dir
 
 DEDUP_KEY="${TEAMMATE_NAME:-${AGENT_ID}}"
@@ -139,7 +137,7 @@ except:
   fi
 fi
 
-# === タイムライン記録（jq -nc で安全な JSON 構築） ===
+# === 时间线记录（使用 jq -nc 安全构建 JSON） ===
 TS="$(get_timestamp)"
 
 if command -v jq >/dev/null 2>&1; then
@@ -152,7 +150,7 @@ if command -v jq >/dev/null 2>&1; then
     --arg timestamp "${TS}" \
     '{event:$event, teammate:$teammate, team:$team, agent_id:$agent_id, agent_type:$agent_type, timestamp:$timestamp}')"
 else
-  # フォールバック: python3 で安全にエスケープ
+  # 回退：使用 python3 安全转义
   log_entry="$(python3 -c "
 import json, sys
 print(json.dumps({
@@ -171,7 +169,7 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${TIMELINE_FILE}"
 fi
 
-# === レスポンス ===
+# === 响应 ===
 if [ "${HOOK_CONTINUE}" = "false" ] || [ -n "${STOP_REASON}" ]; then
   FINAL_STOP_REASON="${STOP_REASON:-TeammateIdle requested stop}"
   if command -v jq >/dev/null 2>&1; then

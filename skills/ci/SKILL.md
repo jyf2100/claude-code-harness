@@ -1,196 +1,196 @@
 ---
 name: ci
-description: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
+description: "CI 变红了就叫我。流水线消防队，出动。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 description-en: "CI red? Call us. Pipeline fire brigade deploys. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
-description-ja: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
+description-zh: "CI 变红了就叫我。流水线消防队，出动。触发短语：CI 失败、构建错误、测试失败、流水线问题。不用于：本地构建、标准实现工作、审查、设置。"
 allowed-tools: ["Read", "Grep", "Bash", "Task"]
 user-invocable: false
 context: fork
 argument-hint: "[analyze|fix|run]"
 ---
 
-# CI/CD Skills
+# CI/CD 技能
 
-CI/CD パイプラインに関する問題を解決するスキル群です。
-
----
-
-## 発動条件
-
-- 「CIが落ちた」「GitHub Actionsが失敗」
-- 「ビルドエラー」「テストが通らない」
-- 「パイプラインを直して」
+解决 CI/CD 流水线相关问题的技能群。
 
 ---
 
-## 機能詳細
+## 触发条件
 
-| 機能 | 詳細 | トリガー |
-|------|------|----------|
-| **失敗分析** | See [references/analyzing-failures.md](${CLAUDE_SKILL_DIR}/references/analyzing-failures.md) | 「ログを見て」「原因を調べて」 |
-| **テスト修正** | See [references/fixing-tests.md](${CLAUDE_SKILL_DIR}/references/fixing-tests.md) | 「テストを直して」「修正案を出して」 |
+- "CI 失败了""GitHub Actions 失败"
+- "构建错误""测试不通过"
+- "修复流水线"
 
 ---
 
-## 実行手順
+## 功能详情
 
-1. **テスト vs 実装判定**（Step 0）
-2. ユーザーの意図を分類（分析 or 修正）
-3. 複雑度を判定（下記参照）
-4. 上記の「機能詳細」から適切な参照ファイルを読む、または ci-cd-fixer サブエージェント起動
-5. 結果を確認し、必要に応じて再実行
+| 功能 | 详情 | 触发器 |
+|------|------|--------|
+| **失败分析** | 见 [references/analyzing-failures.md](${CLAUDE_SKILL_DIR}/references/analyzing-failures.md) | "查看日志""调查原因" |
+| **测试修复** | 见 [references/fixing-tests.md](${CLAUDE_SKILL_DIR}/references/fixing-tests.md) | "修复测试""给出修复方案" |
 
-### Step 0: テスト vs 実装判定（品質判定ゲート）
+---
 
-CI 失敗時、まず原因の切り分けを行う:
+## 执行步骤
+
+1. **测试 vs 实现判定**（Step 0）
+2. 分类用户意图（分析 or 修复）
+3. 判定复杂度（见下文）
+4. 从上述"功能详情"读取适当的参考文件，或启动 ci-cd-fixer 子代理
+5. 确认结果，必要时重新执行
+
+### Step 0: 测试 vs 实现判定（质量判定门禁）
+
+CI 失败时，首先区分原因：
 
 ```
-CI 失敗報告
+CI 失败报告
     ↓
 ┌─────────────────────────────────────────┐
-│           テスト vs 実装判定             │
+│           测试 vs 实现判定               │
 ├─────────────────────────────────────────┤
-│  エラーの原因を分析:                    │
-│  ├── 実装が間違い → 実装を修正          │
-│  ├── テストが古い → ユーザーに確認      │
-│  └── 環境問題 → 環境修正                │
+│  分析错误原因:                           │
+│  ├── 实现有误 → 修复实现                 │
+│  ├── 测试过时 → 向用户确认               │
+│  └── 环境问题 → 修复环境                 │
 └─────────────────────────────────────────┘
 ```
 
-#### 禁止事項（改ざん防止）
+#### 禁止事项（防篡改）
 
 ```markdown
-⚠️ CI 失敗時の禁止事項
+⚠️ CI 失败时的禁止事项
 
-以下の「解決策」は禁止です：
+以下"解决方案"是禁止的：
 
-| 禁止 | 例 | 正しい対応 |
-|------|-----|-----------|
-| テスト skip 化 | `it.skip(...)` | 実装を修正 |
-| アサーション削除 | `expect()` を消す | 期待値を確認 |
-| CI チェック迂回 | `continue-on-error` | 根本原因修正 |
-| lint ルール緩和 | `eslint-disable` | コードを修正 |
+| 禁止 | 示例 | 正确做法 |
+|------|------|----------|
+| 跳过测试 | `it.skip(...)` | 修复实现 |
+| 删除断言 | 删除 `expect()` | 确认期望值 |
+| 绕过 CI 检查 | `continue-on-error` | 修复根本原因 |
+| 放宽 lint 规则 | `eslint-disable` | 修复代码 |
 ```
 
-#### 判断フロー
+#### 判断流程
 
 ```markdown
-🔴 CI が失敗しています
+🔴 CI 失败中
 
-**判断が必要です**:
+**需要判断**:
 
-1. **実装が間違い** → 実装を修正 ✅
-2. **テストの期待値が古い** → ユーザーに確認を求める
-3. **環境の問題** → 環境設定を修正
+1. **实现有误** → 修复实现 ✅
+2. **测试期望值过时** → 向用户确认
+3. **环境问题** → 修复环境设置
 
-⚠️ テストの改ざん（skip化、アサーション削除）は禁止です
+⚠️ 篡改测试（跳过、删除断言）是禁止的
 
-どれに該当しますか？
+属于哪种情况？
 ```
 
-#### 承認が必要な場合
+#### 需要批准的情况
 
-テスト/設定の変更がやむを得ない場合:
+不得不更改测试/设置时：
 
 ```markdown
-## 🚨 テスト/設定変更の承認リクエスト
+## 🚨 测试/设置更改批准请求
 
-### 理由
-[なぜこの変更が必要か]
+### 原因
+[为什么需要此更改]
 
-### 変更内容
-[差分]
+### 更改内容
+[差异]
 
-### 代替案の検討
-- [ ] 実装の修正で解決できないか確認した
+### 替代方案探讨
+- [ ] 确认无法通过修复实现解决
 
-ユーザーの明示的な承認を待つ
+等待用户明确批准
 ```
 
-### Git log 拡張フラグの活用（CC 2.1.49+）
+### Git log 扩展标志的利用（CC 2.1.49+）
 
-CI 失敗時の原因コミット特定に構造化ログを活用します。
+CI 失败时使用结构化日志确定原因提交。
 
-#### 原因コミットの特定
+#### 确定原因提交
 
 ```bash
-# 構造化フォーマットでコミット分析
+# 结构化格式分析提交
 git log --format="%h|%s|%an|%ad" --date=short -10
 
-# トポロジカル順序で時系列分析
+# 拓扑顺序的时序分析
 git log --topo-order --oneline -20
 
-# 変更ファイルと原因の紐付け
+# 关联更改文件和原因
 git log --raw --oneline -5
 ```
 
-#### 主な活用場面
+#### 主要使用场景
 
-| 用途 | フラグ | 効果 |
-|------|--------|------|
-| **失敗原因の特定** | `--format="%h|%s"` | コミット一覧の構造化 |
-| **時系列での追跡** | `--topo-order` | マージ順序を考慮した追跡 |
-| **変更影響の把握** | `--raw` | ファイル変更の詳細表示 |
-| **マージ除外分析** | `--cherry-pick --no-merges` | 実コミットのみを抽出 |
+| 用途 | 标志 | 效果 |
+|------|------|------|
+| **确定失败原因** | `--format="%h\|%s"` | 提交列表结构化 |
+| **时序追踪** | `--topo-order` | 考虑合并顺序的追踪 |
+| **把握更改影响** | `--raw` | 详细显示文件更改 |
+| **排除合并分析** | `--cherry-pick --no-merges` | 仅提取实际提交 |
 
-#### 出力例
+#### 输出示例
 
 ```markdown
-🔍 CI 失敗原因分析
+🔍 CI 失败原因分析
 
-最近のコミット（構造化）:
+最近提交（结构化）:
 | Hash | Subject | Author | Date |
 |------|---------|--------|------|
 | a1b2c3d | feat: update API | Alice | 2026-02-04 |
 | e4f5g6h | test: add tests | Bob | 2026-02-03 |
 
-変更ファイル（--raw）:
-├── src/api/endpoint.ts (Modified) ← 型エラー発生
+更改文件（--raw）:
+├── src/api/endpoint.ts (Modified) ← 类型错误发生
 ├── tests/api.test.ts (Modified)
 └── package.json (Modified)
 
-→ a1b2c3d のコミットが原因の可能性大
-  型エラー: src/api/endpoint.ts:42
+→ a1b2c3d 提交可能是原因
+  类型错误: src/api/endpoint.ts:42
 ```
 
-## サブエージェント連携
+## 子代理联动
 
-以下の条件を満たす場合、Task tool で ci-cd-fixer を起動:
+满足以下条件时，用 Task tool 启动 ci-cd-fixer：
 
-- 修正 → 再実行 → 失敗のループが **2回以上** 発生
-- または、エラーが複数ファイルにまたがる複雑なケース
+- 修复 → 重试 → 失败循环发生 **2 次以上**
+- 或错误跨越多个文件的复杂情况
 
-**起動パターン:**
+**启动模式：**
 
 ```
 Task tool:
   subagent_type="ci-cd-fixer"
-  prompt="CI失敗を診断・修正してください。エラーログ: {error_log}"
+  prompt="诊断并修复 CI 失败。错误日志: {error_log}"
 ```
 
-ci-cd-fixer は安全第一で動作（デフォルト dry-run モード）。
-詳細は `agents/ci-cd-fixer.md` を参照。
+ci-cd-fixer 安全优先运行（默认 dry-run 模式）。
+详见 `agents/ci-cd-fixer.md`。
 
 ---
 
-## VibeCoder 向け
+## 面向 VibeCoder
 
 ```markdown
-🔧 CI が壊れたときの言い方
+🔧 CI 坏了时的说法
 
-1. **「CI が落ちた」「赤くなった」**
-   - 自動テストが失敗している状態
+1. **"CI 掉了""变红了"**
+   - 自动测试失败的状态
 
-2. **「なんで失敗してるの？」**
-   - 原因を調べてほしい
+2. **"为什么失败？"**
+   - 想要调查原因
 
-3. **「直して」**
-   - 自動で修正を試みる
+3. **"修复它"**
+   - 尝试自动修复
 
-💡 重要: テストを「ごまかす」修正は禁止です
-   - ❌ テストを消す、スキップする
-   - ⭕ コードを正しく直す
+💡 重要: "糊弄"测试的修复是禁止的
+   - ❌ 删除测试、跳过测试
+   - ⭕ 正确修复代码
 
-「テストが間違ってそう」と思ったら、
-まず確認してから対応を決めましょう
+"觉得测试有问题"时，
+先确认再决定怎么处理
 ```

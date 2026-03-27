@@ -1,19 +1,19 @@
 # Browser Automation with agent-browser
 
-agent-browser CLI を使用したブラウザ自動化の詳細ガイド。
+使用 agent-browser CLI 进行浏览器自动化的详细指南。
 
 ---
 
-## インストール
+## 安装
 
 ```bash
-# グローバルインストール
+# 全局安装
 npm install -g agent-browser
 
-# Chromium をダウンロード
+# 下载 Chromium
 agent-browser install
 
-# Linux の場合、システム依存関係も
+# Linux 时，也需要系统依赖
 agent-browser install --with-deps
 ```
 
@@ -21,154 +21,154 @@ agent-browser install --with-deps
 
 ## 基本操作
 
-### ページを開く
+### 打开页面
 
 ```bash
 # 基本
 agent-browser open https://example.com
 
-# ブラウザを表示して開く（デバッグ用）
+# 显示浏览器打开（调试用）
 agent-browser open https://example.com --headed
 
-# カスタムヘッダー付き
+# 带自定义头
 agent-browser open https://api.example.com --headers '{"Authorization": "Bearer token"}'
 ```
 
-### クリック
+### 点击
 
 ```bash
-# 要素参照でクリック（推奨）
+# 通过元素引用点击（推荐）
 agent-browser click @e1
 
-# CSS セレクタでクリック
+# 通过 CSS 选择器点击
 agent-browser click "button.submit"
 
-# ダブルクリック
+# 双击
 agent-browser dblclick @e1
 ```
 
-### 入力
+### 输入
 
 ```bash
-# フォームをクリア&入力
+# 清空并输入表单
 agent-browser fill @e1 "hello@example.com"
 
-# 追加入力（クリアしない）
-agent-browser type @e1 "追加テキスト"
+# 追加输入（不清空）
+agent-browser type @e1 "追加文本"
 
-# キーを押す
+# 按键
 agent-browser press Enter
 agent-browser press Tab
 agent-browser press "Control+a"
 ```
 
-### フォーム操作
+### 表单操作
 
 ```bash
-# チェックボックス
+# 复选框
 agent-browser check @e1
 agent-browser uncheck @e1
 
-# セレクトボックス
+# 选择框
 agent-browser select @e1 "option-value"
 
-# ファイルアップロード
+# 文件上传
 agent-browser upload @e1 /path/to/file.pdf
 ```
 
-### スクロール
+### 滚动
 
 ```bash
-# 方向指定
+# 指定方向
 agent-browser scroll down
 agent-browser scroll up 500
 
-# 要素を表示
+# 显示元素
 agent-browser scrollintoview @e1
 ```
 
 ---
 
-## 情報取得
+## 获取信息
 
 ```bash
-# テキスト取得
+# 获取文本
 agent-browser get text @e1
 
-# HTML 取得
+# 获取 HTML
 agent-browser get html @e1
 
-# 属性取得
+# 获取属性
 agent-browser get attr href @e1
 
-# 値取得（input）
+# 获取值（input）
 agent-browser get value @e1
 
-# 現在の URL
+# 当前 URL
 agent-browser get url
 
-# ページタイトル
+# 页面标题
 agent-browser get title
 
-# 要素数
+# 元素数量
 agent-browser get count "li.item"
 
-# 要素の位置とサイズ
+# 元素的位置和尺寸
 agent-browser get box @e1
 ```
 
 ---
 
-## 状態チェック
+## 状态检查
 
 ```bash
-# 表示されているか
+# 是否可见
 agent-browser is visible @e1
 
-# 有効か（disabled でないか）
+# 是否可用（非 disabled）
 agent-browser is enabled @e1
 
-# チェックされているか
+# 是否已选中
 agent-browser is checked @e1
 ```
 
 ---
 
-## 待機
+## 等待
 
 ```bash
-# 要素が表示されるまで待機
+# 等待元素显示
 agent-browser wait @e1
 agent-browser wait "button.loaded"
 
-# 時間で待機（ミリ秒）
+# 按时间等待（毫秒）
 agent-browser wait 2000
 ```
 
 ---
 
-## スクリーンショット
+## 屏幕截图
 
 ```bash
 # 基本
 agent-browser screenshot
 
-# ファイル名指定
+# 指定文件名
 agent-browser screenshot output.png
 
-# フルページ
+# 完整页面
 agent-browser screenshot --full page.png
 
-# PDF として保存
+# 保存为 PDF
 agent-browser pdf document.pdf
 ```
 
 ---
 
-## JavaScript 実行
+## 执行 JavaScript
 
 ```bash
-# スクリプト実行
+# 执行脚本
 agent-browser eval "document.title"
 agent-browser eval "localStorage.getItem('token')"
 agent-browser eval "window.scrollTo(0, document.body.scrollHeight)"
@@ -176,19 +176,19 @@ agent-browser eval "window.scrollTo(0, document.body.scrollHeight)"
 
 ---
 
-## ネットワーク操作
+## 网络操作
 
 ```bash
-# リクエストをモック
+# 模拟请求
 agent-browser network route "*/api/users" --body '{"users": []}'
 
-# リクエストをブロック
+# 阻止请求
 agent-browser network route "*/analytics/*" --abort
 
-# ルート解除
+# 解除路由
 agent-browser network unroute "*/api/users"
 
-# リクエスト履歴
+# 请求历史
 agent-browser network requests
 agent-browser network requests --filter "api"
 agent-browser network requests --clear
@@ -199,13 +199,13 @@ agent-browser network requests --clear
 ## Cookie/Storage
 
 ```bash
-# Cookie 取得
+# 获取 Cookie
 agent-browser cookies get
 
-# Cookie 設定
+# 设置 Cookie
 agent-browser cookies set '{"name": "session", "value": "abc123", "domain": "example.com"}'
 
-# Cookie クリア
+# 清除 Cookie
 agent-browser cookies clear
 
 # LocalStorage
@@ -219,65 +219,65 @@ agent-browser storage session get "key"
 
 ---
 
-## タブ管理
+## 标签页管理
 
 ```bash
-# 新しいタブを開く
+# 打开新标签页
 agent-browser tab new
 
-# タブ一覧
+# 标签页列表
 agent-browser tab list
 
-# タブを切り替え
+# 切换标签页
 agent-browser tab 2
 
-# タブを閉じる
+# 关闭标签页
 agent-browser tab close
 ```
 
 ---
 
-## ブラウザ設定
+## 浏览器设置
 
 ```bash
-# ビューポートサイズ
+# 视口大小
 agent-browser set viewport 1920 1080
 
-# デバイスエミュレーション
+# 设备模拟
 agent-browser set device "iPhone 12"
 
-# 位置情報
+# 地理位置
 agent-browser set geo 35.6762 139.6503
 
-# オフラインモード
+# 离线模式
 agent-browser set offline on
 agent-browser set offline off
 
-# ダークモード
+# 深色模式
 agent-browser set media dark
 agent-browser set media light
 
-# 認証情報
+# 认证信息
 agent-browser set credentials admin password123
 ```
 
 ---
 
-## デバッグ
+## 调试
 
 ```bash
-# コンソールログを表示
+# 显示控制台日志
 agent-browser console
 agent-browser console --clear
 
-# ページエラーを表示
+# 显示页面错误
 agent-browser errors
 agent-browser errors --clear
 
-# 要素をハイライト
+# 高亮元素
 agent-browser highlight @e1
 
-# トレース記録
+# 记录追踪
 agent-browser trace start
 # ... 操作 ...
 agent-browser trace stop trace.zip
@@ -285,25 +285,25 @@ agent-browser trace stop trace.zip
 
 ---
 
-## Find コマンド（高度な要素検索）
+## Find 命令（高级元素搜索）
 
 ```bash
-# ロールで検索してクリック
+# 按角色搜索并点击
 agent-browser find role button click --name "Submit"
 
-# テキストで検索
+# 按文本搜索
 agent-browser find text "Click here" click
 
-# ラベルで検索
+# 按标签搜索
 agent-browser find label "Email" fill "test@example.com"
 
-# プレースホルダーで検索
+# 按占位符搜索
 agent-browser find placeholder "Enter your name" fill "John"
 
-# テスト ID で検索
+# 按 test ID 搜索
 agent-browser find testid "submit-btn" click
 
-# 最初/最後/n番目
+# 第一个/最后一个/第 n 个
 agent-browser find first "button" click
 agent-browser find last "input" fill "text"
 agent-browser find nth 2 "li" click
@@ -311,58 +311,58 @@ agent-browser find nth 2 "li" click
 
 ---
 
-## マウス操作（低レベル）
+## 鼠标操作（底层）
 
 ```bash
-# マウス移動
+# 移动鼠标
 agent-browser mouse move 100 200
 
-# マウスボタン
+# 鼠标按钮
 agent-browser mouse down
 agent-browser mouse up
 agent-browser mouse down right
 
-# ホイール
+# 滚轮
 agent-browser mouse wheel 100
 agent-browser mouse wheel 100 50  # dy, dx
 ```
 
 ---
 
-## ドラッグ&ドロップ
+## 拖放
 
 ```bash
-# 要素間のドラッグ
+# 元素间拖拽
 agent-browser drag @e1 @e2
 
-# 座標指定
+# 指定坐标
 agent-browser drag @e1 "500,300"
 ```
 
 ---
 
-## セッション管理
+## 会话管理
 
 ```bash
-# 名前付きセッション
+# 命名会话
 agent-browser --session myapp open https://example.com
 
-# セッション一覧
+# 会话列表
 agent-browser session list
 
-# 現在のセッション名
+# 当前会话名
 agent-browser session
 
-# 環境変数でも指定可能
+# 也可通过环境变量指定
 AGENT_BROWSER_SESSION=myapp agent-browser snapshot
 ```
 
 ---
 
-## JSON 出力
+## JSON 输出
 
 ```bash
-# JSON 形式で出力
+# JSON 格式输出
 agent-browser snapshot --json
 agent-browser get text @e1 --json
 agent-browser network requests --json
@@ -370,12 +370,12 @@ agent-browser network requests --json
 
 ---
 
-## カスタムブラウザ
+## 自定义浏览器
 
 ```bash
-# カスタム実行ファイル
+# 自定义可执行文件
 agent-browser --executable-path /path/to/chrome open https://example.com
 
-# 環境変数でも指定可能
+# 也可通过环境变量指定
 AGENT_BROWSER_EXECUTABLE_PATH=/path/to/chrome agent-browser open https://example.com
 ```

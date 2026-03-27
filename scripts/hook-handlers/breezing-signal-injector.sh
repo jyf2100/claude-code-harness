@@ -1,15 +1,15 @@
 #!/bin/bash
 # breezing-signal-injector.sh
-# UserPromptSubmit フックで breezing-signals.jsonl から未消費シグナルを読み取り、
-# systemMessage として注入する。
+# 在 UserPromptSubmit 钩子中从 breezing-signals.jsonl 读取未消费信号，
+# 作为 systemMessage 注入。
 #
-# Usage: 自動呼び出し（UserPromptSubmit hook）
+# Usage: 自动调用（UserPromptSubmit hook）
 # Input: stdin JSON from Claude Code hooks (UserPromptSubmit)
 # Output: JSON with optional systemMessage
 
-set +e  # エラーで停止しない
+set +e  # 不在错误时停止
 
-# === プロジェクトルートを検出 ===
+# === 检测项目根目录 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
@@ -18,24 +18,24 @@ fi
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "${PARENT_DIR}/.." && pwd)}"
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 
-# === breezing セッションが存在するかチェック ===
+# === 检查 breezing 会话是否存在 ===
 ACTIVE_FILE="${STATE_DIR}/breezing-active.json"
 if [ ! -f "${ACTIVE_FILE}" ]; then
-  # breezing セッション外はスキップ
+  # breezing 会话外则跳过
   exit 0
 fi
 
-# === シグナルファイルが存在するかチェック ===
+# === 检查信号文件是否存在 ===
 SIGNALS_FILE="${STATE_DIR}/breezing-signals.jsonl"
 if [ ! -f "${SIGNALS_FILE}" ]; then
   exit 0
 fi
 
-# === 未消費シグナルを読み取り ===
-# consumed_at が null または存在しない行を未消費とみなす
+# === 读取未消费信号 ===
+# consumed_at 为 null 或不存在的行被视为未消费
 UNCONSUMED_SIGNALS=""
 if command -v jq >/dev/null 2>&1; then
-  # jq で consumed_at が null のシグナルを抽出
+  # 使用 jq 提取 consumed_at 为 null 的信号
   UNCONSUMED_SIGNALS="$(grep -v '^$' "${SIGNALS_FILE}" 2>/dev/null | \
     while IFS= read -r line; do
       consumed="$(printf '%s' "${line}" | jq -r '.consumed_at // "null"' 2>/dev/null)"
@@ -64,11 +64,11 @@ print('\n'.join(lines))
 fi
 
 if [ -z "${UNCONSUMED_SIGNALS}" ]; then
-  # 未消費シグナルなし
+  # 没有未消费信号
   exit 0
 fi
 
-# === シグナルをメッセージ形式に整形 ===
+# === 将信号格式化为消息形式 ===
 SYSTEM_MESSAGE=""
 SIGNAL_COUNT=0
 
@@ -92,7 +92,7 @@ while IFS= read -r signal_line; do
         conclusion="$(printf '%s' "${signal_line}" | jq -r '.conclusion // "unknown"' 2>/dev/null)"
         trigger_cmd="$(printf '%s' "${signal_line}" | jq -r '.trigger_command // ""' 2>/dev/null)"
       fi
-      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:ci_failure_detected] CI が失敗しました（${conclusion}）。トリガー: ${trigger_cmd}。ci-cd-fixer エージェントで自動修復することを検討してください。\n"
+      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:ci_failure_detected] CI 失败（${conclusion}）。触发器: ${trigger_cmd}。请考虑使用 ci-cd-fixer 代理自动修复。\n"
       ;;
     retake_requested)
       reason=""
@@ -101,14 +101,14 @@ while IFS= read -r signal_line; do
         reason="$(printf '%s' "${signal_line}" | jq -r '.reason // ""' 2>/dev/null)"
         task_id="$(printf '%s' "${signal_line}" | jq -r '.task_id // ""' 2>/dev/null)"
       fi
-      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:retake_requested] タスク #${task_id} のやり直しが要求されました。理由: ${reason}\n"
+      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:retake_requested] 任务 #${task_id} 被要求重做。理由: ${reason}\n"
       ;;
     reviewer_approved)
       task_id=""
       if command -v jq >/dev/null 2>&1; then
         task_id="$(printf '%s' "${signal_line}" | jq -r '.task_id // ""' 2>/dev/null)"
       fi
-      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:reviewer_approved] タスク #${task_id} がレビュアーに承認されました。\n"
+      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:reviewer_approved] 任务 #${task_id} 已被审核员批准。\n"
       ;;
     escalation_required)
       reason=""
@@ -117,10 +117,10 @@ while IFS= read -r signal_line; do
         reason="$(printf '%s' "${signal_line}" | jq -r '.reason // ""' 2>/dev/null)"
         task_id="$(printf '%s' "${signal_line}" | jq -r '.task_id // ""' 2>/dev/null)"
       fi
-      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:escalation_required] タスク #${task_id} でエスカレーションが必要です。理由: ${reason}\n"
+      SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:escalation_required] 任务 #${task_id} 需要升级处理。理由: ${reason}\n"
       ;;
     *)
-      # 未知のシグナルはそのまま通知
+      # 未知信号直接通知
       SYSTEM_MESSAGE="${SYSTEM_MESSAGE}[SIGNAL:${signal_type}] ${signal_line}\n"
       ;;
   esac
@@ -130,8 +130,8 @@ if [ -z "${SYSTEM_MESSAGE}" ] || [ "${SIGNAL_COUNT}" -eq 0 ]; then
   exit 0
 fi
 
-# === consumed_at を設定してシグナルをマーク済みにする ===
-# アトミック更新: 新しいファイルに consumed_at を付与して上書き
+# === 设置 consumed_at 以标记信号为已消费 ===
+# 原子更新: 在新文件中附加 consumed_at 并覆盖
 CONSUMED_TS="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 LOCK_DIR="${STATE_DIR}/.breezing-signals.lock"
 
@@ -148,7 +148,7 @@ if [ "${_lock_acquired}" -eq 1 ]; then
   TMP_NEW_SIGNALS="$(mktemp /tmp/breezing-signals-new.XXXXXX)"
 
   if command -v jq >/dev/null 2>&1; then
-    # consumed_at を付与して全シグナルを再書き込み
+    # 附加 consumed_at 并重写所有信号
     while IFS= read -r line; do
       [ -z "${line}" ] && continue
       consumed="$(printf '%s' "${line}" | jq -r '.consumed_at // "null"' 2>/dev/null)"
@@ -167,14 +167,14 @@ if [ "${_lock_acquired}" -eq 1 ]; then
   rmdir "${LOCK_DIR}" 2>/dev/null || true
 fi
 
-# === systemMessage として出力 ===
-HEADER="[breezing-signal-injector] ${SIGNAL_COUNT} 件の未消費シグナルがあります:\n"
+# === 作为 systemMessage 输出 ===
+HEADER="[breezing-signal-injector] 有 ${SIGNAL_COUNT} 个未消费信号:\n"
 FULL_MESSAGE="${HEADER}${SYSTEM_MESSAGE}"
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg msg "${FULL_MESSAGE}" '{"systemMessage": $msg}'
 else
-  # jq がない場合は簡易エスケープ
+  # 如果没有 jq 则使用简易转义
   _escaped="${FULL_MESSAGE//\\/\\\\}"
   _escaped="${_escaped//\"/\\\"}"
   printf '{"systemMessage":"%s"}\n' "${_escaped}"

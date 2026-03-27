@@ -1,198 +1,198 @@
 ---
 name: cc-update-review
-description: "CC アプデ統合の品質ガードレール。Feature Table 追加時に「書いただけ」を検出し、実装案を強制出力。Use when reviewing CC update integration PRs. Do NOT load for: implementation work, standard reviews, setup."
+description: "CC 更新集成的质量护栏。Feature Table 添加时检测"仅书写"，强制输出实现方案。Use when reviewing CC update integration PRs. Do NOT load for: implementation work, standard reviews, setup."
 description-en: "Quality guardrail for CC update integration. Detects doc-only Feature Table additions and requires implementation proposals. Internal use only."
-description-ja: "CC アプデ統合の品質ガードレール。Feature Table 追加時に「書いただけ」を検出し、実装案を強制出力。内部専用。"
+description-zh: "CC 更新集成的质量护栏。Feature Table 添加时检测"仅书写"，强制输出实现方案。触发短语：CC 更新集成审查。不用于：实现工作、标准审查、设置。"
 user-invocable: false
 allowed-tools: ["Read", "Grep", "Glob"]
 ---
 
-# CC Update Review ガードレール
+# CC 更新审查护栏
 
-Claude Code のアップデート統合時に「Feature Table に書いただけ」を防止する品質ガードレール。
-Feature Table への追加が実装を伴っているかを自動分類し、不足があれば実装案を強制出力する。
+防止 Claude Code 更新集成时出现"仅在 Feature Table 书写"的质量护栏。
+自动分类 Feature Table 的添加是否伴随实现，如有不足则强制输出实现方案。
 
-## Quick Reference
+## 快速参考
 
-以下の状況でこのスキルがトリガーされる:
+此技能在以下情况触发：
 
-- **CC アップデート統合 PR** のレビュー時
-- **Feature Table**（`CLAUDE.md` / `docs/CLAUDE-feature-table.md`）に新行が追加された diff を検出した時
-- `/harness-review` が CC 統合 PR と判定した場合の内部呼び出し
+- **CC 更新集成 PR** 审查时
+- 检测到 **Feature Table**（`CLAUDE.md` / `docs/CLAUDE-feature-table.md`）有新行的 diff 时
+- `/harness-review` 判定为 CC 集成 PR 时的内部调用
 
-トリガー **しない** 状況:
+**不**触发的情况：
 
-- 通常の実装作業（`/work`）
-- Feature Table 以外のみの変更
-- セットアップ・初期化作業
+- 通常的实现工作（`/work`）
+- 仅 Feature Table 以外的更改
+- 设置/初始化工作
 
-## 3 カテゴリ分類
+## 3 类别分类
 
-Feature Table に追加された各項目を、以下の 3 カテゴリに分類する。
+Feature Table 添加的各项目分为以下 3 类。
 
-### (A) 実装あり
+### (A) 有实现
 
-**定義**: Feature Table の追加に対応する hooks / scripts / agents / skills / core の実装変更が同じ PR に含まれている。
+**定义**: Feature Table 的添加有对应的 hooks / scripts / agents / skills / core 实现更改包含在同一 PR 中。
 
-**判定条件**:
-- Feature Table の行で言及されている機能に関連するファイルが変更されている
-- hooks.json、スキル SKILL.md、エージェント .md、scripts/*.sh、core/src/*.ts のいずれかに diff がある
+**判定条件**：
+- Feature Table 的行中提到的功能相关文件已更改
+- hooks.json、技能 SKILL.md、代理 .md、scripts/*.sh、core/src/*.ts 中有 diff
 
-**例**:
+**示例**：
 
-| Feature Table 追加 | 対応する実装変更 | 判定 |
+| Feature Table 添加 | 对应的实现更改 | 判定 |
 |-------------------|----------------|------|
-| `PostCompact フック` | `hooks/post-compact-handler.sh` 新規作成 | A |
-| `MCP Elicitation 対応` | `hooks.json` に Elicitation イベント追加 + `elicitation-handler.sh` 作成 | A |
-| `Worker maxTurns 制限` | `agents-v3/worker.md` に maxTurns フィールド追加 | A |
+| `PostCompact 钩子` | 新建 `hooks/post-compact-handler.sh` | A |
+| `MCP Elicitation 对应` | hooks.json 添加 Elicitation 事件 + 创建 `elicitation-handler.sh` | A |
+| `Worker maxTurns 限制` | `agents-v3/worker.md` 添加 maxTurns 字段 | A |
 
-**結果**: OK。追加のアクション不要。
+**结果**: OK。不需要额外操作。
 
 ---
 
-### (B) 書いただけ
+### (B) 仅书写
 
-**定義**: Feature Table にのみ行が追加され、Harness 側の実装変更が一切含まれていない。かつ、CC 自動継承（カテゴリ C）にも該当しない。
+**定义**: 仅在 Feature Table 添加了行，Harness 侧的实现更改完全没有。且不符合 CC 自动继承（类别 C）。
 
-**判定条件**:
-- Feature Table に新行がある
-- 同じ PR 内で hooks / scripts / agents / skills / core に関連する変更がない
-- Harness が独自の付加価値を提供すべき機能である（設定、ワークフロー統合、ガードレール等）
+**判定条件**：
+- Feature Table 有新行
+- 同一 PR 中没有 hooks / scripts / agents / skills / core 相关更改
+- 是 Harness 应提供独特价值的功能（设置、工作流集成、护栏等）
 
-**例**:
+**示例**：
 
-| Feature Table 追加 | 対応する実装変更 | 判定 |
+| Feature Table 添加 | 对应的实现更改 | 判定 |
 |-------------------|----------------|------|
-| `PreCompact フック` | なし（Feature Table のみ） | B |
-| `Agent Teams` | なし（Feature Table のみ） | B |
-| `Desktop Scheduled Tasks` | なし（Feature Table のみ） | B |
+| `PreCompact 钩子` | 无（仅 Feature Table） | B |
+| `Agent Teams` | 无（仅 Feature Table） | B |
+| `Desktop Scheduled Tasks` | 无（仅 Feature Table） | B |
 
-**結果**: NG。PR をブロックし、実装案の提示を要求する。出力フォーマットは後述。
+**结果**: NG。阻止 PR，要求提示实现方案。输出格式见后述。
 
 ---
 
-### (C) CC 自動継承
+### (C) CC 自动继承
 
-**定義**: Claude Code 本体のパフォーマンス改善・バグ修正・内部最適化等で、Harness 側の変更が不要な項目。
+**定义**: Claude Code 本体的性能改善、bug 修复、内部优化等，Harness 侧不需要更改的项目。
 
-**判定条件**:
-- CC 本体の修正であり、Harness がラップ・拡張する余地がない
-- パフォーマンス改善、メモリリーク修正、UI 改善等
-- Harness のワークフローに影響を与えない内部変更
+**判定条件**：
+- 是 CC 本体的修复，Harness 没有 wrap/扩展的余地
+- 性能改善、内存泄漏修复、UI 改善等
+- 不影响 Harness 工作流的内部更改
 
-**例**:
+**示例**：
 
-| Feature Table 追加 | 理由 | 判定 |
+| Feature Table 添加 | 理由 | 判定 |
 |-------------------|------|------|
-| `Streaming API memory leak fix` | CC 内部のメモリリーク修正。Harness 側の対応不要 | C |
-| `Compaction image retention` | CC がコンパクション時に画像を保持。Harness の変更不要 | C |
-| `Parallel tool call fix` | CC 内部の並列実行修正。自動的に恩恵を受ける | C |
+| `Streaming API memory leak fix` | CC 内部的内存泄漏修复。Harness 侧无需对应 | C |
+| `Compaction image retention` | CC 在压缩时保留图片。Harness 无需更改 | C |
+| `Parallel tool call fix` | CC 内部的并行执行修复。自动受益 | C |
 
-**結果**: OK。ただし Feature Table のカラムに「CC 自動継承」と明記すること。
+**结果**: OK。但要在 Feature Table 的列中明确标注"CC 自动继承"。
 
-## CC アップデート PR チェックリスト
+## CC 更新 PR 检查清单
 
-PR レビュー時に以下を順番に確認する:
-
-```
-## CC アップデート統合チェックリスト
-
-### 1. Feature Table 差分の抽出
-- [ ] `CLAUDE.md` または `docs/CLAUDE-feature-table.md` の diff から追加行を列挙
-
-### 2. 各項目の分類
-- [ ] 追加された各行について A / B / C を判定
-- [ ] カテゴリ B の項目が 0 件であることを確認
-
-### 3. カテゴリ別の確認
-- [ ] (A) 実装あり: 対応する実装ファイルが正しくリンクされているか
-- [ ] (B) 書いただけ: 実装案が提示されているか（0 件でなければ PR ブロック）
-- [ ] (C) CC 自動継承: Feature Table に「CC 自動継承」の明記があるか
-
-### 4. CHANGELOG 確認
-- [ ] カテゴリ A の項目が CHANGELOG に「今まで / 今後」形式で記載されているか
-- [ ] カテゴリ C の項目が CHANGELOG で CC 自動継承として記載されているか
-
-### 分類結果
-
-| # | Feature Table 項目 | カテゴリ | 対応ファイル / 備考 |
-|---|-------------------|---------|-------------------|
-| 1 | （項目名） | A / B / C | （ファイルパスまたは備考） |
-| 2 | （項目名） | A / B / C | （ファイルパスまたは備考） |
-```
-
-## カテゴリ B 検出時の出力フォーマット
-
-カテゴリ B が 1 件以上検出された場合、以下のフォーマットで実装案を出力する。
-**このフォーマットの出力は必須であり、省略は許可されない。**
+PR 审查时按顺序确认以下内容：
 
 ```
-## カテゴリ B 検出: 実装案
+## CC 更新集成检查清单
 
-### B-{番号}. {Feature Table の項目名}
+### 1. Feature Table 差异提取
+- [ ] 从 `CLAUDE.md` 或 `docs/CLAUDE-feature-table.md` 的 diff 列出添加行
 
-**現状**: Feature Table に記載のみ。Harness 側の実装なし。
+### 2. 各项目分类
+- [ ] 对添加的各行判定 A / B / C
+- [ ] 确认类别 B 的项目为 0 件
 
-**Harness ならではの付加価値**:
-{この機能を Harness がどう活用すべきかの具体的な説明}
+### 3. 按类别确认
+- [ ] (A) 有实现: 对应的实现文件是否正确链接
+- [ ] (B) 仅书写: 是否提示了实现方案（非 0 件则阻止 PR）
+- [ ] (C) CC 自动继承: Feature Table 是否明确标注"CC 自动继承"
 
-**実装案**:
+### 4. CHANGELOG 确认
+- [ ] 类别 A 的项目是否以"今まで / 今後"形式记载在 CHANGELOG
+- [ ] 类别 C 的项目是否在 CHANGELOG 中记载为 CC 自动继承
 
-| 対象ファイル | 変更内容 |
-|------------|---------|
-| `{ファイルパス}` | {具体的な変更内容} |
-| `{ファイルパス}` | {具体的な変更内容} |
+### 分类结果
 
-**ユーザー体験の改善**:
-- 今まで: {現在のユーザー体験}
-- 今後: {実装後のユーザー体験}
-
-**実装の優先度**: {高 / 中 / 低}
-**推定工数**: {小 / 中 / 大}
+| # | Feature Table 项目 | 类别 | 对应文件 / 备注 |
+|---|-------------------|------|----------------|
+| 1 | （项目名） | A / B / C | （文件路径或备注） |
+| 2 | （项目名） | A / B / C | （文件路径或备注） |
 ```
 
-### 出力例
+## 类别 B 检测时的输出格式
+
+检测到 1 件以上类别 B 时，按以下格式输出实现方案。
+**此格式输出是强制性的，不允许省略。**
 
 ```
-## カテゴリ B 検出: 実装案
+## 类别 B 检测: 实现方案
+
+### B-{编号}. {Feature Table 的项目名}
+
+**现状**: 仅在 Feature Table 记载。Harness 侧无实现。
+
+**Harness 独特价值**:
+{Harness 应如何利用此功能的具体说明}
+
+**实现方案**:
+
+| 对象文件 | 更改内容 |
+|---------|---------|
+| `{文件路径}` | {具体更改内容} |
+| `{文件路径}` | {具体更改内容} |
+
+**用户体验改善**:
+- 以前: {当前用户体验}
+- 今后: {实现后的用户体验}
+
+**实现优先级**: {高 / 中 / 低}
+**预估工时**: {小 / 中 / 大}
+```
+
+### 输出示例
+
+```
+## 类别 B 检测: 实现方案
 
 ### B-1. Desktop Scheduled Tasks
 
-**現状**: Feature Table に記載のみ。Harness 側の実装なし。
+**现状**: 仅在 Feature Table 记载。Harness 侧无实现。
 
-**Harness ならではの付加価値**:
-Scheduled Tasks を Harness のワークフローと統合し、定期的な品質チェック・
-ステータス同期・メモリ整理を自動化できる。
+**Harness 独特价值**:
+将 Scheduled Tasks 与 Harness 工作流集成，可自动执行定期质量检查、
+状态同步、内存整理。
 
-**実装案**:
+**实现方案**:
 
-| 対象ファイル | 変更内容 |
-|------------|---------|
-| `skills/harness-work/references/scheduled-tasks.md` | スケジュールタスクのテンプレートとガイド |
-| `scripts/setup-scheduled-tasks.sh` | 初期セットアップスクリプト |
-| `hooks/hooks.json` | Cron トリガーの登録 |
+| 对象文件 | 更改内容 |
+|---------|---------|
+| `skills/harness-work/references/scheduled-tasks.md` | 计划任务的模板和指南 |
+| `scripts/setup-scheduled-tasks.sh` | 初始设置脚本 |
+| `hooks/hooks.json` | Cron 触发器注册 |
 
-**ユーザー体験の改善**:
-- 今まで: ユーザーが手動で定期タスクを実行する必要があった
-- 今後: Harness が自動的に定期品質チェックを実行し、結果を通知する
+**用户体验改善**:
+- 以前: 用户必须手动执行定期任务
+- 今后: Harness 自动执行定期质量检查并通知结果
 
-**実装の優先度**: 中
-**推定工数**: 中
+**实现优先级**: 中
+**预估工时**: 中
 ```
 
-## 「付加価値」列の推奨
+## 推荐"附加价值"列
 
-Feature Table に以下のカラムを追加することを推奨する:
+建议在 Feature Table 添加以下列：
 
-| Feature | Skill | Purpose | 付加価値 |
+| Feature | Skill | Purpose | 附加价值 |
 |---------|-------|---------|---------|
-| PostCompact フック | hooks | コンテキスト再注入 | A: 実装あり |
-| Streaming leak fix | all | メモリリーク修正 | C: CC 自動継承 |
+| PostCompact 钩子 | hooks | 上下文再注入 | A: 有实现 |
+| Streaming leak fix | all | 内存泄漏修复 | C: CC 自动继承 |
 
-この列により、各項目の分類が一目で確認でき、カテゴリ B の残存を防止できる。
+此列可一目了然确认各项目的分类，防止类别 B 残留。
 
-## 関連スキル
+## 相关技能
 
-- `harness-review` - コードレビュー（CC 統合 PR 判定時にこのスキルを内部呼び出し）
-- `harness-work` - 実装作業（カテゴリ B の実装案に基づく作業時）
-- `memory` - SSOT 管理（分類基準の決定記録）
+- `harness-review` - 代码审查（判定 CC 集成 PR 时内部调用此技能）
+- `harness-work` - 实现工作（基于类别 B 实现方案的工作时）
+- `memory` - SSOT 管理（分类标准的决策记录）

@@ -1,124 +1,124 @@
 ---
 name: session-memory
-description: "セッション間の学習と記憶の永続化を管理。Use when user asks about previous sessions, history, or to continue from before. Do NOT load for: implementation work, reviews, or ad-hoc information."
+description: "管理跨会话学习和记忆持久化。Use when user asks about previous sessions, history, or to continue from before. Do NOT load for: implementation work, reviews, or ad-hoc information."
 description-en: "Manages cross-session learning and memory persistence. Use when user asks about previous sessions, history, or to continue from before. Do NOT load for: implementation work, reviews, or ad-hoc information."
-description-ja: "セッション間の学習と記憶の永続化を管理。Use when user asks about previous sessions, history, or to continue from before. Do NOT load for: implementation work, reviews, or ad-hoc information."
+description-ja: "管理跨会话学习和记忆持久化。Use when user asks about previous sessions, history, or to continue from before. Do NOT load for: implementation work, reviews, or ad-hoc information."
 allowed-tools: ["Read", "Write", "Edit"]
 user-invocable: false
 ---
 
 # Session Memory Skill
 
-セッション間の学習と記憶を管理するスキル。
-過去の作業内容、決定事項、学んだパターンを記録・参照します。
+管理会话间学习和记忆的技能。
+记录和参考过去的工作内容、决定事项、学到的模式。
 
 ---
 
-## トリガーフレーズ
+## 触发短语
 
-このスキルは以下のフレーズで自動起動します：
+此技能在以下短语下自动启动：
 
-- 「前回何をした？」「前回の続きから」
-- 「履歴を見せて」「過去の作業」
-- 「このプロジェクトについて教えて」
+- 「上次做了什么？」「从上次继续」
+- 「给我看历史」「过去的工作」
+- 「告诉我这个项目的情况」
 - "what did we do last time?", "continue from before"
 
 ---
 
 ## 概要
 
-このスキルは `.claude/memory/` に作業履歴を保存し、
-セッション間での知識の継続を実現します。
+此技能将工作历史保存到 `.claude/memory/`，
+实现会话间的知识延续。
 
-あわせて、重要な情報は「どこに残すべきか」を明確にします（詳細: `docs/MEMORY_POLICY.md`）。
+同时，明确重要信息「应该保存在哪里」（详情: `docs/MEMORY_POLICY.md`）。
 
 ---
 
-## メモリ構造
+## 内存结构
 
 ```
 .claude/
 ├── memory/
-│   ├── session-log.md      # セッションごとのログ
-│   ├── decisions.md        # 重要な決定事項
-│   ├── patterns.md         # 学んだパターン
-│   └── context.json        # プロジェクトコンテキスト
+│   ├── session-log.md      # 每个会话的日志
+│   ├── decisions.md        # 重要决定事项
+│   ├── patterns.md         # 学到的模式
+│   └── context.json        # 项目上下文
 └── state/
-    └── agent-trace.jsonl   # Agent Trace（ツール実行履歴）
+    └── agent-trace.jsonl   # Agent Trace（工具执行历史）
 ```
 
-### 推奨運用（SSOT/ローカル分離）
+### 推荐运营（SSOT/本地分离）
 
-- **SSOT（共有推奨）**: `decisions.md` / `patterns.md`  
-  - 「決定（Why）」と「再利用できる解法（How）」を集約する
-  - 各エントリは **タイトル + タグ**（例: `#decision #db`）を付け、先頭に **Index** を置く
-- **ローカル推奨**: `session-log.md` / `context.json` / `.claude/state/`  
-  - ノイズ/肥大化しやすいため、基本は Git 管理しない（必要なら個別に判断）
+- **SSOT（共享推荐）**: `decisions.md` / `patterns.md`
+  - 汇集「决定（Why）」和「可复用的解决方案（How）」
+  - 每个条目附加 **标题 + 标签**（例: `#decision #db`），开头放置 **Index**
+- **本地推荐**: `session-log.md` / `context.json` / `.claude/state/`
+  - 容易产生噪音/膨胀，基本不进行 Git 管理（必要时个别判断）
 
 ---
 
-## 自動記録される情報
+## 自动记录的信息
 
 ### session-log.md
 
-各セッション記録には `${CLAUDE_SESSION_ID}` 環境変数を活用してセッションIDを付与します。
-これにより、セッション間のトレーサビリティが向上します。
+每个会话记录使用 `${CLAUDE_SESSION_ID}` 环境变量附加会话ID。
+这样可以提高会话间的可追溯性。
 
 ```markdown
-## セッション: 2024-01-15 14:30 (session: abc123def)
+## 会话: 2024-01-15 14:30 (session: abc123def)
 
-### 実行したタスク
-- [x] ユーザー認証機能の実装
-- [x] ログインページの作成
+### 执行的任务
+- [x] 实现用户认证功能
+- [x] 创建登录页面
 
-### 生成したファイル
+### 生成的文件
 - src/lib/auth.ts
 - src/app/login/page.tsx
 
-### 重要な決定
-- 認証方式: Supabase Auth を採用
+### 重要决定
+- 认证方式: 采用 Supabase Auth
 
-### 次回への引き継ぎ
-- ログアウト機能が未実装
-- パスワードリセットも必要
+### 给下次的交接
+- 登出功能未实现
+- 还需要密码重置
 ```
 
-> **Note**: `${CLAUDE_SESSION_ID}` は Claude Code が自動設定する環境変数です。
-> セッションごとに一意のIDが割り当てられ、ログの追跡や問題調査に役立ちます。
+> **Note**: `${CLAUDE_SESSION_ID}` 是 Claude Code 自动设置的环境变量。
+> 每个会话分配唯一ID，有助于日志跟踪和问题调查。
 
 ### decisions.md
 
 ```markdown
-## 技術選定
+## 技术选型
 
-| 日付 | 決定事項 | 理由 |
+| 日期 | 决定事项 | 理由 |
 |------|---------|------|
-| 2024-01-15 | Supabase Auth | 無料枠あり、セットアップ簡単 |
-| 2024-01-14 | Next.js App Router | 最新のベストプラクティス |
+| 2024-01-15 | Supabase Auth | 有免费额度，设置简单 |
+| 2024-01-14 | Next.js App Router | 最新的最佳实践 |
 
-## アーキテクチャ
+## 架构
 
-- コンポーネント: `src/components/`
-- ユーティリティ: `src/lib/`
-- 型定義: `src/types/`
+- 组件: `src/components/`
+- 工具函数: `src/lib/`
+- 类型定义: `src/types/`
 ```
 
 ### patterns.md
 
 ```markdown
-## このプロジェクトのパターン
+## 这个项目的模式
 
-### コンポーネント命名
+### 组件命名
 - PascalCase
 - 例: `UserProfile.tsx`, `LoginForm.tsx`
 
-### API エンドポイント
-- `/api/v1/` プレフィックス
-- RESTful 設計
+### API 端点
+- `/api/v1/` 前缀
+- RESTful 设计
 
-### エラーハンドリング
-- try-catch で囲む
-- エラーメッセージは日本語
+### 错误处理
+- 用 try-catch 包裹
+- 错误信息使用中文
 ```
 
 ### context.json
@@ -133,136 +133,136 @@ user-invocable: false
     "database": "supabase",
     "styling": "tailwind"
   },
-  "current_phase": "フェーズ2: コア機能",
+  "current_phase": "Phase 2: 核心功能",
   "last_session": "2024-01-15T14:30:00Z"
 }
 ```
 
 ---
 
-## 処理フロー
+## 处理流程
 
-### セッション開始時
+### 会话开始时
 
-1. `.claude/memory/context.json` を読み込み
-2. 前回のセッションログを確認
-3. **Agent Trace から直近の編集履歴を取得**
-4. 未完了タスクを特定
-5. コンテキストサマリーを生成
+1. 读取 `.claude/memory/context.json`
+2. 确认上次会话日志
+3. **从 Agent Trace 获取最近的编辑历史**
+4. 确定未完成任务
+5. 生成上下文摘要
 
-**Agent Trace 活用**:
+**Agent Trace 应用**:
 ```bash
-# 前回の編集ファイル一覧を取得
+# 获取上次编辑的文件列表
 tail -50 .claude/state/agent-trace.jsonl | jq -r '.files[].path' | sort -u
 
-# プロジェクト情報を取得
+# 获取项目信息
 tail -1 .claude/state/agent-trace.jsonl | jq '.metadata'
 ```
 
-### セッション中
+### 会话中
 
-1. 重要な決定を `decisions.md` に記録
-2. 新しいパターンを `patterns.md` に追加
-3. ファイル生成を `session-log.md` に記録
+1. 记录重要决定到 `decisions.md`
+2. 添加新模式到 `patterns.md`
+3. 记录文件生成到 `session-log.md`
 
-### セッション終了時
+### 会话结束时
 
-1. セッションサマリーを生成
-2. `context.json` を更新
-3. 次回への引き継ぎ事項を記録
+1. 生成会话摘要
+2. 更新 `context.json`
+3. 记录给下次的交接事项
 
 ---
 
-## メモリ最適化（CC 2.1.49+）
+## 内存优化（CC 2.1.49+）
 
-Claude Code 2.1.49 以降、セッション再開時のメモリ使用量が **68% 削減** されました。
+Claude Code 2.1.49 以后，会话恢复时的内存使用量**减少了 68%**。
 
-### 推奨ワークフロー
+### 推荐工作流
 
 ```bash
-# 長時間作業は --resume を活用
+# 长时间工作使用 --resume
 claude --resume
 
-# 大規模タスクは分割してセッション再開
-claude --resume "続きから"
+# 大任务分割后会话恢复
+claude --resume "继续"
 ```
 
-| シナリオ | 推奨 |
+| 场景 | 推荐 |
 |---------|------|
-| 長時間実装 | 1-2時間ごとにセッション再開 |
-| 大規模リファクタ | 機能単位でセッション分割 |
-| メモリ不足警告 | 即座に `--resume` で再開 |
+| 长时间实现 | 每 1-2 小时会话恢复 |
+| 大规模重构 | 按功能分割会话 |
+| 内存不足警告 | 立即用 `--resume` 恢复 |
 
-> 💡 メモリ効率が大幅に改善されたため、セッション再開を積極的に活用してください。
+> 💡 内存效率大幅改善，请积极使用会话恢复。
 
 ---
 
-## 使用例
+## 使用示例
 
-### 前回の続きから開始
+### 从上次继续开始
 
 ```
-ユーザー: 「前回の続きから」
+用户: 「从上次继续」
 
 Claude Code:
-📋 前回のセッション（2024-01-15）
+📋 上次会话（2024-01-15）
 
-完了したタスク:
-- ユーザー認証機能
-- ログインページ
+完成的任务:
+- 用户认证功能
+- 登录页面
 
-未完了:
-- ログアウト機能
-- パスワードリセット
+未完成:
+- 登出功能
+- 密码重置
 
-「ログアウト機能を作って」と言えば続きを実装します。
+说「创建登出功能」就会继续实现。
 ```
 
-### プロジェクトの状況確認
+### 确认项目状况
 
 ```
-ユーザー: 「このプロジェクトについて教えて」
+用户: 「告诉我这个项目的情况」
 
 Claude Code:
-📁 プロジェクト: my-blog
+📁 项目: my-blog
 
-技術スタック:
+技术栈:
 - Next.js + Tailwind CSS + Supabase
 
-現在のフェーズ: コア機能開発
-進捗: 40% 完了
+当前阶段: 核心功能开发
+进度: 40% 完成
 
-最近の決定:
-- Supabase Auth を採用
-- App Router を使用
+最近的决定:
+- 采用 Supabase Auth
+- 使用 App Router
 ```
 
 ---
 
-## Claude Code 自動メモリとの関係（D22）
+## 与 Claude Code 自动内存的关系（D22）
 
-Claude Code 2.1.32+ には「自動メモリ」機能があり、`~/.claude/projects/<project>/memory/MEMORY.md` にセッション間の学習を自動保存します。
+Claude Code 2.1.32+ 有「自动内存」功能，自动保存会话间的学习到 `~/.claude/projects/<project>/memory/MEMORY.md`。
 
-Harness のメモリシステムとは**3層アーキテクチャ**として共存します:
+与 Harness 的内存系统作为**3 层架构**共存:
 
-| 層 | システム | 内容 | 管理 |
+| 层 | 系统 | 内容 | 管理 |
 |----|---------|------|------|
-| **Layer 1** | Claude Code 自動メモリ | 汎用的な学習（ミス回避、ツール使い方） | 暗黙的・自動 |
-| **Layer 2** | Harness SSOT | プロジェクト固有の決定事項・パターン | 明示的・手動 |
-| **Layer 3** | Agent Memory | エージェント別のタスク学習 | エージェント定義 |
+| **Layer 1** | Claude Code 自动内存 | 通用学习（避免错误、工具用法） | 隐式/自动 |
+| **Layer 2** | Harness SSOT | 项目固有决定事项/模式 | 显式/手动 |
+| **Layer 3** | Agent Memory | 代理别任务学习 | 代理定义 |
 
-**使い分け**:
-- Layer 1 の知見がプロジェクト全体に重要 → `/memory ssot` で Layer 2 に昇格
-- 日常的な学習は Layer 1 に任せる（無効化しない）
-- Agent Teams 使用時は並列書き込みに注意
+**区分使用**:
+- Layer 1 的知识对整个项目重要 → 用 `/memory ssot` 升级到 Layer 2
+- 日常学习交给 Layer 1（不禁用）
+- 使用 Agent Teams 时注意并行写入
 
-詳細: [D22: 3層メモリアーキテクチャ](../../.claude/memory/decisions.md#d22-3層メモリアーキテクチャ)
+详情: [D22: 3 层内存架构](../../.claude/memory/decisions.md#d22-3-layer-memory-architecture)
 
 ---
 
-## 注意事項
+## 注意事项
 
-- **自動保存**: `hooks/Stop` により、セッション終了時に `session-log.md` へ要約を自動追記する運用を推奨（未導入の場合は手動運用でOK）
-- **プライバシー**: 機密情報は記録しない
-- **Git方針**: `decisions.md`/`patterns.md`は共有推奨、`session-log.md`/`context.json`/`.claude/state/`はローカル推奨（詳細: `docs/MEMORY_POLICY.md`）
-- **容量管理**: ログが大きくなったら「セッションログを整理して」を推奨
+- **自动保存**: 建议通过 `hooks/Stop` 在会话结束时自动追加摘要到 `session-log.md`（未导入时可手动运营）
+- **隐私**: 不记录机密信息
+- **Git 方针**: `decisions.md`/`patterns.md` 共享推荐，`session-log.md`/`context.json`/`.claude/state/` 本地推荐（详情: `docs/MEMORY_POLICY.md`）
+- **容量管理**: 日志变大时推荐「整理会话日志」

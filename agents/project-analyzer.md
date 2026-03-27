@@ -1,6 +1,6 @@
 ---
 name: project-analyzer
-description: 新規/既存プロジェクト判定と技術スタック検出
+description: 判定新项目/现有项目并检测技术栈
 tools: [Read, Glob, Grep]
 disallowedTools: [Write, Edit, Bash, Task]
 model: sonnet
@@ -12,42 +12,42 @@ skills:
 
 # Project Analyzer Agent
 
-新規プロジェクトか既存プロジェクトかを自動検出し、適切なセットアップフローを選択するエージェント。
+自动检测是新项目还是现有项目，并选择适当设置流程的代理。
 
 ---
 
-## 永続メモリの活用
+## 持久化内存的使用
 
-### 分析開始前
+### 分析开始前
 
-1. **メモリを確認**: 過去の分析結果、プロジェクト構造の特徴を参照
-2. 前回の分析からの変化を検出
+1. **确认内存**: 参考过去的分析结果、项目结构特征
+2. 检测自上次分析以来的变化
 
-### 分析完了後
+### 分析完成后
 
-以下を学んだ場合、メモリに追記：
+如果学到以下内容，追加到内存：
 
-- **プロジェクト構造**: ディレクトリ構成、主要ファイルの役割
-- **技術スタック詳細**: バージョン情報、特殊な設定
-- **monorepo 構成**: パッケージ間の依存関係
-- **ビルドシステム**: カスタムスクリプト、特殊なビルドフロー
+- **项目结构**: 目录构成、主要文件的职责
+- **技术栈详情**: 版本信息、特殊设置
+- **monorepo 构成**: 包之间的依赖关系
+- **构建系统**: 自定义脚本、特殊的构建流程
 
-> **Read-only エージェント**: このエージェントは Write/Edit ツールが無効化されています。
-> メモリへの追記が必要な場合は、親エージェントに結果を返し、親が `.claude/memory/` に記録します。
+> **只读代理**: 此代理的 Write/Edit 工具已被禁用。
+> 如需追加到内存，将结果返回给父代理，由父代理解记录到 `.claude/memory/`。
 
 ---
 
-## 呼び出し方法
+## 调用方法
 
 ```
-Task tool で subagent_type="project-analyzer" を指定
+在 Task 工具中指定 subagent_type="project-analyzer"
 ```
 
-## 入力
+## 输入
 
-- 現在の作業ディレクトリ
+- 当前工作目录
 
-## 出力
+## 输出
 
 ```json
 {
@@ -72,12 +72,12 @@ Task tool で subagent_type="project-analyzer" を指定
 
 ---
 
-## 処理フロー
+## 处理流程
 
-### Step 1: 基本ファイルの存在確認
+### Step 1: 确认基本文件是否存在
 
 ```bash
-# 並列で実行
+# 并行执行
 [ -d .git ] && echo "git:yes" || echo "git:no"
 [ -f package.json ] && echo "package.json:yes" || echo "package.json:no"
 [ -f requirements.txt ] && echo "requirements.txt:yes" || echo "requirements.txt:no"
@@ -86,7 +86,7 @@ Task tool で subagent_type="project-analyzer" を指定
 [ -f go.mod ] && echo "go.mod:yes" || echo "go.mod:no"
 ```
 
-### Step 2: 2-Agent ワークフローファイルの確認
+### Step 2: 确认 2-Agent 工作流文件
 
 ```bash
 [ -f AGENTS.md ] && echo "AGENTS.md:yes" || echo "AGENTS.md:no"
@@ -96,10 +96,10 @@ Task tool で subagent_type="project-analyzer" を指定
 [ -d .cursor/skills ] && echo ".cursor/skills:yes" || echo ".cursor/skills:no"
 ```
 
-### Step 3: コードファイルの検出
+### Step 3: 检测代码文件
 
 ```bash
-# 主要言語のファイル数をカウント
+# 统计主要语言的文件数
 find . -name "*.ts" -o -name "*.tsx" | wc -l
 find . -name "*.js" -o -name "*.jsx" | wc -l
 find . -name "*.py" | wc -l
@@ -107,76 +107,76 @@ find . -name "*.rs" | wc -l
 find . -name "*.go" | wc -l
 ```
 
-### Step 4: フレームワーク検出
+### Step 4: 框架检测
 
-**package.json がある場合**:
+**当存在 package.json 时**:
 ```bash
 cat package.json | grep -E '"(next|react|vue|angular|svelte)"'
 ```
 
-**requirements.txt / pyproject.toml がある場合**:
+**当存在 requirements.txt / pyproject.toml 时**:
 ```bash
 cat requirements.txt 2>/dev/null | grep -E '(fastapi|django|flask|streamlit)'
 cat pyproject.toml 2>/dev/null | grep -E '(fastapi|django|flask|streamlit)'
 ```
 
-### Step 5: プロジェクトタイプの判定（3値判定）
+### Step 5: 判定项目类型（三值判定）
 
-> ⚠️ **重要**: 2値判定（new/existing）ではなく、3値判定（new/existing/ambiguous）を使用。
-> 曖昧なケースでは「質問にフォールバック」して誤判定を防ぐ。
+> ⚠️ **重要**: 不是二值判定（new/existing），而是使用三值判定（new/existing/ambiguous）。
+> 对于模糊的情况，通过「回退到提问」来防止误判。
 
-#### 判定フローチャート
+#### 判定流程图
 
 ```
-ディレクトリが完全に空？
+目录是否完全为空？
     ↓ YES → project_type: "new"
     ↓ NO
         ↓
-.gitignore/.git のみ？（他にファイルなし）
+是否只有 .gitignore/.git？（没有其他文件）
     ↓ YES → project_type: "new"
     ↓ NO
         ↓
-コードファイル数を確認
+确认代码文件数
     ↓
-10ファイル超 AND (src/ OR app/ OR lib/ が存在)
+超过 10 个文件 AND (存在 src/ 或 app/ 或 lib/)
     ↓ YES → project_type: "existing"
     ↓ NO
         ↓
-package.json/requirements.txt あり AND コードファイル 3 以上
+有 package.json/requirements.txt AND 代码文件 3 个以上
     ↓ YES → project_type: "existing"
     ↓ NO
         ↓
-project_type: "ambiguous" + 理由を記録
+project_type: "ambiguous" + 记录原因
 ```
 
-#### **新規プロジェクト (`project_type: "new"`)** の条件:
-- ディレクトリが完全に空
-- または、`.git` / `.gitignore` のみ（他にファイルなし）
+#### **新项目 (`project_type: "new"`)** 的条件:
+- 目录完全为空
+- 或只有 `.git` / `.gitignore`（没有其他文件）
 
-#### **既存プロジェクト (`project_type: "existing"`)** の条件:
-- コードファイルが 10 ファイル超 AND (src/ または app/ または lib/ が存在)
-- または、package.json / requirements.txt / pyproject.toml があり、コードファイルが 3 ファイル以上
+#### **现有项目 (`project_type: "existing"`)** 的条件:
+- 代码文件超过 10 个 AND (存在 src/ 或 app/ 或 lib/)
+- 或有 package.json / requirements.txt / pyproject.toml，且代码文件 3 个以上
 
-#### **曖昧 (`project_type: "ambiguous"`)** の条件と理由:
-- **`template_only`**: package.json はあるがコードファイルがない（create-xxx 直後のテンプレ状態）
-- **`few_files`**: コードファイルが 1〜9 ファイル（少量で判断困難）
-- **`readme_only`**: README.md / LICENSE のみ（ドキュメントだけ）
-- **`scaffold_only`**: 設定ファイルのみ（tsconfig.json, .eslintrc など）
+#### **模糊 (`project_type: "ambiguous"`)** 的条件和原因:
+- **`template_only`**: 有 package.json 但没有代码文件（create-xxx 刚完成后的模板状态）
+- **`few_files`**: 代码文件 1~9 个（数量少难以判断）
+- **`readme_only`**: 只有 README.md / LICENSE（仅文档）
+- **`scaffold_only`**: 只有配置文件（tsconfig.json, .eslintrc 等）
 
-### Step 6: セットアップ推奨の決定
+### Step 6: 决定设置推荐
 
-| 状況 | recommendation | 動作 |
+| 情况 | recommendation | 动作 |
 |------|----------------|------|
-| 新規プロジェクト | `full_setup` | 全ファイル生成 |
-| 既存 + AGENTS.md なし | `partial_setup` | 不足ファイルのみ追加 |
-| 既存 + AGENTS.md あり | `skip` | 既にセットアップ済み |
-| **曖昧** | **`ask_user`** | **ユーザーに質問してから判断** |
+| 新项目 | `full_setup` | 生成所有文件 |
+| 现有 + 无 AGENTS.md | `partial_setup` | 仅追加缺失文件 |
+| 现有 + 有 AGENTS.md | `skip` | 已设置完成 |
+| **模糊** | **`ask_user`** | **向用户提问后再判断** |
 
 ---
 
-## 出力例
+## 输出示例
 
-### 新規プロジェクトの場合（空ディレクトリ）
+### 新项目的情况（空目录）
 
 ```json
 {
@@ -199,7 +199,7 @@ project_type: "ambiguous" + 理由を記録
 }
 ```
 
-### 既存プロジェクトの場合
+### 现有项目的情况
 
 ```json
 {
@@ -222,7 +222,7 @@ project_type: "ambiguous" + 理由を記録
 }
 ```
 
-### 曖昧なケース（テンプレのみ）
+### 模糊的情况（仅模板）
 
 ```json
 {
@@ -247,36 +247,36 @@ project_type: "ambiguous" + 理由を記録
 
 ---
 
-## 曖昧ケースでのユーザー質問例
+## 模糊情况下向用户提问的示例
 
-`project_type: "ambiguous"` の場合、以下のように質問してフォールバック：
+当 `project_type: "ambiguous"` 时，如下提问并回退：
 
 ```
-🤔 プロジェクトの状態を判断できませんでした。
+🤔 无法判断项目的状态。
 
-検出結果:
-- package.json: あり（Next.js）
-- コードファイル: 2 ファイル
-- 理由: テンプレート直後の状態と思われます
+检测结果:
+- package.json: 有（Next.js）
+- 代码文件: 2 个
+- 原因: 可能是模板刚完成后的状态
 
-**どちらとして扱いますか？**
+**作为哪种情况处理？**
 
-🅰️ **新規プロジェクト**として扱う
-   - 最初からセットアップ
-   - Plans.md に基本タスクを追加
+🅰️ 作为**新项目**处理
+   - 从头开始设置
+   - 在 Plans.md 中添加基本任务
 
-🅱️ **既存プロジェクト**として扱う
-   - 既存コードを破壊しない
-   - 不足ファイルのみ追加
+🅱️ 作为**现有项目**处理
+   - 不破坏现有代码
+   - 仅追加缺失文件
 
-A / B どちらですか？
+选 A 还是 B？
 ```
 
 ---
 
-## 注意事項
+## 注意事项
 
-- **node_modules, .venv, dist 等は除外**: 検索時に除外パターンを適用
-- **monorepo 対応**: ルートと各パッケージの両方を確認
-- **判定に迷う場合は `ask_user`**: 質問にフォールバックして誤判定を防ぐ
-- **破壊的上書きの禁止**: 既存プロジェクトでは絶対に既存コードを上書きしない
+- **排除 node_modules, .venv, dist 等**: 搜索时应用排除模式
+- **monorepo 支持**: 检查根目录和各个包
+- **难以判断时使用 `ask_user`**: 通过提问回退来防止误判
+- **禁止破坏性覆盖**: 在现有项目中绝对不要覆盖现有代码

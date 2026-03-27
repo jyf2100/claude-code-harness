@@ -56,7 +56,7 @@ The plugin system generates fully qualified names in the following format:
 
 ```markdown
 ---
-description: Japanese description (one line, concise)
+description: 日语描述（一行，简洁）
 description-en: English description (one line, concise)
 ---
 

@@ -1,12 +1,12 @@
 # Scripts Directory
 
-JSON Schema 自動生成とバリデーションのためのスクリプト集。
+用于 JSON Schema 自动生成和验证的脚本集合。
 
 ## Available Scripts
 
 ### generate-schemas.js
 
-JSON Schema から Zod スキーマを自動生成します。
+从 JSON Schema 自动生成 Zod schema。
 
 **Usage:**
 ```bash
@@ -14,11 +14,11 @@ npm run generate:schemas
 ```
 
 **Input:**
-- `schemas/*.schema.json` - JSON Schema ファイル
+- `schemas/*.schema.json` - JSON Schema 文件
 
 **Output:**
-- `src/schemas/*.ts` - Zod スキーマ定義
-- `src/schemas/index.ts` - バレル export
+- `src/schemas/*.ts` - Zod schema 定义
+- `src/schemas/index.ts` - barrel export
 
 **Example:**
 ```bash
@@ -30,7 +30,7 @@ npm run generate:schemas
 ```
 
 **Dependencies:**
-- `json-schema-to-zod` - JSON Schema → Zod 変換
+- `json-schema-to-zod` - JSON Schema → Zod 转换
 - `zod` - Runtime validation
 
 ---
@@ -39,7 +39,7 @@ npm run generate:schemas
 
 ### Install Dependencies
 
-スキーマ生成に必要なパッケージをインストール：
+安装 schema 生成所需的包：
 
 ```bash
 npm install --save-dev json-schema-to-zod
@@ -48,7 +48,7 @@ npm install zod
 
 ### Add npm Script
 
-`package.json` に以下を追加：
+在 `package.json` 中添加：
 
 ```json
 {
@@ -60,7 +60,7 @@ npm install zod
 
 ### Pre-commit Hook (Optional)
 
-スキーマ変更時に自動生成：
+在 schema 变更时自动生成：
 
 ```bash
 # .husky/pre-commit
@@ -72,10 +72,10 @@ git add src/schemas/
 
 ## Schema Development Workflow
 
-1. **Schema 作成**: `schemas/*.schema.json` を作成
-2. **生成実行**: `npm run generate:schemas`
-3. **型推論確認**: `src/schemas/*.ts` で TypeScript 型を確認
-4. **バリデーション**: 生成された Zod スキーマで検証
+1. **创建 Schema**: 创建 `schemas/*.schema.json`
+2. **执行生成**: `npm run generate:schemas`
+3. **确认类型推断**: 在 `src/schemas/*.ts` 中确认 TypeScript 类型
+4. **验证**: 使用生成的 Zod schema 进行验证
 
 ### Example
 
@@ -112,15 +112,15 @@ if (result.success) {
 
 ### Breaking Changes
 
-メジャーバージョンを上げる必要がある変更：
-- Required フィールドの追加
-- フィールドの削除
-- 型の変更
+需要提升主版本号的变更：
+- 添加 Required 字段
+- 删除字段
+- 类型变更
 
-マイナーバージョンで可能な変更：
-- Optional フィールドの追加
-- Enum 値の追加
-- Description の変更
+可以在次版本号中进行的变更：
+- 添加 Optional 字段
+- 添加 Enum 值
+- Description 变更
 
 ---
 
@@ -134,11 +134,11 @@ npm install --save-dev json-schema-to-zod
 ```
 
 **Error**: `No .schema.json files found`
-- `schemas/` ディレクトリに `*.schema.json` ファイルがあるか確認
+- 确认 `schemas/` 目录中有 `*.schema.json` 文件
 
 **Error**: `Invalid JSON`
-- JSON Schema の構文エラーをチェック
-- [JSONLint](https://jsonlint.com/) で検証
+- 检查 JSON Schema 的语法错误
+- 使用 [JSONLint](https://jsonlint.com/) 验证
 
 ### Zod Schema Issues
 
@@ -158,7 +158,7 @@ const manifest: AssetManifest = { /* ... */ };
 
 ### validate-scene.js
 
-個別シーン JSON を `scene.schema.json` に対してバリデーションします。
+对单个场景 JSON 针对 `scene.schema.json` 进行验证。
 
 **Usage:**
 ```bash
@@ -187,11 +187,11 @@ node scripts/validate-scene.js schemas/examples/scene-example.json
 
 ### validate-scenario.js
 
-シナリオ JSON を `scenario.schema.json` に対してバリデーションします。
-セマンティックチェックも実行：
-- セクション ID の一意性
-- セクション順序の正しさ
-- Duration の妥当性
+对场景 JSON 针对 `scenario.schema.json` 进行验证。
+也执行语义检查：
+- Section ID 的唯一性
+- Section 顺序的正确性
+- Duration 的合理性
 
 **Usage:**
 ```bash
@@ -217,8 +217,8 @@ node scripts/validate-scenario.js schemas/examples/scenario-example.json
 
 ### validate-video.js
 
-完全なビデオスクリプト JSON を E2E でバリデーションします。
-Critical エラーは停止、Warning はログ出力して続行。
+对完整的视频脚本 JSON 进行 E2E 验证。
+Critical 错误会停止，Warning 只输出日志并继续。
 
 **Usage:**
 ```bash
@@ -271,7 +271,7 @@ node scripts/validate-video.js schemas/examples/video-script-example.json
 
 ### load-assets.js
 
-アセット（背景、効果音、フォント、画像）の読み込みとユーザー上書き対応。
+资源（背景、音效、字体、图片）的加载和用户覆盖支持。
 
 **Priority System:**
 1. User assets: `~/.harness/video/assets/`
@@ -338,12 +338,12 @@ npm test -- asset-loader.test.js
 
 ## Future Scripts (Phase 3+)
 
-今後追加予定のスクリプト：
+计划将来添加的脚本：
 
-- `merge-scenes.js` - シーン JSON マージ
-- `optimize-assets.js` - アセット最適化
-- `generate-thumbnails.js` - サムネイル自動生成
-- `render-video.js` - ビデオレンダリング (Phase 8)
+- `merge-scenes.js` - 场景 JSON 合并
+- `optimize-assets.js` - 资源优化
+- `generate-thumbnails.js` - 缩略图自动生成
+- `render-video.js` - 视频渲染 (Phase 8)
 
 ---
 

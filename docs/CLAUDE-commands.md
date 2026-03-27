@@ -1,31 +1,31 @@
-# 主要コマンド一覧
+# Major Commands List
 
-Claude harness 開発時に使用するコマンドとハンドオフの一覧です。
+List of commands and handoffs used during Claude harness development.
 
-## 主要コマンド（開発時に使用）
+## Major Commands (used during development)
 
-| コマンド | 用途 |
-|---------|------|
-| `/plan-with-agent` | 改善タスクを Plans.md に追加 |
-| `/work` | タスクを実装（スコープ自動判断、--codex 対応） |
-| `/breezing` | Agent Teams でチーム並列完走（--codex 対応） |
-| `/reload-plugins` | スキル/フック編集後の即時反映（再起動不要） |
-| `/harness-review` | 変更内容をレビュー |
-| `/validate` | プラグイン検証 |
-| `/remember` | 学習事項を記録 |
+| Command | Purpose |
+|---------|---------|
+| `/plan-with-agent` | Add improvement tasks to Plans.md |
+| `/work` | Implement tasks (auto scope detection, --codex support) |
+| `/breezing` | Team parallel completion with Agent Teams (--codex support) |
+| `/reload-plugins` | Immediate reflection after skill/hook edits (no restart needed) |
+| `/harness-review` | Review changes |
+| `/validate` | Validate plugin |
+| `/remember` | Record learning items |
 
-## ハンドオフ
+## Handoffs
 
-| コマンド | 用途 |
-|---------|------|
-| `/handoff-to-cursor` | Cursor 運用時の完了報告 |
+| Command | Purpose |
+|---------|---------|
+| `/handoff-to-cursor` | Completion report for Cursor operations |
 
-**スキル（会話で自動起動）**:
-- `handoff-to-impl` - 「実装役に渡して」→ PM → Impl への依頼
-- `handoff-to-pm` - 「PMに完了報告」→ Impl → PM への完了報告
+**Skills (auto-launched in conversation)**:
+- `handoff-to-impl` - "Hand off to implementer" → PM → Impl request
+- `handoff-to-pm` - "Report completion to PM" → Impl → PM completion report
 
-## 関連ドキュメント
+## Related Documentation
 
-- [CLAUDE.md](../CLAUDE.md) - プロジェクト開発ガイド
-- [docs/CLAUDE-skill-catalog.md](./CLAUDE-skill-catalog.md) - スキルカタログ
-- [docs/CLAUDE-feature-table.md](./CLAUDE-feature-table.md) - 新機能活用テーブル
+- [CLAUDE.md](../CLAUDE.md) - Project Development Guide
+- [docs/CLAUDE-skill-catalog.md](./CLAUDE-skill-catalog.md) - Skill Catalog
+- [docs/CLAUDE-feature-table.md](./CLAUDE-feature-table.md) - New Feature Usage Table

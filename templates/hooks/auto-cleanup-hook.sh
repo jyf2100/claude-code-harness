@@ -1,67 +1,67 @@
 #!/bin/bash
 # auto-cleanup-hook.sh
-# PostToolUse Hook: Plans.md 等への書き込み後に自動でサイズチェック
+# PostToolUse Hook: 写入 Plans.md 等文件后自动进行大小检查
 #
-# 環境変数:
-#   $CLAUDE_FILE_PATHS - 変更されたファイルパス（スペース区切り）
+# 环境变量:
+#   $CLAUDE_FILE_PATHS - 已更改的文件路径（空格分隔）
 #
-# 設定:
-#   .claude-code-harness.config.yaml で閾値をカスタマイズ可能
+# 设置:
+#   可在 .claude-code-harness.config.yaml 中自定义阈值
 
-# デフォルト閾値
+# 默认阈值
 PLANS_MAX_LINES=${PLANS_MAX_LINES:-200}
 SESSION_LOG_MAX_LINES=${SESSION_LOG_MAX_LINES:-500}
 CLAUDE_MD_MAX_LINES=${CLAUDE_MD_MAX_LINES:-100}
 
-# 設定ファイルがあれば読み込み
+# 如果存在配置文件则加载
 CONFIG_FILE=".claude-code-harness.config.yaml"
 if [ -f "$CONFIG_FILE" ]; then
-  # 簡易 YAML パース
+  # 简易 YAML 解析
   PLANS_MAX_LINES=$(grep -A5 "plans:" "$CONFIG_FILE" | grep "max_lines:" | head -1 | awk '{print $2}' || echo $PLANS_MAX_LINES)
   SESSION_LOG_MAX_LINES=$(grep -A5 "session_log:" "$CONFIG_FILE" | grep "max_lines:" | head -1 | awk '{print $2}' || echo $SESSION_LOG_MAX_LINES)
   CLAUDE_MD_MAX_LINES=$(grep -A5 "claude_md:" "$CONFIG_FILE" | grep "max_lines:" | head -1 | awk '{print $2}' || echo $CLAUDE_MD_MAX_LINES)
 fi
 
-# フィードバックを格納する変数
+# 用于存储反馈的变量
 FEEDBACK=""
 
-# 各ファイルをチェック
+# 检查每个文件
 for file in $CLAUDE_FILE_PATHS; do
-  # Plans.md のチェック
+  # Plans.md 的检查
   if [[ "$file" == *"Plans.md"* ]] || [[ "$file" == *"plans.md"* ]] || [[ "$file" == *"PLANS.MD"* ]]; then
     if [ -f "$file" ]; then
       lines=$(wc -l < "$file" | tr -d ' ')
       if [ "$lines" -gt "$PLANS_MAX_LINES" ]; then
-        FEEDBACK="${FEEDBACK}Plans.md が ${lines} 行です（上限: ${PLANS_MAX_LINES}行）。\`/maintenance\` で古いタスクをアーカイブすることを推奨します。\n"
+        FEEDBACK="${FEEDBACK}Plans.md 已达 ${lines} 行（上限: ${PLANS_MAX_LINES}行）。建议使用 \`/maintenance\` 归档旧任务。\n"
       fi
     fi
   fi
 
-  # session-log.md のチェック
+  # session-log.md 的检查
   if [[ "$file" == *"session-log.md"* ]]; then
     if [ -f "$file" ]; then
       lines=$(wc -l < "$file" | tr -d ' ')
       if [ "$lines" -gt "$SESSION_LOG_MAX_LINES" ]; then
-        FEEDBACK="${FEEDBACK}session-log.md が ${lines} 行です（上限: ${SESSION_LOG_MAX_LINES}行）。\`/maintenance\` で月別に分割することを推奨します。\n"
+        FEEDBACK="${FEEDBACK}session-log.md 已达 ${lines} 行（上限: ${SESSION_LOG_MAX_LINES}行）。建议使用 \`/maintenance\` 按月分割。\n"
       fi
     fi
   fi
 
-  # CLAUDE.md のチェック
+  # CLAUDE.md 的检查
   if [[ "$file" == *"CLAUDE.md"* ]] || [[ "$file" == *"claude.md"* ]]; then
     if [ -f "$file" ]; then
       lines=$(wc -l < "$file" | tr -d ' ')
       if [ "$lines" -gt "$CLAUDE_MD_MAX_LINES" ]; then
-        FEEDBACK="${FEEDBACK}CLAUDE.md が ${lines} 行です。常に必要な情報以外は docs/ に分割し、\`@docs/filename.md\` で参照することを検討してください。\n"
+        FEEDBACK="${FEEDBACK}CLAUDE.md 已达 ${lines} 行。请考虑将非常用信息分割到 docs/，并使用 \`@docs/filename.md\` 引用。\n"
       fi
     fi
   fi
 done
 
-# フィードバックがあれば出力（Claude Code へのフィードバック）
+# 如有反馈则输出（向 Claude Code 的反馈）
 if [ -n "$FEEDBACK" ]; then
-  echo -e "⚠️ ファイルサイズ警告:\n${FEEDBACK}"
+  echo -e "⚠️ 文件大小警告:\n${FEEDBACK}"
 fi
 
-# 常に成功で終了（ブロックしない）
+# 始终以成功退出（不阻塞）
 exit 0

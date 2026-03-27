@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # post-compact.sh
-# PostCompact フックハンドラ
-# コンテキストコンパクション完了後に発火（PreCompact の対）
-# WIP タスクがある場合は Plans.md の現在状態をサマリーとして additionalContext に注入
+# PostCompact 钩子处理器
+# 在上下文压缩完成后触发（PreCompact 的对应）
+# 如果有 WIP 任务，将 Plans.md 的当前状态作为摘要注入 additionalContext
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON with optional additionalContext for context re-injection
@@ -10,32 +10,32 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ファイルパス
+# 文件路径
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 COMPACTION_LOG="${STATE_DIR}/compaction-events.jsonl"
 PLANS_FILE="${PROJECT_ROOT}/Plans.md"
 PRECOMPACT_SNAPSHOT="${STATE_DIR}/precompact-snapshot.json"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行）
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -50,7 +50,7 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# Plans.md から WIP タスクを抽出してサマリーを生成
+# 从 Plans.md 提取 WIP 任务并生成摘要
 get_wip_summary() {
   if [ ! -f "${PLANS_FILE}" ]; then
     return 0
@@ -77,14 +77,14 @@ except Exception:
     pass
 " "${PLANS_FILE}" 2>/dev/null)" || wip_lines=""
   else
-    # python3 がない場合は grep でフォールバック
+    # 如果没有 python3，则使用 grep 作为后备方案
     wip_lines="$(grep -E 'cc:WIP|cc:TODO' "${PLANS_FILE}" 2>/dev/null | head -20)" || wip_lines=""
   fi
 
   printf '%s' "${wip_lines}"
 }
 
-# PreCompact スナップショットからコンテキストを復元
+# 从 PreCompact 快照恢复上下文
 get_precompact_context() {
   if [ ! -f "${PRECOMPACT_SNAPSHOT}" ]; then
     return 0
@@ -129,29 +129,29 @@ except Exception:
   printf '%s' "${context}"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 如果载荷为空则跳过
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"PostCompact: no payload"}'
   exit 0
 fi
 
-# === コンパクション後のコンテキスト再注入 ===
+# === 压缩后的上下文重新注入 ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
-# WIP タスクサマリーを取得
+# 获取 WIP 任务摘要
 WIP_SUMMARY="$(get_wip_summary)"
 
-# PreCompact スナップショットからコンテキストを復元
+# 从 PreCompact 快照恢复上下文
 PRECOMPACT_CONTEXT="$(get_precompact_context)"
 
-# === イベント記録 ===
+# === 事件记录 ===
 log_entry=""
 if command -v jq >/dev/null 2>&1; then
   log_entry="$(jq -nc \
@@ -177,9 +177,9 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${COMPACTION_LOG}"
 fi
 
-# === レスポンス生成 ===
+# === 响应生成 ===
 
-# additionalContext を構築
+# 构建 additionalContext
 ADDITIONAL_CONTEXT=""
 
 if [ -n "${WIP_SUMMARY}" ]; then
@@ -197,7 +197,7 @@ ${PRECOMPACT_CONTEXT}"
   fi
 fi
 
-# additionalContext がある場合はレスポンスに含める
+# 如果有 additionalContext 则包含在响应中
 if [ -n "${ADDITIONAL_CONTEXT}" ]; then
   if command -v jq >/dev/null 2>&1; then
     jq -nc \
@@ -205,7 +205,7 @@ if [ -n "${ADDITIONAL_CONTEXT}" ]; then
       --arg ctx "${ADDITIONAL_CONTEXT}" \
       '{"decision":"approve","reason":$reason,"additionalContext":$ctx}'
   else
-    # jq がない場合のフォールバック
+    # 没有 jq 时的后备方案
     _escaped_ctx="${ADDITIONAL_CONTEXT//\\/\\\\}"
     _escaped_ctx="${_escaped_ctx//\"/\\\"}"
     _escaped_ctx="${_escaped_ctx//$'\n'/\\n}"

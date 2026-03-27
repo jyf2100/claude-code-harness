@@ -1,5 +1,5 @@
 ---
-description: UIデバッグ/検証は agent-browser（インストール済みの場合）を優先する
+description: UI调试/验证优先使用 agent-browser（如已安装）
 alwaysApply: true
 _harness_template: "rules/ui-debugging-agent-browser.md.template"
 _harness_version: "2.7.13"
@@ -7,104 +7,104 @@ _harness_version: "2.7.13"
 
 # UI Debugging Rule (Prefer Agent Browser)
 
-## 基本方針
+## 基本方针
 
-- UI/UXの不具合・画面上の再現が必要な調査は、**agent-browser を最優先で使う**
-- 他のブラウザ系ツール（MCP の chrome-devtools、playwright）より先に agent-browser を試す
-- 画面とソースコードを往復しながら、**再現 → 原因推定 → 修正 → 再検証** を短いサイクルで回す
+- UI/UX缺陷、需要屏幕重现的调查，**优先使用 agent-browser**
+- 优先于其他浏览器工具（MCP 的 chrome-devtools、playwright）尝试 agent-browser
+- 在界面和源代码之间往返，**重现 → 推断原因 → 修复 → 再验证** 以短周期循环
 
-## agent-browser の優位性
+## agent-browser 的优势
 
-| 特徴 | 説明 |
+| 特性 | 说明 |
 |------|------|
-| **AI 最適化** | `snapshot -i -c` で要素参照（`@e1`, `@e2`）を取得可能 |
-| **シンプル** | CLI で直接実行、MCP 経由不要 |
-| **高速** | Rust 製バイナリ |
-| **セッション管理** | `--session` で複数タブを並列管理 |
+| **AI 优化** | `snapshot -i -c` 可获取元素引用（`@e1`, `@e2`） |
+| **简洁** | CLI 直接执行，无需 MCP |
+| **高速** | Rust 构建的二进制 |
+| **会话管理** | `--session` 可并行管理多个标签页 |
 
-## 進め方（推奨）
+## 推进方式（推荐）
 
-### 1. 再現条件を固める
+### 1. 确定重现条件
 
-- 対象URL、ユーザー状態（ログイン/権限/データ）、期待値/実際の挙動を明文化
+- 明确目标 URL、用户状态（登录/权限/数据）、期望值/实际行为
 
-### 2. agent-browser で再現
+### 2. 用 agent-browser 重现
 
 ```bash
-# ページを開く
+# 打开页面
 agent-browser open https://example.com/target-page
 
-# AI 向けスナップショットを取得（インタラクティブ要素のみ）
+# 获取 AI 专用快照（仅交互元素）
 agent-browser snapshot -i -c
 
-# 出力例:
+# 输出示例:
 # - button "Login" [ref=e1]
 # - input "Email" [ref=e2]
 # - input "Password" [ref=e3]
 ```
 
-### 3. 操作を実行して問題を再現
+### 3. 执行操作重现问题
 
 ```bash
-# 要素参照でクリック
+# 通过元素引用点击
 agent-browser click @e1
 
-# フォームに入力
+# 填写表单
 agent-browser fill @e2 "test@example.com"
 agent-browser fill @e3 "password123"
 
-# 状態を確認
+# 确认状态
 agent-browser snapshot -i -c
 ```
 
-### 4. 観測→仮説→コード確認
+### 4. 观察→假设→确认代码
 
-- スナップショット/スクリーンショット/コンソールログの情報を根拠に、原因候補を絞る
-- 関連するソース（UI/状態管理/API/バリデーション）を確認
+- 以快照/截图/控制台日志信息为依据，缩小原因候选项
+- 确认相关源代码（UI/状态管理/API/验证）
 
-### 5. 最小修正で直す
+### 5. 用最小修改修复
 
-- 変更範囲を抑え、意図と副作用を説明できる修正にする
+- 控制修改范围，确保能说明意图和副作用
 
-### 6. agent-browser で再検証
+### 6. 用 agent-browser 再验证
 
 ```bash
-# 同じ手順で再現しないことを確認
+# 确认同样步骤不会重现
 agent-browser open https://example.com/target-page
 agent-browser snapshot -i -c
 agent-browser click @e1
 # ...
 ```
 
-## agent-browser が使えない場合のフォールバック
+## agent-browser 不可用时的回退方案
 
-以下の順序で代替手段を試す：
+按以下顺序尝试替代方案：
 
-1. **MCP ブラウザツール**（chrome-devtools, playwright）
-2. **手動再現**:
-   - 再現手順（URL/操作/期待値/実際）
-   - スクリーンショット/動画
-   - コンソールログ/ネットワークログ
-3. **自動E2E**:
-   - 可能なら最小の Playwright/Cypress テストを追加して回帰を防ぐ
+1. **MCP 浏览器工具**（chrome-devtools, playwright）
+2. **手动重现**:
+   - 重现步骤（URL/操作/期望值/实际）
+   - 截图/视频
+   - 控制台日志/网络日志
+3. **自动 E2E**:
+   - 如可能添加最小化的 Playwright/Cypress 测试以防止回归
 
-## よく使うコマンド
+## 常用命令
 
 ```bash
 # 基本操作
-agent-browser open <url>          # ページを開く
-agent-browser snapshot -i -c      # スナップショット（AI向け）
-agent-browser click @e1           # クリック
-agent-browser fill @e2 "text"     # 入力
-agent-browser screenshot out.png  # スクリーンショット
+agent-browser open <url>          # 打开页面
+agent-browser snapshot -i -c      # 快照（AI 专用）
+agent-browser click @e1           # 点击
+agent-browser fill @e2 "text"     # 输入
+agent-browser screenshot out.png  # 截图
 
-# デバッグ
-agent-browser --headed open <url> # ブラウザを表示
-agent-browser console             # コンソールログ表示
-agent-browser errors              # ページエラー表示
+# 调试
+agent-browser --headed open <url> # 显示浏览器
+agent-browser console             # 显示控制台日志
+agent-browser errors              # 显示页面错误
 
-# 情報取得
-agent-browser get text @e1        # テキスト取得
-agent-browser get html @e1        # HTML取得
-agent-browser get url             # 現在のURL
+# 信息获取
+agent-browser get text @e1        # 获取文本
+agent-browser get html @e1        # 获取 HTML
+agent-browser get url             # 获取当前 URL
 ```

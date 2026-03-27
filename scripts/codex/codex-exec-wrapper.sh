@@ -1,13 +1,13 @@
 #!/bin/bash
 # codex-exec-wrapper.sh
-# codex exec の前処理（ルール注入）と後処理（結果記録・マーカー抽出）を自動化するラッパー
+# codex exec 前处理（规则注入）与后处理（结果记录、标记提取）的自动化包装器
 #
 # Usage: ./scripts/codex/codex-exec-wrapper.sh <prompt_file> [timeout_seconds]
-#   prompt_file      : codex exec に渡すプロンプトファイルのパス
-#   timeout_seconds  : タイムアウト秒数（デフォルト: 120）
+#   prompt_file      : 传递给 codex exec 的提示文件路径
+#   timeout_seconds  : 超时秒数（默认: 120）
 #
-# 環境変数:
-#   HARNESS_CODEX_NO_SYNC : 1 を指定すると sync-rules-to-agents.sh をスキップ
+# 环境变量:
+#   HARNESS_CODEX_NO_SYNC : 设为 1 时跳过 sync-rules-to-agents.sh
 
 set -euo pipefail
 
@@ -20,7 +20,7 @@ HARDENING_MARKER="HARNESS_HARDENING_CONTRACT_V1"
 PROMPT_FILE="${1:-}"
 TIMEOUT_SEC="${2:-120}"
 
-# === 引数チェック ===
+# === 参数检查 ===
 if [ -z "${PROMPT_FILE}" ]; then
   echo "Usage: $0 <prompt_file> [timeout_seconds]" >&2
   exit 1
@@ -31,15 +31,15 @@ if [ ! -f "${PROMPT_FILE}" ]; then
   exit 1
 fi
 
-# === timeout コマンド検出（macOS 対応）===
+# === timeout 命令检测（macOS 兼容）===
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
 
-# === 前処理: AGENTS.md が最新であることを確認 ===
+# === 前处理: 确认 AGENTS.md 为最新 ===
 SYNC_SCRIPT="${SCRIPT_DIR}/sync-rules-to-agents.sh"
 if [ "${HARNESS_CODEX_NO_SYNC:-}" != "1" ] && [ -f "${SYNC_SCRIPT}" ]; then
-  echo "[codex-exec-wrapper] sync-rules-to-agents.sh を実行中..." >&2
+  echo "[codex-exec-wrapper] 正在执行 sync-rules-to-agents.sh..." >&2
   bash "${SYNC_SCRIPT}" >&2 || {
-    echo "[codex-exec-wrapper] Warning: sync-rules-to-agents.sh が失敗しました（続行）" >&2
+    echo "[codex-exec-wrapper] Warning: sync-rules-to-agents.sh 执行失败（继续执行）" >&2
   }
 fi
 
@@ -77,7 +77,7 @@ prepend_hardening_contract_if_missing() {
   mv "${tmp_file}" "${file_path}"
 }
 
-# === 注入済みプロンプトを作成 ===
+# === 创建已注入提示 ===
 CODEX_STATE_DIR="${HARNESS_CODEX_STATE_DIR:-${EXECUTION_ROOT}/.claude/state/codex-worker}"
 TMP_PROMPT="$(mktemp /tmp/codex-exec-prompt.XXXXXX)"
 build_hardening_contract_artifact "$CODEX_STATE_DIR"
@@ -93,50 +93,50 @@ else
   } > "${TMP_PROMPT}"
 fi
 
-# === 一時ファイルの準備 ===
+# === 准备临时文件 ===
 TMP_OUT="$(mktemp /tmp/codex-exec-out.XXXXXX)"
 TMP_LEARNING="$(mktemp /tmp/codex-learning.XXXXXX)"
 trap 'rm -f "${TMP_OUT}" "${TMP_LEARNING}" "${TMP_PROMPT}"' EXIT
 
-# === 本体: codex exec を実行 ===
-echo "[codex-exec-wrapper] codex exec 実行中（timeout=${TIMEOUT_SEC}s）..." >&2
+# === 主体: 执行 codex exec ===
+echo "[codex-exec-wrapper] 正在执行 codex exec（timeout=${TIMEOUT_SEC}s）..." >&2
 
 EXIT_CODE=0
-# stdin 経由でプロンプトを渡す（ARG_MAX 超過を回避）
-# "-" は codex exec の公式 stdin 入力指定
+# 通过 stdin 传递提示（避免超过 ARG_MAX）
+# "-" 是 codex exec 的官方 stdin 输入指定
 if [ -n "${TIMEOUT}" ]; then
   cat "${TMP_PROMPT}" | ${TIMEOUT} "${TIMEOUT_SEC}" codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 else
   cat "${TMP_PROMPT}" | codex exec - --full-auto > "${TMP_OUT}" 2>>/tmp/harness-codex-$$.log || EXIT_CODE=$?
 fi
 
-# タイムアウト（exit 124）の場合もログを出力
+# 超时（exit 124）时也输出日志
 if [ "${EXIT_CODE}" -eq 124 ]; then
-  echo "[codex-exec-wrapper] Warning: codex exec がタイムアウトしました（${TIMEOUT_SEC}s）" >&2
+  echo "[codex-exec-wrapper] Warning: codex exec 超时（${TIMEOUT_SEC}s）" >&2
 fi
 
-# === 後処理: [HARNESS-LEARNING] マーカー行の抽出 ===
-# NOTE: Codex CLI の --output-schema オプションで構造化 JSON 出力が可能。
-# マーカー grep 方式から --output-schema 方式への移行は将来検討（要スキーマ定義）。
-# stdout から `[HARNESS-LEARNING]` で始まる行のみを抽出してマーカーを除去
+# === 后处理: 提取 [HARNESS-LEARNING] 标记行 ===
+# NOTE: Codex CLI 的 --output-schema 选项可输出结构化 JSON。
+# 从标记 grep 方式迁移到 --output-schema 方式将在未来考虑（需要定义 schema）。
+# 从 stdout 中仅提取以 `[HARNESS-LEARNING]` 开头的行并移除标记
 LEARNING_COUNT=0
 if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   grep '^\[HARNESS-LEARNING\]' "${TMP_OUT}" | sed 's/^\[HARNESS-LEARNING\] *//' > "${TMP_LEARNING}"
   LEARNING_COUNT="$(wc -l < "${TMP_LEARNING}" | tr -d ' ')"
-  echo "[codex-exec-wrapper] ${LEARNING_COUNT} 件の学習マーカーを検出しました" >&2
+  echo "[codex-exec-wrapper] 检测到 ${LEARNING_COUNT} 条学习标记" >&2
 
-  # === シークレットフィルタ ===
-  # token/key/password/secret/credential/api_key を含む行を除去（大文字小文字無視）
+  # === 密钥过滤器 ===
+  # 移除包含 token/key/password/secret/credential/api_key 的行（忽略大小写）
   TMP_FILTERED="$(mktemp /tmp/codex-filtered.XXXXXX)"
   trap 'rm -f "${TMP_OUT}" "${TMP_LEARNING}" "${TMP_FILTERED}"' EXIT
   grep -viE '(token|key|password|secret|credential|api_key)' "${TMP_LEARNING}" > "${TMP_FILTERED}" 2>/dev/null || true
   FILTERED_COUNT="$(wc -l < "${TMP_FILTERED}" | tr -d ' ')"
   REMOVED=$((LEARNING_COUNT - FILTERED_COUNT))
   if [ "${REMOVED}" -gt 0 ]; then
-    echo "[codex-exec-wrapper] Warning: シークレット候補 ${REMOVED} 行を除去しました" >&2
+    echo "[codex-exec-wrapper] Warning: 移除了 ${REMOVED} 行疑似密钥内容" >&2
   fi
 
-  # === codex-learnings.md にアトミック追記（mkdir ロック方式、macOS 対応）===
+  # === 原子追加到 codex-learnings.md（mkdir 锁方式，兼容 macOS）===
   MEMORY_DIR="${HARNESS_CODEX_MEMORY_DIR:-${EXECUTION_ROOT}/.claude/memory}"
   mkdir -p "${MEMORY_DIR}"
   LEARNINGS_FILE="${MEMORY_DIR}/codex-learnings.md"
@@ -145,7 +145,7 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   DATE_ONLY="$(date -u +"%Y-%m-%d")"
   PROMPT_BASENAME="$(basename "${PROMPT_FILE}")"
 
-  # ロック取得（最大 10 秒待機）
+  # 获取锁（最多等待 10 秒）
   _lock_acquired=0
   for _i in $(seq 1 20); do
     if mkdir "${LOCK_DIR}" 2>/dev/null; then
@@ -156,12 +156,12 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   done
 
   if [ "${_lock_acquired}" -eq 1 ]; then
-    # ファイルが存在しない場合はヘッダーを作成
+    # 文件不存在时创建标题
     if [ ! -f "${LEARNINGS_FILE}" ]; then
-      printf '# codex-learnings.md\n\ncodex exec から抽出した学習内容の記録。\n\n' > "${LEARNINGS_FILE}"
+      printf '# codex-learnings.md\n\n从 codex exec 提取的学习内容记录。\n\n' > "${LEARNINGS_FILE}"
     fi
 
-    # セクションヘッダーを付与して追記
+    # 添加章节标题后追加
     if [ "${FILTERED_COUNT}" -gt 0 ]; then
       {
         printf '\n## %s %s\n\n' "${DATE_ONLY}" "${PROMPT_BASENAME}"
@@ -171,13 +171,13 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
       } >> "${LEARNINGS_FILE}" 2>/dev/null || true
     fi
 
-    # ロック解放
+    # 释放锁
     rmdir "${LOCK_DIR}" 2>/dev/null || true
   else
-    echo "[codex-exec-wrapper] Warning: ロック取得タイムアウト、codex-learnings.md への追記をスキップ" >&2
+    echo "[codex-exec-wrapper] Warning: 获取锁超时，跳过追加到 codex-learnings.md" >&2
   fi
 
-  # 学習内容を state ディレクトリにも JSONL 保存（既存互換）
+  # 学习内容同时保存为 JSONL 到 state 目录（保持兼容）
   STATE_DIR="${HARNESS_CODEX_GENERAL_STATE_DIR:-${EXECUTION_ROOT}/.claude/state}"
   mkdir -p "${STATE_DIR}"
   LEARNING_FILE="${STATE_DIR}/codex-learning.jsonl"
@@ -198,8 +198,8 @@ if grep -q '^\[HARNESS-LEARNING\]' "${TMP_OUT}" 2>/dev/null; then
   done < "${TMP_FILTERED}"
 fi
 
-# === stdout を通過させる ===
+# === 透传 stdout ===
 cat "${TMP_OUT}"
 
-# === exit code を伝播 ===
+# === 传递 exit code ===
 exit "${EXIT_CODE}"

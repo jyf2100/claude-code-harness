@@ -1,26 +1,26 @@
 #!/bin/bash
 # task-completed.sh
-# TaskCompleted フックハンドラ
-# タスクが完了した時にタイムラインに記録する
+# TaskCompleted 钩子处理器
+# 任务完成时记录到时间线
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
 
 set -euo pipefail
 
-# === 設定 ===
+# === 设置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# タイムラインファイル
+# 时间线文件
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 TIMELINE_FILE="${STATE_DIR}/breezing-timeline.jsonl"
 PENDING_FIX_PROPOSALS_FILE="${STATE_DIR}/pending-fix-proposals.jsonl"
@@ -28,14 +28,14 @@ FINALIZE_MARKER_FILE="${STATE_DIR}/harness-mem-finalize-work-completed.json"
 TOTAL_TASKS=0
 COMPLETED_COUNT=0
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL 轮转（超过 500 行时截断为 400 行）
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -318,19 +318,19 @@ PY
   fi
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"TaskCompleted: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 TEAMMATE_NAME=""
 TASK_ID=""
 TASK_SUBJECT=""
@@ -383,7 +383,7 @@ except:
   STOP_REASON="$(echo "${_parsed}" | sed -n '8p')"
 fi
 
-# === タイムライン記録（jq -nc で安全な JSON 構築） ===
+# === 时间线记录（使用 jq -nc 安全构建 JSON） ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
@@ -399,7 +399,7 @@ if command -v jq >/dev/null 2>&1; then
     --arg timestamp "${TS}" \
     '{event:$event, teammate:$teammate, task_id:$task_id, subject:$subject, description:$description, agent_id:$agent_id, agent_type:$agent_type, timestamp:$timestamp}')"
 else
-  # フォールバック: python3 で安全にエスケープ
+  # 回退：使用 python3 安全转义
   log_entry="$(python3 -c "
 import json, sys
 print(json.dumps({
@@ -420,13 +420,13 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${TIMELINE_FILE}"
 fi
 
-# === シグナル生成（動的オーケストレーション） ===
+# === 信号生成（动态编排） ===
 SIGNALS_FILE="${STATE_DIR}/breezing-signals.jsonl"
 BREEZING_ACTIVE="${STATE_DIR}/breezing-active.json"
 
-# breezing セッションがアクティブな場合のみシグナルを生成
+# 仅在 breezing 会话活跃时生成信号
 if [ -f "${BREEZING_ACTIVE}" ]; then
-  # セッション ID を取得（シグナルのセッションスコープ用）
+  # 获取会话 ID（用于信号的作用域）
   SESSION_ID=""
   if command -v jq >/dev/null 2>&1; then
     SESSION_ID="$(jq -r '.session_id // ""' "${BREEZING_ACTIVE}" 2>/dev/null)" || SESSION_ID=""
@@ -441,11 +441,11 @@ except:
 " "${BREEZING_ACTIVE}" 2>/dev/null)" || SESSION_ID=""
   fi
 
-  # breezing-active.json から現在バッチのタスク ID リストと合計タスク数を取得
+  # 从 breezing-active.json 获取当前批次的任务 ID 列表和总任务数
   TOTAL_TASKS=0
   CURRENT_BATCH_IDS=""
   if command -v jq >/dev/null 2>&1; then
-    # Progressive Batching: 現在の in_progress バッチから取得
+    # Progressive Batching：从当前的 in_progress 批次获取
     _batch_info="$(jq -r '
       (.batching.batches // [] | map(select(.status == "in_progress")) | .[0].task_ids // []) as $ids |
       ($ids | length) as $len |
@@ -456,18 +456,18 @@ except:
       TOTAL_TASKS="$(printf '%s' "${_batch_info}" | cut -f1)"
       CURRENT_BATCH_IDS="$(printf '%s' "${_batch_info}" | cut -f2)"
     fi
-    # batching でない場合は plans_md_mapping のキー数で推定
+    # 如果不是 batching 模式，用 plans_md_mapping 的键数估算
     if [ "${TOTAL_TASKS}" = "0" ] || [ "${TOTAL_TASKS}" = "null" ] || [ -z "${TOTAL_TASKS}" ]; then
       TOTAL_TASKS="$(jq -r '.plans_md_mapping // {} | keys | length' "${BREEZING_ACTIVE}" 2>/dev/null)" || TOTAL_TASKS=0
-      # 非バッチモード: plans_md_mapping のキーをバッチ ID として使用
+      # 非批次模式：使用 plans_md_mapping 的键作为批次 ID
       CURRENT_BATCH_IDS="$(jq -r '.plans_md_mapping // {} | keys | join(",")' "${BREEZING_ACTIVE}" 2>/dev/null)" || CURRENT_BATCH_IDS=""
     fi
     unset _batch_info
   fi
 
-  # 現在バッチのタスクのみで完了数をカウント（前バッチの完了を除外）
-  # 各タスク ID につき存在すれば +1（リテイク等による重複カウントを防止）
-  # grep -F: 固定文字列マッチ（メタ文字リスク回避）
+  # 仅对当前批次的任务统计完成数（排除之前批次的完成）
+  # 每个任务 ID 存在则 +1（防止重试等导致的重复计数）
+  # grep -F：固定字符串匹配（避免元字符风险）
   COMPLETED_COUNT=0
   if [ -f "${TIMELINE_FILE}" ] && [ -n "${CURRENT_BATCH_IDS}" ]; then
     IFS=',' read -ra _batch_id_arr <<< "${CURRENT_BATCH_IDS}"
@@ -481,23 +481,23 @@ except:
     done
     unset _batch_id_arr _bid
   elif [ -f "${TIMELINE_FILE}" ]; then
-    # フォールバック: バッチ ID が取得できない場合は全体カウント
+    # 回退：无法获取批次 ID 时统计整体
     COMPLETED_COUNT="$(grep -Fc '"event":"task_completed"' "${TIMELINE_FILE}" 2>/dev/null)" || COMPLETED_COUNT=0
   fi
 
-  # シグナル dedup ヘルパー: セッションスコープで重複チェック
-  # SESSION_ID があればセッション単位（同一レコード内で AND 判定）、なければグローバルで dedup
+  # 信号去重助手：在会话范围内检查重复
+  # 如果有 SESSION_ID 则按会话（同一记录内的 AND 判断），否则全局去重
   _signal_exists() {
     local sig_type="$1"
     if [ -n "${SESSION_ID}" ] && [ -f "${SIGNALS_FILE}" ]; then
-      # 同一行に signal と session_id の両方を含むレコードが存在するか
+      # 检查同一行是否同时包含 signal 和 session_id 的记录
       grep -F "\"${sig_type}\"" "${SIGNALS_FILE}" 2>/dev/null | grep -Fq "\"session_id\":\"${SESSION_ID}\"" 2>/dev/null
     else
       grep -Fq "\"${sig_type}\"" "${SIGNALS_FILE}" 2>/dev/null
     fi
   }
 
-  # シグナル JSON 構築ヘルパー
+  # 信号 JSON 构建助手
   _build_signal_json() {
     local sig_type="$1" completed="$2" total="$3" ts="$4"
     if command -v jq >/dev/null 2>&1; then
@@ -522,10 +522,10 @@ print(json.dumps({
     fi
   }
 
-  # 50% 完了シグナル: 部分レビュー推奨
-  # -ge で閾値飛び越え（同時完了等）に対応、既発行チェックで重複防止
-  # 切り上げ計算で閾値が早すぎるトリガーを防止
-  # HALF>1 ガード: バッチサイズ 1-2 では部分レビューは不要（全体レビューで十分）
+  # 50% 完成信号：建议部分审查
+  # 使用 -ge 处理阈值跨越（同时完成等），通过已发布检查防止重复
+  # 向上取整计算防止阈值过早触发
+  # HALF>1 保护：批量大小 1-2 不需要部分审查（整体审查足够）
   if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null; then
     HALF=$(( (TOTAL_TASKS + 1) / 2 ))
     if [ "${COMPLETED_COUNT}" -ge "${HALF}" ] && [ "${HALF}" -gt 1 ] 2>/dev/null; then
@@ -537,8 +537,8 @@ print(json.dumps({
       fi
     fi
 
-    # 60% 完了シグナル: 次バッチ登録推奨（Progressive Batch 用）
-    # 切り上げ: (n * 60 + 99) / 100 で端数切り捨てによる早期トリガーを防止
+    # 60% 完成信号：建议注册下一批次（用于渐进式批处理）
+    # 向上取整：(n * 60 + 99) / 100 防止截断导致的过早触发
     SIXTY_PCT=$(( (TOTAL_TASKS * 60 + 99) / 100 ))
     if [ "${COMPLETED_COUNT}" -ge "${SIXTY_PCT}" ] && [ "${SIXTY_PCT}" -gt 0 ] 2>/dev/null; then
       if ! _signal_exists "next_batch_recommended"; then
@@ -551,12 +551,12 @@ print(json.dumps({
   fi
 fi
 
-# === テスト結果参照ロジック ===
-# auto-test-runner の結果ファイルを確認し、未実行/失敗時は exit 2 でエスカレーション
+# === 测试结果引用逻辑 ===
+# 检查 auto-test-runner 的结果文件，未执行/失败时通过 exit 2 进行升级
 TEST_RESULT_FILE="${STATE_DIR}/test-result.json"
 QUALITY_GATE_FILE="${STATE_DIR}/task-quality-gate.json"
 
-# タスク ID 別の失敗カウントを更新
+# 更新任务 ID 的失败计数
 # $1: task_id, $2: "increment"|"reset"
 update_failure_count() {
   local tid="$1"
@@ -572,7 +572,7 @@ update_failure_count() {
     if [ "${action}" = "increment" ]; then
       new_count=$(( current_count + 1 ))
     fi
-    # ファイル更新（存在しない場合は新規作成）
+    # 文件更新（不存在时新建）
     local existing="{}"
     if [ -f "${QUALITY_GATE_FILE}" ]; then
       existing="$(cat "${QUALITY_GATE_FILE}" 2>/dev/null)" || existing="{}"
@@ -612,12 +612,12 @@ print(count)
 }
 
 check_test_result() {
-  # 結果ファイルが存在しない場合: テスト未実行
+  # 结果文件不存在时：测试未执行
   if [ ! -f "${TEST_RESULT_FILE}" ]; then
-    return 0  # 未実行はスキップ（テストが不要なプロジェクトも存在するため）
+    return 0  # 未执行则跳过（因为有些项目不需要测试）
   fi
 
-  # 結果ファイルの読み取り
+  # 读取结果文件
   local status=""
   if command -v jq >/dev/null 2>&1; then
     status="$(jq -r '.status // ""' "${TEST_RESULT_FILE}" 2>/dev/null)" || status=""
@@ -632,7 +632,7 @@ except:
 " "${TEST_RESULT_FILE}" 2>/dev/null)" || status=""
   fi
 
-  # status=failed の場合は失敗として検知
+  # status=failed 时检测为失败
   if [ "${status}" = "failed" ]; then
     return 1
   fi
@@ -641,10 +641,10 @@ except:
 }
 
 if ! check_test_result; then
-  # テスト失敗: 失敗カウントをインクリメント
+  # 测试失败：增加失败计数
   FAIL_COUNT="$(update_failure_count "${TASK_ID}" "increment")"
 
-  # タイムラインにも記録
+  # 同时记录到时间线
   FAIL_ENTRY=""
   if command -v jq >/dev/null 2>&1; then
     FAIL_ENTRY="$(jq -nc \
@@ -660,10 +660,10 @@ if ! check_test_result; then
     echo "${FAIL_ENTRY}" >> "${TIMELINE_FILE}" 2>/dev/null || true
   fi
 
-  # 3回連続失敗でエスカレーション（D21 自動化: exit 0 + stderr 出力）
+  # 3 次连续失败则升级（D21 自动化：exit 0 + stderr 输出）
   ESCALATION_THRESHOLD=3
   if [ "${FAIL_COUNT}" -ge "${ESCALATION_THRESHOLD}" ] 2>/dev/null; then
-    # テスト結果から原因分類・推奨アクション・試行履歴を収集
+    # 从测试结果收集原因分类、推荐操作和尝试历史
     _last_cmd=""
     _last_output=""
     _failure_category="unknown"
@@ -691,83 +691,83 @@ except Exception as e:
       fi
     fi
 
-    # 原因分類（テスト出力のキーワードから推定）
+    # 原因分类（根据测试输出关键词推断）
     if echo "${_last_output}" | grep -qi "syntax\|SyntaxError\|parse error\|unexpected token"; then
       _failure_category="syntax_error"
-      _recommended_action="構文エラーを修正してください。コードの文法を確認してください。"
+      _recommended_action="请修复语法错误。检查代码的语法。"
     elif echo "${_last_output}" | grep -qi "cannot find module\|module not found\|import.*error\|ModuleNotFoundError"; then
       _failure_category="import_error"
-      _recommended_action="モジュール/インポートエラーを修正してください。依存関係を確認してください（npm install / pip install）。"
+      _recommended_action="请修复模块/导入错误。检查依赖关系（npm install / pip install）。"
     elif echo "${_last_output}" | grep -qi "type.*error\|TypeError\|is not assignable\|Property.*does not exist"; then
       _failure_category="type_error"
-      _recommended_action="型エラーを修正してください。型定義と実装の不一致を確認してください。"
+      _recommended_action="请修复类型错误。检查类型定义和实现的不一致。"
     elif echo "${_last_output}" | grep -qi "assertion\|AssertionError\|expect.*received\|toBe\|toEqual\|FAIL\|FAILED"; then
       _failure_category="assertion_error"
-      _recommended_action="テストアサーションが失敗しています。期待値と実際の値の差分を確認してください。"
+      _recommended_action="测试断言失败。请检查期望值和实际值的差异。"
     elif echo "${_last_output}" | grep -qi "timeout\|Timeout\|ETIMEDOUT\|timed out"; then
       _failure_category="timeout"
-      _recommended_action="タイムアウトが発生しました。非同期処理やネットワーク依存を確認してください。"
+      _recommended_action="发生超时。请检查异步处理和网络依赖。"
     elif echo "${_last_output}" | grep -qi "permission\|EACCES\|EPERM\|access denied"; then
       _failure_category="permission_error"
-      _recommended_action="権限エラーが発生しています。ファイルのパーミッションを確認してください。"
+      _recommended_action="发生权限错误。请检查文件的权限设置。"
     else
       _failure_category="runtime_error"
-      _recommended_action="ランタイムエラーが発生しています。テスト出力を詳しく確認してください。"
+      _recommended_action="发生运行时错误。请详细查看测试输出。"
     fi
 
-    # 試行履歴を quality-gate ファイルから取得
+    # 从 quality-gate 文件获取尝试历史
     _history_summary=""
     if [ -f "${QUALITY_GATE_FILE}" ]; then
       if command -v jq >/dev/null 2>&1; then
         _history_summary="$(jq -r --arg tid "${TASK_ID}" '
           .[$tid] |
-          "  失敗カウント: \(.failure_count // 0)\n  最終更新: \(.updated_at // "不明")"
+          "  失败计数: \(.failure_count // 0)\n  最后更新: \(.updated_at // "未知")"
         ' "${QUALITY_GATE_FILE}" 2>/dev/null)" || _history_summary=""
       fi
     fi
 
-    # エスカレーションレポートを stderr に出力
+    # 将升级报告输出到 stderr
     {
       echo ""
       echo "=========================================="
-      echo "[ESCALATION] 3回連続失敗を検知 - 自動修正ループを停止"
+      echo "[升级] 检测到连续 3 次失败 - 停止自动修复循环"
       echo "=========================================="
-      echo "  タスク ID  : ${TASK_ID}"
-      echo "  タスク名   : ${TASK_SUBJECT}"
-      echo "  担当者     : ${TEAMMATE_NAME}"
-      echo "  連続失敗数 : ${FAIL_COUNT}"
-      echo "  検知時刻   : ${TS}"
+      echo "  任务 ID    : ${TASK_ID}"
+      echo "  任务名称   : ${TASK_SUBJECT}"
+      echo "  负责人     : ${TEAMMATE_NAME}"
+      echo "  连续失败数 : ${FAIL_COUNT}"
+      echo "  检测时间   : ${TS}"
       echo "------------------------------------------"
-      echo "  [原因分類]"
-      echo "  カテゴリ   : ${_failure_category}"
+      echo "  [原因分类]"
+      echo "  类别       : ${_failure_category}"
       echo ""
-      echo "  [推奨アクション]"
+      echo "  [推荐操作]"
       echo "  ${_recommended_action}"
       echo ""
       if [ -n "${_last_cmd}" ]; then
-        echo "  [最後に実行したコマンド]"
+        echo "  [最后执行的命令]"
         echo "  ${_last_cmd}"
         echo ""
       fi
       if [ -n "${_last_output}" ]; then
-        echo "  [テスト出力（最大20行）]"
+        echo "  [测试输出（最多 20 行）]"
         echo "${_last_output}" | while IFS= read -r _line; do
           echo "    ${_line}"
         done
         echo ""
       fi
       if [ -n "${_history_summary}" ]; then
-        echo "  [試行履歴]"
+        echo "  [尝试历史]"
         echo "${_history_summary}"
         echo ""
       fi
-      echo "  詳細ファイル: ${QUALITY_GATE_FILE}"
-      echo "  手動対応が必要です。エスカレーション記録後、ループを終了します。"
+      echo "  详情文件：${QUALITY_GATE_FILE}"
+      echo "  需要手动处理。记录升级后，终止循环。"
       echo "=========================================="
       echo ""
     } >&2 2>/dev/null || true
 
-    # エスカレーション記録をタイムラインに追記
+    # 将升级记录追加到时间线
     ESC_ENTRY=""
     if command -v jq >/dev/null 2>&1; then
       ESC_ENTRY="$(jq -nc \
@@ -785,7 +785,7 @@ except Exception as e:
 
     _fix_task_id="$(build_fix_task_id "${TASK_ID}")"
     _fix_subject="$(sanitize_inline_text "fix: ${TASK_SUBJECT} - ${_failure_category}")"
-    _fix_dod="$(sanitize_inline_text "失敗カテゴリ (${_failure_category}) を解消し、直近のテスト/CI が通ること")"
+    _fix_dod="$(sanitize_inline_text "解决失败类别 (${_failure_category})，并使最近的测试/CI 通过")"
     _proposal_json=""
     if command -v jq >/dev/null 2>&1; then
       _proposal_json="$(jq -nc \
@@ -825,17 +825,17 @@ PY
       _proposal_saved="true"
     fi
 
-    _fix_message="[FIX PROPOSAL] タスク ${TASK_ID} が3回連続で失敗しました。
-提案: ${_fix_task_id} — ${_fix_subject}
-DoD: ${_fix_dod}
-承認: approve fix ${TASK_ID}
-却下: reject fix ${TASK_ID}"
+    _fix_message="[修复提案] 任务 ${TASK_ID} 已连续失败 3 次。
+建议：${_fix_task_id} — ${_fix_subject}
+DoD：${_fix_dod}
+批准：approve fix ${TASK_ID}
+拒绝：reject fix ${TASK_ID}"
     if [ "${_proposal_saved}" != "true" ]; then
       _fix_message="${_fix_message}
-警告: proposal 保存に失敗しました。手動で Plans.md に追加してください。"
+警告：保存 proposal 失败。请手动添加到 Plans.md。"
     fi
 
-    # exit 0 でフックを承認しつつ、次ターンで承認可能な proposal を案内
+    # 使用 exit 0 批准钩子，同时在下一轮提示可批准的 proposal
     if command -v jq >/dev/null 2>&1; then
       jq -nc \
         --arg reason "TaskCompleted: 3-strike escalation triggered - fix proposal queued" \
@@ -852,13 +852,13 @@ DoD: ${_fix_dod}
   echo '{"decision":"block","reason":"TaskCompleted: test result shows failure - escalation required"}'
   exit 2
 else
-  # テスト成功またはテスト未実行: 失敗カウントをリセット
+  # 测试成功或测试未执行：重置失败计数
   if [ -n "${TASK_ID}" ]; then
     update_failure_count "${TASK_ID}" "reset" >/dev/null 2>&1 || true
   fi
 fi
 
-# === レスポンス ===
+# === 响应 ===
 if [ "${REQUEST_CONTINUE}" = "false" ] || [ -n "${STOP_REASON}" ]; then
   FINAL_STOP_REASON="${STOP_REASON:-TaskCompleted requested stop}"
   if command -v jq >/dev/null 2>&1; then
@@ -879,7 +879,7 @@ if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null && [ "${COMPLETED_COUNT}" -ge "${TOTAL
   exit 0
 fi
 
-# プログレスサマリー付きレスポンス
+# 带进度摘要的响应
 if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null && [ -n "${TASK_SUBJECT:-}" ]; then
   PROGRESS_MSG="📊 Progress: Task ${COMPLETED_COUNT}/${TOTAL_TASKS} 完了 — \"${TASK_SUBJECT}\""
   if command -v jq >/dev/null 2>&1; then
@@ -888,7 +888,7 @@ if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null && [ -n "${TASK_SUBJECT:-}" ]; then
       --arg msg "${PROGRESS_MSG}" \
       '{"decision":"approve","reason":$reason,"systemMessage":$msg}'
   else
-    # jq がない場合のフォールバック（特殊文字をエスケープ）
+    # 无 jq 时的回退方案（转义特殊字符）
     _escaped_msg="${PROGRESS_MSG//\"/\\\"}"
     printf '{"decision":"approve","reason":"TaskCompleted tracked","systemMessage":"%s"}\n' "${_escaped_msg}"
   fi

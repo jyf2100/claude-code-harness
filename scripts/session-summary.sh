@@ -1,8 +1,8 @@
 #!/bin/bash
 # session-summary.sh
-# セッション終了時にサマリーを生成
+# 会话结束时生成摘要
 #
-# Usage: Stop hook から自動実行
+# Usage: 从 Stop hook 自动执行
 
 set +e
 
@@ -13,23 +13,23 @@ EVENT_LOG_FILE=".claude/state/session.events.jsonl"
 ARCHIVE_DIR=".claude/state/sessions"
 CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# 状態ファイルがなければスキップ
+# 如果没有状态文件则跳过
 if [ ! -f "$STATE_FILE" ]; then
   exit 0
 fi
 
-# jq がなければスキップ
+# 如果没有 jq 则跳过
 if ! command -v jq &> /dev/null; then
   exit 0
 fi
 
-# 既にメモリへ記録済みならスキップ（Stop hook の二重実行対策）
+# 如果已记录到内存则跳过（防止 Stop hook 重复执行）
 ALREADY_LOGGED=$(jq -r '.memory_logged // false' "$STATE_FILE" 2>/dev/null)
 if [ "$ALREADY_LOGGED" = "true" ]; then
   exit 0
 fi
 
-# セッション情報を取得
+# 获取会话信息
 SESSION_ID=$(jq -r '.session_id // "unknown"' "$STATE_FILE")
 SESSION_START=$(jq -r '.started_at' "$STATE_FILE")
 PROJECT_NAME=$(jq -r '.project_name // empty' "$STATE_FILE")
@@ -37,76 +37,76 @@ GIT_BRANCH=$(jq -r '.git.branch // empty' "$STATE_FILE")
 CHANGES_COUNT=$(jq '.changes_this_session | length' "$STATE_FILE")
 IMPORTANT_CHANGES=$(jq '[.changes_this_session[] | select(.important == true)] | length' "$STATE_FILE")
 
-# Git 情報
+# Git 信息
 GIT_COMMITS=0
 if [ -d ".git" ]; then
-  # セッション開始後のコミット数（概算）
+  # 会话开始后的提交数（估算）
   GIT_COMMITS=$(git log --oneline --since="$SESSION_START" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 fi
 
-# Plans.md のタスク状況
+# Plans.md 的任务状态
 COMPLETED_TASKS=0
 WIP_TASK_TITLE=""
 if [ -f "Plans.md" ]; then
   COMPLETED_TASKS=$(grep -c "cc:完了" Plans.md 2>/dev/null || echo "0")
-  # 現在のWIPタスクタイトルを取得（最初の1件）
+  # 获取当前 WIP 任务标题（第一个）
   WIP_TASK_TITLE=$(grep -E "^\s*-\s*\[.\]\s*\*\*.*\`cc:WIP\`" Plans.md 2>/dev/null | head -1 | sed 's/.*\*\*\(.*\)\*\*.*/\1/' || true)
 fi
 
-# Agent Trace から直近の編集ファイル情報を取得
+# 从 Agent Trace 获取最近的编辑文件信息
 AGENT_TRACE_FILE=".claude/state/agent-trace.jsonl"
 RECENT_EDITS=""
 RECENT_PROJECT=""
 if [ -f "$AGENT_TRACE_FILE" ]; then
-  # 直近10件のトレースから編集ファイルを抽出
+  # 从最近 10 条记录中提取编辑文件
   RECENT_EDITS=$(tail -10 "$AGENT_TRACE_FILE" 2>/dev/null | jq -r '.files[].path' 2>/dev/null | sort -u | head -5 || true)
-  # 最新のプロジェクト情報を取得
+  # 获取最新的项目信息
   RECENT_PROJECT=$(tail -1 "$AGENT_TRACE_FILE" 2>/dev/null | jq -r '.metadata.project // empty' 2>/dev/null || true)
 fi
 
-# セッション時間計算
+# 会话时长计算
 START_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$SESSION_START" "+%s" 2>/dev/null || date -d "$SESSION_START" "+%s" 2>/dev/null || echo "0")
 NOW_EPOCH=$(date +%s)
 DURATION_MINUTES=$(( (NOW_EPOCH - START_EPOCH) / 60 ))
 
-# サマリー出力（変更がある場合のみ）
+# 摘要输出（仅当有变更时）
 if [ "$CHANGES_COUNT" -gt 0 ] || [ "$GIT_COMMITS" -gt 0 ] || [ -n "$RECENT_EDITS" ]; then
   echo ""
-  echo "📊 セッションサマリー"
+  echo "📊 会话摘要"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # プロジェクト名（Agent Trace から）
+  # 项目名称（来自 Agent Trace）
   if [ -n "$RECENT_PROJECT" ]; then
-    echo "📁 プロジェクト: ${RECENT_PROJECT}"
+    echo "📁 项目: ${RECENT_PROJECT}"
   fi
 
-  # 現在のタスク（WIP）
+  # 当前任务（WIP）
   if [ -n "$WIP_TASK_TITLE" ]; then
-    echo "🎯 現在のタスク: ${WIP_TASK_TITLE}"
+    echo "🎯 当前任务: ${WIP_TASK_TITLE}"
   fi
 
   if [ "$COMPLETED_TASKS" -gt 0 ]; then
-    echo "✅ 完了タスク: ${COMPLETED_TASKS}件"
+    echo "✅ 已完成任务: ${COMPLETED_TASKS}件"
   fi
 
-  echo "📝 変更ファイル: ${CHANGES_COUNT}件"
+  echo "📝 变更文件: ${CHANGES_COUNT}件"
 
   if [ "$IMPORTANT_CHANGES" -gt 0 ]; then
-    echo "⚠️ 重要な変更: ${IMPORTANT_CHANGES}件"
+    echo "⚠️ 重要变更: ${IMPORTANT_CHANGES}件"
   fi
 
   if [ "$GIT_COMMITS" -gt 0 ]; then
-    echo "💾 コミット: ${GIT_COMMITS}件"
+    echo "💾 提交: ${GIT_COMMITS}件"
   fi
 
   if [ "$DURATION_MINUTES" -gt 0 ]; then
-    echo "⏱️ セッション時間: ${DURATION_MINUTES}分"
+    echo "⏱️ 会话时长: ${DURATION_MINUTES}分钟"
   fi
 
-  # 直近の編集ファイル（Agent Trace から）
+  # 最近编辑的文件（来自 Agent Trace）
   if [ -n "$RECENT_EDITS" ]; then
     echo ""
-    echo "📄 直近の編集:"
+    echo "📄 最近编辑:"
     echo "$RECENT_EDITS" | while read -r f; do
       [ -n "$f" ] && echo "   - $f"
     done
@@ -117,11 +117,11 @@ if [ "$CHANGES_COUNT" -gt 0 ] || [ "$GIT_COMMITS" -gt 0 ] || [ -n "$RECENT_EDITS
 fi
 
 # ================================
-# `.claude/memory/session-log.md` へ自動追記（あれば作成）
+# 自动追加到 `.claude/memory/session-log.md`（如不存在则创建）
 # ================================
 
-# 変更がなくても「開始した」という記録が欲しいケースがあるため、
-# セッション開始が取れていればログを書いて良い（空セッションも可）
+# 即使没有变更，有时也需要记录"已启动"的情况，
+# 因此如果获取到会话开始时间，就可以写入日志（允许空会话）
 if [ -n "$SESSION_START" ] && [ "$SESSION_START" != "null" ]; then
   mkdir -p "$MEMORY_DIR" 2>/dev/null || true
 
@@ -129,30 +129,30 @@ if [ -n "$SESSION_START" ] && [ "$SESSION_START" != "null" ]; then
     cat > "$SESSION_LOG_FILE" << 'EOF'
 # Session Log
 
-セッション単位の作業ログ（基本はローカル運用向け）。
-重要な意思決定は `.claude/memory/decisions.md`、再利用できる解法は `.claude/memory/patterns.md` に昇格してください。
+会话级别的作业日志（主要用于本地操作）。
+重要的决策请提升到 `.claude/memory/decisions.md`，可复用的解决方案请提升到 `.claude/memory/patterns.md`。
 
 ## Index
 
-- （必要に応じて追記）
+- （根据需要追加）
 
 ---
 EOF
   fi
 
-  # 変更ファイル一覧（重複排除）
+  # 变更文件列表（去重）
   CHANGED_FILES=$(jq -r '.changes_this_session[]?.file' "$STATE_FILE" 2>/dev/null | awk 'NF' | awk '!seen[$0]++')
   IMPORTANT_FILES=$(jq -r '.changes_this_session[]? | select(.important == true) | .file' "$STATE_FILE" 2>/dev/null | awk 'NF' | awk '!seen[$0]++')
 
-  # WIP タスク（存在すれば軽く抽出）
+  # WIP 任务（如存在则简要提取）
   WIP_TASKS=""
   if [ -f "Plans.md" ]; then
-    WIP_TASKS=$(grep -n "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null | head -20 || true)
+    WIP_TASKS=$(grep -n "cc:WIP\|pm:依赖中\|cursor:依赖中" Plans.md 2>/dev/null | head -20 || true)
   fi
 
   {
     echo ""
-    echo "## セッション: ${CURRENT_TIME}"
+    echo "## 会话: ${CURRENT_TIME}"
     echo ""
     echo "- session_id: \`${SESSION_ID}\`"
     [ -n "$PROJECT_NAME" ] && echo "- project: \`${PROJECT_NAME}\`"
@@ -164,47 +164,47 @@ EOF
     [ "$IMPORTANT_CHANGES" -gt 0 ] && echo "- important_changes: ${IMPORTANT_CHANGES}"
     [ "$GIT_COMMITS" -gt 0 ] && echo "- commits: ${GIT_COMMITS}"
     echo ""
-    echo "### 変更ファイル"
+    echo "### 变更文件"
     if [ -n "$CHANGED_FILES" ]; then
       echo "$CHANGED_FILES" | while read -r f; do
         [ -n "$f" ] && echo "- \`$f\`"
       done
     else
-      echo "- （なし）"
+      echo "- （无）"
     fi
     echo ""
-    echo "### 重要な変更（important=true）"
+    echo "### 重要变更（important=true）"
     if [ -n "$IMPORTANT_FILES" ]; then
       echo "$IMPORTANT_FILES" | while read -r f; do
         [ -n "$f" ] && echo "- \`$f\`"
       done
     else
-      echo "- （なし）"
+      echo "- （无）"
     fi
     echo ""
-    echo "### 次回への引き継ぎ（任意）"
+    echo "### 下次交接（可选）"
     if [ -n "$WIP_TASKS" ]; then
       echo ""
-      echo "**Plans.md のWIP/依頼中（抜粋）**:"
+      echo "**Plans.md 的 WIP/依赖中（摘录）**:"
       echo ""
       echo '```'
       echo "$WIP_TASKS"
       echo '```'
     else
-      echo "- （必要に応じて追記）"
+      echo "- （根据需要追加）"
     fi
     echo ""
     echo "---"
   } >> "$SESSION_LOG_FILE" 2>/dev/null || true
 fi
 
-# 状態ファイルにセッション終了時刻・記録済みフラグを記録
+# 在状态文件中记录会话结束时间和已记录标志
 append_event() {
   local event_type="$1"
   local event_state="$2"
   local event_time="$3"
 
-  # イベントログ初期化
+  # 初始化事件日志
   mkdir -p ".claude/state" 2>/dev/null || true
   touch "$EVENT_LOG_FILE" 2>/dev/null || true
 
@@ -235,7 +235,7 @@ if command -v jq >/dev/null 2>&1; then
      "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
 fi
 
-# アーカイブ保存（resume/fork 用）
+# 归档保存（用于 resume/fork）
 if [ -f "$STATE_FILE" ]; then
   mkdir -p "$ARCHIVE_DIR" 2>/dev/null || true
   if command -v jq >/dev/null 2>&1; then

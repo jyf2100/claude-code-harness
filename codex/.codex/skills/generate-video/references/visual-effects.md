@@ -1,21 +1,21 @@
 # Visual Effects Library
 
-動画にインパクトを与える視覚効果のテンプレート集です。
+为视频增加冲击力的视觉效果模板集。
 
 ---
 
-## カラーパレット
+## 颜色调色板
 
-### Cyberpunk / Neon（推奨）
+### Cyberpunk / Neon（推荐）
 
-インパクトのある技術系動画向け。
+有冲击力的技术视频用。
 
 ```tsx
 const colors = {
-  background: "#0A0A0F",  // ディープダーク
-  primary: "#00F5FF",     // シアン
-  secondary: "#FF00FF",   // マゼンタ
-  accent: "#7B2FFF",      // パープル
+  background: "#0A0A0F",  // 深暗色
+  primary: "#00F5FF",     // 青色
+  secondary: "#FF00FF",   // 品红
+  accent: "#7B2FFF",      // 紫色
   text: "#FFFFFF",
   glow: "rgba(0, 245, 255, 0.5)",
 };
@@ -23,25 +23,25 @@ const colors = {
 
 ### Corporate / Professional
 
-ビジネス向け落ち着いたトーン。
+商务用沉稳色调。
 
 ```tsx
 const colors = {
   background: "#FFFFFF",
-  primary: "#FF6B35",     // オレンジ
-  secondary: "#004E89",   // ネイビー
-  accent: "#2EC4B6",      // ティール
+  primary: "#FF6B35",     // 橙色
+  secondary: "#004E89",   // 海军蓝
+  accent: "#2EC4B6",      // 青绿色
   text: "#1A1A2E",
 };
 ```
 
 ---
 
-## 効果コンポーネント
+## 效果组件
 
-### GlitchText - グリッチテキスト
+### GlitchText - 故障文本
 
-RGB分離 + ランダムオフセットでサイバーパンク風テキスト。
+RGB 分离 + 随机偏移实现赛博朋克风格文本。
 
 ```tsx
 import { useCurrentFrame, interpolate, random } from "remotion";
@@ -54,7 +54,7 @@ const GlitchText: React.FC<{
   const frame = useCurrentFrame();
   const adjustedFrame = frame - startFrame;
 
-  // グリッチ強度（最初の20フレームで減衰）
+  // 故障强度（前 20 帧衰减）
   const glitchIntensity = adjustedFrame < 20
     ? interpolate(adjustedFrame, [0, 20], [20, 0])
     : 0;
@@ -62,7 +62,7 @@ const GlitchText: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  // ランダムオフセット
+  // 随机偏移
   const offsetX = glitchIntensity > 0
     ? (random(`x-${frame}`) - 0.5) * glitchIntensity
     : 0;
@@ -72,7 +72,7 @@ const GlitchText: React.FC<{
 
   return (
     <div style={{ position: "relative", opacity }}>
-      {/* Red channel (マゼンタ) */}
+      {/* Red channel (品红) */}
       <div
         style={{
           position: "absolute",
@@ -86,7 +86,7 @@ const GlitchText: React.FC<{
       >
         {text}
       </div>
-      {/* Blue channel (シアン) */}
+      {/* Blue channel (青色) */}
       <div
         style={{
           position: "absolute",
@@ -117,16 +117,16 @@ const GlitchText: React.FC<{
 };
 ```
 
-**使用例**:
+**使用示例**:
 ```tsx
-<GlitchText text="革新的な機能" fontSize={64} startFrame={0} />
+<GlitchText text="革新性的功能" fontSize={64} startFrame={0} />
 ```
 
 ---
 
-### Particles - パーティクルシステム
+### Particles - 粒子系统
 
-浮遊・収束するパーティクルアニメーション。
+漂浮/收敛的粒子动画。
 
 ```tsx
 import { useMemo } from "react";
@@ -134,13 +134,13 @@ import { useCurrentFrame, useVideoConfig, interpolate, random } from "remotion";
 
 const Particles: React.FC<{
   count?: number;
-  converge?: boolean;      // 中央に収束するか
-  convergeFrame?: number;  // 収束完了フレーム
+  converge?: boolean;      // 是否向中央收敛
+  convergeFrame?: number;  // 收敛完成帧
 }> = ({ count = 50, converge = false, convergeFrame = 100 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
 
-  // useMemo でパーティクル初期位置を固定（重要！）
+  // useMemo 固定粒子初始位置（重要！）
   const particles = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -164,7 +164,7 @@ const Particles: React.FC<{
         const targetX = width / 2;
         const targetY = height / 2;
 
-        // 収束 or 浮遊
+        // 收敛或漂浮
         const x = converge
           ? interpolate(progress, [0, 1], [p.startX, targetX])
           : p.startX + Math.sin(frame * 0.02 * p.speed + p.id) * 30;
@@ -198,20 +198,20 @@ const Particles: React.FC<{
 };
 ```
 
-**使用例**:
+**使用示例**:
 ```tsx
-{/* 浮遊パーティクル */}
+{/* 漂浮粒子 */}
 <Particles count={80} />
 
-{/* 収束パーティクル（CTAシーン向け） */}
+{/* 收敛粒子（CTA 场景用） */}
 <Particles count={100} converge convergeFrame={150} />
 ```
 
 ---
 
-### ScanLine - スキャンライン
+### ScanLine - 扫描线
 
-画面を走る解析波エフェクト。
+屏幕上穿过的解析波效果。
 
 ```tsx
 const ScanLine: React.FC<{ speed?: number }> = ({ speed = 1 }) => {
@@ -235,17 +235,17 @@ const ScanLine: React.FC<{ speed?: number }> = ({ speed = 1 }) => {
 };
 ```
 
-**使用例**:
+**使用示例**:
 ```tsx
-{/* 解析中の演出 */}
+{/* 解析中的演出 */}
 {frame < 60 && <ScanLine speed={3} />}
 ```
 
 ---
 
-### ProgressBar - 進行バー
+### ProgressBar - 进度条
 
-並列処理の進行状況を可視化。
+并行处理的进度可视化。
 
 ```tsx
 const ProgressBar: React.FC<{ progress: number; label: string }> = ({
@@ -287,7 +287,7 @@ const ProgressBar: React.FC<{ progress: number; label: string }> = ({
 };
 ```
 
-**使用例**:
+**使用示例**:
 ```tsx
 const agents = [
   { name: "Agent 1: Intro", progress: Math.min(1, frame / 150) },
@@ -302,9 +302,9 @@ const agents = [
 
 ---
 
-### 3D Parallax - パララックス効果
+### 3D Parallax - 视差效果
 
-奥行きのある3Dカード表示。
+有深度的 3D 卡片显示。
 
 ```tsx
 const ParallaxCard: React.FC<{
@@ -349,20 +349,20 @@ const ParallaxCard: React.FC<{
 };
 ```
 
-**使用例**:
+**使用示例**:
 ```tsx
 <div style={{ display: "flex", gap: 40, perspective: 1000 }}>
-  <ParallaxCard delay={30} color="#00F5FF">LP/広告</ParallaxCard>
-  <ParallaxCard delay={70} color="#FF00FF">Introデモ</ParallaxCard>
-  <ParallaxCard delay={110} color="#7B2FFF">リリースノート</ParallaxCard>
+  <ParallaxCard delay={30} color="#00F5FF">LP/广告</ParallaxCard>
+  <ParallaxCard delay={70} color="#FF00FF">Intro演示</ParallaxCard>
+  <ParallaxCard delay={110} color="#7B2FFF">发布说明</ParallaxCard>
 </div>
 ```
 
 ---
 
-## 組み合わせ例
+## 组合示例
 
-### インパクト重視のHookシーン
+### 重视冲击力的 Hook 场景
 
 ```tsx
 const HookScene: React.FC = () => {
@@ -381,9 +381,9 @@ const HookScene: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <GlitchText text="コードから動画が" fontSize={64} startFrame={0} />
+        <GlitchText text="从代码到视频" fontSize={64} startFrame={0} />
         <div style={{ height: 20 }} />
-        <GlitchText text="自動生成される時代へ" fontSize={64} startFrame={15} />
+        <GlitchText text="进入自动生成的时代" fontSize={64} startFrame={15} />
       </div>
       {frame < 30 && <ScanLine speed={3} />}
     </AbsoluteFill>
@@ -391,7 +391,7 @@ const HookScene: React.FC = () => {
 };
 ```
 
-### CTAシーン（パーティクル収束）
+### CTA 场景（粒子收敛）
 
 ```tsx
 const CTAScene: React.FC = () => {
@@ -437,7 +437,7 @@ const CTAScene: React.FC = () => {
             boxShadow: "0 0 40px rgba(0, 245, 255, 0.6)",
           }}
         >
-          今すぐ試す
+          立即尝试
         </div>
       </div>
     </AbsoluteFill>
@@ -447,19 +447,19 @@ const CTAScene: React.FC = () => {
 
 ---
 
-## 注意事項
+## 注意事项
 
-| 項目 | ルール |
+| 项目 | 规则 |
 |------|--------|
-| `random()` | 引数でシード指定必須（フレーム毎に同じ値） |
-| `useMemo` | パーティクル等の大量オブジェクトは必ずメモ化 |
-| `interpolate` | `extrapolateRight: "clamp"` で値の暴走防止 |
-| `spring` | `config: { damping: 200 }` で滑らかに |
-| CSS animations | 使用禁止、Remotion の `useCurrentFrame()` を使う |
+| `random()` | 必须用参数指定种子（每帧相同值） |
+| `useMemo` | 粒子等大量对象必须记忆化 |
+| `interpolate` | `extrapolateRight: "clamp"` 防止值失控 |
+| `spring` | `config: { damping: 200 }` 使动画流畅 |
+| CSS animations | 禁止使用，使用 Remotion 的 `useCurrentFrame()` |
 
 ---
 
 ## References
 
-- [generator.md](generator.md) - 並列生成エンジン
-- [best-practices.md](best-practices.md) - 動画制作ベストプラクティス
+- [generator.md](generator.md) - 并行生成引擎
+- [best-practices.md](best-practices.md) - 视频制作最佳实践

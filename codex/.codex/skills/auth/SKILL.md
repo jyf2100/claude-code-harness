@@ -1,6 +1,6 @@
 ---
 name: auth
-description: "認証と決済機能を実装。Clerk、Supabase Auth、Stripeに対応。Use when user mentions login, authentication, payments, subscriptions, or Stripe. Do NOT load for: general UI work, database design, or non-auth features."
+description: "实现认证和支付功能。支持 Clerk、Supabase Auth、Stripe。Use when user mentions login, authentication, payments, subscriptions, or Stripe. Do NOT load for: general UI work, database design, or non-auth features."
 description-en: "Implements authentication and payment features using Clerk, Supabase Auth, or Stripe. Use when user mentions login, authentication, payments, subscriptions, or Stripe. Do NOT load for: general UI work, database design, or non-auth features."
 description-ja: "認証と決済機能を実装。Clerk、Supabase Auth、Stripeに対応。Use when user mentions login, authentication, payments, subscriptions, or Stripe. Do NOT load for: general UI work, database design, or non-auth features."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
@@ -9,75 +9,75 @@ user-invocable: false
 
 # Auth Skills
 
-認証と決済機能の実装を担当するスキル群です。
+负责实现认证和支付功能的技能群。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **認証機能** | See [references/authentication.md](${CLAUDE_SKILL_DIR}/references/authentication.md) |
-| **決済機能** | See [references/payments.md](${CLAUDE_SKILL_DIR}/references/payments.md) |
+| **认证功能** | See [references/authentication.md](${CLAUDE_SKILL_DIR}/references/authentication.md) |
+| **支付功能** | See [references/payments.md](${CLAUDE_SKILL_DIR}/references/payments.md) |
 
-## 実行手順
+## 执行步骤
 
-1. **品質判定ゲート**（Step 0）
-2. ユーザーのリクエストを分類(認証 or 決済)
-3. 上記の「機能詳細」から適切な参照ファイルを読む
-4. その内容に従って実装
+1. **质量判定关卡**（Step 0）
+2. 分类用户请求（认证或支付）
+3. 从上述"功能详情"读取适当的参考文件
+4. 按照其内容实现
 
-### Step 0: 品質判定ゲート（セキュリティチェックリスト）
+### Step 0: 质量判定关卡（安全检查清单）
 
-認証・決済機能は常にセキュリティリスクが高いため、作業開始前に必ず以下を表示:
+认证和支付功能始终存在较高的安全风险，因此开始工作前必须显示以下内容：
 
 ```markdown
-🔐 セキュリティチェックリスト
+🔐 安全检查清单
 
-この作業はセキュリティ上重要です。以下を確認してください：
+此工作在安全上很重要。请确认以下内容：
 
-### 認証関連
-- [ ] パスワードはハッシュ化（bcrypt/argon2）
-- [ ] セッション管理は安全か（HTTPOnly Cookie）
-- [ ] CSRF 対策は実装されているか
-- [ ] レート制限（ブルートフォース対策）
+### 认证相关
+- [ ] 密码已哈希化（bcrypt/argon2）
+- [ ] 会话管理是否安全（HTTPOnly Cookie）
+- [ ] 是否实现了 CSRF 防护
+- [ ] 速率限制（暴力破解防护）
 
-### 決済関連
-- [ ] 機密情報（カード番号等）をサーバーに保存しない
-- [ ] Stripe/決済プロバイダの SDK を正しく使用
-- [ ] Webhook の署名検証
-- [ ] 金額改ざん防止（サーバー側で金額を確定）
+### 支付相关
+- [ ] 不在服务器保存敏感信息（卡号等）
+- [ ] 正确使用 Stripe/支付提供商的 SDK
+- [ ] Webhook 签名验证
+- [ ] 防止金额篡改（在服务器端确定金额）
 
-### 共通
-- [ ] エラーメッセージが詳細すぎないか（情報漏洩防止）
-- [ ] ログに機密情報を出力していないか
+### 共同
+- [ ] 错误消息是否过于详细（防止信息泄露）
+- [ ] 是否在日志中输出了敏感信息
 ```
 
-### セキュリティ重要度表示
+### 安全重要度显示
 
 ```markdown
-⚠️ 注意レベル: 🔴 高
+⚠️ 注意级别: 🔴 高
 
-この機能は以下のリスクがあります：
-- 認証情報の漏洩
-- 不正アクセス
-- 決済の不正操作
+此功能存在以下风险：
+- 认证信息泄露
+- 未授权访问
+- 支付操作异常
 
-専門家によるレビューを推奨します。
+建议由专家进行审查。
 ```
 
-### VibeCoder 向け
+### VibeCoder 专用
 
 ```markdown
-🔐 安全にログイン・決済機能を作るために
+🔐 安全地创建登录和支付功能
 
-1. **パスワードは「ハッシュ化」する**
-   - 元のパスワードを復元できない形で保存
-   - 万が一データが漏れても安全
+1. **密码需要"哈希化"**
+   - 以无法还原原始密码的形式保存
+   - 即使数据泄露也安全
 
-2. **カード情報はサーバーに保存しない**
-   - Stripe などの専用サービスに任せる
-   - 自分のサーバーには一切保存しない
+2. **不在服务器保存卡信息**
+   - 交给 Stripe 等专业服务
+   - 绝不保存在自己的服务器上
 
-3. **エラーメッセージは曖昧に**
-   - 「パスワードが違います」ではなく「認証に失敗しました」
-   - 悪意ある人にヒントを与えない
+3. **错误消息要模糊**
+   - 不是"密码错误"而是"认证失败"
+   - 不给恶意者提示
 ```

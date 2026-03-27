@@ -1,22 +1,22 @@
 #!/bin/bash
 # session-state.sh
-# セッション状態を強制的に遷移させる
+# 强制转换会话状态
 #
 # Usage: ./scripts/session-state.sh --state <state> --event <event> [--data <json>]
 #
-# 入力:
-#   --state <state>  : 遷移先の状態 (idle, initialized, planning, executing, reviewing, verifying, escalated, completed, failed, stopped)
-#   --event <event>  : 遷移トリガーのイベント (session.start, plan.ready, work.start, etc.)
-#   --data <json>    : イベント付加データ (オプション)
+# 输入:
+#   --state <state>  : 目标状态 (idle, initialized, planning, executing, reviewing, verifying, escalated, completed, failed, stopped)
+#   --event <event>  : 触发转换的事件 (session.start, plan.ready, work.start, etc.)
+#   --data <json>    : 事件附加数据 (可选)
 #
-# 出力:
-#   成功時: exit 0
-#   失敗時: stderr にエラー出力 + exit 1
+# 输出:
+#   成功: exit 0
+#   失败: stderr 输出错误 + exit 1
 
 set -euo pipefail
 
 # ================================
-# 定数
+# 常量
 # ================================
 STATE_DIR=".claude/state"
 SESSION_FILE="$STATE_DIR/session.json"
@@ -24,11 +24,11 @@ EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 LOCK_FILE="$STATE_DIR/session-state.lock"
 CONFIG_FILE=".claude-code-harness.config.yaml"
 
-# 有効な状態リスト (docs/SESSION_ORCHESTRATION.md の States と同期)
+# 有效状态列表 (与 docs/SESSION_ORCHESTRATION.md 中的 States 同步)
 VALID_STATES=(idle initialized planning executing reviewing verifying escalated completed failed stopped)
 
-# 遷移ルール (from:event -> to)
-# フォーマット: "from_state:event_name:to_state"
+# 转换规则 (from:event -> to)
+# 格式: "from_state:event_name:to_state"
 TRANSITION_RULES=(
   "idle:session.start:initialized"
   "initialized:plan.ready:planning"
@@ -40,26 +40,26 @@ TRANSITION_RULES=(
   "reviewing:verify.start:verifying"
   "verifying:verify.passed:completed"
   "verifying:verify.failed:escalated"
-  # エスカレーション
+  # 升级
   "executing:escalation.requested:escalated"
   "reviewing:escalation.requested:escalated"
   "verifying:escalation.requested:escalated"
   "planning:escalation.requested:escalated"
   "escalated:escalation.resolved:initialized"
-  # 停止 (任意の状態から)
+  # 停止 (从任意状态)
   "*:session.stop:stopped"
-  # 再開
+  # 恢复
   "stopped:session.resume:initialized"
-  # 完了
+  # 完成
   "completed:session.stop:stopped"
   "reviewing:work.all_complete:completed"
 )
 
 # ================================
-# ヘルパー関数
+# 辅助函数
 # ================================
 
-# 使用方法を表示
+# 显示使用方法
 usage() {
   echo "Usage: $0 --state <state> --event <event> [--data <json>]" >&2
   echo "" >&2
@@ -72,7 +72,7 @@ usage() {
   exit 1
 }
 
-# 状態の有効性チェック
+# 状态有效性检查
 is_valid_state() {
   local state="$1"
   for valid in "${VALID_STATES[@]}"; do
@@ -83,7 +83,7 @@ is_valid_state() {
   return 1
 }
 
-# 遷移ルールのチェック
+# 转换规则检查
 is_valid_transition() {
   local from="$1"
   local event="$2"
@@ -95,7 +95,7 @@ is_valid_transition() {
     local rule_event="${rest%%:*}"
     local rule_to="${rest#*:}"
 
-    # ワイルドカード対応（任意の状態から）
+    # 支持通配符（从任意状态）
     if [[ "$rule_from" == "*" || "$rule_from" == "$from" ]]; then
       if [[ "$rule_event" == "$event" && "$rule_to" == "$to" ]]; then
         return 0
@@ -105,7 +105,7 @@ is_valid_transition() {
   return 1
 }
 
-# ロック取得
+# 获取锁
 acquire_lock() {
   local timeout=5
   local waited=0
@@ -128,7 +128,7 @@ acquire_lock() {
   return 0
 }
 
-# ロック解放
+# 释放锁
 release_lock() {
   if command -v flock >/dev/null 2>&1; then
     exec 200>&-
@@ -137,7 +137,7 @@ release_lock() {
   fi
 }
 
-# 現在の状態を取得
+# 获取当前状态
 get_current_state() {
   if [ ! -f "$SESSION_FILE" ]; then
     echo "idle"
@@ -153,7 +153,7 @@ get_current_state() {
   fi
 }
 
-# 最大リトライ数を取得
+# 获取最大重试次数
 get_max_retries() {
   local default=3
 
@@ -173,7 +173,7 @@ get_max_retries() {
   echo "$default"
 }
 
-# リトライバックオフ秒数を取得 (SESSION_ORCHESTRATION.md準拠)
+# 获取重试退避秒数 (符合 SESSION_ORCHESTRATION.md 规范)
 get_retry_backoff() {
   local retry_num="${1:-1}"
   local defaults=(5 15 30)
@@ -182,7 +182,7 @@ get_retry_backoff() {
     local backoff_line
     backoff_line=$(grep -E "retry_backoff_seconds:" "$CONFIG_FILE" 2>/dev/null | head -n 1 || true)
     if [ -n "$backoff_line" ]; then
-      # YAML配列 [5, 15, 30] からパース
+      # 从 YAML 数组 [5, 15, 30] 解析
       local arr
       arr=$(echo "$backoff_line" | sed 's/.*: *\[//' | sed 's/\].*//' | tr ',' ' ')
       local index=$((retry_num - 1))
@@ -197,7 +197,7 @@ get_retry_backoff() {
     fi
   fi
 
-  # デフォルト値
+  # 默认值
   local idx=$((retry_num - 1))
   if [ "$idx" -ge 0 ] && [ "$idx" -lt ${#defaults[@]} ]; then
     echo "${defaults[$idx]}"
@@ -207,14 +207,14 @@ get_retry_backoff() {
 }
 
 # ================================
-# メイン処理
+# 主处理
 # ================================
 
 TARGET_STATE=""
 EVENT_NAME=""
 EVENT_DATA=""
 
-# 引数解析
+# 参数解析
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --state)
@@ -239,29 +239,29 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 必須引数チェック
+# 必需参数检查
 if [ -z "$TARGET_STATE" ] || [ -z "$EVENT_NAME" ]; then
   echo "Error: --state and --event are required" >&2
   usage
 fi
 
-# 状態の有効性チェック
+# 状态有效性检查
 if ! is_valid_state "$TARGET_STATE"; then
   echo "Error: Invalid state '$TARGET_STATE'" >&2
   echo "Valid states: ${VALID_STATES[*]}" >&2
   exit 1
 fi
 
-# ロック取得
+# 获取锁
 if ! acquire_lock; then
   echo "Error: Failed to acquire lock" >&2
   exit 1
 fi
 
-# 現在の状態を取得
+# 获取当前状态
 CURRENT_STATE=$(get_current_state)
 
-# 遷移ルールのチェック
+# 转换规则检查
 if ! is_valid_transition "$CURRENT_STATE" "$EVENT_NAME" "$TARGET_STATE"; then
   release_lock
   echo "Error: Invalid transition from '$CURRENT_STATE' via '$EVENT_NAME' to '$TARGET_STATE'" >&2
@@ -275,18 +275,18 @@ if ! is_valid_transition "$CURRENT_STATE" "$EVENT_NAME" "$TARGET_STATE"; then
   exit 1
 fi
 
-# タイムスタンプ
+# 时间戳
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# セッションファイルの更新
+# 更新会话文件
 if [ -f "$SESSION_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
-    # event_seq を増加
+    # 增加 event_seq
     EVENT_SEQ=$(jq -r '.event_seq // 0' "$SESSION_FILE" 2>/dev/null)
     EVENT_SEQ=$((EVENT_SEQ + 1))
     EVENT_ID=$(printf "event-%06d" "$EVENT_SEQ")
 
-    # session.json を更新
+    # 更新 session.json
     tmp_file=$(mktemp)
     jq --arg state "$TARGET_STATE" \
        --arg updated_at "$TIMESTAMP" \
@@ -295,7 +295,7 @@ if [ -f "$SESSION_FILE" ]; then
        '.state = $state | .updated_at = $updated_at | .last_event_id = $event_id | .event_seq = $event_seq' \
        "$SESSION_FILE" > "$tmp_file" && mv "$tmp_file" "$SESSION_FILE"
 
-    # イベントログに追記
+    # 追加到事件日志
     mkdir -p "$(dirname "$EVENT_LOG_FILE")" 2>/dev/null || true
     if [ -n "$EVENT_DATA" ]; then
       echo "{\"id\":\"$EVENT_ID\",\"type\":\"$EVENT_NAME\",\"ts\":\"$TIMESTAMP\",\"state\":\"$TARGET_STATE\",\"data\":$EVENT_DATA}" >> "$EVENT_LOG_FILE"
@@ -352,7 +352,7 @@ PY
     exit 1
   fi
 else
-  # セッションファイルがない場合は新規作成
+  # 会话文件不存在时创建新文件
   mkdir -p "$STATE_DIR" 2>/dev/null || true
 
   SESSION_ID="session-$(date +%s)"
@@ -360,7 +360,7 @@ else
   EVENT_ID="event-000001"
   MAX_RETRIES=$(get_max_retries)
 
-  # バックオフ秒数を配列として取得
+  # 获取退避秒数数组
   BACKOFF_1=$(get_retry_backoff 1)
   BACKOFF_2=$(get_retry_backoff 2)
   BACKOFF_3=$(get_retry_backoff 3)
@@ -384,7 +384,7 @@ else
 }
 EOF
 
-  # イベントログに追記
+  # 追加到事件日志
   if [ -n "$EVENT_DATA" ]; then
     echo "{\"id\":\"$EVENT_ID\",\"type\":\"$EVENT_NAME\",\"ts\":\"$TIMESTAMP\",\"state\":\"$TARGET_STATE\",\"data\":$EVENT_DATA}" >> "$EVENT_LOG_FILE"
   else

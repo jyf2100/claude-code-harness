@@ -1,65 +1,65 @@
 ---
 name: harness-setup
-description: "Harness v3 統合セットアップスキル。プロジェクト初期化・ツール設定・2エージェント構成・メモリ設定・公開 skill mirror 同期を担当。以下で起動: セットアップ、初期化、新規プロジェクト、CIセットアップ、codex CLIセットアップ、harness-mem、エージェント設定、symlink、mirror、harness-setup。実装・レビュー・リリース・プランニングには使わない。"
+description: "Harness v3 统一设置技能。负责项目初始化・工具配置・2代理配置・内存设置・公开 skill mirror 同步。以下启动: 设置、初始化、新项目、CI设置、codex CLI设置、harness-mem、代理设置、symlink、mirror、harness-setup。不用于实现・审查・发布・规划。"
 description-en: "Unified setup skill for Harness v3. Project init, tool setup, 2-agent config, memory setup, and public skill mirror sync. Use when user mentions: setup, initialization, new project, CI setup, codex CLI setup, harness-mem, agent setup, symlinks, mirrors, harness-setup. Do NOT load for: implementation, code review, release, or planning."
-description-ja: "Harness v3 統合セットアップスキル。プロジェクト初期化・ツール設定・2エージェント構成・メモリ設定・公開 skill mirror 同期を担当。以下で起動: セットアップ、初期化、新規プロジェクト、CIセットアップ、codex CLIセットアップ、harness-mem、エージェント設定、symlink、mirror、harness-setup。実装・レビュー・リリース・プランニングには使わない。"
+description-ja: "Harness v3 统一设置技能。负责项目初始化・工具设置・2代理配置・内存设置・公开 skill mirror 同步。以下短语启动: 设置、初始化、新项目、CI设置、codex CLI设置、harness-mem、代理设置、symlink、mirror、harness-setup。不用于实现・审查・发布・规划。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 argument-hint: "[init|ci|codex|harness-mem|mirrors|agents|localize]"
 ---
 
 # Harness Setup (v3)
 
-Harness v3 の統合セットアップスキル。
-以下の旧スキルを統合:
+Harness v3 的统一设置技能。
+整合了以下旧技能:
 
-- `setup` — 統合セットアップハブ
-- `harness-init` — プロジェクト初期化
-- `harness-update` — Harness アップデート
-- `maintenance` — ファイル整理・クリーンアップ
+- `setup` — 统一设置中心
+- `harness-init` — 项目初始化
+- `harness-update` — Harness 更新
+- `maintenance` — 文件整理・清理
 
 ## Quick Reference
 
-| サブコマンド | 動作 |
+| 子命令 | 动作 |
 |------------|------|
-| `harness-setup init` | 新規プロジェクト初期化（CLAUDE.md + Plans.md + hooks）|
-| `harness-setup ci` | CI/CD パイプライン設定 |
-| `harness-setup codex` | Codex CLI インストール・設定 |
-| `harness-setup harness-mem` | harness-mem 統合・メモリ設定 |
-| `harness-setup mirrors` | skills-v3/ → 公開 mirror bundle 更新 |
-| `harness-setup agents` | agents-v3/ エージェント設定 |
-| `harness-setup localize` | CLAUDE.md ルールのローカライズ |
+| `harness-setup init` | 新项目初始化（CLAUDE.md + Plans.md + hooks）|
+| `harness-setup ci` | CI/CD 管道设置 |
+| `harness-setup codex` | Codex CLI 安装・设置 |
+| `harness-setup harness-mem` | harness-mem 集成・内存设置 |
+| `harness-setup mirrors` | skills-v3/ → 公开 mirror bundle 更新 |
+| `harness-setup agents` | agents-v3/ 代理设置 |
+| `harness-setup localize` | CLAUDE.md 规则本地化 |
 
-## サブコマンド詳細
+## 子命令详情
 
-### init — プロジェクト初期化
+### init — 项目初始化
 
-新規プロジェクトに Harness v3 を導入する。
+向新项目引入 Harness v3。
 
-**生成ファイル**:
+**生成的文件**:
 ```
 project/
-├── CLAUDE.md            # プロジェクト設定
-├── Plans.md             # タスク管理（空テンプレート）
+├── CLAUDE.md            # 项目配置
+├── Plans.md             # 任务管理（空模板）
 ├── .claude/
-│   ├── settings.json    # Claude Code 設定
-│   └── hooks.json       # フック設定（v3 シム）
+│   ├── settings.json    # Claude Code 设置
+│   └── hooks.json       # 钩子设置（v3 shim）
 └── hooks/
-    ├── pre-tool.sh      # 薄いシム（→ core/src/index.ts）
-    └── post-tool.sh     # 薄いシム（→ core/src/index.ts）
+    ├── pre-tool.sh      # 薄 shim（→ core/src/index.ts）
+    └── post-tool.sh     # 薄 shim（→ core/src/index.ts）
 ```
 
-**フロー**:
-1. プロジェクト種別を検出（Node.js/Python/Go/Rust/その他）
-2. 最小限の CLAUDE.md を生成
-3. Plans.md テンプレートを生成
-4. hooks.json を配置
+**流程**:
+1. 检测项目类型（Node.js/Python/Go/Rust/其他）
+2. 生成最小化的 CLAUDE.md
+3. 生成 Plans.md 模板
+4. 部署 hooks.json
 
-### ci — CI/CD 設定
+### ci — CI/CD 设置
 
-GitHub Actions ワークフローを設定する。
+配置 GitHub Actions 工作流。
 
 ```yaml
-# .github/workflows/ci.yml 生成例
+# .github/workflows/ci.yml 生成示例
 name: CI
 on:
   push:
@@ -73,125 +73,125 @@ jobs:
       - run: npm ci && npm test
 ```
 
-### codex — Codex CLI 設定
+### codex — Codex CLI 设置
 
 ```bash
-# インストール確認
+# 安装确认
 which codex || npm install -g @openai/codex
 
-# タイムアウトコマンド確認（macOS）
+# 超时命令确认（macOS）
 TIMEOUT=$(command -v timeout || command -v gtimeout || echo "")
-# macOS の場合: brew install coreutils
+# macOS 的情况: brew install coreutils
 ```
 
-**使用パターン**:
+**使用模式**:
 ```bash
 ${TIMEOUT:+$TIMEOUT 120} codex exec "$(cat /tmp/prompt.md)" 2>/dev/null
 ```
 
-### harness-mem — メモリ設定
+### harness-mem — 内存设置
 
-Unified Harness Memory の設定を行う。
+进行 Unified Harness Memory 的设置。
 
 ```bash
-# メモリディレクトリ作成
+# 创建内存目录
 mkdir -p .claude/agent-memory/claude-code-harness-worker
 mkdir -p .claude/agent-memory/claude-code-harness-reviewer
 
-# MEMORY.md テンプレート配置
+# 放置 MEMORY.md 模板
 cat > .claude/agent-memory/claude-code-harness-worker/MEMORY.md << 'EOF'
 # Worker Agent Memory
 
 ## Project Context
-[プロジェクト概要]
+[项目概要]
 
 ## Patterns
-[学習パターン]
+[学习模式]
 EOF
 ```
 
-### mirrors — 公開 skill bundle 同期
+### mirrors — 公开 skill bundle 同步
 
-Windows の `core.symlinks=false` では repository symlink が通常ファイルになり、`harness-*` skill が command 一覧に出なくなることがあります。公開 bundle は実ディレクトリ mirror として同期します。
+在 Windows 的 `core.symlinks=false` 中，仓库 symlink 会变成普通文件，`harness-*` skill 可能不会出现在命令列表中。公开 bundle 以实际目录 mirror 方式同步。
 
 ```bash
 ./scripts/sync-v3-skill-mirrors.sh
 ./scripts/sync-v3-skill-mirrors.sh --check
 ```
 
-更新対象:
+更新对象:
 
 - `skills/`
 - `codex/.codex/skills/`
 - `opencode/skills/`
 
-### agents — エージェント設定
+### agents — 代理设置
 
-agents-v3/ の3エージェント構成を設定する。
+设置 agents-v3/ 的3代理配置。
 
 ```
 agents-v3/
-├── worker.md      # 実装担当（task-worker + codex-implementer + error-recovery）
-├── reviewer.md    # レビュー担当（code-reviewer + plan-critic）
-└── scaffolder.md  # 足場担当（project-analyzer + scaffolder）
+├── worker.md      # 实现担当（task-worker + codex-implementer + error-recovery）
+├── reviewer.md    # 审查担当（code-reviewer + plan-critic）
+└── scaffolder.md  # 脚手架担当（project-analyzer + scaffolder）
 ```
 
-### localize — ルールローカライズ
+### localize — 规则本地化
 
-`.claude/rules/` のルールを現プロジェクトに適応する。
+将 `.claude/rules/` 的规则适配到当前项目。
 
 ```bash
-# ルール一覧確認
+# 确认规则列表
 ls .claude/rules/
 
-# プロジェクト固有ルールの追加
+# 追加项目固有规则
 cat >> .claude/rules/project-rules.md << 'EOF'
 # Project-Specific Rules
-[プロジェクト固有ルール]
+[项目固有规则]
 EOF
 ```
 
-## Plugin インストール (v2.1.71+ Marketplace)
+## Plugin 安装 (v2.1.71+ Marketplace)
 
-v2.1.71 で Marketplace の安定性が大幅に改善された。
+v2.1.71 中 Marketplace 的稳定性大幅改善。
 
-### 推奨インストール方式
+### 推荐安装方式
 
 ```bash
-# @ref 形式でバージョン固定（推奨）
+# @ref 形式固定版本（推荐）
 claude plugin install owner/repo@v3.5.0
 
 # 最新版
 claude plugin install owner/repo
 ```
 
-`owner/repo@vX.X.X` 形式を推奨。`@ref` パーサー修正により、タグ・ブランチ・コミットハッシュいずれも正確に解決される。
+推荐 `owner/repo@vX.X.X` 格式。`@ref` 解析器修复后，标签・分支・提交哈希都能准确解析。
 
-### アップデート
+### 更新
 
 ```bash
 claude plugin update owner/repo
 ```
 
-v2.1.71 で update 時の merge conflict が修正され、安定したアップデートが可能になった。
+v2.1.71 修复了 update 时的 merge conflict，可以进行稳定的更新。
 
-### その他の改善点
+### 其他改进
 
-- MCP server 重複排除: 同一 MCP サーバーの多重登録を自動防止
-- `/plugin uninstall` が `settings.local.json` を使用: ユーザーローカル設定に正確に反映
+- MCP server 去重: 自动防止同一 MCP 服务器的重复注册
+- `/plugin uninstall` 使用 `settings.local.json`: 准确反映到用户本地设置
 
-## Maintenance — ファイル整理
+## Maintenance — 文件整理
 
-定期メンテナンスタスク:
+定期维护任务:
 
-| タスク | コマンド |
+| 任务 | 命令 |
 |--------|---------|
-| 古いログ削除 | `find .claude/logs -mtime +30 -delete` |
-| Plans.md 圧縮 | 完了タスクをアーカイブセクションに移動 |
-| 古いトレース削除 | `tail -1000 .claude/state/agent-trace.jsonl > /tmp/trace && mv /tmp/trace .claude/state/agent-trace.jsonl` |
+| 删除旧日志 | `find .claude/logs -mtime +30 -delete` |
+| Plans.md 压缩 | 将完成任务移动到归档部分 |
+| 删除旧跟踪 | `tail -1000 .claude/state/agent-trace.jsonl > /tmp/trace && mv /tmp/trace .claude/state/agent-trace.jsonl` |
 
-## 関連スキル
+## 相关技能
 
-- `harness-plan` — セットアップ後にプロジェクト計画を作成
-- `harness-work` — セットアップ後にタスクを実行
-- `harness-review` — セットアップ設定をレビュー
+- `harness-plan` — 设置后创建项目计划
+- `harness-work` — 设置后执行任务
+- `harness-review` — 审查设置配置

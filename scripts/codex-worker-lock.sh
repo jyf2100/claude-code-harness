@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # codex-worker-lock.sh
-# タスク所有権・ロック機構
+# 任务所有权与锁机制
 #
 # Usage:
 #   ./scripts/codex-worker-lock.sh acquire --path PATH --worker WORKER_ID
@@ -13,31 +13,31 @@
 
 set -euo pipefail
 
-# スクリプトディレクトリ
+# 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 共通ライブラリ読み込み
+# 加载通用库
 # shellcheck source=lib/codex-worker-common.sh
 source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 
 # ============================================
-# ローカル設定（main で初期化）
+# 本地设置（在 main 中初始化）
 # ============================================
 TTL_MINUTES=""
 HEARTBEAT_MINUTES=""
-LOCK_DIR=""  # 絶対パスで初期化される
-LOCK_LOG=""  # 絶対パスで初期化される
+LOCK_DIR=""  # 以绝对路径初始化
+LOCK_LOG=""  # 以绝对路径初始化
 
-# 設定初期化（check_dependencies 後に呼び出す）
+# 设置初始化（在 check_dependencies 后调用）
 init_lock_config() {
     validate_config || {
-        log_error "設定ファイルが不正です"
+        log_error "配置文件无效"
         exit 1
     }
     TTL_MINUTES=$(get_config "ttl_minutes")
     HEARTBEAT_MINUTES=$(get_config "heartbeat_minutes")
 
-    # Security: 絶対パスで固定（CWD 依存を排除）
+    # Security: 以绝对路径固定（消除对 CWD 的依赖）
     local repo_root
     repo_root=$(get_repo_root) || exit 1
     LOCK_DIR="$repo_root/.claude/state/locks"
@@ -45,57 +45,57 @@ init_lock_config() {
 }
 
 # ============================================
-# ロック固有関数
+# 锁专用函数
 # ============================================
 
-# ロックディレクトリの検証と初期化
-# Security: symlink 攻撃を防止（親ディレクトリ含む）
-# Note: LOCK_DIR は init_lock_config() で絶対パスに設定済み
+# 验证并初始化锁目录
+# Security: 防止 symlink 攻击（包含父目录）
+# Note: LOCK_DIR 已在 init_lock_config() 中设置为绝对路径
 init_lock_dir() {
     local repo_root
     repo_root=$(get_repo_root) || exit 1
 
-    # リポジトリルートを解決
+    # 解析仓库根目录
     local real_repo_root
     real_repo_root=$(realpath "$repo_root" 2>/dev/null) || {
-        log_error "リポジトリルートを解決できません: $repo_root"
+        log_error "无法解析仓库根目录: $repo_root"
         exit 1
     }
 
-    # LOCK_DIR は既に絶対パス（init_lock_config で設定）
+    # LOCK_DIR 已是绝对路径（在 init_lock_config 中设置）
     local full_lock_dir="$LOCK_DIR"
 
-    # 親ディレクトリの symlink チェック（Security: 各階層を検証）
+    # 父目录的 symlink 检查（Security: 验证各层级）
     local check_path="$repo_root"
     for segment in .claude state locks; do
         check_path="$check_path/$segment"
         if [[ -L "$check_path" ]]; then
-            log_error "パス階層に symlink が含まれています（セキュリティ上禁止）: $check_path"
+            log_error "路径层级包含 symlink（出于安全考虑禁止）: $check_path"
             exit 1
         fi
     done
 
-    # ディレクトリが存在する場合、リポジトリ内か確認
+    # 如果目录存在，确认其在仓库内
     if [[ -e "$full_lock_dir" ]]; then
         local real_lock_dir
         real_lock_dir=$(realpath "$full_lock_dir" 2>/dev/null) || {
-            log_error "ロックディレクトリを解決できません: $full_lock_dir"
+            log_error "无法解析锁目录: $full_lock_dir"
             exit 1
         }
 
-        # Security: /repo と /repo2 を区別
+        # Security: 区分 /repo 和 /repo2
         if [[ "$real_lock_dir" != "$real_repo_root" && "$real_lock_dir" != "$real_repo_root/"* ]]; then
-            log_error "ロックディレクトリがリポジトリ外: $real_lock_dir"
+            log_error "锁目录位于仓库外: $real_lock_dir"
             exit 1
         fi
     fi
 
-    # ディレクトリ作成（Security: 700 権限）
+    # 创建目录（Security: 700 权限）
     mkdir -p "$full_lock_dir"
     chmod 700 "$full_lock_dir"
 }
 
-# ロックキー生成（SHA256 先頭8文字）
+# 生成锁键（SHA256 前8位）
 generate_lock_key() {
     local path="$1"
     local normalized
@@ -103,7 +103,7 @@ generate_lock_key() {
     calculate_sha256 "$normalized" 8
 }
 
-# ロックファイルパス取得
+# 获取锁文件路径
 get_lock_file() {
     local path="$1"
     local key
@@ -111,9 +111,9 @@ get_lock_file() {
     printf '%s/%s.lock.json' "$LOCK_DIR" "$key"
 }
 
-# ロックファイルの複数フィールドを一度に取得（Performance 最適化）
+# 一次性读取锁文件的多个字段（性能优化）
 # Usage: read_lock_fields "$lock_file" worker heartbeat path
-# Returns: tab-separated values
+# Returns: 制表符分隔的值
 read_lock_fields() {
     local lock_file="$1"
     shift
@@ -123,15 +123,15 @@ read_lock_fields() {
         return 1
     fi
 
-    # 単一の jq 呼び出しで複数フィールドを取得
+    # 使用单次 jq 调用获取多个字段
     local jq_filter
     jq_filter=$(printf '.%s, ' "${fields[@]}")
-    jq_filter="${jq_filter%, }"  # 末尾のカンマを削除
+    jq_filter="${jq_filter%, }"  # 删除末尾逗号
 
     jq -r "[$jq_filter] | @tsv" "$lock_file"
 }
 
-# ログ記録
+# 记录日志
 log_event() {
     local event="$1"
     local path="$2"
@@ -140,7 +140,7 @@ log_event() {
     printf '%s\t%s\t%s\t%s\n' "$(now_utc)" "$event" "$path" "$worker" >> "$LOCK_LOG"
 }
 
-# ロック取得
+# 获取锁
 cmd_acquire() {
     local path=""
     local worker=""
@@ -149,13 +149,13 @@ cmd_acquire() {
         case "$1" in
             --path)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--path には値が必要です"
+                    log_error "--path 需要值"
                     exit 1
                 fi
                 path="$2"; shift 2 ;;
             --worker)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--worker には値が必要です"
+                    log_error "--worker 需要值"
                     exit 1
                 fi
                 worker="$2"; shift 2 ;;
@@ -164,16 +164,16 @@ cmd_acquire() {
     done
 
     if [[ -z "$path" ]] || [[ -z "$worker" ]]; then
-        log_error "--path と --worker は必須です"
+        log_error "--path 和 --worker 为必选项"
         exit 1
     fi
 
-    # Security: パス検証
+    # Security: 路径验证
     if ! validate_repo_path "$path"; then
         exit 1
     fi
 
-    # Security: ロックディレクトリ検証
+    # Security: 锁目录验证
     init_lock_dir
 
     local lock_file
@@ -181,11 +181,11 @@ cmd_acquire() {
     local normalized_path
     normalized_path=$(normalize_path "$path")
 
-    # 既存ロックチェック（Performance: 1回の jq で複数フィールド取得）
+    # 检查现有锁（性能优化: 使用1次 jq 获取多个字段）
     if [[ -f "$lock_file" ]]; then
         local lock_data
         lock_data=$(read_lock_fields "$lock_file" worker heartbeat) || {
-            log_warn "ロックファイルの読み込みに失敗: $lock_file"
+            log_warn "读取锁文件失败: $lock_file"
             rm -f "$lock_file"
         }
 
@@ -194,7 +194,7 @@ cmd_acquire() {
         existing_worker=$(echo "$lock_data" | cut -f1)
         heartbeat=$(echo "$lock_data" | cut -f2)
 
-        # TTL チェック
+        # TTL 检查
         local heartbeat_epoch
         local now_epoch
         local ttl_seconds=$((TTL_MINUTES * 60))
@@ -203,20 +203,20 @@ cmd_acquire() {
         now_epoch=$(date "+%s")
 
         if (( now_epoch - heartbeat_epoch > ttl_seconds )); then
-            log_warn "TTL 超過: 既存ロックを解放 (worker=$existing_worker)"
+            log_warn "TTL 超时: 释放现有锁 (worker=$existing_worker)"
             log_event "expired" "$normalized_path" "$existing_worker"
             rm -f "$lock_file"
         else
-            log_error "ロック取得失敗: $normalized_path は $existing_worker がロック中"
+            log_error "获取锁失败: $normalized_path 正被 $existing_worker 锁定"
             exit 1
         fi
     fi
 
-    # 新規ロック作成（原子的作成）
+    # 创建新锁（原子创建）
     local now
     now=$(now_utc)
 
-    # Security: 本人のみ読み書き可能な権限で作成
+    # Security: 仅允许所有者读写的权限创建
     local tmp_file
     tmp_file=$(mktemp "$LOCK_DIR/tmp.XXXXXX")
     jq -n \
@@ -232,20 +232,20 @@ cmd_acquire() {
         }' > "$tmp_file"
     chmod 600 "$tmp_file"
 
-    # ln で原子的配置（既存ファイルがあれば失敗）
+    # 使用 ln 进行原子放置（如文件已存在则失败）
     if ! ln "$tmp_file" "$lock_file" 2>/dev/null; then
         rm -f "$tmp_file"
-        log_error "ロック取得失敗: $normalized_path は他の Worker がロック中（競合）"
+        log_error "获取锁失败: $normalized_path 正被其他 Worker 锁定（竞争）"
         exit 1
     fi
 
     chmod 600 "$lock_file"
     rm -f "$tmp_file"
     log_event "acquire" "$normalized_path" "$worker"
-    log_info "ロック取得: $normalized_path (worker=$worker)"
+    log_info "获取锁: $normalized_path (worker=$worker)"
 }
 
-# ロック解放
+# 释放锁
 cmd_release() {
     local path=""
     local worker=""
@@ -254,13 +254,13 @@ cmd_release() {
         case "$1" in
             --path)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--path には値が必要です"
+                    log_error "--path 需要值"
                     exit 1
                 fi
                 path="$2"; shift 2 ;;
             --worker)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--worker には値が必要です"
+                    log_error "--worker 需要值"
                     exit 1
                 fi
                 worker="$2"; shift 2 ;;
@@ -269,11 +269,11 @@ cmd_release() {
     done
 
     if [[ -z "$path" ]] || [[ -z "$worker" ]]; then
-        log_error "--path と --worker は必須です"
+        log_error "--path 和 --worker 为必选项"
         exit 1
     fi
 
-    # Security: パス検証
+    # Security: 路径验证
     if ! validate_repo_path "$path"; then
         exit 1
     fi
@@ -284,7 +284,7 @@ cmd_release() {
     normalized_path=$(normalize_path "$path")
 
     if [[ ! -f "$lock_file" ]]; then
-        log_warn "ロックが存在しません: $normalized_path"
+        log_warn "锁不存在: $normalized_path"
         exit 0
     fi
 
@@ -292,16 +292,16 @@ cmd_release() {
     existing_worker=$(jq -r '.worker' "$lock_file")
 
     if [[ "$existing_worker" != "$worker" ]]; then
-        log_error "ロック解放失敗: $normalized_path は $existing_worker のロックです"
+        log_error "释放锁失败: $normalized_path 是 $existing_worker 的锁"
         exit 1
     fi
 
     rm -f "$lock_file"
     log_event "release" "$normalized_path" "$worker"
-    log_info "ロック解放: $normalized_path (worker=$worker)"
+    log_info "释放锁: $normalized_path (worker=$worker)"
 }
 
-# heartbeat 更新
+# 更新心跳
 cmd_heartbeat() {
     local path=""
     local worker=""
@@ -310,13 +310,13 @@ cmd_heartbeat() {
         case "$1" in
             --path)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--path には値が必要です"
+                    log_error "--path 需要值"
                     exit 1
                 fi
                 path="$2"; shift 2 ;;
             --worker)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--worker には値が必要です"
+                    log_error "--worker 需要值"
                     exit 1
                 fi
                 worker="$2"; shift 2 ;;
@@ -325,11 +325,11 @@ cmd_heartbeat() {
     done
 
     if [[ -z "$path" ]] || [[ -z "$worker" ]]; then
-        log_error "--path と --worker は必須です"
+        log_error "--path 和 --worker 为必选项"
         exit 1
     fi
 
-    # Security: パス検証
+    # Security: 路径验证
     if ! validate_repo_path "$path"; then
         exit 1
     fi
@@ -340,7 +340,7 @@ cmd_heartbeat() {
     normalized_path=$(normalize_path "$path")
 
     if [[ ! -f "$lock_file" ]]; then
-        log_error "ロックが存在しません: $normalized_path"
+        log_error "锁不存在: $normalized_path"
         exit 1
     fi
 
@@ -348,7 +348,7 @@ cmd_heartbeat() {
     existing_worker=$(jq -r '.worker' "$lock_file")
 
     if [[ "$existing_worker" != "$worker" ]]; then
-        log_error "heartbeat 更新失敗: $normalized_path は $existing_worker のロックです"
+        log_error "更新心跳失败: $normalized_path 是 $existing_worker 的锁"
         exit 1
     fi
 
@@ -356,14 +356,14 @@ cmd_heartbeat() {
     now=$(now_utc)
 
     jq --arg heartbeat "$now" '.heartbeat = $heartbeat' "$lock_file" > "$lock_file.tmp"
-    # Security: 権限を維持
+    # Security: 维持权限
     chmod 600 "$lock_file.tmp"
     mv "$lock_file.tmp" "$lock_file"
 
-    log_info "heartbeat 更新: $normalized_path (worker=$worker)"
+    log_info "更新心跳: $normalized_path (worker=$worker)"
 }
 
-# ロック状態確認
+# 检查锁状态
 cmd_check() {
     local path=""
 
@@ -371,7 +371,7 @@ cmd_check() {
         case "$1" in
             --path)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--path には値が必要です"
+                    log_error "--path 需要值"
                     exit 1
                 fi
                 path="$2"; shift 2 ;;
@@ -380,11 +380,11 @@ cmd_check() {
     done
 
     if [[ -z "$path" ]]; then
-        log_error "--path は必須です"
+        log_error "--path 为必选项"
         exit 1
     fi
 
-    # Security: パス検証
+    # Security: 路径验证
     if ! validate_repo_path "$path"; then
         exit 1
     fi
@@ -404,7 +404,7 @@ cmd_check() {
     worker=$(jq -r '.worker' "$lock_file")
     heartbeat=$(jq -r '.heartbeat' "$lock_file")
 
-    # TTL チェック
+    # TTL 检查
     local heartbeat_epoch
     local now_epoch
     local ttl_seconds=$((TTL_MINUTES * 60))
@@ -413,16 +413,16 @@ cmd_check() {
     now_epoch=$(date "+%s")
 
     if (( now_epoch - heartbeat_epoch > ttl_seconds )); then
-        # TTL 超過: 読み取り専用（削除は acquire/cleanup で行う）
+        # TTL 超时: 只读（删除操作在 acquire/cleanup 中进行）
         echo '{"locked": false, "expired": true, "hint": "run cleanup or acquire to release"}'
     else
         jq -c '. + {locked: true}' "$lock_file"
     fi
 }
 
-# 期限切れロックのクリーンアップ
+# 清理过期锁
 cmd_cleanup() {
-    # Security: ロックディレクトリ検証
+    # Security: 锁目录验证
     init_lock_dir
 
     local cleaned=0
@@ -433,7 +433,7 @@ cmd_cleanup() {
     for lock_file in "$LOCK_DIR"/*.lock.json; do
         [[ -f "$lock_file" ]] || continue
 
-        # Performance: 1回の jq で複数フィールド取得
+        # 性能优化: 使用1次 jq 获取多个字段
         local lock_data
         lock_data=$(read_lock_fields "$lock_file" heartbeat worker path) || continue
 
@@ -448,14 +448,14 @@ cmd_cleanup() {
         heartbeat_epoch=$(parse_utc_to_epoch "$heartbeat")
 
         if (( now_epoch - heartbeat_epoch > ttl_seconds )); then
-            log_warn "TTL 超過: $path (worker=$worker)"
+            log_warn "TTL 超时: $path (worker=$worker)"
             log_event "expired" "$path" "$worker"
             rm -f "$lock_file"
             cleaned=$((cleaned + 1))
         fi
     done
 
-    log_info "クリーンアップ完了: $cleaned 件のロックを解放"
+    log_info "清理完成: 释放了 $cleaned 个锁"
 }
 
 # 使用方法
@@ -464,20 +464,20 @@ usage() {
 Usage: $0 COMMAND [OPTIONS]
 
 Commands:
-  acquire   --path PATH --worker WORKER_ID   ロック取得
-  release   --path PATH --worker WORKER_ID   ロック解放
-  heartbeat --path PATH --worker WORKER_ID   heartbeat 更新
-  check     --path PATH                      ロック状態確認
-  cleanup                                    期限切れロックのクリーンアップ
+  acquire   --path PATH --worker WORKER_ID   获取锁
+  release   --path PATH --worker WORKER_ID   释放锁
+  heartbeat --path PATH --worker WORKER_ID   更新心跳
+  check     --path PATH                      检查锁状态
+  cleanup                                    清理过期锁
 
 Options:
-  --path PATH       対象ファイルパス
-  --worker WORKER_ID Worker 識別子
+  --path PATH       目标文件路径
+  --worker WORKER_ID Worker 标识符
 
 Settings:
-  TTL: $TTL_MINUTES 分
-  Heartbeat 間隔: $HEARTBEAT_MINUTES 分
-  ロックディレクトリ: $LOCK_DIR
+  TTL: $TTL_MINUTES 分钟
+  心跳间隔: $HEARTBEAT_MINUTES 分钟
+  锁目录: $LOCK_DIR
 
 Examples:
   $0 acquire --path src/auth/login.ts --worker worker-1
@@ -488,7 +488,7 @@ Examples:
 EOF
 }
 
-# メイン処理
+# 主处理
 main() {
     check_dependencies
     init_lock_config

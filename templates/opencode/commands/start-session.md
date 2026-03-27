@@ -1,28 +1,28 @@
 ---
-description: セッション開始（状況把握→計画→Claude Codeへ依頼）
+description: 会话开始（掌握状况→计划→向Claude Code发出请求）
 ---
 
 # /start-session
 
-あなたは **OpenCode (PM)** です。目的は「いま何をすべきか」を短時間で明確にし、必要なら Claude Code へ依頼することです。
+你是 **OpenCode (PM)**。目的是在短时间内明确"现在应该做什么"，并在需要时委托给 Claude Code。
 
-## 1) 状況把握（最初に読む）
+## 1) 把握状况（首先阅读）
 
 - @Plans.md
 - @AGENTS.md
 
-可能なら以下も確認：
+如果可以的话也确认：
 - `git status -sb`
 - `git log --oneline -5`
 - `git diff --name-only`
 
-## 2) 今日のゴールを決める
+## 2) 确定今天的目标
 
-次を1つに絞って提案してください：
-- 最優先タスク（1つ）
-- 受入条件（3つ以内）
-- 想定リスク（あれば）
+请提出以下内容，限定为一个：
+- 最高优先级任务（1个）
+- 验收条件（3个以内）
+- 预期风险（如果有）
 
-## 3) Claude Codeに依頼する（必要なら）
+## 3) 委托给 Claude Code（如果需要）
 
-タスクを Claude Code に渡す場合、**/handoff-to-claude** を実行して依頼文を作ってください。
+如果要把任务交给 Claude Code，请执行 **/handoff-to-claude** 创建委托文。

@@ -1,38 +1,38 @@
 # AI Snapshot Workflow
 
-agent-browser の `snapshot` コマンドを活用した AI エージェント向けワークフロー。
+利用 agent-browser 的 `snapshot` 命令的 AI 代理专用工作流。
 
 ---
 
 ## 概要
 
-`snapshot` コマンドは、ページのアクセシビリティツリーを取得し、各要素に参照 ID（`@e1`, `@e2` など）を付与します。これにより：
+`snapshot` 命令获取页面的可访问性树，并为各元素分配引用 ID（`@e1`, `@e2` 等）。这样可以:
 
-1. **CSS セレクタ不要**: 動的な ID やクラス名に依存しない
-2. **コンテキスト把握**: 要素の役割（button, input, link）が明確
-3. **決定的操作**: `@e1` などの参照で確実に操作可能
+1. **不需要 CSS 选择器**: 不依赖动态 ID 或类名
+2. **把握上下文**: 明确元素的角色（button, input, link）
+3. **确定性操作**: 通过 `@e1` 等引用进行可靠操作
 
 ---
 
-## 基本ワークフロー
+## 基本工作流
 
-### Step 1: ページを開く
+### Step 1: 打开页面
 
 ```bash
 agent-browser open https://example.com
 ```
 
-### Step 2: スナップショット取得
+### Step 2: 获取快照
 
 ```bash
 agent-browser snapshot -i -c
 ```
 
-**オプション説明**:
-- `-i, --interactive`: インタラクティブな要素（ボタン、リンク、入力フィールド等）のみ表示
-- `-c, --compact`: 空の構造要素を除去してコンパクトに
+**选项说明**:
+- `-i, --interactive`: 仅显示交互元素（按钮、链接、输入框等）
+- `-c, --compact`: 移除空的结构元素，使其紧凑
 
-**出力例**:
+**输出示例**:
 ```
 ✓ Example Domain
   https://example.com/
@@ -44,253 +44,253 @@ agent-browser snapshot -i -c
 - button "Search" [ref=e5]
 ```
 
-### Step 3: 要素参照で操作
+### Step 3: 用元素引用操作
 
 ```bash
-# リンクをクリック
+# 点击链接
 agent-browser click @e1
 
-# 検索フォームに入力
+# 在搜索框中输入
 agent-browser fill @e4 "search query"
 
-# 検索ボタンをクリック
+# 点击搜索按钮
 agent-browser click @e5
 ```
 
-### Step 4: 結果を確認
+### Step 4: 确认结果
 
 ```bash
-# 新しい状態をスナップショット
+# 快照新状态
 agent-browser snapshot -i -c
 ```
 
 ---
 
-## Snapshot オプション詳細
+## Snapshot 选项详细
 
 ### `-i, --interactive`
 
-インタラクティブな要素のみを表示。操作対象を絞り込む際に有効。
+仅显示交互元素。在缩小操作目标范围时有效。
 
 ```bash
-# インタラクティブ要素のみ
+# 仅交互元素
 agent-browser snapshot -i
 
-# 全要素（テキストノード含む）
+# 所有元素（包括文本节点）
 agent-browser snapshot
 ```
 
 ### `-c, --compact`
 
-空の構造要素（div, span など内容のないもの）を除去。
+移除空的结构元素（div, span 等无内容的元素）。
 
 ```bash
-# コンパクト出力
+# 紧凑输出
 agent-browser snapshot -c
 
-# 構造も含めて表示
+# 包括结构
 agent-browser snapshot
 ```
 
 ### `-d, --depth <n>`
 
-ツリーの深さを制限。大きなページで概要を把握する際に有効。
+限制树的深度。在把握大页面的概览时有效。
 
 ```bash
-# 深さ3まで
+# 深度为3
 agent-browser snapshot -d 3
 ```
 
 ### `-s, --selector <sel>`
 
-特定のセレクタにスコープを絞る。
+将范围限定在特定选择器。
 
 ```bash
-# フォーム内のみ
+# 仅表单内
 agent-browser snapshot -s "form.login"
 
-# ナビゲーション内のみ
+# 仅导航内
 agent-browser snapshot -s "nav"
 ```
 
-### 組み合わせ
+### 组合使用
 
 ```bash
-# 推奨: インタラクティブ + コンパクト
+# 推荐: 交互 + 紧凑
 agent-browser snapshot -i -c
 
-# フォーム内のインタラクティブ要素のみ
+# 仅表单内的交互元素
 agent-browser snapshot -i -c -s "form"
 
-# 浅いツリーで概要把握
+# 浅层树概览
 agent-browser snapshot -i -d 2
 ```
 
 ---
 
-## ユースケース別ワークフロー
+## 用例别工作流
 
-### ログインフロー
+### 登录流程
 
 ```bash
-# 1. ログインページを開く
+# 1. 打开登录页面
 agent-browser open https://example.com/login
 
-# 2. スナップショット取得
+# 2. 获取快照
 agent-browser snapshot -i -c
-# 出力:
+# 输出:
 # - input "Email" [ref=e1]
 # - input "Password" [ref=e2]
 # - button "Login" [ref=e3]
 # - link "Forgot password?" [ref=e4]
 
-# 3. ログイン情報を入力
+# 3. 输入登录信息
 agent-browser fill @e1 "user@example.com"
 agent-browser fill @e2 "password123"
 
-# 4. ログインボタンをクリック
+# 4. 点击登录按钮
 agent-browser click @e3
 
-# 5. 結果を確認
+# 5. 确认结果
 agent-browser snapshot -i -c
 agent-browser get url
 ```
 
-### フォーム送信
+### 表单提交
 
 ```bash
-# 1. フォームページを開く
+# 1. 打开表单页面
 agent-browser open https://example.com/contact
 
-# 2. フォーム内のスナップショット
+# 2. 获取表单内快照
 agent-browser snapshot -i -c -s "form"
-# 出力:
+# 输出:
 # - input "Name" [ref=e1]
 # - input "Email" [ref=e2]
 # - textarea "Message" [ref=e3]
 # - button "Send" [ref=e4]
 
-# 3. フォームに入力
+# 3. 填写表单
 agent-browser fill @e1 "John Doe"
 agent-browser fill @e2 "john@example.com"
 agent-browser fill @e3 "Hello, this is a test message."
 
-# 4. 送信
+# 4. 提交
 agent-browser click @e4
 
-# 5. 確認
+# 5. 确认
 agent-browser snapshot -i -c
 ```
 
-### ナビゲーション探索
+### 导航探索
 
 ```bash
-# 1. トップページを開く
+# 1. 打开首页
 agent-browser open https://example.com
 
-# 2. ナビゲーションを確認
+# 2. 确认导航
 agent-browser snapshot -i -c -s "nav"
-# 出力:
+# 输出:
 # - link "Home" [ref=e1]
 # - link "Products" [ref=e2]
 # - link "About" [ref=e3]
 # - link "Contact" [ref=e4]
 
-# 3. Products ページへ
+# 3. 进入 Products 页面
 agent-browser click @e2
 
-# 4. 新しいページの構造を確認
+# 4. 确认新页面结构
 agent-browser snapshot -i -c
 ```
 
-### 動的コンテンツの操作
+### 动态内容的操作
 
 ```bash
-# 1. ページを開く
+# 1. 打开页面
 agent-browser open https://example.com/dashboard
 
-# 2. 初期スナップショット
+# 2. 初始快照
 agent-browser snapshot -i -c
 
-# 3. ドロップダウンを開く
+# 3. 打开下拉菜单
 agent-browser click @e5
 
-# 4. 待機（動的コンテンツのロード）
+# 4. 等待（动态内容加载）
 agent-browser wait 500
 
-# 5. 新しいスナップショット（ドロップダウンメニューが表示される）
+# 5. 新快照（显示下拉菜单）
 agent-browser snapshot -i -c
-# 新しい要素が出現:
+# 出现新元素:
 # - menuitem "Option 1" [ref=e10]
 # - menuitem "Option 2" [ref=e11]
 # - menuitem "Option 3" [ref=e12]
 
-# 6. オプションを選択
+# 6. 选择选项
 agent-browser click @e11
 ```
 
 ---
 
-## トラブルシューティング
+## 故障排除
 
-### 要素が見つからない
+### 找不到元素
 
 ```bash
-# フルスナップショット（すべての要素）
+# 完整快照（所有元素）
 agent-browser snapshot
 
-# 特定セレクタで絞り込み
+# 用特定选择器缩小范围
 agent-browser snapshot -s "#target-element"
 
-# 待機してから再試行
+# 等待后重试
 agent-browser wait 2000
 agent-browser snapshot -i -c
 ```
 
-### 動的ページ
+### 动态页面
 
 ```bash
-# JavaScript 実行後にスナップショット
+# JavaScript 执行后快照
 agent-browser eval "document.querySelector('#load-more').click()"
 agent-browser wait 1000
 agent-browser snapshot -i -c
 ```
 
-### iframe 内の要素
+### iframe 内的元素
 
 ```bash
-# メインフレームのスナップショット
+# 主框架的快照
 agent-browser snapshot -i -c
 
-# iframe 内は直接アクセスできないため、
-# eval で iframe 内の操作を行う
+# iframe 内无法直接访问，需要
+# 用 eval 操作 iframe 内内容
 agent-browser eval "document.querySelector('iframe').contentDocument.querySelector('button').click()"
 ```
 
 ---
 
-## ベストプラクティス
+## 最佳实践
 
-### 1. 常にスナップショットから開始
+### 1. 始终从快照开始
 
-操作前に必ずスナップショットを取得し、現在の状態を把握する。
+操作前必须获取快照，把握当前状态。
 
-### 2. インタラクティブ + コンパクトをデフォルトに
+### 2. 默认使用交互 + 紧凑
 
 ```bash
 agent-browser snapshot -i -c
 ```
 
-### 3. 操作後は状態を確認
+### 3. 操作后确认状态
 
 ```bash
 agent-browser click @e1
-agent-browser snapshot -i -c  # 結果を確認
+agent-browser snapshot -i -c  # 确认结果
 ```
 
-### 4. 適切な待機を入れる
+### 4. 适当添加等待
 
-動的コンテンツがある場合は待機を入れる：
+有动态内容时添加等待:
 
 ```bash
 agent-browser click @e1
@@ -298,13 +298,13 @@ agent-browser wait 500
 agent-browser snapshot -i -c
 ```
 
-### 5. セッションを活用
+### 5. 使用会话
 
-認証状態を維持するためにセッションを使用：
+使用会话保持认证状态:
 
 ```bash
 agent-browser --session myapp open https://example.com/login
-# ... ログイン操作 ...
-# 以降、同じセッションで操作を継続
+# ... 登录操作 ...
+# 之后继续使用相同会话操作
 agent-browser --session myapp open https://example.com/dashboard
 ```

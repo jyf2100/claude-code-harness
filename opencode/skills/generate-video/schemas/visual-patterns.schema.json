@@ -2,45 +2,45 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://claude-code-harness.com/schemas/visual-patterns.schema.json",
   "title": "Visual Patterns Schema",
-  "description": "画像生成パターンのスキーマ。比較図、概念図、フロー図、強調画像の4パターンを定義します。",
+  "description": "图像生成模式的架构。定义比较图、概念图、流程图、强调图4种模式。",
   "version": "1.0.0",
   "type": "object",
   "required": ["type", "topic"],
   "properties": {
     "type": {
       "type": "string",
-      "description": "画像パターンの種類",
+      "description": "图像模式类型",
       "enum": ["comparison", "concept", "flow", "highlight"]
     },
     "topic": {
       "type": "string",
-      "description": "画像の主題・テーマ",
+      "description": "图像的主题/题材",
       "minLength": 1,
       "maxLength": 200
     },
     "style": {
       "type": "string",
-      "description": "視覚スタイル（オプション）",
+      "description": "视觉风格（可选）",
       "enum": ["minimalist", "technical", "modern", "gradient", "flat", "3d"],
       "default": "modern"
     },
     "color_scheme": {
       "type": "object",
-      "description": "カラースキーム設定",
+      "description": "配色方案设置",
       "properties": {
         "primary": {
           "type": "string",
-          "description": "プライマリカラー（例: #3B82F6）",
+          "description": "主色（例: #3B82F6）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "secondary": {
           "type": "string",
-          "description": "セカンダリカラー（例: #10B981）",
+          "description": "次色（例: #10B981）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "accent": {
           "type": "string",
-          "description": "アクセントカラー（例: #F59E0B）",
+          "description": "强调色（例: #F59E0B）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "background": {
@@ -54,23 +54,23 @@
     },
     "comparison": {
       "type": "object",
-      "description": "comparison（比較図）パターン用の設定",
+      "description": "comparison（比较图）模式设置",
       "required": ["left_side", "right_side"],
       "properties": {
         "left_side": {
           "type": "object",
-          "description": "左側（Before / 悪い例）",
+          "description": "左侧（Before / 反例）",
           "required": ["label", "items"],
           "properties": {
             "label": {
               "type": "string",
-              "description": "ラベル（例: Before, 悪い例）",
+              "description": "标签（例: Before, 反例）",
               "minLength": 1,
               "maxLength": 50
             },
             "items": {
               "type": "array",
-              "description": "表示項目リスト",
+              "description": "显示项目列表",
               "items": {
                 "type": "string",
                 "minLength": 1,
@@ -81,12 +81,12 @@
             },
             "icon": {
               "type": "string",
-              "description": "アイコンタイプ（例: x, warning, sad）",
+              "description": "图标类型（例: x, warning, sad）",
               "enum": ["x", "warning", "sad", "slow", "confused", "broken"]
             },
             "sentiment": {
               "type": "string",
-              "description": "感情・印象",
+              "description": "情感/印象",
               "enum": ["negative", "neutral", "caution"],
               "default": "negative"
             }
@@ -95,18 +95,18 @@
         },
         "right_side": {
           "type": "object",
-          "description": "右側（After / 良い例）",
+          "description": "右侧（After / 正例）",
           "required": ["label", "items"],
           "properties": {
             "label": {
               "type": "string",
-              "description": "ラベル（例: After, 良い例）",
+              "description": "标签（例: After, 正例）",
               "minLength": 1,
               "maxLength": 50
             },
             "items": {
               "type": "array",
-              "description": "表示項目リスト",
+              "description": "显示项目列表",
               "items": {
                 "type": "string",
                 "minLength": 1,
@@ -117,12 +117,12 @@
             },
             "icon": {
               "type": "string",
-              "description": "アイコンタイプ（例: check, star, happy）",
+              "description": "图标类型（例: check, star, happy）",
               "enum": ["check", "star", "happy", "fast", "clear", "solid"]
             },
             "sentiment": {
               "type": "string",
-              "description": "感情・印象",
+              "description": "情感/印象",
               "enum": ["positive", "neutral", "success"],
               "default": "positive"
             }
@@ -131,7 +131,7 @@
         },
         "divider": {
           "type": "string",
-          "description": "区切り線の種類",
+          "description": "分隔线类型",
           "enum": ["arrow", "vs", "line", "gradient"],
           "default": "arrow"
         }
@@ -140,52 +140,52 @@
     },
     "concept": {
       "type": "object",
-      "description": "concept（概念図）パターン用の設定",
+      "description": "concept（概念图）模式设置",
       "required": ["elements"],
       "properties": {
         "elements": {
           "type": "array",
-          "description": "概念要素のリスト",
+          "description": "概念元素列表",
           "items": {
             "type": "object",
             "required": ["id", "label"],
             "properties": {
               "id": {
                 "type": "string",
-                "description": "要素の一意なID",
+                "description": "元素的唯一ID",
                 "pattern": "^[a-z0-9_-]+$"
               },
               "label": {
                 "type": "string",
-                "description": "要素のラベル",
+                "description": "元素的标签",
                 "minLength": 1,
                 "maxLength": 50
               },
               "description": {
                 "type": "string",
-                "description": "要素の説明（オプション）",
+                "description": "元素的说明（可选）",
                 "maxLength": 200
               },
               "level": {
                 "type": "integer",
-                "description": "階層レベル（0=最上位）",
+                "description": "层级（0=最顶层）",
                 "minimum": 0,
                 "maximum": 5,
                 "default": 0
               },
               "parent_id": {
                 "type": "string",
-                "description": "親要素のID（階層構造を表現）",
+                "description": "父元素ID（表示层级结构）",
                 "pattern": "^[a-z0-9_-]+$"
               },
               "icon": {
                 "type": "string",
-                "description": "アイコンタイプ",
+                "description": "图标类型",
                 "enum": ["box", "circle", "diamond", "hexagon", "cloud", "gear", "database", "server", "user", "code"]
               },
               "emphasis": {
                 "type": "string",
-                "description": "強調度",
+                "description": "强调度",
                 "enum": ["high", "medium", "low"],
                 "default": "medium"
               }
@@ -197,35 +197,35 @@
         },
         "relationships": {
           "type": "array",
-          "description": "要素間の関係性",
+          "description": "元素之间的关系",
           "items": {
             "type": "object",
             "required": ["from", "to"],
             "properties": {
               "from": {
                 "type": "string",
-                "description": "関係の始点となる要素ID",
+                "description": "关系起点的元素ID",
                 "pattern": "^[a-z0-9_-]+$"
               },
               "to": {
                 "type": "string",
-                "description": "関係の終点となる要素ID",
+                "description": "关系终点的元素ID",
                 "pattern": "^[a-z0-9_-]+$"
               },
               "label": {
                 "type": "string",
-                "description": "関係のラベル（例: 含む、生成、依存）",
+                "description": "关系标签（例: 包含、生成、依赖）",
                 "maxLength": 30
               },
               "type": {
                 "type": "string",
-                "description": "関係のタイプ",
+                "description": "关系类型",
                 "enum": ["hierarchy", "flow", "dependency", "association"],
                 "default": "association"
               },
               "bidirectional": {
                 "type": "boolean",
-                "description": "双方向の関係か",
+                "description": "是否为双向关系",
                 "default": false
               }
             },
@@ -234,7 +234,7 @@
         },
         "layout": {
           "type": "string",
-          "description": "レイアウトタイプ",
+          "description": "布局类型",
           "enum": ["hierarchy", "radial", "grid", "flow", "circular"],
           "default": "hierarchy"
         }
@@ -243,52 +243,52 @@
     },
     "flow": {
       "type": "object",
-      "description": "flow（フロー図）パターン用の設定",
+      "description": "flow（流程图）模式设置",
       "required": ["steps"],
       "properties": {
         "steps": {
           "type": "array",
-          "description": "フローのステップ",
+          "description": "流程步骤",
           "items": {
             "type": "object",
             "required": ["id", "label"],
             "properties": {
               "id": {
                 "type": "string",
-                "description": "ステップの一意なID",
+                "description": "步骤的唯一ID",
                 "pattern": "^[a-z0-9_-]+$"
               },
               "label": {
                 "type": "string",
-                "description": "ステップのラベル",
+                "description": "步骤的标签",
                 "minLength": 1,
                 "maxLength": 50
               },
               "description": {
                 "type": "string",
-                "description": "ステップの詳細説明",
+                "description": "步骤的详细说明",
                 "maxLength": 150
               },
               "order": {
                 "type": "integer",
-                "description": "ステップの順序（1始まり）",
+                "description": "步骤顺序（从1开始）",
                 "minimum": 1,
                 "maximum": 20
               },
               "type": {
                 "type": "string",
-                "description": "ステップのタイプ",
+                "description": "步骤类型",
                 "enum": ["start", "process", "decision", "end", "parallel", "subprocess"],
                 "default": "process"
               },
               "icon": {
                 "type": "string",
-                "description": "アイコンタイプ",
+                "description": "图标类型",
                 "enum": ["circle", "square", "diamond", "rounded", "hexagon"]
               },
               "duration": {
                 "type": "string",
-                "description": "所要時間の目安（例: 2分、即座）",
+                "description": "所需时间估计（例: 2分钟、立即）",
                 "maxLength": 20
               }
             },
@@ -299,19 +299,19 @@
         },
         "direction": {
           "type": "string",
-          "description": "フローの方向",
+          "description": "流程方向",
           "enum": ["horizontal", "vertical", "zigzag"],
           "default": "horizontal"
         },
         "arrow_style": {
           "type": "string",
-          "description": "矢印のスタイル",
+          "description": "箭头样式",
           "enum": ["solid", "dashed", "dotted", "thick", "animated"],
           "default": "solid"
         },
         "show_numbers": {
           "type": "boolean",
-          "description": "ステップ番号を表示するか",
+          "description": "是否显示步骤编号",
           "default": true
         }
       },
@@ -319,47 +319,47 @@
     },
     "highlight": {
       "type": "object",
-      "description": "highlight（強調）パターン用の設定",
+      "description": "highlight（强调）模式设置",
       "required": ["main_text"],
       "properties": {
         "main_text": {
           "type": "string",
-          "description": "メインテキスト（強調する内容）",
+          "description": "主文本（强调内容）",
           "minLength": 1,
           "maxLength": 100
         },
         "sub_text": {
           "type": "string",
-          "description": "サブテキスト（補足説明）",
+          "description": "副文本（补充说明）",
           "maxLength": 150
         },
         "icon": {
           "type": "string",
-          "description": "アイコンタイプ",
+          "description": "图标类型",
           "enum": ["star", "check", "alert", "info", "trophy", "rocket", "fire", "bolt", "heart", "none"],
           "default": "none"
         },
         "position": {
           "type": "string",
-          "description": "テキストの配置",
+          "description": "文本布局",
           "enum": ["center", "top", "bottom", "left", "right"],
           "default": "center"
         },
         "effect": {
           "type": "string",
-          "description": "視覚効果",
+          "description": "视觉效果",
           "enum": ["glow", "shadow", "gradient", "outline", "none"],
           "default": "glow"
         },
         "font_size": {
           "type": "string",
-          "description": "フォントサイズ",
+          "description": "字体大小",
           "enum": ["small", "medium", "large", "xlarge"],
           "default": "large"
         },
         "emphasis": {
           "type": "string",
-          "description": "強調度",
+          "description": "强调度",
           "enum": ["high", "medium", "low"],
           "default": "high"
         }
@@ -368,25 +368,25 @@
     },
     "dimensions": {
       "type": "object",
-      "description": "画像サイズ設定",
+      "description": "图像尺寸设置",
       "properties": {
         "width": {
           "type": "integer",
-          "description": "幅（ピクセル）",
+          "description": "宽度（像素）",
           "minimum": 256,
           "maximum": 2048,
           "default": 1920
         },
         "height": {
           "type": "integer",
-          "description": "高さ（ピクセル）",
+          "description": "高度（像素）",
           "minimum": 256,
           "maximum": 2048,
           "default": 1080
         },
         "aspect_ratio": {
           "type": "string",
-          "description": "アスペクト比",
+          "description": "宽高比",
           "enum": ["16:9", "4:3", "1:1", "9:16"],
           "default": "16:9"
         }
@@ -395,22 +395,22 @@
     },
     "generation": {
       "type": "object",
-      "description": "生成設定",
+      "description": "生成设置",
       "properties": {
         "seed": {
           "type": "integer",
-          "description": "決定性シード値（再現性のため）",
+          "description": "确定性种子值（用于复现）",
           "minimum": 0
         },
         "quality": {
           "type": "string",
-          "description": "画像品質",
+          "description": "图像质量",
           "enum": ["draft", "standard", "high"],
           "default": "standard"
         },
         "retries": {
           "type": "integer",
-          "description": "品質不合格時の最大再試行回数",
+          "description": "质量不合格时的最大重试次数",
           "minimum": 0,
           "maximum": 5,
           "default": 3
@@ -420,20 +420,20 @@
     },
     "metadata": {
       "type": "object",
-      "description": "メタデータ（追加情報）",
+      "description": "元数据（附加信息）",
       "properties": {
         "scene_id": {
           "type": "string",
-          "description": "関連するシーンID"
+          "description": "关联的场景ID"
         },
         "purpose": {
           "type": "string",
-          "description": "画像の目的（例: intro, demo, cta）",
+          "description": "图像用途（例: intro, demo, cta）",
           "maxLength": 50
         },
         "tags": {
           "type": "array",
-          "description": "タグ",
+          "description": "标签",
           "items": {
             "type": "string",
             "maxLength": 30

@@ -1,74 +1,74 @@
 ---
 name: core-read-repo-context
-description: "リポジトリのコンテキスト（README, Plans.md, 既存コード）を読み取り理解する。セッション開始時、新しいタスク開始前、またはプロジェクト構造の理解が必要な場合に使用します。"
+description: "读取并理解仓库上下文（README, Plans.md, 现有代码）。在会话开始、开始新任务前、或需要理解项目结构时使用。"
 allowed-tools: ["Read", "Grep", "Glob"]
 ---
 
 # Read Repository Context
 
-リポジトリの構造とコンテキストを把握するためのスキル。
-作業開始前や、新しい機能の実装前に使用します。
+用于把握仓库结构和上下文的技能。
+在工作开始前或实现新功能前使用。
 
 ---
 
-## 入力
+## 输入
 
-- **必須**: リポジトリのルートディレクトリへのアクセス
-- **オプション**: 特定のファイルやディレクトリへのフォーカス指定
-
----
-
-## 出力
-
-リポジトリの理解を含む構造化されたコンテキスト情報
+- **必填**：仓库根目录的访问权限
+- **可选**：指定特定文件或目录的聚焦
 
 ---
 
-## 実行手順
+## 输出
 
-### Step 1: 基本構造の把握
+包含仓库理解的结构化上下文信息
+
+---
+
+## 执行步骤
+
+### Step 1: 把握基本结构
 
 ```bash
-# ディレクトリ構造
+# 目录结构
 ls -la
 find . -maxdepth 2 -type d | head -20
 
-# 主要ファイルの確認
+# 确认主要文件
 cat README.md 2>/dev/null | head -50
 cat package.json 2>/dev/null | head -20
 ```
 
-### Step 2: ワークフローファイルの確認
+### Step 2: 确认工作流文件
 
 ```bash
-# Plans.md の状態
+# Plans.md 状态
 cat Plans.md 2>/dev/null || echo "Plans.md not found"
 
-# AGENTS.md の役割分担
+# AGENTS.md 角色分工
 cat AGENTS.md 2>/dev/null | head -100 || echo "AGENTS.md not found"
 
-# CLAUDE.md の設定
+# CLAUDE.md 设置
 cat CLAUDE.md 2>/dev/null | head -50 || echo "CLAUDE.md not found"
 ```
 
-### Step 3: 技術スタックの特定
+### Step 3: 确定技术栈
 
 ```bash
-# フロントエンド
+# 前端
 [ -f package.json ] && cat package.json | grep -E '"(react|vue|angular|next|nuxt)"'
 
-# バックエンド
+# 后端
 [ -f requirements.txt ] && head -10 requirements.txt
 [ -f Gemfile ] && head -10 Gemfile
 [ -f go.mod ] && head -10 go.mod
 
-# 設定ファイル
+# 配置文件
 [ -f tsconfig.json ] && echo "TypeScript project"
 [ -f .eslintrc* ] && echo "ESLint configured"
 [ -f tailwind.config.* ] && echo "Tailwind CSS"
 ```
 
-### Step 4: Git 状態の確認
+### Step 4: 确认 Git 状态
 
 ```bash
 git status -sb
@@ -78,41 +78,41 @@ git branch -a | head -10
 
 ---
 
-## 出力フォーマット
+## 输出格式
 
 ```markdown
-## 📁 リポジトリコンテキスト
+## 📁 仓库上下文
 
-### 基本情報
-- **プロジェクト名**: {{name}}
-- **技術スタック**: {{framework}} + {{language}}
-- **現在のブランチ**: {{branch}}
+### 基本信息
+- **项目名**：{{name}}
+- **技术栈**：{{framework}} + {{language}}
+- **当前分支**：{{branch}}
 
-### ワークフロー状態
-- **Plans.md**: {{存在する/しない, タスク数}}
-- **AGENTS.md**: {{存在する/しない}}
-- **CLAUDE.md**: {{存在する/しない}}
+### 工作流状态
+- **Plans.md**：{{存在/不存在，任务数}}
+- **AGENTS.md**：{{存在/不存在}}
+- **CLAUDE.md**：{{存在/不存在}}
 
-### 直近の変更
-{{最近のコミット3件}}
+### 最近变更
+{{最近 3 条提交}}
 
-### 重要なファイル
-{{認識すべき主要ファイル一覧}}
+### 重要文件
+{{应识别的主要文件列表}}
 ```
 
 ---
 
-## 使用タイミング
+## 使用时机
 
-1. **セッション開始時**: 現在の状態把握
-2. **新機能実装前**: 既存コードとの整合性確認
-3. **エラー調査時**: 関連ファイルの特定
-4. **レビュー時**: 変更の影響範囲理解
+1. **会话开始时**：把握当前状态
+2. **实现新功能前**：确认与现有代码的一致性
+3. **错误调查时**：确定相关文件
+4. **审查时**：理解变更影响范围
 
 ---
 
-## 注意事項
+## 注意事项
 
-- **大規模リポジトリ**: ファイル数が多い場合は重要部分に絞る
-- **秘密情報**: .env や secrets/ の内容は読まない
-- **キャッシュ活用**: 同一セッション内では再読み込みを最小化
+- **大型仓库**：文件数量多时聚焦重要部分
+- **机密信息**：不读取 .env 或 secrets/ 的内容
+- **利用缓存**：同一会话内最小化重新读取

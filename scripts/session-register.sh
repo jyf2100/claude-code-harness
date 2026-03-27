@@ -1,24 +1,24 @@
 #!/bin/bash
 # session-register.sh
-# セッションを active.json に登録する（出力なし）
+# 将会话注册到 active.json（无输出）
 #
 # 使用方法:
 #   ./session-register.sh [session_id]
 #
-# session_id を省略した場合は .claude/state/session.json から取得
-# hook から呼び出される際は出力を抑制し、JSON 出力と混ざらないようにする
+# 如果省略 session_id，则从 .claude/state/session.json 获取
+# 被 hook 调用时抑制输出，避免与 JSON 输出混淆
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ===== 設定 =====
+# ===== 配置 =====
 SESSIONS_DIR=".claude/sessions"
 ACTIVE_FILE="${SESSIONS_DIR}/active.json"
 SESSION_FILE=".claude/state/session.json"
-STALE_THRESHOLD=3600  # 1時間経過したセッションは stale とみなす
+STALE_THRESHOLD=3600  # 超过1小时的会话视为过期
 
-# ===== ヘルパー関数 =====
+# ===== 辅助函数 =====
 get_session_id_from_file() {
   if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
     jq -r '.session_id // empty' "$SESSION_FILE" 2>/dev/null
@@ -29,42 +29,42 @@ get_current_timestamp() {
   date +%s
 }
 
-# ===== メイン処理 =====
+# ===== 主处理 =====
 main() {
-  # セッションID を取得（引数優先、なければファイルから）
+  # 获取会话ID（参数优先，否则从文件获取）
   local session_id="${1:-}"
   if [ -z "$session_id" ]; then
     session_id=$(get_session_id_from_file)
   fi
 
-  # セッションID がない場合は何もしない（エラーも出さない）
+  # 如果没有会话ID则不做任何处理（也不输出错误）
   if [ -z "$session_id" ] || [ "$session_id" = "null" ]; then
     exit 0
   fi
 
-  # jq がない場合は何もしない
+  # 如果没有 jq 则不做任何处理
   if ! command -v jq >/dev/null 2>&1; then
     exit 0
   fi
 
-  # ディレクトリ作成
+  # 创建目录
   mkdir -p "$SESSIONS_DIR"
 
   local current_time=$(get_current_timestamp)
   local short_id="${session_id:0:12}"
 
-  # active.json を読み込み（存在しない場合は空オブジェクト）
+  # 读取 active.json（不存在则为空对象）
   local session_data="{}"
   if [ -f "$ACTIVE_FILE" ]; then
     session_data=$(cat "$ACTIVE_FILE" 2>/dev/null || echo "{}")
   fi
 
-  # 一時ファイル用のクリーンアップ設定
+  # 临时文件清理设置
   local tmp_file=""
   cleanup_tmp() { [ -n "$tmp_file" ] && [ -f "$tmp_file" ] && rm -f "$tmp_file"; }
   trap cleanup_tmp EXIT
 
-  # セッションを登録/更新
+  # 注册/更新会话
   tmp_file=$(mktemp)
   echo "$session_data" | jq \
     --arg id "$session_id" \
@@ -78,7 +78,7 @@ main() {
       "status": "active"
     }' > "$tmp_file" && mv "$tmp_file" "$ACTIVE_FILE"
 
-  # 古いセッションをクリーンアップ（24時間以上経過したもの）
+  # 清理过期会话（超过24小时的）
   local cleanup_threshold=$((current_time - 86400))
   tmp_file=$(mktemp)
   jq --arg threshold "$cleanup_threshold" \

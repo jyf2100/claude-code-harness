@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * record-usage.js - Harness リソース使用状況記録スクリプト
+ * record-usage.js - Harness 资源使用情况记录脚本
  *
  * Usage:
  *   node record-usage.js <type> <name> [options]

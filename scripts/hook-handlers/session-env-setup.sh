@@ -1,44 +1,44 @@
 #!/bin/bash
 # session-env-setup.sh
-# SessionStart フックハンドラ: CLAUDE_ENV_FILE を活用してハーネス環境変数を設定
+# SessionStart 钩子处理器: 利用 CLAUDE_ENV_FILE 设置 harness 环境变量
 #
-# セッション開始時に以下の環境変数を CLAUDE_ENV_FILE に書き出す:
-#   HARNESS_VERSION          - ハーネスのバージョン (VERSION ファイルから取得)
-#   HARNESS_EFFORT_DEFAULT   - デフォルト effort レベル (medium)
-#   HARNESS_AGENT_TYPE       - エージェントタイプ (BREEZING_ROLE または "solo")
-#   HARNESS_BREEZING_SESSION_ID - Breezing セッション ID (存在する場合)
-#   HARNESS_IS_REMOTE           - クラウドセッション検出 (CLAUDE_CODE_REMOTE から取得)
+# 会话开始时将以下环境变量写入 CLAUDE_ENV_FILE:
+#   HARNESS_VERSION          - harness 版本 (从 VERSION 文件获取)
+#   HARNESS_EFFORT_DEFAULT   - 默认 effort 级别 (medium)
+#   HARNESS_AGENT_TYPE       - agent 类型 (BREEZING_ROLE 或 "solo")
+#   HARNESS_BREEZING_SESSION_ID - Breezing 会话 ID (如果存在)
+#   HARNESS_IS_REMOTE           - 云会话检测 (从 CLAUDE_CODE_REMOTE 获取)
 #
 # Usage: bash session-env-setup.sh
 # Hook event: SessionStart
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# CLAUDE_ENV_FILE が設定されていない場合は何もしない
+# 如果 CLAUDE_ENV_FILE 未设置则不做任何操作
 if [ -z "${CLAUDE_ENV_FILE:-}" ]; then
   exit 0
 fi
 
-# VERSION ファイルからバージョンを取得
+# 从 VERSION 文件获取版本
 HARNESS_VERSION="unknown"
 if [ -f "${PLUGIN_ROOT}/VERSION" ]; then
   HARNESS_VERSION="$(cat "${PLUGIN_ROOT}/VERSION" | tr -d '[:space:]')"
 fi
 
-# エージェントタイプを決定
+# 确定 agent 类型
 HARNESS_AGENT_TYPE="${BREEZING_ROLE:-solo}"
 
-# Breezing セッション ID (存在する場合)
+# Breezing 会话 ID (如果存在)
 HARNESS_BREEZING_SESSION_ID="${BREEZING_SESSION_ID:-}"
 
-# クラウドセッション検出
+# 云会话检测
 HARNESS_IS_REMOTE="${CLAUDE_CODE_REMOTE:-false}"
 
-# CLAUDE_ENV_FILE に書き出す (既存のハーネス変数を上書き)
+# 写入 CLAUDE_ENV_FILE (覆盖现有 harness 变量)
 {
   echo "HARNESS_VERSION=${HARNESS_VERSION}"
   echo "HARNESS_EFFORT_DEFAULT=medium"

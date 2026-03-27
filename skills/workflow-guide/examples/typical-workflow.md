@@ -1,196 +1,196 @@
-# 典型的なワークフロー例
+# 典型工作流示例
 
-2エージェントワークフローの実際の流れ。
+双代理工作流的实际流程。
 
 ---
 
-## 例1: 新機能開発
+## 示例 1：新功能开发
 
-### Phase 1: PM（Cursor）がタスクを作成
+### Phase 1：PM（Cursor）创建任务
 
 ```markdown
 # Plans.md
 
-## 🟡 未着手のタスク
+## 🟡 未开始的任务
 
-- [ ] ユーザープロフィール編集機能 `pm:依頼中`
-  - 名前、メール、アバター画像の編集
-  - バリデーション付き
-  - 変更履歴の保存
+- [ ] 用户资料编辑功能 `pm:依頼中`
+  - 编辑姓名、邮箱、头像图片
+  - 带验证
+  - 保存更改历史
 ```
 
-**PM の発言**: 「Claude Code にプロフィール編集機能をお願いします」
+**PM 的发言**：「请 Claude Code 做资料编辑功能」
 
 ---
 
-### Phase 2: Claude Code が作業開始
+### Phase 2：Claude Code 开始工作
 
 ```bash
-# Claude Code で実行
+# 在 Claude Code 中执行
 /work
 ```
 
-**Claude Code の作業**:
-1. Plans.md を読み込み
-2. `pm:依頼中` タスクを検出
-3. マーカーを `cc:WIP` に更新
-4. 実装開始
-5. `/harness-review` で品質レビュー
-6. 指摘があれば修正 → 再レビュー（ループ、最大3回）
+**Claude Code 的工作**：
+1. 读取 Plans.md
+2. 检测 `pm:依頼中` 任务
+3. 将标记更新为 `cc:WIP`
+4. 开始实现
+5. 用 `/harness-review` 进行质量审查
+6. 如有问题则修正 → 再审查（循环，最多 3 次）
 7. Review OK → Auto-commit
 
 ```markdown
-# Plans.md（更新後）
+# Plans.md（更新后）
 
-## 🔴 進行中のタスク
+## 🔴 进行中的任务
 
-- [ ] ユーザープロフィール編集機能 `cc:WIP`
-  - 名前、メール、アバター画像の編集
-  - バリデーション付き
-  - 変更履歴の保存
-  - 関連ファイル:
+- [ ] 用户资料编辑功能 `cc:WIP`
+  - 编辑姓名、邮箱、头像图片
+  - 带验证
+  - 保存更改历史
+  - 相关文件：
     - `src/components/ProfileForm.tsx`
     - `src/lib/api/profile.ts`
 ```
 
 ---
 
-### Phase 3: Claude Code が完了報告（2-Agent のみ）
+### Phase 3：Claude Code 完成报告（仅 2-Agent）
 
-Review OK かつ Auto-commit 完了後、2-Agent モードでは `/handoff-to-cursor` を実行して PM に報告する。
+Review OK 且 Auto-commit 完成后，在 2-Agent 模式下执行 `/handoff-to-cursor` 向 PM 报告。
 
-> **Solo モードでは handoff は不要** — Review OK → Auto-commit で /work は完了。
+> **Solo 模式不需要 handoff** — Review OK → Auto-commit 即完成 /work。
 
 ```bash
-# Claude Code で実行（2-Agent モードのみ）
+# 在 Claude Code 中执行（仅 2-Agent 模式）
 /handoff-to-cursor
 ```
 
-**生成されるレポート**:
+**生成的报告**：
 
 ```markdown
-## 📋 完了報告: ユーザープロフィール編集機能
+## 📋 完成报告：用户资料编辑功能
 
-### 実装内容
-- ProfileForm コンポーネント作成
-- プロフィール API エンドポイント
-- Zod によるバリデーション
-- 変更履歴テーブル追加
+### 实现内容
+- 创建 ProfileForm 组件
+- 资料 API 端点
+- 使用 Zod 进行验证
+- 添加更改历史表
 
-### 変更ファイル
+### 更改文件
 - src/components/ProfileForm.tsx (+150 lines)
 - src/lib/api/profile.ts (+80 lines)
 - src/lib/validations/profile.ts (+25 lines)
 - prisma/schema.prisma (+10 lines)
 
-### レビュー結果
-✅ harness-review APPROVE（Critical/High 指摘なし）
+### 审查结果
+✅ harness-review APPROVE（无 Critical/High 问题）
 
-### テスト結果
-✅ 全テスト合格 (12/12)
+### 测试结果
+✅ 全部测试通过 (12/12)
 
-### 次のアクション
-- [ ] staging 環境で動作確認
-- [ ] デザインレビュー
+### 下一步行动
+- [ ] 在 staging 环境确认运行
+- [ ] 设计审查
 ```
 
 ---
 
-### Phase 4: PM が確認
+### Phase 4：PM 确认
 
 ```markdown
-# Plans.md（PM 更新後）
+# Plans.md（PM 更新后）
 
-## 🟢 完了タスク
+## 🟢 已完成任务
 
-- [x] ユーザープロフィール編集機能 `pm:確認済` (2024-01-15)
+- [x] 用户资料编辑功能 `pm:確認済` (2024-01-15)
 ```
 
 ---
 
-## 例2: バグ修正の緊急対応
+## 示例 2：错误修复的紧急对应
 
-### PM からの緊急依頼
+### PM 的紧急请求
 
 ```markdown
-## 🟡 未着手のタスク
+## 🟡 未开始的任务
 
-- [ ] 🔥 【緊急】ログインエラー修正 `pm:依頼中`
-  - 症状: 特定ユーザーがログインできない
-  - エラー: "Invalid token format"
-  - 優先度: 最優先
+- [ ] 🔥 【紧急】登录错误修复 `pm:依頼中`
+  - 症状：特定用户无法登录
+  - 错误："Invalid token format"
+  - 优先级：最高
 ```
 
-### Claude Code の対応
+### Claude Code 的对应
 
-1. `/work` で着手
-2. エラーログ調査
-3. 原因特定・修正
-4. テスト追加
-5. `/harness-review` でレビュー（指摘あれば修正→再レビュー）
+1. 用 `/work` 着手
+2. 调查错误日志
+3. 确定原因并修正
+4. 添加测试
+5. 用 `/harness-review` 审查（有问题则修正→再审查）
 6. Review OK → Auto-commit
-7. `/handoff-to-cursor` で完了報告（2-Agent のみ。Solo では省略）
+7. 用 `/handoff-to-cursor` 完成报告（仅 2-Agent。Solo 中省略）
 
 ---
 
-## 例3: CI 失敗時の自動修正
+## 示例 3：CI 失败时的自动修正
 
-### CI が失敗
+### CI 失败
 
 ```
 GitHub Actions: ❌ Build failed
 - TypeScript error in src/utils/date.ts:45
 ```
 
-### Claude Code の自動対応
+### Claude Code 的自动对应
 
-1. エラー検出
-2. 型エラー修正
-3. 再コミット・プッシュ
+1. 检测错误
+2. 修正类型错误
+3. 再提交和推送
 
-**3回失敗した場合**:
+**失败 3 次时**：
 
 ```markdown
-## ⚠️ CI エスカレーション
+## ⚠️ CI 升级报告
 
-3回修正を試みましたが解決できませんでした。
+尝试了 3 次修正但无法解决。
 
-### 試した修正
-1. 型アノテーション追加 → 失敗
-2. 型定義ファイル更新 → 失敗
-3. tsconfig 調整 → 失敗
+### 尝试过的修正
+1. 添加类型注解 → 失败
+2. 更新类型定义文件 → 失败
+3. 调整 tsconfig → 失败
 
-### 推定原因
-外部ライブラリの型定義が古い可能性
+### 推测原因
+外部库的类型定义可能过时
 
-### 推奨アクション
-- [ ] @types/xxx を最新版に更新
-- [ ] ライブラリ自体のバージョン確認
+### 推荐行动
+- [ ] 将 @types/xxx 更新到最新版
+- [ ] 确认库本身的版本
 ```
 
 ---
 
-## 例4: 並列タスク実行
+## 示例 4：并行任务执行
 
-### 複数タスクがある場合
+### 有多个任务时
 
 ```markdown
-## 🟡 未着手のタスク
+## 🟡 未开始的任务
 
-- [ ] ヘッダーコンポーネントのリファクタリング `cc:TODO`
-- [ ] フッターコンポーネントのリファクタリング `cc:TODO`
-- [ ] テスト追加: ユーティリティ関数 `cc:TODO`
+- [ ] 重构头部组件 `cc:TODO`
+- [ ] 重构底部组件 `cc:TODO`
+- [ ] 添加测试：工具函数 `cc:TODO`
 ```
 
-### /work 実行時
+### 执行 /work 时
 
-Claude Code が並列実行可能か判断:
-- 独立したタスク → 並列実行
-- 依存関係あり → 直列実行
+Claude Code 判断是否可并行执行：
+- 独立任务 → 并行执行
+- 有依赖关系 → 串行执行
 
 ```
-🚀 並列実行開始
-├─ Agent 1: ヘッダーリファクタリング
-├─ Agent 2: フッターリファクタリング
-└─ Agent 3: テスト追加
+🚀 开始并行执行
+├─ Agent 1：头部重构
+├─ Agent 2：底部重构
+└─ Agent 3：添加测试
 ```

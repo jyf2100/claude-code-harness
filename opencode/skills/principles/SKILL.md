@@ -1,27 +1,27 @@
 ---
 name: principles
-description: "開発原則、ガイドライン、VibeCoder向けガイダンスを提供。Use when user mentions principles, guidelines, safety, or diff-aware editing. Do not use for actual implementation—use the impl skill instead."
+description: "提供开发原则、指南和 VibeCoder 指导。Use when user mentions principles, guidelines, safety, or diff-aware editing. Do not use for actual implementation—use the impl skill instead."
 description-en: "Provides development principles, guidelines, and VibeCoder guidance. Use when user mentions principles, guidelines, safety, or diff-aware editing. Do not use for actual implementation—use the impl skill instead."
-description-ja: "開発原則、ガイドライン、VibeCoder向けガイダンスを提供。Use when user mentions principles, guidelines, safety, or diff-aware editing. Do not use for actual implementation—use the impl skill instead."
+description-ja: "提供开发原则、指南和 VibeCoder 指导。Use when user mentions principles, guidelines, safety, or diff-aware editing. Do not use for actual implementation—use the impl skill instead."
 allowed-tools: ["Read"]
 user-invocable: false
 ---
 
 # Principles Skills
 
-開発原則とガイドラインを提供するスキル群です。
+提供开发原则和指南的技能群。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **基本原則** | See [references/general-principles.md](${CLAUDE_SKILL_DIR}/references/general-principles.md) |
-| **差分編集** | See [references/diff-aware-editing.md](${CLAUDE_SKILL_DIR}/references/diff-aware-editing.md) |
-| **コンテキスト読み取り** | See [references/repo-context-reading.md](${CLAUDE_SKILL_DIR}/references/repo-context-reading.md) |
+| **基本原则** | See [references/general-principles.md](${CLAUDE_SKILL_DIR}/references/general-principles.md) |
+| **差分编辑** | See [references/diff-aware-editing.md](${CLAUDE_SKILL_DIR}/references/diff-aware-editing.md) |
+| **上下文读取** | See [references/repo-context-reading.md](${CLAUDE_SKILL_DIR}/references/repo-context-reading.md) |
 | **VibeCoder** | See [references/vibecoder-guide.md](${CLAUDE_SKILL_DIR}/references/vibecoder-guide.md) |
 
-## 実行手順
+## 执行步骤
 
-1. ユーザーのリクエストを分類
-2. 上記の「機能詳細」から適切な参照ファイルを読む
-3. その内容を参照・適用
+1. 分类用户请求
+2. 从上述「功能详情」读取适当的参考文件
+3. 参考并应用其内容

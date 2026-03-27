@@ -1,103 +1,103 @@
 # GitHub Harness Plugin Benchmark
 
-最終更新: 2026-03-06
+Last Updated: 2026-03-06
 
-この文書は、GitHub で人気のある **Claude Code 向けハーネス / ワークフロープラグイン** を対象に、`claude-code-harness` を **導入後の標準運用がどう変わるか** という観点で比較した日付付きスナップショットです。
+This document is a dated snapshot comparing `claude-code-harness` against popular **Claude Code harness / workflow plugins** on GitHub from the perspective of **how standard operations change after adoption**.
 
-- これは **人気投票** ではなく **ハーネス比較** です
-- GitHub stars は「比較対象の選定理由」としてだけ扱います
-- まず「導入後に何が標準になるか」を並べ、その後で違いの意味を説明します
-- 一般的な AI coding agent（Aider, OpenHands など）や curated list は、**単体ハーネスではない**ためこの比較表から外しています
+- This is a **harness comparison**, not a **popularity contest**
+- GitHub stars are only used as "reason for selecting comparison targets"
+- First, list "what becomes standard after adoption", then explain the meaning of differences
+- General AI coding agents (Aider, OpenHands, etc.) and curated lists are **excluded from this comparison table** because they are **not standalone harnesses**
 
 ## Compared Repositories
 
-2026-03-06 時点で、GitHub 上で公開されており、かつ「Claude Code 向けの多段ワークフロー / プラグイン / ハーネス」を主張している repo のうち、比較に十分な公開情報があるものを対象にしました。
+As of 2026-03-06, we targeted publicly available repos on GitHub that claim "multi-stage workflow / plugin / harness for Claude Code" with sufficient public information for comparison.
 
 | Repo | GitHub stars | Included because |
 |------|--------------|------------------|
-| [obra/superpowers](https://github.com/obra/superpowers) | 71,993 | もっとも人気の高い workflow / skills 系プラグイン。比較対象として外せない |
-| [gotalab/cc-sdd](https://github.com/gotalab/cc-sdd) | 2,770 | 要件駆動の開発フローを前面に出す人気の Claude Code 系ハーネス |
-| [Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) | 232 | 本 repo |
+| [obra/superpowers](https://github.com/obra/superpowers) | 71,993 | Most popular workflow / skills plugin. Cannot be excluded from comparison |
+| [gotalab/cc-sdd](https://github.com/gotalab/cc-sdd) | 2,770 | Popular Claude Code harness emphasizing requirements-driven development flow |
+| [Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) | 232 | This repo |
 
-## ユーザーが見て分かる比較表
+## User-visible Comparison Table
 
-凡例:
+Legend:
 
-- `✅` 導入直後から標準フローとして使える
-- `△` 工夫すればできるが、主導線ではない
-- `—` 主な訴求ではない
+- `✅` Available as standard flow immediately after adoption
+- `△` Possible with effort but not the main path
+- `—` Not the main selling point
 
-| ユーザーが気にすること | Claude Harness | Superpowers | cc-sdd |
-|------------------------|----------------|-------------|--------|
-| 計画が会話で消えずにリポジトリへ残る | ✅ | ✅ | ✅ |
-| 実装が承認後に同じ流れで進みやすい | ✅ | ✅ | △ |
-| レビューが完了前の標準工程に入る | ✅ | ✅ | △ |
-| 危険な操作を実行時ガードで止める | ✅ | △ | — |
-| 検証をあとから同じ手順でやり直せる | ✅ | △ | ✅ |
-| 承認後は一気通貫で最後まで進められる | ✅ | △ | — |
+| What users care about | Claude Harness | Superpowers | cc-sdd |
+|-----------------------|----------------|-------------|--------|
+| Plans stay in repo, not lost in conversation | ✅ | ✅ | ✅ |
+| Implementation proceeds in same flow after approval | ✅ | ✅ | △ |
+| Review becomes standard process before completion | ✅ | ✅ | △ |
+| Dangerous operations stopped by runtime guards | ✅ | △ | — |
+| Verification can be re-run with same steps later | ✅ | △ | ✅ |
+| After approval, can proceed end-to-end to completion | ✅ | △ | — |
 
-## この違いが意味すること
+## What These Differences Mean
 
 ### Claude Harness
 
-- いちばん強いのは **標準フローの固定化** と **実行時ガード** と **再実行できる検証** です
-- Plan → Work → Review が独立した導線として揃っていて、`/harness-work all` という一括実行の近道まであります
-- 「毎回いい感じにやって」ではなく、「毎回同じ型で崩れず進んでほしい」人に向いています
+- Strongest points are **standard flow solidification**, **runtime guards**, and **re-runnable verification**
+- Plan → Work → Review exist as independent paths, with `/harness-work all` as a shortcut for batch execution
+- Suited for those who want "proceed consistently every time with the same pattern" rather than "do something good each time"
 
 ### Superpowers
 
-- いちばん強いのは **ワークフローの広さ** と **導入ストーリーの分かりやすさ** です
-- 企画、実装、レビュー、デバッグまでの流れが見えやすく、自動トリガーも強いです
-- ただし、危険な操作を実行時ルールで止める仕組みや、再実行できる証跡は Harness ほど標準フローとしては前面に出ていません
+- Strongest points are **workflow breadth** and **clear onboarding story**
+- Flow from planning, implementation, review to debugging is visible, and auto-triggers are strong
+- However, mechanisms to stop dangerous operations with runtime rules or re-runnable evidence trails are not as front-and-center as standard flow compared to Harness
 
 ### cc-sdd
 
-- いちばん強いのは **仕様駆動の規律** です
-- `Requirements -> Design -> Tasks -> Implementation` の流れが明快で、dry-run や validate-gap / validate-design もあります
-- ただし、公開面からは独立したレビュー工程や一括実行の導線が、Harness ほど標準フローとして強くは見えません
+- Strongest point is **specification-driven discipline**
+- `Requirements -> Design -> Tasks -> Implementation` flow is clear, with dry-run, validate-gap, and validate-design
+- However, from the public side, independent review stages and batch execution paths are not as visible as standard flow compared to Harness
 
-## README での見せ方
+## README Presentation
 
-README や LP では、次の言い方が自然です。
+In README or LP, this phrasing is natural:
 
-> ワークフローの引き出しを広げたいなら Superpowers。
-> 要件 → 設計 → タスクの規律を強めたいなら cc-sdd。
-> 計画・実装・レビュー・検証を、崩れにくい標準フローに変えたいなら Claude Harness。
+> To expand your workflow repertoire, choose Superpowers.
+> To strengthen requirements → design → tasks discipline, choose cc-sdd.
+> To turn planning, implementation, review, and verification into resilient standard flows, choose Claude Harness.
 
-## 判定メモ
+## Assessment Notes
 
-- `計画が会話で消えずにリポジトリへ残る`
+- `Plans stay in repo, not lost in conversation`
   - Harness: `Plans.md` / `/harness-plan`
   - Superpowers: brainstorming / writing-plans workflow
   - cc-sdd: requirements / design / tasks workflow
-- `実装が承認後に同じ流れで進みやすい`
-  - Harness: `/harness-work --parallel`, Breezing, worker/reviewer flows が標準フローに乗る
-  - Superpowers: parallel agent execution / subagent workflows が公開面で分かりやすい
-  - cc-sdd: Claude agent variant では複数 subagent が確認できるが、すべての使い方で中心機能として打ち出されているわけではない
-- `レビューが完了前の標準工程に入る`
-  - Harness: `/harness-review` と `/harness-work all`
+- `Implementation proceeds in same flow after approval`
+  - Harness: `/harness-work --parallel`, Breezing, worker/reviewer flows become part of standard flow
+  - Superpowers: parallel agent execution / subagent workflows are visible on public side
+  - cc-sdd: Multiple subagents are confirmed in Claude agent variant, but not promoted as core feature in all usage patterns
+- `Review becomes standard process before completion`
+  - Harness: `/harness-review` and `/harness-work all`
   - Superpowers: code review workflow is explicit
-  - cc-sdd: validate コマンドは明示されているが、コードレビューを独立した工程として前面に出している度合いはやや弱い
-- `危険な操作を実行時ガードで止める`
+  - cc-sdd: validate commands are explicit, but degree of presenting code review as independent stage is somewhat weaker
+- `Dangerous operations stopped by runtime guards`
   - Harness: TypeScript guardrail engine + deny / warn rules
   - Superpowers: workflow discipline and hooks are visible, but compiled deny / warn runtime engine is not front-and-center
-  - cc-sdd: 公開 README では、明示的な実行時 safety engine は確認しにくい
-- `検証をあとから同じ手順でやり直せる`
+  - cc-sdd: Explicit runtime safety engine is hard to confirm in public README
+- `Verification can be re-run with same steps later`
   - Harness: validate scripts + consistency checks + evidence pack
-  - Superpowers: verify-oriented workflows はあるが、artifact pack は前面に出ていない
-  - cc-sdd: dry-run / validate-gap / validate-design がある
-- `承認後は一気通貫で最後まで進められる`
+  - Superpowers: verify-oriented workflows exist but artifact pack is not front-and-center
+  - cc-sdd: dry-run / validate-gap / validate-design exist
+- `After approval, can proceed end-to-end to completion`
   - Harness: `/harness-work all`
-  - Superpowers: auto-triggered workflow はあるが、同じ意味での published single command は前面に出ていない
-  - cc-sdd: spec-based command set はあるが、approval 後に full loop をまとめる単一の導線は前面に出ていない
+  - Superpowers: auto-triggered workflow exists but published single command in same sense is not front-and-center
+  - cc-sdd: spec-based command set exists but single path to wrap full loop after approval is not front-and-center
 
-## 注意点
+## Notes
 
-- stars は毎日変わるため、この表は **日付付きスナップショット** です
-- この比較は「市場人気」ではなく「ユーザーに見えるハーネス機能差」に寄せています
-- `Superpowers > Claude Harness` となる軸もあります。特に ecosystem / adoption / workflow story の強さは目立ちます
-- `cc-sdd > Claude Harness` となる軸もあります。特に要件駆動の規律の明快さは強みです
-- README に載せるときは、勝ち負けの断言より **何を重視する人に向いているか** を書く方が自然です
+- Stars change daily, so this table is a **dated snapshot**
+- This comparison focuses on "user-visible harness feature differences" not "market popularity"
+- There are axes where `Superpowers > Claude Harness`. Particularly ecosystem / adoption / workflow story strength is prominent
+- There are axes where `cc-sdd > Claude Harness`. Particularly clarity of requirements-driven discipline is a strength
+- When putting in README, writing **who it's suited for** is more natural than declaring winners/losers
 
 ## Evidence Used
 

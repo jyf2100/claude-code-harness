@@ -1,9 +1,9 @@
 #!/bin/bash
 # track-changes.sh
-# ファイル変更を追跡し、状態ファイルを更新
+# 跟踪文件变更并更新状态文件
 #
-# Usage: PostToolUse hook から自動実行
-# Input: stdin JSON (Claude Code hooks) / 互換: $1=tool_name, $2=file_path
+# Usage: 从 PostToolUse hook 自动执行
+# Input: stdin JSON (Claude Code hooks) / 兼容: $1=tool_name, $2=file_path
 #
 # Cross-platform: Supports Windows (Git Bash/MSYS2/Cygwin/WSL), macOS, Linux
 
@@ -70,7 +70,7 @@ fi
 
 TOOL_NAME="${TOOL_NAME:-unknown}"
 
-# 可能ならプロジェクト相対パスへ正規化（クロスプラットフォーム対応）
+# 尽可能规范化为项目相对路径（跨平台兼容）
 if [ -n "$CWD" ] && [ -n "$FILE_PATH" ]; then
   NORM_FILE_PATH="$(normalize_path "$FILE_PATH")"
   NORM_CWD="$(normalize_path "$CWD")"
@@ -86,17 +86,17 @@ fi
 STATE_FILE=".claude/state/session.json"
 CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# 状態ファイルがなければスキップ
+# 如果状态文件不存在则跳过
 if [ ! -f "$STATE_FILE" ]; then
   exit 0
 fi
 
-# ファイルパスがなければスキップ
+# 如果没有文件路径则跳过
 if [ -z "$FILE_PATH" ]; then
   exit 0
 fi
 
-# 重要なファイルの変更を検出
+# 检测重要文件的变更
 IMPORTANT_FILES="Plans.md CLAUDE.md AGENTS.md"
 IS_IMPORTANT="false"
 
@@ -107,19 +107,19 @@ for important in $IMPORTANT_FILES; do
   fi
 done
 
-# テストファイルの検出
+# 检测测试文件
 if [[ "$FILE_PATH" == *".test."* ]] || [[ "$FILE_PATH" == *".spec."* ]] || [[ "$FILE_PATH" == *"__tests__"* ]]; then
   IS_IMPORTANT="true"
 fi
 
-# 変更を記録（jq があれば使用、なければスキップ）
+# 记录变更（如有 jq 则使用，否则跳过）
 if command -v jq &> /dev/null; then
-  # 新しい変更エントリを追加
+  # 添加新的变更记录
   TEMP_FILE=$(mktemp 2>/dev/null) || {
-    # mktemp 失敗時は静かにスキップ（PostToolUse hookなので中断しない）
+    # mktemp 失败时静默跳过（因为是 PostToolUse hook，所以不中断）
     exit 0
   }
-  # クリーンアップを保証
+  # 保证清理
   trap 'rm -f "$TEMP_FILE"' EXIT
 
   if jq --arg file "$FILE_PATH" \
@@ -136,30 +136,30 @@ if command -v jq &> /dev/null; then
   fi
 fi
 
-# 重要なファイルの変更時は通知
+# 重要文件变更时通知
 if [ "$IS_IMPORTANT" = "true" ]; then
   case "$FILE_PATH" in
     *Plans.md*)
-      echo "📋 Plans.md が更新されました"
+      echo "📋 Plans.md 已更新"
       ;;
     *CLAUDE.md*)
-      echo "📝 CLAUDE.md が更新されました"
+      echo "📝 CLAUDE.md 已更新"
       ;;
     *AGENTS.md*)
-      echo "📝 AGENTS.md が更新されました"
+      echo "📝 AGENTS.md 已更新"
       ;;
     *.test.*|*.spec.*|*__tests__*)
-      echo "🧪 テストファイルが更新されました: $(basename "$FILE_PATH")"
+      echo "🧪 测试文件已更新: $(basename "$FILE_PATH")"
       ;;
   esac
 fi
 
 # ==============================================================================
-# Work モード時の review_status リセット
+# Work 模式下的 review_status 重置
 # ==============================================================================
-# /work 実行中に Write/Edit が入った場合、review_status を pending に戻す
-# これにより、コード変更後は必ず再レビューが必要になる
-# 後方互換: work-active.json を優先、ultrawork-active.json にフォールバック
+# 在 /work 执行期间如果发生 Write/Edit，将 review_status 重置为 pending
+# 这确保代码变更后必须重新进行审查
+# 向后兼容: 优先使用 work-active.json，回退到 ultrawork-active.json
 # ==============================================================================
 WORK_FILE=".claude/state/work-active.json"
 if [ ! -f "$WORK_FILE" ]; then
@@ -168,13 +168,13 @@ fi
 if [ -f "$WORK_FILE" ] && command -v jq >/dev/null 2>&1; then
   CURRENT_STATUS=$(jq -r '.review_status // "pending"' "$WORK_FILE" 2>/dev/null)
 
-  # passed または failed の場合のみ pending にリセット
+  # 仅在 passed 或 failed 时重置为 pending
   if [ "$CURRENT_STATUS" = "passed" ] || [ "$CURRENT_STATUS" = "failed" ]; then
     TEMP_UW=$(mktemp 2>/dev/null)
     if [ -n "$TEMP_UW" ]; then
       if jq '.review_status = "pending"' "$WORK_FILE" > "$TEMP_UW" 2>/dev/null; then
         mv "$TEMP_UW" "$WORK_FILE" 2>/dev/null || rm -f "$TEMP_UW"
-        echo "⚠️ work: コード変更を検出 → review_status を pending にリセット（再レビュー必須）" >&2
+        echo "⚠️ work: 检测到代码变更 → review_status 已重置为 pending（必须重新审查）" >&2
       else
         rm -f "$TEMP_UW"
       fi

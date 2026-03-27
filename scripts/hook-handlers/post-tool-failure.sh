@@ -8,22 +8,22 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === 配置 ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# 加载 path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# 检测项目根目录
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# 状態ディレクトリ
+# 状态目录
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 
-# === ユーティリティ関数 ===
+# === 工具函数 ===
 
 ensure_state_dir() {
   local state_parent
@@ -54,19 +54,19 @@ write_counter_file() {
   return 0
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === 从 stdin 读取 JSON 载荷 ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# 载荷为空时跳过
 if [ -z "${INPUT}" ]; then
   echo '{}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === 字段提取 ===
 TOOL_NAME=""
 ERROR_MSG=""
 
@@ -89,13 +89,13 @@ except:
   ERROR_MSG="$(echo "${_parsed}" | sed -n '2p')"
 fi
 
-# === 連続失敗カウンター（タイムスタンプ付き） ===
+# === 连续失败计数器（带时间戳） ===
 if ! ensure_state_dir; then
   echo '{}'
   exit 0
 fi
 COUNTER_FILE="${STATE_DIR}/tool-failure-counter.txt"
-STALENESS_THRESHOLD=60  # 秒。前回失敗から60秒以上経過したらリセット
+STALENESS_THRESHOLD=60  # 秒。距离上次失败超过60秒则重置
 
 if [ -L "${COUNTER_FILE}" ]; then
   echo '{}'
@@ -107,18 +107,18 @@ LAST_TIMESTAMP=0
 NOW="$(date +%s)"
 
 if [ -f "${COUNTER_FILE}" ]; then
-  # フォーマット: "count timestamp"
+  # 格式: "count timestamp"
   _line="$(cat "${COUNTER_FILE}" 2>/dev/null || echo "0 0")"
   CURRENT_COUNT="$(echo "${_line}" | awk '{print $1}')"
   LAST_TIMESTAMP="$(echo "${_line}" | awk '{print $2}')"
-  # 数値でない場合のガード
+  # 非数值时的防护
   if ! printf '%d' "${CURRENT_COUNT}" >/dev/null 2>&1; then
     CURRENT_COUNT=0
   fi
   if ! printf '%d' "${LAST_TIMESTAMP}" >/dev/null 2>&1; then
     LAST_TIMESTAMP=0
   fi
-  # 前回失敗から一定時間経過していたらリセット（連続ではない）
+  # 距离上次失败超过一定时间则重置（非连续）
   ELAPSED=$((NOW - LAST_TIMESTAMP))
   if [ "${ELAPSED}" -gt "${STALENESS_THRESHOLD}" ]; then
     CURRENT_COUNT=0
@@ -130,9 +130,9 @@ if ! write_counter_file "${CURRENT_COUNT}" "${NOW}"; then
   exit 0
 fi
 
-# === 3回連続失敗で escalation ===
+# === 3次连续失败则升级 ===
 if [ "${CURRENT_COUNT}" -ge 3 ]; then
-  # エスケープ済みエラーメッセージを構築
+  # 构建已转义的错误消息
   if command -v jq >/dev/null 2>&1; then
     jq -nc \
       --arg tool "${TOOL_NAME}" \
@@ -149,7 +149,7 @@ print(json.dumps({'systemMessage': msg}, ensure_ascii=False))
   else
     printf '{"systemMessage":"WARNING: %s consecutive tool failures detected (tool: %s). Stop retrying the same approach."}\n' "${CURRENT_COUNT}" "${TOOL_NAME}"
   fi
-  # カウンターリセット
+  # 重置计数器
   write_counter_file "0" "0" || true
 else
   if command -v jq >/dev/null 2>&1; then

@@ -2,19 +2,19 @@
 /**
  * validate-opencode.js
  *
- * opencode 用に変換されたファイルが正しい形式かを検証
+ * 验证为 opencode 转换的文件是否为正确格式
  *
- * 検証内容:
- * - frontmatter に opencode 非対応フィールドがないか
- * - 必須ファイルが存在するか
- * - JSON ファイルが有効か
+ * 验证内容:
+ * - frontmatter 中是否包含 opencode 不支持的字段
+ * - 必需文件是否存在
+ * - JSON 文件是否有效
  *
  * 使用方法:
  *   node scripts/validate-opencode.js
  *
- * 終了コード:
- *   0: 検証成功
- *   1: 検証失敗
+ * 退出码:
+ *   0: 验证成功
+ *   1: 验证失败
  */
 
 const fs = require('fs');
@@ -23,10 +23,10 @@ const path = require('path');
 const ROOT_DIR = path.join(__dirname, '..');
 const OPENCODE_DIR = path.join(ROOT_DIR, 'opencode');
 
-// opencode で無効な frontmatter フィールド
+// opencode 中无效的 frontmatter 字段
 const INVALID_FIELDS = ['description-en', 'name'];
 
-// 必須ファイル（v2.17.0+: commands は Skills に移行済み、skills が必須）
+// 必需文件（v2.17.0+: commands 已迁移到 Skills，skills 为必需）
 const REQUIRED_FILES = [
   'opencode/AGENTS.md',
   'opencode/opencode.json',
@@ -38,7 +38,7 @@ let errors = [];
 let warnings = [];
 
 /**
- * frontmatter を解析
+ * 解析 frontmatter
  */
 function parseFrontmatter(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);
@@ -63,7 +63,7 @@ function parseFrontmatter(content) {
 }
 
 /**
- * コマンドファイルを検証
+ * 验证命令文件
  */
 function validateCommandFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
@@ -71,26 +71,26 @@ function validateCommandFile(filePath) {
   const relativePath = path.relative(ROOT_DIR, filePath);
 
   if (!frontmatter) {
-    // frontmatter がないファイルは警告のみ
+    // 没有 frontmatter 的文件仅警告
     warnings.push(`${relativePath}: No frontmatter found`);
     return;
   }
 
-  // 無効なフィールドをチェック
+  // 检查无效字段
   for (const field of INVALID_FIELDS) {
     if (frontmatter[field]) {
       errors.push(`${relativePath}: Invalid field '${field}' found in frontmatter`);
     }
   }
 
-  // description がない場合は警告
+  // 没有 description 时警告
   if (!frontmatter.description) {
     warnings.push(`${relativePath}: Missing 'description' field`);
   }
 }
 
 /**
- * ディレクトリ内のファイルを再帰的に検証
+ * 递归验证目录内的文件
  */
 function validateDirectory(dir) {
   if (!fs.existsSync(dir)) {
@@ -112,7 +112,7 @@ function validateDirectory(dir) {
 }
 
 /**
- * JSON ファイルを検証
+ * 验证 JSON 文件
  */
 function validateJsonFile(filePath) {
   const relativePath = path.relative(ROOT_DIR, filePath);
@@ -131,7 +131,7 @@ function validateJsonFile(filePath) {
 }
 
 /**
- * 必須ファイルの存在を確認
+ * 确认必需文件的存在
  */
 function validateRequiredFiles() {
   for (const file of REQUIRED_FILES) {
@@ -143,25 +143,25 @@ function validateRequiredFiles() {
 }
 
 /**
- * opencode.json の構造を検証
+ * 验证 opencode.json 的结构
  */
 function validateOpencodeConfig() {
   const configPath = path.join(OPENCODE_DIR, 'opencode.json');
 
   if (!fs.existsSync(configPath)) {
-    return; // 既に必須ファイルチェックでエラー出力済み
+    return; // 已在必需文件检查中输出错误
   }
 
   try {
     const content = fs.readFileSync(configPath, 'utf8');
     const config = JSON.parse(content);
 
-    // $schema の存在確認
+    // 确认 $schema 存在
     if (!config.$schema) {
       warnings.push('opencode/opencode.json: Missing $schema field');
     }
 
-    // mcp 設定の存在確認
+    // 确认 mcp 设置存在
     if (config.mcp && config.mcp.harness) {
       const harness = config.mcp.harness;
       if (harness.type !== 'local' && harness.type !== 'remote') {
@@ -169,33 +169,33 @@ function validateOpencodeConfig() {
       }
     }
   } catch (e) {
-    // JSON パースエラーは既に出力済み
+    // JSON 解析错误已输出
   }
 }
 
 /**
- * メイン処理
+ * 主处理函数
  */
 function main() {
   console.log('🔍 Validating opencode files...\n');
 
-  // 必須ファイルの存在確認
+  // 确认必需文件存在
   console.log('📁 Checking required files...');
   validateRequiredFiles();
 
-  // コマンドファイルの検証
+  // 验证命令文件
   console.log('📄 Validating command files...');
   const commandsDir = path.join(OPENCODE_DIR, 'commands');
   if (fs.existsSync(commandsDir)) {
     validateDirectory(commandsDir);
   }
 
-  // JSON ファイルの検証
+  // 验证 JSON 文件
   console.log('📋 Validating JSON files...');
   validateJsonFile(path.join(OPENCODE_DIR, 'opencode.json'));
   validateOpencodeConfig();
 
-  // 結果出力
+  // 输出结果
   console.log('\n' + '='.repeat(50));
 
   if (warnings.length > 0) {

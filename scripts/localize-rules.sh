@@ -1,13 +1,13 @@
 #!/bin/bash
 # localize-rules.sh
-# プロジェクト構造に合わせてルールをローカライズ
+# 根据项目结构本地化规则
 #
 # Usage: ./scripts/localize-rules.sh [--dry-run]
 #
-# 機能:
-# - プロジェクト分析結果に基づいて paths: を調整
-# - 言語固有のルールを追加
-# - 既存のカスタマイズを保持
+# 功能:
+# - 根据项目分析结果调整 paths:
+# - 添加语言特定规则
+# - 保留现有自定义配置
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ DEFAULT_PLUGIN_PATH="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-${PLUGIN_PATH:-$DEFAULT_PLUGIN_PATH}}"
 DRY_RUN=false
 
-# 引数解析
+# 参数解析
 while [[ $# -gt 0 ]]; do
   case $1 in
     --dry-run) DRY_RUN=true; shift ;;
@@ -25,30 +25,30 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ================================
-# プロジェクト分析
+# 项目分析
 # ================================
-echo "🔍 プロジェクト構造を分析中..."
+echo "🔍 正在分析项目结构..."
 
-# analyze-project.sh を実行
+# 执行 analyze-project.sh
 ANALYSIS=$("$PLUGIN_PATH/scripts/analyze-project.sh" 2>/dev/null || echo '{"languages":["unknown"],"source_dirs":["."],"test_info":[],"extensions":[]}')
 
-# JSON から値を抽出
+# 从 JSON 中提取值
 LANGUAGES=$(echo "$ANALYSIS" | jq -r '.languages[]' 2>/dev/null | tr '\n' ' ')
 SOURCE_DIRS=$(echo "$ANALYSIS" | jq -r '.source_dirs[]' 2>/dev/null | tr '\n' ' ')
 TEST_DIRS=$(echo "$ANALYSIS" | jq -r '.test_info.dirs[]' 2>/dev/null | tr '\n' ' ')
 HAS_COLOCATED_TESTS=$(echo "$ANALYSIS" | jq -r '.test_info.has_colocated_tests // false' 2>/dev/null)
 
-echo "  言語: $LANGUAGES"
-echo "  ソースディレクトリ: $SOURCE_DIRS"
+echo "  语言: $LANGUAGES"
+echo "  源代码目录: $SOURCE_DIRS"
 
 # ================================
-# paths パターン生成
+# paths 模式生成
 # ================================
 generate_code_paths() {
   local paths=""
   local src_dirs=($SOURCE_DIRS)
 
-  # 言語に応じた拡張子
+  # 根据语言确定扩展名
   local extensions=""
   if [[ "$LANGUAGES" == *"typescript"* ]] || [[ "$LANGUAGES" == *"react"* ]]; then
     extensions="ts,tsx,js,jsx"
@@ -68,7 +68,7 @@ generate_code_paths() {
     extensions="ts,tsx,js,jsx,py,rb,go,rs,java,kt"
   fi
 
-  # ソースディレクトリごとにパターン生成
+  # 为每个源代码目录生成模式
   for dir in "${src_dirs[@]}"; do
     if [ "$dir" = "." ]; then
       paths+="**/*.{$extensions}, "
@@ -77,7 +77,7 @@ generate_code_paths() {
     fi
   done
 
-  # 末尾のカンマとスペースを削除
+  # 移除末尾的逗号和空格
   echo "${paths%, }"
 }
 
@@ -85,13 +85,13 @@ generate_test_paths() {
   local paths=""
   local test_dirs_arr=($TEST_DIRS)
 
-  # 検出されたテストディレクトリ
+  # 检测到的测试目录
   if [ ${#test_dirs_arr[@]} -gt 0 ]; then
     for dir in "${test_dirs_arr[@]}"; do
       paths+="$dir/**/*.*, "
     done
   else
-    # デフォルトのテストディレクトリをチェック
+    # 检查默认测试目录
     for dir in tests test __tests__ spec e2e; do
       if [ -d "$dir" ]; then
         paths+="$dir/**/*.*, "
@@ -99,12 +99,12 @@ generate_test_paths() {
     done
   fi
 
-  # colocated tests
+  # 同位测试 (colocated tests)
   if [ "$HAS_COLOCATED_TESTS" = "true" ]; then
     paths+="**/*.{test,spec}.{ts,tsx,js,jsx,py}, "
   fi
 
-  # デフォルト
+  # 默认值
   if [ -z "$paths" ]; then
     paths="**/*.{test,spec}.*, tests/**/*.*, test/**/*.*"
   fi
@@ -113,148 +113,148 @@ generate_test_paths() {
 }
 
 # ================================
-# ルールファイル生成
+# 规则文件生成
 # ================================
 CODE_PATHS=$(generate_code_paths)
 TEST_PATHS=$(generate_test_paths)
 
 echo ""
-echo "📝 生成される paths:"
-echo "  コード: $CODE_PATHS"
-echo "  テスト: $TEST_PATHS"
+echo "📝 生成的 paths:"
+echo "  代码: $CODE_PATHS"
+echo "  测试: $TEST_PATHS"
 
 if [ "$DRY_RUN" = true ]; then
   echo ""
-  echo "🔍 [Dry Run] 実際の変更は行いません"
+  echo "🔍 [Dry Run] 不执行实际更改"
   exit 0
 fi
 
-# .claude/rules ディレクトリ確認
+# 确认 .claude/rules 目录存在
 mkdir -p .claude/rules
 
 # ================================
-# coding-standards.md のローカライズ
+# coding-standards.md 本地化
 # ================================
 echo ""
-echo "📁 ルールをローカライズ中..."
+echo "📁 正在本地化规则..."
 
-# テンプレートから生成（既存ファイルがあれば上書き確認）
+# 从模板生成（如果文件存在则确认覆盖）
 CODING_STANDARDS=".claude/rules/coding-standards.md"
 
-# 言語固有のセクションを追加
+# 添加语言特定部分
 LANG_SPECIFIC=""
 if [[ "$LANGUAGES" == *"typescript"* ]]; then
   LANG_SPECIFIC+="
-## TypeScript 固有
+## TypeScript 特定规则
 
-- \`any\` は使用禁止（\`unknown\` を使用）
-- 戻り値の型は明示する
-- 厳密な null チェックを有効化
+- \`any\` 禁止使用（使用 \`unknown\` 代替）
+- 返回值类型必须显式声明
+- 启用严格空值检查
 "
 fi
 
 if [[ "$LANGUAGES" == *"python"* ]]; then
   LANG_SPECIFIC+="
-## Python 固有
+## Python 特定规则
 
-- PEP 8 スタイルガイドに従う
-- 型ヒントを使用する
-- docstring は Google スタイル
+- 遵循 PEP 8 风格指南
+- 使用类型注解
+- docstring 使用 Google 风格
 "
 fi
 
 if [[ "$LANGUAGES" == *"react"* ]]; then
   LANG_SPECIFIC+="
-## React 固有
+## React 特定规则
 
-- 関数コンポーネントを使用
-- カスタムフックは \`use\` プレフィックス
-- Props の型定義を必須
+- 使用函数组件
+- 自定义 Hook 使用 \`use\` 前缀
+- Props 类型定义必须
 "
 fi
 
-# coding-standards.md を生成
+# 生成 coding-standards.md
 cat > "$CODING_STANDARDS" << EOF
 ---
-description: コーディング規約（コードファイル編集時のみ適用）
+description: 编码规范（仅适用于代码文件编辑）
 paths: "$CODE_PATHS"
 ---
 
 # Coding Standards
 
-## コミットメッセージ規約
+## 提交信息规范
 
-| Prefix | 用途 | 例 |
+| Prefix | 用途 | 示例 |
 |--------|------|-----|
-| \`feat:\` | 新機能 | \`feat: ユーザー認証を追加\` |
-| \`fix:\` | バグ修正 | \`fix: ログインエラーを修正\` |
-| \`docs:\` | ドキュメント | \`docs: README を更新\` |
-| \`refactor:\` | リファクタリング | \`refactor: 認証ロジックを整理\` |
-| \`test:\` | テスト | \`test: 認証テストを追加\` |
-| \`chore:\` | その他 | \`chore: 依存関係を更新\` |
+| \`feat:\` | 新功能 | \`feat: 添加用户认证\` |
+| \`fix:\` | Bug 修复 | \`fix: 修复登录错误\` |
+| \`docs:\` | 文档 | \`docs: 更新 README\` |
+| \`refactor:\` | 重构 | \`refactor: 整理认证逻辑\` |
+| \`test:\` | 测试 | \`test: 添加认证测试\` |
+| \`chore:\` | 其他 | \`chore: 更新依赖\` |
 
-## コードスタイル
+## 代码风格
 
-- ✅ 既存のコードスタイルに従う
-- ✅ 変更に必要な最小限の修正のみ
-- ❌ 変更していないコードへの「改善」
-- ❌ 依頼されていないリファクタリング
-- ❌ 過剰なコメント追加
+- ✅ 遵循现有代码风格
+- ✅ 仅进行必要的最小修改
+- ❌ 对未修改代码进行"改进"
+- ❌ 未请求的重构
+- ❌ 添加过多注释
 $LANG_SPECIFIC
 ## Pull Request
 
-- タイトル: 変更内容を簡潔に（50文字以内）
-- 説明: 「何を」「なぜ」を明記
-- テスト方法を必ず記載
+- 标题: 简洁描述变更内容（50字符以内）
+- 说明: 明确"做了什么"和"为什么"
+- 必须记录测试方法
 EOF
 
 echo "  ✅ $CODING_STANDARDS"
 
 # ================================
-# testing.md のローカライズ
+# testing.md 本地化
 # ================================
 TESTING_RULES=".claude/rules/testing.md"
 
 cat > "$TESTING_RULES" << EOF
 ---
-description: テストファイル作成・編集時のルール
+description: 测试文件创建/编辑规则
 paths: "$TEST_PATHS"
 ---
 
 # Testing Rules
 
-## テスト作成の原則
+## 测试创建原则
 
-1. **境界テスト**: 入力の境界値を必ずテスト
-2. **正常系・異常系**: 両方のケースをカバー
-3. **独立性**: 各テストは他のテストに依存しない
-4. **明確な命名**: テスト名で何をテストしているか分かる
+1. **边界测试**: 必须测试输入边界值
+2. **正常/异常情况**: 覆盖两种情况
+3. **独立性**: 每个测试不依赖其他测试
+4. **清晰命名**: 测试名称应表明测试内容
 
-## テスト命名規約
+## 测试命名规范
 
 \`\`\`
-describe('機能名', () => {
-  it('should 期待する動作 when 条件', () => {
+describe('功能名称', () => {
+  it('should 期望的行为 when 条件', () => {
     // ...
   });
 });
 \`\`\`
 
-## 禁止事項
+## 禁止事项
 
-- ❌ 実装の内部詳細に依存したテスト
-- ❌ 外部サービスへの実際の接続（モックを使用）
-- ❌ テスト間の状態共有
+- ❌ 依赖实现内部细节的测试
+- ❌ 实际连接外部服务（使用模拟）
+- ❌ 测试间共享状态
 EOF
 
 echo "  ✅ $TESTING_RULES"
 
 # ================================
-# 完了
+# 完成
 # ================================
 echo ""
-echo "✅ ルールのローカライズが完了しました"
+echo "✅ 规则本地化完成"
 echo ""
-echo "📋 生成されたルール:"
+echo "📋 生成的规则:"
 echo "  - .claude/rules/coding-standards.md (paths: $CODE_PATHS)"
 echo "  - .claude/rules/testing.md (paths: $TEST_PATHS)"

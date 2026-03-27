@@ -1,8 +1,8 @@
 ---
 name: deploy
-description: "VercelやNetlifyへいざ出陣。本番環境への片道切符を手配します。Use when user mentions deployment, Vercel, Netlify, analytics, or health checks. Do NOT load for: implementation work, local development, reviews, or setup."
+description: "部署到 Vercel/Netlify。前往生产环境的单程票已备好。Use when user mentions deployment, Vercel, Netlify, analytics, or health checks. Do NOT load for: implementation work, local development, reviews, or setup."
 description-en: "Deploy to Vercel/Netlify. One-way ticket to production arranged. Use when user mentions deployment, Vercel, Netlify, analytics, or health checks. Do NOT load for: implementation work, local development, reviews, or setup."
-description-ja: "VercelやNetlifyへいざ出陣。本番環境への片道切符を手配します。Use when user mentions deployment, Vercel, Netlify, analytics, or health checks. Do NOT load for: implementation work, local development, reviews, or setup."
+description-ja: "部署到 Vercel/Netlify。前往生产环境的单程票已备好。触发短语: 部署、Vercel、Netlify、分析统计、健康检查。不用于: 实现工作、本地开发、审查、设置。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 disable-model-invocation: true
 argument-hint: "[vercel|netlify|health]"
@@ -11,18 +11,18 @@ context: fork
 
 # Deploy Skills
 
-デプロイとモニタリングの設定を担当するスキル群です。
+负责部署和监控设置的技能组。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **デプロイ設定** | See [references/deployment-setup.md](${CLAUDE_SKILL_DIR}/references/deployment-setup.md) |
-| **アナリティクス** | See [references/analytics.md](${CLAUDE_SKILL_DIR}/references/analytics.md) |
-| **環境診断** | See [references/health-checking.md](${CLAUDE_SKILL_DIR}/references/health-checking.md) |
+| **部署设置** | See [references/deployment-setup.md](${CLAUDE_SKILL_DIR}/references/deployment-setup.md) |
+| **分析统计** | See [references/analytics.md](${CLAUDE_SKILL_DIR}/references/analytics.md) |
+| **环境诊断** | See [references/health-checking.md](${CLAUDE_SKILL_DIR}/references/health-checking.md) |
 
-## 実行手順
+## 执行步骤
 
-1. ユーザーのリクエストを分類
-2. 上記の「機能詳細」から適切な参照ファイルを読む
-3. その内容に従って設定
+1. 分类用户的请求
+2. 从上述"功能详情"中读取相应的参考文件
+3. 按照其内容进行设置

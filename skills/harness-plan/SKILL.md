@@ -1,138 +1,138 @@
 ---
 name: harness-plan
-description: "Harness v3 統合プランニングスキル。タスク計画・Plans.md管理・進捗同期を担当。以下のフレーズで起動: 計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認、harness-plan、harness-sync。実装・レビュー・リリースには使わない。"
+description: "Harness v3 统一计划技能。负责任务计划、Plans.md 管理、进度同步。触发短语：创建计划、添加任务、更新 Plans.md、标记完成、确认进度、harness-plan、harness-sync。不用于：实现、代码审查或发布任务。"
 description-en: "Unified planning skill for Harness v3. Handles task planning, Plans.md management, and progress sync. Use when user mentions: create a plan, add tasks, update Plans.md, mark complete, check progress, sync status, where am I, harness-plan, harness-sync. Do NOT load for: implementation, code review, or release tasks."
-description-ja: "Harness v3 統合プランニングスキル。タスク計画・Plans.md管理・進捗同期を担当。以下のフレーズで起動: 計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認、harness-plan、harness-sync。実装・レビュー・リリースには使わない。"
+description-zh: "Harness v3 统一计划技能。负责任务计划、Plans.md 管理、进度同步。触发短语：创建计划、添加任务、更新 Plans.md、标记完成、确认进度、harness-plan、harness-sync。不用于：实现、代码审查或发布任务。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "Task"]
 argument-hint: "[create|add|update|sync|sync --no-retro|--ci]"
 ---
 
 # Harness Plan (v3)
 
-Harness v3 の統合プランニングスキル。
-以下の3つの旧スキルを統合:
+Harness v3 的统一计划技能。
+整合了以下 3 个旧技能：
 
-- `planning` (plan-with-agent) — アイデア → Plans.md への落とし込み
-- `plans-management` — タスク状態管理・マーカー更新
-- `sync-status` — Plans.md と実装の同期確認
+- `planning` (plan-with-agent) — 从想法到 Plans.md 的落实
+- `plans-management` — 任务状态管理、标记更新
+- `sync-status` — Plans.md 与实现的同步确认
 
-## Quick Reference
+## 快速参考
 
-| ユーザー入力 | サブコマンド | 動作 |
-|------------|------------|------|
-| "計画を作って" / "create a plan" | `create` | 対話型ヒアリング → Plans.md 生成 |
-| "タスクを追加して" / "add a task" | `add` | Plans.md に新タスク追加 |
-| "完了にして" / "mark complete" | `update` | タスクマーカーを cc:完了 に変更 |
-| "今どこ？" / "check progress" | `sync` | 実装とPlans.mdを照合・同期 |
-| `harness-sync` | `sync` | 進捗確認（独立 sync surface と同等） |
-| `harness-plan create` | `create` | 計画作成 |
+| 用户输入 | 子命令 | 操作 |
+|---------|-------|------|
+| "创建计划" / "create a plan" | `create` | 对话式需求收集 → 生成 Plans.md |
+| "添加任务" / "add a task" | `add` | 向 Plans.md 添加新任务 |
+| "标记完成" / "mark complete" | `update` | 将任务标记更改为 cc:完了 |
+| "现在在哪" / "check progress" | `sync` | 对照实现与 Plans.md 并同步 |
+| `harness-sync` | `sync` | 进度确认（与独立 sync surface 等效） |
+| `harness-plan create` | `create` | 创建计划 |
 
-## サブコマンド詳細
+## 子命令详情
 
-### create — 計画作成
+### create — 创建计划
 
 See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
 
-アイデア・要件をヒアリングし、実行可能な Plans.md を生成する。
+通过对话收集想法和需求，生成可执行的 Plans.md。
 
-**フロー**:
-1. 会話コンテキスト確認（直前の議論から抽出 or 新規ヒアリング）
-2. 何を作るか聞く（max 3問）
-3. 技術調査（WebSearch）
-4. 機能リスト抽出
-5. 優先度マトリクス（Required / Recommended / Optional）
-6. TDD 採用判断（テスト設計）
-7. Plans.md 生成（`cc:TODO` マーカー付き）
-8. 次のアクション案内
+**流程**:
+1. 确认对话上下文（从最近讨论提取 or 新对话收集）
+2. 询问要做什么（最多 3 问）
+3. 技术调查（WebSearch）
+4. 提取功能列表
+5. 优先级矩阵（Required / Recommended / Optional）
+6. TDD 采用判断（测试设计）
+7. 生成 Plans.md（带 `cc:TODO` 标记）
+8. 指引下一步操作
 
-**CI モード** (`--ci`):
-ヒアリングなし。既存の Plans.md をそのまま利用してタスク分解のみ行う。
+**CI 模式** (`--ci`):
+不进行对话。直接利用现有 Plans.md 仅进行任务分解。
 
-### add — タスク追加
+### add — 添加任务
 
-Plans.md に新しいタスクを追加する。
-
-```
-harness-plan add タスク名: 詳細説明 [--phase フェーズ番号]
-```
-
-タスクは `cc:TODO` マーカーで追加される。
-
-### update — マーカー更新
-
-タスクのステータスマーカーを変更する。
+向 Plans.md 添加新任务。
 
 ```
-harness-plan update [タスク名|タスク番号] [WIP|完了|blocked]
+harness-plan add 任务名: 详细说明 [--phase 阶段编号]
 ```
 
-マーカー対応表:
+任务以 `cc:TODO` 标记添加。
 
-| コマンド | マーカー |
-|---------|---------|
+### update — 更新标记
+
+更改任务的状态标记。
+
+```
+harness-plan update [任务名|任务编号] [WIP|完了|blocked]
+```
+
+标记对应表：
+
+| 命令 | 标记 |
+|-----|------|
 | `WIP` | `cc:WIP` |
 | `完了` / `done` | `cc:完了` |
 | `blocked` | `blocked` |
 | `TODO` | `cc:TODO` |
 
-### sync — 進捗同期
+### sync — 进度同步
 
-実装状況と Plans.md を照合し、差分を検出・更新する。
+对照实现情况与 Plans.md，检测差异并更新。
 
 See [references/sync.md](${CLAUDE_SKILL_DIR}/references/sync.md)
 
-**フロー**:
-1. Plans.md の現状取得
-2. Plans.md フォーマット検出（v1: 3 カラム / v2: 5 カラム）
-3. git status / git log から実装状況取得
-4. エージェントトレース確認（`.claude/state/agent-trace.jsonl`）
-5. Plans.md と実装の差分検出
-6. 未更新マーカーの自動修正提案
-7. 次のアクション提示
+**流程**:
+1. 获取 Plans.md 当前状态
+2. 检测 Plans.md 格式（v1: 3 列 / v2: 5 列）
+3. 从 git status / git log 获取实现情况
+4. 确认代理跟踪（`.claude/state/agent-trace.jsonl`）
+5. 检测 Plans.md 与实现的差异
+6. 提议自动修正未更新的标记
+7. 提示下一步操作
 
-**レトロスペクティブ**（デフォルト ON）:
-`cc:完了` タスクが 1 件以上あれば自動的に振り返りを実行する。
-見積もり精度、ブロック原因パターン、スコープ変動を分析し、学びを記録。
-`sync --no-retro` で明示的にスキップ可能。
+**回顾**（默认开启）:
+有 1 个以上 `cc:完了` 任务时自动执行回顾。
+分析估算精度、阻塞原因模式、范围变动，记录学习心得。
+可用 `sync --no-retro` 显式跳过。
 
-## Plans.md フォーマット規約
+## Plans.md 格式规范
 
-### フォーマット
+### 格式
 
 ```markdown
-# [プロジェクト名] Plans.md
+# [项目名] Plans.md
 
-作成日: YYYY-MM-DD
+创建日期: YYYY-MM-DD
 
 ---
 
-## Phase N: フェーズ名
+## Phase N: 阶段名
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| N.1  | 説明 | テスト通過 | - | cc:TODO |
-| N.2  | 説明 | lint エラー 0 | N.1 | cc:WIP |
-| N.3  | 説明 | マイグレーション実行可能 | N.1, N.2 | cc:完了 |
+| N.1  | 说明 | 测试通过 | - | cc:TODO |
+| N.2  | 说明 | lint 错误 0 | N.1 | cc:WIP |
+| N.3  | 说明 | 迁移可执行 | N.1, N.2 | cc:完了 |
 ```
 
-**DoD（Definition of Done）**: 検証可能な完了条件を 1 行で記述。「いい感じ」「ちゃんと動く」は禁止。Yes/No で判定できる形にする。
+**DoD（Definition of Done）**: 用 1 行描述可验证的完成条件。禁止使用"感觉不错"、"正常运行"等表述。必须是可以 Yes/No 判断的形式。
 
-**Depends**: タスク間の依存関係。`-`（依存なし）、タスク番号（`N.1`）、カンマ区切り（`N.1, N.2`）、フェーズ依存（`Phase N`）。
+**Depends**: 任务间依赖关系。`-`（无依赖）、任务编号（`N.1`）、逗号分隔（`N.1, N.2`）、阶段依赖（`Phase N`）。
 
-### マーカー一覧
+### 标记列表
 
-| マーカー | 意味 |
-|---------|------|
-| `pm:依頼中` | PM から依頼済み |
-| `cc:TODO` | 未着手 |
-| `cc:WIP` | 作業中 |
-| `cc:完了` | Worker 作業完了 |
-| `pm:確認済` | PM レビュー完了 |
-| `blocked` | ブロック中（理由を必ず記載） |
+| 标记 | 含义 |
+|-----|------|
+| `pm:依赖中` | 已向 PM 请求 |
+| `cc:TODO` | 未开始 |
+| `cc:WIP` | 进行中 |
+| `cc:完了` | Worker 工作完成 |
+| `pm:确认済` | PM 审核完成 |
+| `blocked` | 阻塞中（必须注明原因） |
 
-## 関連スキル
+## 相关技能
 
-- `harness-sync` — 実装と Plans.md を同期する
-- `harness-work` — 計画したタスクを実装する
-- `harness-review` — 実装のレビュー
-- `harness-setup` — プロジェクト初期化
+- `harness-sync` — 同步实现与 Plans.md
+- `harness-work` — 实现计划的任务
+- `harness-review` — 审查实现
+- `harness-setup` — 项目初始化

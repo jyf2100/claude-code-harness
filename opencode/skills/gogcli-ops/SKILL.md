@@ -1,8 +1,8 @@
 ---
 name: gogcli-ops
-description: "gogcli でGoogle Workspace操作（Drive/Sheets/Docs/Slides）。ユーザーがGoogleファイルの確認・検索・エクスポート・読み取り・更新をgogcliで依頼する時に使用。Trigger when a user asks to check, list, search, export, read, or update Google files via gogcli; when a Google URL/ID needs parsing; when auth/account selection or safe read-only workflows are needed; or when troubleshooting gogcli access/errors. Do NOT load for: general file operations, non-Google cloud storage, or standard shell commands."
+description: "使用 gogcli 操作 Google Workspace（Drive/Sheets/Docs/Slides）。当用户请求通过 gogcli 检查、搜索、导出、读取或更新 Google 文件时使用。Trigger when a user asks to check, list, search, export, read, or update Google files via gogcli; when a Google URL/ID needs parsing; when auth/account selection or safe read-only workflows are needed; or when troubleshooting gogcli access/errors. Do NOT load for: general file operations, non-Google cloud storage, or standard shell commands."
 description-en: "Use gogcli for Google Workspace CLI operations (Drive/Sheets/Docs/Slides). Trigger when a user asks to check, list, search, export, read, or update Google files via gogcli; when a Google URL/ID needs parsing; when auth/account selection or safe read-only workflows are needed; or when troubleshooting gogcli access/errors. Do NOT load for: general file operations, non-Google cloud storage, or standard shell commands."
-description-ja: "gogcli でGoogle Workspace操作（Drive/Sheets/Docs/Slides）。ユーザーがGoogleファイルの確認・検索・エクスポート・読み取り・更新をgogcliで依頼する時に使用。Trigger when a user asks to check, list, search, export, read, or update Google files via gogcli; when a Google URL/ID needs parsing; when auth/account selection or safe read-only workflows are needed; or when troubleshooting gogcli access/errors. Do NOT load for: general file operations, non-Google cloud storage, or standard shell commands."
+description-ja: "使用 gogcli 操作 Google Workspace（Drive/Sheets/Docs/Slides）。当用户请求通过 gogcli 检查、搜索、导出、读取或更新 Google 文件时使用。触发短语: gogcli 检查、搜索、导出、读取、更新 Google 文件。不用于: 一般文件操作、非 Google 云存储、标准 shell 命令。"
 allowed-tools: ["Read", "Bash", "Grep", "Glob"]
 ---
 

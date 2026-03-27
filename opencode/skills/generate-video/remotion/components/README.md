@@ -1,28 +1,28 @@
-# Remotion Visual Components
+# Remotion 视觉组件
 
-Phase 5: 視覚コンポーネント実装
+Phase 5: 视觉组件实现
 
-## Components
+## 组件
 
 ### 1. EmphasisBox
 
-3段階の強調表示コンポーネント。
+3 段强调显示组件。
 
-**Features**:
-- 3 levels: `high`, `medium`, `low`
-- 5 styles: `bold`, `glitch`, `underline`, `highlight`, `glow`
-- Pulse animation support
-- Glow effects
-- Sound effect integration
-- Customizable colors and fonts
+**特性**:
+- 3 级别: `high`, `medium`, `low`
+- 5 样式: `bold`, `glitch`, `underline`, `highlight`, `glow`
+- 脉冲动画支持
+- 发光效果
+- 效果音集成
+- 可自定义颜色和字体
 
-**Usage**:
+**使用**:
 ```tsx
 import { EmphasisBox } from './components';
 
 <EmphasisBox
   level="high"
-  text="Important Message"
+  text="重要信息"
   color="#00F5FF"
   enablePulse={true}
   enableGlow={true}
@@ -32,32 +32,32 @@ import { EmphasisBox } from './components';
 />
 ```
 
-**Props**:
-- `level`: `'high' | 'medium' | 'low'` - Emphasis intensity
-- `text`: `string` - Text to display
-- `color`: `string` - Primary color (hex)
-- `sound`: `'none' | 'pop' | 'whoosh' | 'chime' | 'ding'` - Sound effect
+**属性**:
+- `level`: `'high' | 'medium' | 'low'` - 强调强度
+- `text`: `string` - 显示文本
+- `color`: `string` - 主色（十六进制）
+- `sound`: `'none' | 'pop' | 'whoosh' | 'chime' | 'ding'` - 效果音
 - `style`: `'bold' | 'glitch' | 'underline' | 'highlight' | 'glow'`
-- `enablePulse`: `boolean` - Enable pulse animation
-- `enableGlow`: `boolean` - Enable glow effect
-- `startFrame`: `number` - Start frame (relative to scene)
-- `durationFrames`: `number` - Duration in frames
+- `enablePulse`: `boolean` - 启用脉冲动画
+- `enableGlow`: `boolean` - 启用发光效果
+- `startFrame`: `number` - 开始帧（相对于场景）
+- `durationFrames`: `number` - 持续帧数
 
 ---
 
 ### 2. TransitionWrapper
 
-4種類のトランジションエフェクトでコンテンツをラップ。
+用 4 种过渡效果包装内容。
 
-**Features**:
-- 4 types: `fade`, `slideIn`, `zoom`, `cut`
-- Remotion `interpolate` and `spring` support
-- 4 easing functions: `linear`, `easeIn`, `easeOut`, `easeInOut`
-- Customizable slide direction
-- Spring physics option
-- Preset configurations
+**特性**:
+- 4 类型: `fade`, `slideIn`, `zoom`, `cut`
+- 支持 Remotion `interpolate` 和 `spring`
+- 4 缓动函数: `linear`, `easeIn`, `easeOut`, `easeInOut`
+- 可自定义滑动方向
+- 弹簧物理选项
+- 预设配置
 
-**Usage**:
+**使用**:
 ```tsx
 import { TransitionWrapper, TransitionPresets } from './components';
 
@@ -70,22 +70,22 @@ import { TransitionWrapper, TransitionPresets } from './components';
   <YourContent />
 </TransitionWrapper>
 
-// Or use presets
+// 或使用预设
 <TransitionWrapper {...TransitionPresets.fadeIn(15)}>
   <YourContent />
 </TransitionWrapper>
 ```
 
-**Props**:
-- `type`: `'fade' | 'slideIn' | 'zoom' | 'cut'` - Transition type
-- `duration`: `number` - Duration in frames (default: 15)
-- `direction`: `'left' | 'right' | 'top' | 'bottom'` - Slide direction
+**属性**:
+- `type`: `'fade' | 'slideIn' | 'zoom' | 'cut'` - 过渡类型
+- `duration`: `number` - 持续帧数（默认: 15）
+- `direction`: `'left' | 'right' | 'top' | 'bottom'` - 滑动方向
 - `easing`: `'linear' | 'easeIn' | 'easeOut' | 'easeInOut'`
-- `useSpring`: `boolean` - Use spring physics instead of interpolation
-- `springConfig`: `{ damping, stiffness, mass }` - Spring parameters
-- `delay`: `number` - Delay before transition starts (frames)
+- `useSpring`: `boolean` - 使用弹簧物理而非插值
+- `springConfig`: `{ damping, stiffness, mass }` - 弹簧参数
+- `delay`: `number` - 过渡开始前延迟（帧）
 
-**Presets**:
+**预设**:
 - `TransitionPresets.fadeIn(duration)`
 - `TransitionPresets.fadeOut(duration)`
 - `TransitionPresets.slideFromRight(duration)`
@@ -97,17 +97,17 @@ import { TransitionWrapper, TransitionPresets } from './components';
 
 ### 3. ProgressIndicator
 
-セクション位置表示コンポーネント。
+段落位置显示组件。
 
-**Features**:
-- 3 styles: `bar`, `dots`, `minimal`
-- 4 positions: `top`, `bottom`, `left`, `right`
-- Auto-detection of current section
-- Animated transitions
-- Optional section labels
-- 3 sizes: `small`, `medium`, `large`
+**特性**:
+- 3 样式: `bar`, `dots`, `minimal`
+- 4 位置: `top`, `bottom`, `left`, `right`
+- 自动检测当前段落
+- 动画过渡
+- 可选段落标签
+- 3 大小: `small`, `medium`, `large`
 
-**Usage**:
+**使用**:
 ```tsx
 import { ProgressIndicator, createSections } from './components';
 
@@ -127,18 +127,18 @@ const sections = createSections([
 />
 ```
 
-**Props**:
-- `sections`: `Section[]` - Array of sections
-- `currentIndex`: `number` - Current section (auto-detected if omitted)
+**属性**:
+- `sections`: `Section[]` - 段落数组
+- `currentIndex`: `number` - 当前段落（省略时自动检测）
 - `position`: `'top' | 'bottom' | 'left' | 'right'`
 - `style`: `'bar' | 'dots' | 'minimal'`
-- `showLabels`: `boolean` - Show section names
-- `activeColor`: `string` - Color for active section
-- `inactiveColor`: `string` - Color for inactive sections
+- `showLabels`: `boolean` - 显示段落名称
+- `activeColor`: `string` - 激活段落颜色
+- `inactiveColor`: `string` - 非激活段落颜色
 - `size`: `'small' | 'medium' | 'large'`
-- `animated`: `boolean` - Animate transitions
+- `animated`: `boolean` - 动画过渡
 
-**Section Type**:
+**Section 类型**:
 ```typescript
 interface Section {
   id: string;
@@ -153,32 +153,32 @@ interface Section {
 
 ### 4. BackgroundLayer
 
-5種類のアニメーション背景レイヤー。
+5 种动画背景层。
 
-**Features**:
-- 5 types: `neutral`, `highlight`, `dramatic`, `tech`, `warm`
-- Static image or video support
-- Animated gradients
-- Type-specific effects:
-  - `tech`: Animated grid overlay
-  - `dramatic`: Vignette effect
-  - `highlight`: Floating particles
-  - `warm`: Pulsing radial gradient
-- Blur and overlay support
-- Customizable colors
+**特性**:
+- 5 类型: `neutral`, `highlight`, `dramatic`, `tech`, `warm`
+- 静态图像或视频支持
+- 动画渐变
+- 类型特定效果:
+  - `tech`: 动画网格覆盖
+  - `dramatic`: 暗角效果
+  - `highlight`: 漂浮粒子
+  - `warm`: 脉冲径向渐变
+- 模糊和覆盖支持
+- 可自定义颜色
 
-**Usage**:
+**使用**:
 ```tsx
 import { BackgroundLayer, getRecommendedBackground } from './components';
 
-// Generated gradient background
+// 生成渐变背景
 <BackgroundLayer
   type="tech"
   animated={true}
   opacity={0.8}
 />
 
-// Image background
+// 图像背景
 <BackgroundLayer
   type="neutral"
   src="/path/to/background.jpg"
@@ -186,7 +186,7 @@ import { BackgroundLayer, getRecommendedBackground } from './components';
   overlayColor="rgba(0,0,0,0.3)"
 />
 
-// Video background
+// 视频背景
 <BackgroundLayer
   type="highlight"
   src="/path/to/background.mp4"
@@ -194,50 +194,50 @@ import { BackgroundLayer, getRecommendedBackground } from './components';
   opacity={0.6}
 />
 
-// Auto-select based on scene type
-const bgType = getRecommendedBackground('intro'); // Returns 'highlight'
+// 根据场景类型自动选择
+const bgType = getRecommendedBackground('intro'); // 返回 'highlight'
 ```
 
-**Props**:
+**属性**:
 - `type`: `'neutral' | 'highlight' | 'dramatic' | 'tech' | 'warm'`
-- `src`: `string` - Path to image/video (optional)
-- `isVideo`: `boolean` - Is the source a video?
-- `primaryColor`: `string` - Primary gradient color (hex)
-- `secondaryColor`: `string` - Secondary gradient color (hex)
-- `opacity`: `number` - Background opacity (0-1)
-- `animated`: `boolean` - Enable animations
-- `blur`: `number` - Blur intensity (pixels)
-- `overlayColor`: `string` - Overlay tint color
-- `overlayOpacity`: `number` - Overlay opacity (0-1)
+- `src`: `string` - 图像/视频路径（可选）
+- `isVideo`: `boolean` - 源是视频吗？
+- `primaryColor`: `string` - 主渐变色（十六进制）
+- `secondaryColor`: `string` - 次渐变色（十六进制）
+- `opacity`: `number` - 背景透明度（0-1）
+- `animated`: `boolean` - 启用动画
+- `blur`: `number` - 模糊强度（像素）
+- `overlayColor`: `string` - 覆盖层色调色
+- `overlayOpacity`: `number` - 覆盖层透明度（0-1）
 
-**Background Types**:
-| Type | Primary | Secondary | Use Case |
+**背景类型**:
+| Type | Primary | Secondary | 用例 |
 |------|---------|-----------|----------|
-| `neutral` | Dark gray | Light gray | General content, demos |
-| `highlight` | Cyan | Magenta | Intros, CTAs, highlights |
-| `dramatic` | Black | Red | Hooks, problem statements |
-| `tech` | Dark blue | Navy | Architecture, technical content |
-| `warm` | Orange | Yellow | Conclusions, warm CTAs |
+| `neutral` | 深灰 | 浅灰 | 通用内容、演示 |
+| `highlight` | 青色 | 品红 | 介绍、CTA、强调 |
+| `dramatic` | 黑色 | 红色 | Hook、问题陈述 |
+| `tech` | 深蓝 | 海军蓝 | 架构、技术内容 |
+| `warm` | 橙色 | 黄色 | 结论、温暖 CTA |
 
 ---
 
-## Integration with Schemas
+## 与 Schema 的集成
 
-All components are designed to work with the Phase 4 schemas:
+所有组件设计为与 Phase 4 schema 配合使用:
 
 - `EmphasisBox` ← `emphasis.schema.json`
 - `TransitionWrapper` ← `animation.schema.json`
-- `BackgroundLayer` ← `direction.schema.json` (background section)
+- `BackgroundLayer` ← `direction.schema.json`（背景部分）
 
-**Example Integration**:
+**集成示例**:
 ```typescript
 import { EmphasisBox, TransitionWrapper, BackgroundLayer } from './components';
 import { EmphasisSchema, AnimationSchema, DirectionSchema } from '../schemas';
 
-// Load direction data from JSON
+// 从 JSON 加载 direction 数据
 const direction = DirectionSchema.parse(directionData);
 
-// Use in Remotion composition
+// 在 Remotion composition 中使用
 <>
   <BackgroundLayer
     type={direction.background.type}
@@ -262,32 +262,32 @@ const direction = DirectionSchema.parse(directionData);
 
 ---
 
-## Animation Performance
+## 动画性能
 
-All components use Remotion's native `interpolate` and `spring` functions for optimal performance:
+所有组件使用 Remotion 原生 `interpolate` 和 `spring` 函数以获得最佳性能:
 
-- **CPU-efficient**: No heavy React re-renders
-- **Predictable**: Deterministic animations
-- **Smooth**: 60fps at 1920x1080
+- **CPU 高效**: 无重型 React 重渲染
+- **可预测**: 确定性动画
+- **流畅**: 60fps @ 1920x1080
 
-**Best Practices**:
-1. Use `spring` for natural motion (bounces, elastic)
-2. Use `interpolate` for linear/eased motion
-3. Avoid complex CSS filters in animated sections
-4. Prefer CSS transforms over layout changes
+**最佳实践**:
+1. 使用 `spring` 实现自然运动（弹跳、弹性）
+2. 使用 `interpolate` 实现线性/缓动运动
+3. 避免在动画区域使用复杂 CSS 滤镜
+4. 优先使用 CSS transform 而非布局更改
 
 ---
 
-## Testing
+## 测试
 
-Each component can be tested individually in Remotion Studio:
+各组件可在 Remotion Studio 中单独测试:
 
 ```bash
 cd remotion
 npm run dev
 ```
 
-Create test compositions in `src/Root.tsx`:
+在 `src/Root.tsx` 中创建测试 composition:
 
 ```tsx
 import { Composition } from 'remotion';
@@ -308,34 +308,34 @@ export const RemotionRoot = () => (
         enablePulse: true,
       }}
     />
-    {/* More test compositions... */}
+    {/* 更多测试 composition... */}
   </>
 );
 ```
 
 ---
 
-## Next Steps
+## 下一步
 
-### Phase 6: Image Generation Patterns
+### Phase 6: 图像生成模式
 
-Now that visual components are implemented, integrate them with AI-generated images:
+视觉组件已实现，接下来与 AI 生成图像集成:
 
-1. **Task 6.1**: Define `visual-patterns.schema.json`
-2. **Task 6.2**: Create image prompt templates
-3. **Task 6.3**: Implement comparison/concept/flow patterns
-4. **Task 6.4**: Integrate with Nano Banana Pro
+1. **Task 6.1**: 定义 `visual-patterns.schema.json`
+2. **Task 6.2**: 创建图像提示词模板
+3. **Task 6.3**: 实现 comparison/concept/flow 模式
+4. **Task 6.4**: 与 Nano Banana Pro 集成
 
-### Integration Points
+### 集成点
 
-- Use `BackgroundLayer` with AI-generated backgrounds
-- Overlay `EmphasisBox` on AI-generated diagrams
-- Animate AI images with `TransitionWrapper`
-- Show generation progress with `ProgressIndicator`
+- 使用 `BackgroundLayer` 配合 AI 生成背景
+- 在 AI 生成图表上叠加 `EmphasisBox`
+- 用 `TransitionWrapper` 动画 AI 图像
+- 用 `ProgressIndicator` 显示生成进度
 
 ---
 
-## License
+## 许可证
 
-Part of Claude Code Harness - generate-video skill.
-MIT License.
+Claude Code Harness - generate-video skill 的一部分。
+MIT 许可证。

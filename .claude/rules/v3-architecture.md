@@ -1,35 +1,35 @@
-# v3 アーキテクチャ詳細
+# v3 架构详细
 
-## ディレクトリ構造
+## 目录结构
 
 ```
 claude-code-harness/
-├── core/           # TypeScript コアエンジン
+├── core/           # TypeScript 核心引擎
 │   ├── src/
-│   │   ├── index.ts          # stdin → route → stdout パイプライン
-│   │   ├── types.ts          # 型定義（HookInput, HookResult 等）
-│   │   └── guardrails/       # ガードレールエンジン
-│   │       ├── rules.ts      # 宣言的ルールテーブル (R01-R09)
-│   │       ├── pre-tool.ts   # PreToolUse フック
-│   │       ├── post-tool.ts  # PostToolUse フック
-│   │       ├── permission.ts # PermissionRequest フック
-│   │       └── tampering.ts  # 改ざん検出
+│   │   ├── index.ts          # stdin → route → stdout 管道
+│   │   ├── types.ts          # 类型定义（HookInput, HookResult 等）
+│   │   └── guardrails/       # 护栏引擎
+│   │       ├── rules.ts      # 声明式规则表 (R01-R09)
+│   │       ├── pre-tool.ts   # PreToolUse 钩子
+│   │       ├── post-tool.ts  # PostToolUse 钩子
+│   │       ├── permission.ts # PermissionRequest 钩子
+│   │       └── tampering.ts  # 篡改检测
 │   ├── package.json          # standalone TypeScript package
 │   └── tsconfig.json         # strict, NodeNext ESM
-├── skills-v3/      # 5動詞スキル
-│   ├── plan/       # planning + plans-management + sync-status 統合
-│   ├── execute/    # work + breezing + codex 統合
-│   ├── review/     # harness-review + codex-review 統合
-│   ├── release/    # release-har + handoff 統合
-│   ├── setup/      # harness-init + harness-mem 統合
-│   └── extensions/ # 拡張パック（symlink → skills/）
-├── agents-v3/      # 3エージェント（11→3 統合）
-│   ├── worker.md        # 実装担当
-│   ├── reviewer.md      # レビュー担当（Read-only）
-│   ├── scaffolder.md    # 足場・状態更新担当
-│   └── team-composition.md  # チーム構成ガイド
-├── skills/         # 旧スキル（後方互換のため保持）
-├── hooks/          # 薄いシム（→ core/src/index.ts に委譲）
+├── skills-v3/      # 5动词技能
+│   ├── plan/       # planning + plans-management + sync-status 集成
+│   ├── execute/    # work + breezing + codex 集成
+│   ├── review/     # harness-review + codex-review 集成
+│   ├── release/    # release-har + handoff 集成
+│   ├── setup/      # harness-init + harness-mem 集成
+│   └── extensions/ # 扩展包（symlink → skills/）
+├── agents-v3/      # 3代理（11→3 集成）
+│   ├── worker.md        # 实现担当
+│   ├── reviewer.md      # 审查担当（Read-only）
+│   ├── scaffolder.md    # 脚手架・状态更新担当
+│   └── team-composition.md  # 团队构成指南
+├── skills/         # 旧技能（向后兼容保留）
+├── hooks/          # 薄层封装（→ core/src/index.ts 委托）
 └── .claude/
     └── agent-memory/
         ├── claude-code-harness-worker/
@@ -37,9 +37,9 @@ claude-code-harness/
         └── claude-code-harness-scaffolder/
 ```
 
-## 5動詞スキル マッピング
+## 5动词技能映射
 
-| v3 スキル | 統合元（旧スキル） |
+| v3 技能 | 集成来源（旧技能） |
 |----------|----------------|
 | `plan` | planning, plans-management, sync-status |
 | `execute` | work, impl, breezing, parallel-workflows, ci |
@@ -47,29 +47,26 @@ claude-code-harness/
 | `release` | release-har, x-release-harness, handoff |
 | `setup` | setup, harness-init, harness-update, maintenance |
 
-## 3エージェント マッピング
-
-| v3 エージェント | 統合元（旧エージェント） |
+## 3代理映射
+| v3 代理 | 集成来源（旧代理） |
 |--------------|------------------|
 | `worker` | task-worker, codex-implementer, error-recovery |
 | `reviewer` | code-reviewer, plan-critic, plan-analyst |
 | `scaffolder` | project-analyzer, project-scaffolder, project-state-updater |
 
-## TypeScript 設定
+## TypeScript 配置
+- `exactOptionalPropertyTypes: true` — optional 字段使用条件赋值
+- `noUncheckedIndexedAccess: true` — 数组访问需要 undefined 检查
+- `NodeNext` 模块解析 — ESM
+- `better-sqlite3` 是 `optionalDependencies`（Node 24 compat）
 
-- `exactOptionalPropertyTypes: true` — optional フィールドに conditional assignment を使う
-- `noUncheckedIndexedAccess: true` — 配列アクセスは undefined チェック必須
-- `NodeNext` モジュール解決 — ESM
-- `better-sqlite3` は `optionalDependencies`（Node 24 compat）
-
-## Symlink 構成（v3）
-
-`codex/.codex/skills/` と `opencode/skills/` の5動詞スキルは `skills-v3/` への symlink:
+## Symlink 构成（v3）
+`codex/.codex/skills/` 和 `opencode/skills/` 的5动词技能是 `skills-v3/` 的 symlink:
 
 ```bash
 codex/.codex/skills/plan -> ../../../../skills-v3/plan
 opencode/skills/execute   -> ../../../skills-v3/execute
-# ...etc
+# ...等等
 ```
 
-`check-consistency.sh` が symlink の健全性を検証する。
+`check-consistency.sh` 验证 symlink 的健全性。

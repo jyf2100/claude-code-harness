@@ -2,25 +2,25 @@
 #
 # setup-opencode.sh
 #
-# Claude Code を使わずに opencode.ai 用の Harness をセットアップ
+# 在不使用 Claude Code 的情况下为 opencode.ai 设置 Harness
 #
 # 使用方法:
 #   curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/setup-opencode.sh | bash
 #
-# または:
+# 或者:
 #   ./setup-opencode.sh
 #
 
 set -e
 
-# 色付き出力
+# 彩色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' # 无颜色
 
-# ロゴ
+# Logo
 echo -e "${BLUE}"
 echo '  ___ _                 _        _  _                              '
 echo ' / __| |__ _ _  _ _____|_)___   | || |__ _ _ _ _ _  ___ ________ '
@@ -30,40 +30,40 @@ echo ''
 echo '                    for opencode.ai'
 echo -e "${NC}"
 
-# 変数
+# 变量
 HARNESS_REPO="https://github.com/Chachamaru127/claude-code-harness.git"
 HARNESS_BRANCH="main"
 TEMP_DIR=$(mktemp -d)
 PROJECT_DIR=$(pwd)
 
-# クリーンアップ関数
+# 清理函数
 cleanup() {
     rm -rf "$TEMP_DIR"
 }
 trap cleanup EXIT
 
-# 関数: エラー表示
+# 函数: 显示错误
 error() {
     echo -e "${RED}Error: $1${NC}" >&2
     exit 1
 }
 
-# 関数: 成功表示
+# 函数: 显示成功
 success() {
     echo -e "${GREEN}✓ $1${NC}"
 }
 
-# 関数: 情報表示
+# 函数: 显示信息
 info() {
     echo -e "${BLUE}→ $1${NC}"
 }
 
-# 関数: 警告表示
+# 函数: 显示警告
 warn() {
     echo -e "${YELLOW}⚠ $1${NC}"
 }
 
-# 前提条件チェック
+# 检查前提条件
 check_requirements() {
     info "Checking requirements..."
 
@@ -74,7 +74,7 @@ check_requirements() {
     success "All requirements met"
 }
 
-# Harness をクローン
+# 克隆 Harness
 clone_harness() {
     info "Downloading Harness..."
 
@@ -84,14 +84,14 @@ clone_harness() {
     success "Harness downloaded"
 }
 
-# opencode ディレクトリをコピー
+# 复制 opencode 目录
 copy_opencode_files() {
     info "Setting up opencode files..."
 
-    # .opencode/commands/ を作成
+    # 创建 .opencode/commands/
     mkdir -p "$PROJECT_DIR/.opencode/commands"
 
-    # コマンドをコピー
+    # 复制命令
     if [ -d "$TEMP_DIR/harness/opencode/commands" ]; then
         cp -r "$TEMP_DIR/harness/opencode/commands/"* "$PROJECT_DIR/.opencode/commands/"
         success "Commands copied to .opencode/commands/"
@@ -99,7 +99,7 @@ copy_opencode_files() {
         error "opencode/commands not found in Harness"
     fi
 
-    # .claude/skills/ を作成してスキルをコピー
+    # 创建 .claude/skills/ 并复制技能
     mkdir -p "$PROJECT_DIR/.claude/skills"
 
     if [ -d "$PROJECT_DIR/.claude/skills" ] && [ "$(ls -A "$PROJECT_DIR/.claude/skills" 2>/dev/null)" ]; then
@@ -115,7 +115,7 @@ copy_opencode_files() {
         warn "opencode/skills not found in Harness (optional)"
     fi
 
-    # AGENTS.md をコピー（既存の場合はバックアップ）
+    # 复制 AGENTS.md（如果已存在则备份）
     if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
         warn "AGENTS.md already exists, creating backup"
         mv "$PROJECT_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md.backup.$(date +%Y%m%d%H%M%S)"
@@ -127,7 +127,7 @@ copy_opencode_files() {
     fi
 }
 
-# opencode.json を生成（オプション）
+# 生成 opencode.json（可选）
 setup_mcp() {
     echo ""
     echo -e "${YELLOW}Do you want to setup MCP server? (for advanced workflow tools)${NC}"
@@ -140,7 +140,7 @@ setup_mcp() {
             return
         fi
 
-        # opencode.json をコピー
+        # 复制 opencode.json
         if [ -f "$TEMP_DIR/harness/opencode/opencode.json" ]; then
             cp "$TEMP_DIR/harness/opencode/opencode.json" "$PROJECT_DIR/opencode.json"
             success "opencode.json created"
@@ -153,7 +153,7 @@ setup_mcp() {
     fi
 }
 
-# 完了メッセージ
+# 完成消息
 print_success() {
     echo ""
     echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
@@ -182,7 +182,7 @@ print_success() {
     echo ""
 }
 
-# メイン処理
+# 主处理
 main() {
     echo ""
     info "Setting up Harness for OpenCode in: $PROJECT_DIR"

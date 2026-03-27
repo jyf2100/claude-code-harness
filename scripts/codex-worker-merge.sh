@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # codex-worker-merge.sh
-# Worker 成果物のマージ統合
+# Worker 成果物合并集成
 #
 # Usage:
 #   ./scripts/codex-worker-merge.sh --worktree PATH --target-branch BRANCH [--squash] [--dry-run]
@@ -9,15 +9,15 @@
 
 set -euo pipefail
 
-# スクリプトディレクトリ
+# 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 共通ライブラリ読み込み
+# 加载通用库
 # shellcheck source=lib/codex-worker-common.sh
 source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 
-# Plans.md 更新
-# Note: CWD 依存排除のため repo root からの絶対パスを使用
+# 更新 Plans.md
+# Note: 为消除 CWD 依赖，使用从仓库根目录开始的绝对路径
 update_plans() {
     local task_pattern="$1"
     local repo_root
@@ -25,7 +25,7 @@ update_plans() {
     local plans_file="$repo_root/Plans.md"
 
     if [[ ! -f "$plans_file" ]]; then
-        log_warn "Plans.md が見つかりません: $plans_file"
+        log_warn "Plans.md 未找到: $plans_file"
         return 1
     fi
 
@@ -41,7 +41,7 @@ update_plans() {
     return 1
 }
 
-# cherry-pick マージ
+# cherry-pick 合并
 do_cherry_pick() {
     local commit_hash="$1"
     local dry_run="$2"
@@ -56,18 +56,18 @@ do_cherry_pick() {
     if git cherry-pick "$commit_hash" 2>/dev/null; then
         return 0
     else
-        # 競合発生
+        # 发生冲突
         git cherry-pick --abort 2>/dev/null || true
         return 1
     fi
 }
 
-# squash マージ
+# squash 合并
 do_squash_merge() {
     local worktree="$1"
     local dry_run="$2"
 
-    # worktree のブランチ名を取得
+    # 获取 worktree 的分支名
     local branch_name
     branch_name=$(cd "$worktree" && git branch --show-current)
 
@@ -79,7 +79,7 @@ do_squash_merge() {
     fi
 
     if git merge --squash "$branch_name" 2>/dev/null; then
-        git commit -m "feat: Worker 成果物のマージ ($branch_name)"
+        git commit -m "feat: Worker 成果物合并 ($branch_name)"
         return 0
     else
         git merge --abort 2>/dev/null || true
@@ -87,7 +87,7 @@ do_squash_merge() {
     fi
 }
 
-# メイン処理
+# 主处理
 main() {
     check_dependencies
 
@@ -101,13 +101,13 @@ main() {
         case "$1" in
             --worktree)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--worktree には値が必要です"
+                    log_error "--worktree 需要提供值"
                     exit 1
                 fi
                 worktree="$2"; shift 2 ;;
             --target-branch)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "--target-branch には値が必要です"
+                    log_error "--target-branch 需要提供值"
                     exit 1
                 fi
                 target_branch="$2"; shift 2 ;;
@@ -115,88 +115,88 @@ main() {
             --dry-run) dry_run=true; shift ;;
             --force) force=true; shift ;;
             -h|--help) usage; exit 0 ;;
-            *) log_error "Unknown option: $1"; exit 1 ;;
+            *) log_error "未知选项: $1"; exit 1 ;;
         esac
     done
 
-    # デフォルトブランチの取得
+    # 获取默认分支
     if [[ -z "$target_branch" ]]; then
         target_branch=$(get_default_branch)
     fi
 
-    # 必須パラメータチェック
+    # 必需参数检查
     if [[ -z "$worktree" ]]; then
-        log_error "--worktree は必須です"
+        log_error "--worktree 为必需参数"
         exit 1
     fi
 
     if [[ ! -d "$worktree" ]]; then
-        log_error "Worktree が存在しません: $worktree"
+        log_error "Worktree 不存在: $worktree"
         exit 1
     fi
 
-    # Security: 同一リポジトリの worktree か検証（共通関数を使用）
+    # Security: 验证是否为同一仓库的 worktree（使用通用函数）
     if ! validate_worktree_path "$worktree"; then
         exit 1
     fi
 
-    # Quality: worktree の作業ツリーがクリーンか確認
+    # Quality: 确认 worktree 的工作区是否干净
     local worktree_status
     worktree_status=$(cd "$worktree" && git status --porcelain 2>/dev/null)
     if [[ -n "$worktree_status" ]]; then
-        log_warn "worktree に未コミットの変更があります:"
+        log_warn "worktree 中存在未提交的更改:"
         echo "$worktree_status" | head -5
         if [[ "$force" != "true" ]]; then
-            log_error "未コミットの変更があるため中断します。--force でスキップ可能"
+            log_error "存在未提交的更改，已中断。可使用 --force 跳过"
             echo '{"status": "blocked", "reason": "uncommitted_changes"}'
             exit 1
         fi
-        log_warn "⚠️ 未コミットの変更を無視してマージを続行"
+        log_warn "⚠️ 忽略未提交的更改，继续合并"
     fi
 
-    # Security: 品質ゲート通過確認（中央管理のゲート結果を検証）
+    # Security: 确认质量门通过（验证中央管理的门结果）
     local require_gate_pass
     require_gate_pass=$(get_config "require_gate_pass_for_merge")
 
     if [[ "$require_gate_pass" == "true" ]]; then
-        # verify_gate_result は worktree の HEAD コミットに対応するゲート結果を検証
-        # Worker が改ざんできない中央管理の結果ファイルを参照
+        # verify_gate_result 验证 worktree 的 HEAD 提交对应的门结果
+        # 引用 Worker 无法篡改的中央管理结果文件
         if ! verify_gate_result "$worktree"; then
-            log_error "品質ゲートを通過してからマージしてください"
-            log_error "--force オプションでスキップ可能ですが推奨しません"
+            log_error "请先通过质量门后再合并"
+            log_error "可使用 --force 选项跳过，但不推荐"
 
             if [[ "$force" != "true" ]]; then
                 echo '{"status": "blocked", "reason": "gate_not_passed"}'
                 exit 1
             fi
-            log_warn "⚠️ 品質ゲート未通過でマージを強制実行"
+            log_warn "⚠️ 质量门未通过，强制执行合并"
         fi
     fi
 
-    # worktree の最新コミット取得
+    # 获取 worktree 的最新提交
     local commit_hash
     commit_hash=$(cd "$worktree" && git log -1 --format="%H")
 
     if [[ -z "$commit_hash" ]]; then
-        log_error "コミットが見つかりません"
+        log_error "未找到提交"
         echo '{"status": "failed", "commit_hash": null, "conflicts": [], "plans_updated": false}'
         exit 1
     fi
 
-    log_info "Worker コミット: $commit_hash"
+    log_info "Worker 提交: $commit_hash"
 
-    # 現在のブランチを確認
+    # 确认当前分支
     local current_branch
     current_branch=$(git branch --show-current)
 
-    # ターゲットブランチの検証
+    # 验证目标分支
     if ! git check-ref-format --branch "$target_branch" 2>/dev/null; then
-        log_error "無効なブランチ名: $target_branch"
+        log_error "无效的分支名: $target_branch"
         echo '{"status": "failed", "commit_hash": null, "conflicts": ["invalid branch name"], "plans_updated": false}'
         exit 1
     fi
 
-    # ターゲットブランチに切り替え
+    # 切换到目标分支
     if [[ "$current_branch" != "$target_branch" ]]; then
         if [[ "$dry_run" == "false" ]]; then
             git switch "$target_branch"
@@ -205,7 +205,7 @@ main() {
         fi
     fi
 
-    # マージ実行
+    # 执行合并
     local merge_status="merged"
     local conflicts=()
 
@@ -221,10 +221,10 @@ main() {
         fi
     fi
 
-    # Plans.md 更新
+    # 更新 Plans.md
     local plans_updated=false
     if [[ "$merge_status" == "merged" ]] && [[ "$dry_run" == "false" ]]; then
-        # worktree 名からタスク ID を推測（worker-1 → task-1 など）
+        # 从 worktree 名推测任务 ID（worker-1 → task-1 等）
         local worker_id
         worker_id=$(basename "$worktree" | sed 's/worker-//')
 
@@ -233,7 +233,7 @@ main() {
         fi
     fi
 
-    # 結果出力
+    # 输出结果
     local conflicts_json
     conflicts_json=$(printf '%s\n' "${conflicts[@]:-}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
 
@@ -252,12 +252,12 @@ main() {
 
     echo "$result"
 
-    # 元のブランチに戻る（マージ後）
+    # 返回原分支（合并后）
     if [[ "$dry_run" == "false" ]] && [[ -n "$current_branch" ]] && [[ "$current_branch" != "$target_branch" ]]; then
-        git switch "$current_branch" 2>/dev/null || log_warn "元のブランチに戻れませんでした: $current_branch"
+        git switch "$current_branch" 2>/dev/null || log_warn "无法返回原分支: $current_branch"
     fi
 
-    # 終了コード
+    # 退出码
     if [[ "$merge_status" == "merged" ]]; then
         exit 0
     else
@@ -271,19 +271,19 @@ usage() {
 Usage: $0 --worktree PATH [OPTIONS]
 
 Options:
-  --worktree PATH         Worker の worktree パス（必須）
-  --target-branch BRANCH  マージ先ブランチ（デフォルト: main）
-  --squash                squash merge を使用
-  --dry-run               実際にマージせず確認のみ
-  --force                 品質ゲート未通過でも強制マージ（非推奨）
-  -h, --help              ヘルプ表示
+  --worktree PATH         Worker 的 worktree 路径（必需）
+  --target-branch BRANCH  合并目标分支（默认: main）
+  --squash                使用 squash merge
+  --dry-run               仅确认，不实际合并
+  --force                 质量门未通过也强制合并（不推荐）
+  -h, --help              显示帮助
 
 Examples:
   $0 --worktree ../worktrees/worker-1
   $0 --worktree ../worktrees/worker-1 --target-branch develop
   $0 --worktree ../worktrees/worker-1 --squash
   $0 --worktree ../worktrees/worker-1 --dry-run
-  $0 --worktree ../worktrees/worker-1 --force  # 品質ゲートスキップ（注意）
+  $0 --worktree ../worktrees/worker-1 --force  # 跳过质量门（注意）
 EOF
 }
 

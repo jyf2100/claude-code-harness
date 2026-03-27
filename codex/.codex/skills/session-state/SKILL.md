@@ -1,32 +1,32 @@
 ---
 name: session-state
-description: "SESSION_ORCHESTRATION.md に基づくセッション状態遷移管理。harness-work フェーズ境界での状態更新、エラー時の escalated 遷移、セッション再開時の initialized 復帰を制御。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
+description: "基于 SESSION_ORCHESTRATION.md 的会话状态转换管理。控制 harness-work 阶段边界的状态更新、错误时的 escalated 转换、会话恢复时的 initialized 还原。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
 description-en: "Manages session state transitions per SESSION_ORCHESTRATION.md. Controls state updates at harness-work phase boundaries, escalated transitions on error, and initialized restoration on session resume. Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
-description-ja: "SESSION_ORCHESTRATION.md に基づくセッション状態遷移管理。harness-work フェーズ境界での状態更新、エラー時の escalated 遷移、セッション再開時の initialized 復帰を制御。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
+description-ja: "基于 SESSION_ORCHESTRATION.md 的会话状态转换管理。控制 harness-work 阶段边界的状态更新、错误时的 escalated 转换、会话恢复时的 initialized 还原。Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
 allowed-tools: ["Read", "Bash"]
 user-invocable: false
 ---
 
 # Session State Skill
 
-セッション状態の遷移を管理する内部スキル。
-`docs/SESSION_ORCHESTRATION.md` に定義された状態機械に従って遷移を検証・実行する。
+管理会话状态转换的内部技能。
+按照 `docs/SESSION_ORCHESTRATION.md` 中定义的状态机验证和执行转换。
 
-## 機能詳細
+## 功能详情
 
-| 機能 | 詳細 |
+| 功能 | 详情 |
 |------|------|
-| **状態遷移** | See [references/state-transition.md](${CLAUDE_SKILL_DIR}/references/state-transition.md) |
+| **状态转换** | See [references/state-transition.md](${CLAUDE_SKILL_DIR}/references/state-transition.md) |
 
-## 使用タイミング
+## 使用时机
 
-- `harness-work` フェーズ境界での状態更新
-- エラー発生時の `escalated` 遷移
-- セッション終了時の `stopped` 遷移
-- セッション再開時の `initialized` 復帰
+- `harness-work` 阶段边界的状态更新
+- 发生错误时的 `escalated` 转换
+- 会话结束时的 `stopped` 转换
+- 恢复会话时的 `initialized` 还原
 
-## 注意事項
+## 注意事项
 
-- このスキルは内部使用専用です
-- ユーザーが直接呼び出すことは想定していません
-- 状態遷移ルールは `docs/SESSION_ORCHESTRATION.md` で定義
+- 此技能仅供内部使用
+- 不打算由用户直接调用
+- 状态转换规则在 `docs/SESSION_ORCHESTRATION.md` 中定义

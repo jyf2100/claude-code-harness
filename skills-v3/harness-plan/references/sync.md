@@ -1,180 +1,180 @@
-# sync サブコマンド — 進捗同期フロー
+# sync 子命令 — 进度同步流程
 
-実装状況と Plans.md を照合し、差分を検出・更新する。
+将实现状况与 Plans.md 对照，检测并更新差异。
 
-## Step 0: Plans.md 検証
+## Step 0: Plans.md 验证
 
-Plans.md の存在とフォーマットを確認する。問題がある場合は即座に案内して停止する。
+确认 Plans.md 的存在和格式。有问题时立即提示并停止。
 
-| 状態 | 案内 |
+| 状态 | 提示 |
 |------|------|
-| Plans.md が存在しない | `Plans.md が見つかりません。/harness-plan create で作成してください。` → **停止** |
-| ヘッダーに DoD / Depends カラムがない（v1 形式） | `Plans.md が旧フォーマット（3カラム）です。/harness-plan create で v2（5カラム）に再生成してください。既存タスクは自動的に引き継がれます。` → **停止** |
-| v2 形式（5カラム） | そのまま Step 1 に進む |
+| Plans.md 不存在 | `未找到 Plans.md。请用 /harness-plan create 创建。` → **停止** |
+| 头部没有 DoD / Depends 列（v1 格式） | `Plans.md 是旧格式（3列）。请用 /harness-plan create 重新生成 v2（5列）。现有任务会自动继承。` → **停止** |
+| v2 格式（5列） | 直接进入 Step 1 |
 
-## Step 1: 現状収集（並列）
+## Step 1: 现状收集（并行）
 
 ```bash
-# Plans.md の状態
+# Plans.md 状态
 cat Plans.md
 
-# Git 変更状態
+# Git 变更状态
 git status
 git diff --stat HEAD~3
 
-# 直近コミット履歴
+# 最近提交历史
 git log --oneline -10
 
-# エージェントトレース（直近の編集ファイル）
+# 代理跟踪（最近编辑的文件）
 tail -20 .claude/state/agent-trace.jsonl 2>/dev/null | jq -r '.files[].path' | sort -u
 ```
 
 ## Step 1.5: Agent Trace 分析
 
-Agent Trace から直近の編集履歴を取得し、Plans.md のタスクと照合する:
+从 Agent Trace 获取最近的编辑历史，与 Plans.md 的任务对照:
 
 ```bash
-# 直近の編集ファイル一覧
+# 最近编辑的文件列表
 RECENT_FILES=$(tail -20 .claude/state/agent-trace.jsonl 2>/dev/null | \
   jq -r '.files[].path' | sort -u)
 
-# プロジェクト情報
+# 项目信息
 PROJECT=$(tail -1 .claude/state/agent-trace.jsonl 2>/dev/null | \
   jq -r '.metadata.project')
 ```
 
-**照合ポイント**:
+**对照要点**:
 
-| チェック項目 | 検出方法 |
+| 检查项 | 检测方法 |
 |------------|----------|
-| Plans.md にないファイル編集 | Agent Trace vs タスク記述 |
-| タスク記述と異なるファイル | 想定ファイル vs 実際の編集 |
-| 長時間編集がないタスク | Agent Trace 時系列 vs WIP 期間 |
+| Plans.md 中没有的文件编辑 | Agent Trace vs 任务描述 |
+| 与任务描述不同的文件 | 预期文件 vs 实际编辑 |
+| 长时间没有编辑的任务 | Agent Trace 时间序列 vs WIP 期间 |
 
-## Step 2: 差分検出
+## Step 2: 差异检测
 
-| チェック項目 | 検出方法 |
+| 检查项 | 检测方法 |
 |------------|----------|
-| 完了済みなのに `cc:WIP` | コミット履歴 vs マーカー |
-| 着手済みなのに `cc:TODO` | 変更ファイル vs マーカー |
-| `cc:完了` なのに未コミット | git status vs マーカー |
+| 已完成但仍为 `cc:WIP` | 提交历史 vs 标记 |
+| 已着手但仍为 `cc:TODO` | 变更文件 vs 标记 |
+| `cc:完了` 但未提交 | git status vs 标记 |
 
-### Artifact Hash 後方互換
+### Artifact Hash 向后兼容
 
-`cc:完了 [a1b2c3d]` 形式（commit hash 付き）と `cc:完了`（hash なし）の両方を認識する。
+同时识别 `cc:完了 [a1b2c3d]` 格式（带 commit hash）和 `cc:完了`（无 hash）。
 
-**マッチングルール**:
-- `cc:完了` → hash なし完了として扱う
-- `cc:完了 [xxxxxxx]` → hash 付き完了として扱う。7 文字の短縮 hash を保持
-- hash 付きの場合、`git log --oneline` と照合してコミットの存在を確認可能
+**匹配规则**:
+- `cc:完了` → 作为无 hash 完成处理
+- `cc:完了 [xxxxxxx]` → 作为带 hash 完成处理。保留 7 字短 hash
+- 带 hash 时，可与 `git log --oneline` 对照确认 commit 存在
 
-> **後方互換**: hash なし形式も引き続き有効。既存の Plans.md を破壊しない。
+> **向后兼容**: 无 hash 格式仍然有效。不破坏现有 Plans.md。
 
 ## Step 3: Plans.md 更新提案
 
-差分が検出された場合、提案して実行する:
+检测到差异时，提出并执行:
 
 ```
-Plans.md 更新が必要です
+Plans.md 需要更新
 
-| Task | 現在 | 変更後 | 理由 |
+| Task | 当前 | 变更后 | 理由 |
 |------|------|--------|------|
-| XX   | cc:WIP | cc:完了 | コミット済み |
-| YY   | cc:TODO | cc:WIP | ファイル編集済み |
+| XX   | cc:WIP | cc:完了 | 已提交 |
+| YY   | cc:TODO | cc:WIP | 已编辑文件 |
 
-更新しますか？ (yes / no)
+要更新吗？ (yes / no)
 ```
 
-## Step 4: 進捗サマリー出力
+## Step 4: 进度摘要输出
 
 ```markdown
-## 進捗サマリー
+## 进度摘要
 
-**プロジェクト**: {{project_name}}
+**项目**: {{project_name}}
 
-| ステータス | 件数 |
+| 状态 | 件数 |
 |----------|------|
-| 未着手 (cc:TODO) | {{count}} |
-| 作業中 (cc:WIP) | {{count}} |
-| 完了 (cc:完了) | {{count}} |
-| PM確認済 (pm:確認済) | {{count}} |
+| 未开始 (cc:TODO) | {{count}} |
+| 进行中 (cc:WIP) | {{count}} |
+| 完成 (cc:完了) | {{count}} |
+| PM已确认 (pm:確認済) | {{count}} |
 
-**進捗率**: {{percent}}%
+**进度率**: {{percent}}%
 
-### 直近の編集ファイル (Agent Trace)
+### 最近编辑的文件 (Agent Trace)
 - {{file1}}
 - {{file2}}
 ```
 
-## Step 5: 次のアクション提案
+## Step 5: 下一步行动提案
 
 ```
-次にやること
+接下来要做的事
 
-**優先 1**: {{タスク}}
-- 理由: {{依頼中 / アンブロック待ち}}
+**优先 1**: {{任务}}
+- 理由: {{请求中 / 等待解除阻塞}}
 
-**推奨**: harness-work, harness-review
+**推荐**: harness-work, harness-review
 ```
 
-## 異常検知
+## 异常检测
 
-| 状況 | 警告 |
+| 情况 | 警告 |
 |------|------|
-| 複数の `cc:WIP` | 複数タスクが同時進行中 |
-| `pm:依頼中` が未処理 | PM の依頼を先に処理する |
-| 大きな乖離 | タスク管理が追いついていない |
-| WIP が 3日以上更新なし | ブロックされていないか確認 |
+| 多个 `cc:WIP` | 多个任务同时进行中 |
+| `pm:依頼中` 未处理 | 先处理 PM 的请求 |
+| 巨大差异 | 任务管理没有跟上 |
+| WIP 3天以上无更新 | 确认是否被阻塞 |
 
-## Step 6: レトロスペクティブ（デフォルト ON）
+## Step 6: 回顾（默认 ON）
 
-`sync` 実行時、`cc:完了` タスクが 1 件以上あれば自動的に振り返りを実行する。
-`--no-retro` で明示的にスキップ可能。
+执行 `sync` 时，有 1 件以上 `cc:完了` 任务则自动执行回顾。
+可用 `--no-retro` 明确跳过。
 
-### Step R1: 完了タスク収集
+### Step R1: 完成任务收集
 
 ```bash
-# Plans.md から cc:完了 / pm:確認済 のタスクを抽出
+# 从 Plans.md 提取 cc:完了 / pm:確認済 的任务
 grep -E 'cc:完了|pm:確認済' Plans.md
 
-# 直近の完了コミット履歴
+# 最近的完成提交历史
 git log --oneline --since="7 days ago"
 
-# 変更規模
+# 变更规模
 git diff --stat HEAD~10
 ```
 
-### Step R2: 振り返り 4 項目
+### Step R2: 回顾 4 项
 
-| 項目 | 分析方法 |
+| 项目 | 分析方法 |
 |------|---------|
-| **見積もり精度** | Plans.md のタスク記述から想定ファイル数を推論 → `git diff --stat` の実変更ファイル数と比較 |
-| **ブロック原因** | `blocked` マーカーが付いたタスクの理由パターンを集計（技術的/外部依存/仕様不明確） |
-| **品質マーカー的中率** | `[feature:security]` 等を付けたタスクで実際に関連問題が出たか |
-| **スコープ変動** | Plans.md の初回コミット時のタスク数 vs 現在のタスク数（追加/削除件数） |
+| **估算精度** | 从 Plans.md 的任务描述推论预期文件数 → 与 `git diff --stat` 的实际变更文件数比较 |
+| **阻塞原因** | 统计带 `blocked` 标记任务的理由模式（技术性/外部依赖/规格不明确） |
+| **质量标记命中率** | 带有 `[feature:security]` 等标记的任务是否实际出现了相关问题 |
+| **范围变动** | Plans.md 首次提交时的任务数 vs 当前任务数（追加/删除件数） |
 
-### Step R3: 振り返りサマリー出力
+### Step R3: 回顾摘要输出
 
 ```markdown
-## 振り返りサマリー
+## 回顾摘要
 
-**期間**: {{start_date}} 〜 {{end_date}}
+**期间**: {{start_date}} 〜 {{end_date}}
 
-| 指標 | 値 |
+| 指标 | 值 |
 |------|-----|
-| 完了タスク | {{count}} 件 |
-| ブロック発生 | {{blocked_count}} 件 |
-| スコープ変動 | +{{added}} / -{{removed}} 件 |
-| 見積もり精度 | 想定 {{est}} ファイル → 実際 {{actual}} ファイル |
+| 完成任务 | {{count}} 件 |
+| 阻塞发生 | {{blocked_count}} 件 |
+| 范围变动 | +{{added}} / -{{removed}} 件 |
+| 估算精度 | 预期 {{est}} 文件 → 实际 {{actual}} 文件 |
 
-### 学び
-- {{1-2 行の学び}}
+### 学习
+- {{1-2 行学习内容}}
 
-### 次に活かすこと
-- {{1-2 行の改善アクション}}
+### 下次应用
+- {{1-2 行改进行动}}
 ```
 
-### Step R4: harness-mem への記録
+### Step R4: 记录到 harness-mem
 
-振り返り結果を harness-mem に記録し、次回の `create` 時に参照できるようにする。
-記録先: `.claude/agent-memory/` 配下の該当エージェントメモリ。
+将回顾结果记录到 harness-mem，以便下次 `create` 时参考。
+记录位置: `.claude/agent-memory/` 下的相关代理内存。

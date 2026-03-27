@@ -1,6 +1,6 @@
 ---
 name: Harness Ops
-description: Plan/Work/Review ワークフローに最適化された構造化出力スタイル。進捗追跡とフェーズ別の出力形式を提供。
+description: 为 Plan/Work/Review 工作流优化的结构化输出样式。提供进度跟踪和分阶段的输出格式。
 keep-coding-instructions: true
 ---
 

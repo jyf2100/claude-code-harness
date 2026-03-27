@@ -1,109 +1,109 @@
 ---
 name: crud
-description: "CRUDをサクッと自動生成。ボイラープレートはAIにお任せ。Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
+description: "快速自动生成 CRUD。样板代码交给 AI。Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
 description-en: "Auto-generate CRUD quickly. Boilerplate left to AI. Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
-description-ja: "CRUDをサクッと自動生成。ボイラープレートはAIにお任せ。Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
+description-zh: "快速自动生成 CRUD。样板代码交给 AI。触发短语：CRUD、实体生成、创建 API 端点。不用于：UI 组件创建、表单设计、数据库模式讨论。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "<entity-name>"
 user-invocable: false
 ---
 
-# CRUD Skill
+# CRUD 技能
 
-Auto-generates CRUD functionality for specified entities (tables) at **production-ready level**.
+为指定实体（表）自动生成 **生产级** CRUD 功能。
 
-## Quick Reference
+## 快速参考
 
 - "**Create CRUD for task management**" → `/crud tasks`
-- "**Want search and pagination too**" → Includes all together
-- "**Include permissions (who can view/edit)**" → Sets up authorization/rules together
+- "**Want search and pagination too**" → 全部包含
+- "**Include permissions (who can view/edit)**" → 一起设置授权/规则
 
-## Deliverables
+## 交付物
 
-- CRUD + validation + authorization + tests, **complete production-safe set**
-- Minimize diff to match existing DB/code
+- CRUD + 验证 + 授权 + 测试，**完整的生产安全套件**
+- 最小化差异以匹配现有数据库/代码
 
-**Features**:
-- Validation (Zod) auto-add
-- Auth/authorization (Row Level Security) auto-config
-- Relations (one-to-many, many-to-many) support
-- Pagination, search, filters
-- Auto-generated test cases
-
----
-
-## Auto-invoke Skills
-
-**This skill must explicitly invoke the following skills with the Skill tool**:
-
-| Skill | Purpose | When to Call |
-|-------|---------|--------------|
-| `impl` | Implementation (parent skill) | CRUD feature implementation |
-| `verify` | Verification (parent skill) | Post-implementation verification |
+**功能**：
+- 验证（Zod）自动添加
+- 认证/授权（行级安全）自动配置
+- 关系（一对多、多对多）支持
+- 分页、搜索、过滤
+- 自动生成测试用例
 
 ---
 
-## Execution Flow
+## 自动调用技能
 
-Detailed steps are described in the phases below.
+**此技能必须用 Skill tool 显式调用以下技能**：
 
-### Phase 1: Entity Analysis
-
-1. Parse entity name from $ARGUMENTS
-2. Detect existing schema (Prisma, Drizzle, raw SQL)
-3. Infer field types and relations
-
-### Phase 2: CRUD Generation
-
-1. Generate model/schema if needed
-2. Create API endpoints (REST or tRPC)
-3. Add validation schemas (Zod)
-4. Configure authorization rules
-
-### Phase 3: Test Generation
-
-1. Create unit tests for each endpoint
-2. Add integration tests
-3. Generate test fixtures
-
-### Phase 4: Verification
-
-1. Run type check
-2. Run tests
-3. Verify build
+| 技能 | 用途 | 调用时机 |
+|------|------|----------|
+| `impl` | 实现（父技能） | CRUD 功能实现 |
+| `verify` | 验证（父技能） | 实现后验证 |
 
 ---
 
-## Supported Frameworks
+## 执行流程
 
-| Framework | Detection | Generated Files |
-|-----------|-----------|-----------------|
-| **Next.js + Prisma** | `prisma/schema.prisma` | API routes, Prisma client |
-| **Next.js + Drizzle** | `drizzle.config.ts` | API routes, Drizzle queries |
-| **Express** | `express` in package.json | Controllers, routes |
-| **Hono** | `hono` in package.json | Route handlers |
+详细步骤在以下阶段中描述。
+
+### Phase 1: 实体分析
+
+1. 从 $ARGUMENTS 解析实体名称
+2. 检测现有模式（Prisma、Drizzle、原始 SQL）
+3. 推断字段类型和关系
+
+### Phase 2: CRUD 生成
+
+1. 如需要生成模型/模式
+2. 创建 API 端点（REST 或 tRPC）
+3. 添加验证模式（Zod）
+4. 配置授权规则
+
+### Phase 3: 测试生成
+
+1. 为每个端点创建单元测试
+2. 添加集成测试
+3. 生成测试固件
+
+### Phase 4: 验证
+
+1. 运行类型检查
+2. 运行测试
+3. 验证构建
 
 ---
 
-## Output Structure
+## 支持的框架
+
+| 框架 | 检测方式 | 生成的文件 |
+|------|----------|------------|
+| **Next.js + Prisma** | `prisma/schema.prisma` | API 路由、Prisma 客户端 |
+| **Next.js + Drizzle** | `drizzle.config.ts` | API 路由、Drizzle 查询 |
+| **Express** | `package.json` 中的 `express` | 控制器、路由 |
+| **Hono** | `package.json` 中的 `hono` | 路由处理器 |
+
+---
+
+## 输出结构
 
 ```
 src/
 ├── lib/
 │   └── validations/
-│       └── {entity}.ts        # Zod schemas
+│       └── {entity}.ts        # Zod 模式
 ├── app/api/{entity}/
-│   ├── route.ts              # GET (list), POST (create)
+│   ├── route.ts              # GET（列表）、POST（创建）
 │   └── [id]/
-│       └── route.ts          # GET, PUT, DELETE
+│       └── route.ts          # GET、PUT、DELETE
 └── tests/
-    └── {entity}.test.ts      # Test cases
+    └── {entity}.test.ts      # 测试用例
 ```
 
 ---
 
-## Related Skills
+## 相关技能
 
-- `impl` - Feature implementation
-- `verify` - Build verification
-- `auth` - Authentication/authorization
+- `impl` - 功能实现
+- `verify` - 构建验证
+- `auth` - 认证/授权
