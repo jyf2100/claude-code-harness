@@ -1,8 +1,8 @@
 /**
  * core/src/guardrails/__tests__/permission.test.ts
- * permission.ts 単体テスト
+ * permission.ts 单元测试
  *
- * permission-request.sh の全ロジックが正しく移植されていることを検証する。
+ * 验证 permission-request.sh 的所有逻辑都已正确移植。
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { evaluatePermission, formatPermissionOutput } from "../permission.js";
 import type { HookInput } from "../../types.js";
 
-// fs モジュールをモック
+// 模拟 fs 模块
 vi.mock("node:fs");
 
 const mockedExistsSync = vi.mocked(existsSync);
@@ -28,7 +28,7 @@ function makeInput(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // デフォルト: 許可リストファイルは存在しない
+  // 默认: 许可列表文件不存在
   mockedExistsSync.mockReturnValue(false);
 });
 
@@ -37,21 +37,21 @@ afterEach(() => {
 });
 
 // ============================================================
-// Edit / Write の自動承認
+// Edit / Write 自动批准
 // ============================================================
-describe("Edit / Write の自動承認", () => {
-  it("Edit ツールを自動承認する", () => {
+describe("Edit / Write 自动批准", () => {
+  it("自动批准 Edit 工具", () => {
     const result = evaluatePermission(
       makeInput("Edit", { file_path: "/project/src/foo.ts" })
     );
-    // approve が返り、systemMessage に PermissionRequest JSON が含まれる
+    // 返回 approve，systemMessage 包含 PermissionRequest JSON
     expect(result.decision).toBe("approve");
     expect(result.systemMessage).toBeDefined();
     const parsed = JSON.parse(result.systemMessage!);
     expect(parsed.hookSpecificOutput.decision.behavior).toBe("allow");
   });
 
-  it("Write ツールを自動承認する", () => {
+  it("自动批准 Write 工具", () => {
     const result = evaluatePermission(
       makeInput("Write", { file_path: "/project/src/bar.ts", content: "" })
     );
@@ -61,7 +61,7 @@ describe("Edit / Write の自動承認", () => {
     expect(parsed.hookSpecificOutput.decision.behavior).toBe("allow");
   });
 
-  it("MultiEdit ツールを自動承認する", () => {
+  it("自动批准 MultiEdit 工具", () => {
     const result = evaluatePermission(makeInput("MultiEdit"));
     expect(result.decision).toBe("approve");
     expect(result.systemMessage).toBeDefined();
@@ -69,9 +69,9 @@ describe("Edit / Write の自動承認", () => {
 });
 
 // ============================================================
-// Bash: read-only git コマンドの自動承認
+// Bash: read-only git 命令自动批准
 // ============================================================
-describe("Bash: read-only git コマンドの自動承認", () => {
+describe("Bash: read-only git 命令自动批准", () => {
   const readOnlyGitCmds = [
     "git status",
     "git diff",
@@ -83,7 +83,7 @@ describe("Bash: read-only git コマンドの自動承認", () => {
   ];
 
   for (const cmd of readOnlyGitCmds) {
-    it(`${cmd} を自動承認する`, () => {
+    it(`自动批准 ${cmd}`, () => {
       const result = evaluatePermission(
         makeInput("Bash", { command: cmd })
       );
@@ -96,24 +96,24 @@ describe("Bash: read-only git コマンドの自動承認", () => {
 });
 
 // ============================================================
-// Bash: npm/pnpm/yarn — 許可リストなしは不承認（approve のみ）
+// Bash: npm/pnpm/yarn — 无许可列表不批准（仅 approve）
 // ============================================================
-describe("Bash: npm/pnpm/yarn — 許可リストなしは不承認", () => {
-  it("許可リストがない場合 npm test はデフォルト動作（approve）", () => {
+describe("Bash: npm/pnpm/yarn — 无许可列表不批准", () => {
+  it("没有许可列表时 npm test 执行默认行为（approve）", () => {
     mockedExistsSync.mockReturnValue(false);
     const result = evaluatePermission(
       makeInput("Bash", { command: "npm test" })
     );
-    // 安全でないため systemMessage なしの approve
+    // 因为不安全所以只有 approve 没有 systemMessage
     expect(result.decision).toBe("approve");
     expect(result.systemMessage).toBeUndefined();
   });
 });
 
 // ============================================================
-// Bash: npm/pnpm/yarn — 許可リストありは自動承認
+// Bash: npm/pnpm/yarn — 有许可列表自动批准
 // ============================================================
-describe("Bash: npm/pnpm/yarn — 許可リストありは自動承認", () => {
+describe("Bash: npm/pnpm/yarn — 有许可列表自动批准", () => {
   beforeEach(() => {
     mockedExistsSync.mockReturnValue(true);
     mockedReadFileSync.mockReturnValue(
@@ -134,7 +134,7 @@ describe("Bash: npm/pnpm/yarn — 許可リストありは自動承認", () => {
   ];
 
   for (const cmd of pkgCmds) {
-    it(`${cmd} を自動承認する（許可リストあり）`, () => {
+    it(`自动批准 ${cmd}（有许可列表）`, () => {
       const result = evaluatePermission(
         makeInput("Bash", { command: cmd })
       );
@@ -147,9 +147,9 @@ describe("Bash: npm/pnpm/yarn — 許可リストありは自動承認", () => {
 });
 
 // ============================================================
-// Bash: Python / Go / Rust テストの自動承認
+// Bash: Python / Go / Rust 测试自动批准
 // ============================================================
-describe("Bash: Python / Go / Rust テストの自動承認", () => {
+describe("Bash: Python / Go / Rust 测试自动批准", () => {
   const safeCmds = [
     "pytest",
     "pytest -v",
@@ -159,7 +159,7 @@ describe("Bash: Python / Go / Rust テストの自動承認", () => {
   ];
 
   for (const cmd of safeCmds) {
-    it(`${cmd} を自動承認する`, () => {
+    it(`自动批准 ${cmd}`, () => {
       const result = evaluatePermission(
         makeInput("Bash", { command: cmd })
       );
@@ -170,9 +170,9 @@ describe("Bash: Python / Go / Rust テストの自動承認", () => {
 });
 
 // ============================================================
-// Bash: シェル特殊文字を含むコマンドは不承認
+// Bash: 包含 shell 特殊字符的命令不批准
 // ============================================================
-describe("Bash: シェル特殊文字を含むコマンドは不承認", () => {
+describe("Bash: 包含 shell 特殊字符的命令不批准", () => {
   const dangerousCmds = [
     "git status | grep modified",
     "npm test && git push",
@@ -183,11 +183,11 @@ describe("Bash: シェル特殊文字を含むコマンドは不承認", () => {
   ];
 
   for (const cmd of dangerousCmds) {
-    it(`"${cmd}" はデフォルト動作（approve のみ）`, () => {
+    it(`"${cmd}" 执行默认行为（仅 approve）`, () => {
       const result = evaluatePermission(
         makeInput("Bash", { command: cmd })
       );
-      // 保守的：approve は返すが systemMessage（自動承認）はなし
+      // 保守: 返回 approve 但没有 systemMessage（自动批准）
       expect(result.decision).toBe("approve");
       expect(result.systemMessage).toBeUndefined();
     });
@@ -195,13 +195,13 @@ describe("Bash: シェル特殊文字を含むコマンドは不承認", () => {
 });
 
 // ============================================================
-// Bash: その他のツールはスルー
+// Bash: 其他工具直接通过
 // ============================================================
-describe("その他のツールはデフォルト動作", () => {
+describe("其他工具执行默认行为", () => {
   const otherTools = ["Read", "Glob", "Grep", "Task", "Skill"];
 
   for (const tool of otherTools) {
-    it(`${tool} はデフォルト動作（approve）`, () => {
+    it(`${tool} 执行默认行为（approve）`, () => {
       const result = evaluatePermission(makeInput(tool));
       expect(result.decision).toBe("approve");
       expect(result.systemMessage).toBeUndefined();
@@ -213,7 +213,7 @@ describe("その他のツールはデフォルト動作", () => {
 // formatPermissionOutput
 // ============================================================
 describe("formatPermissionOutput", () => {
-  it("PermissionResponse JSON を含む systemMessage を正しく出力する", () => {
+  it("正确输出包含 PermissionResponse JSON 的 systemMessage", () => {
     const result = evaluatePermission(
       makeInput("Edit", { file_path: "/project/src/foo.ts" })
     );
@@ -223,7 +223,7 @@ describe("formatPermissionOutput", () => {
     expect(parsed.hookSpecificOutput.decision.behavior).toBe("allow");
   });
 
-  it("systemMessage がない場合は通常の HookResult を出力する", () => {
+  it("没有 systemMessage 时输出普通 HookResult", () => {
     const result = evaluatePermission(makeInput("Bash", { command: "rm -rf /" }));
     const output = formatPermissionOutput(result);
     const parsed = JSON.parse(output);

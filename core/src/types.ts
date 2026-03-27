@@ -1,47 +1,47 @@
 /**
  * core/src/types.ts
- * Harness v3 共通型定義
+ * Harness v3 通用类型定义
  *
- * Claude Code Hooks の stdin/stdout JSON スキーマと
- * ガードレールエンジンの内部型を定義する。
+ * 定义 Claude Code Hooks 的 stdin/stdout JSON 架构
+ * 以及护栏引擎的内部类型。
  */
 
 // ============================================================
-// Hook I/O 型（Claude Code Hooks プロトコル準拠）
+// Hook I/O 类型（遵循 Claude Code Hooks 协议）
 // ============================================================
 
-/** PreToolUse / PostToolUse フックへの入力 */
+/** PreToolUse / PostToolUse 钩子的输入 */
 export interface HookInput {
-  /** 実行されようとしているツール名（例: "Bash", "Write"） */
+  /** 即将执行的工具名称（例: "Bash", "Write"） */
   tool_name: string;
-  /** ツールへの入力パラメータ */
+  /** 工具的输入参数 */
   tool_input: Record<string, unknown>;
-  /** セッション ID（Claude Code が設定） */
+  /** 会话 ID（由 Claude Code 设置） */
   session_id?: string;
-  /** 現在の作業ディレクトリ */
+  /** 当前工作目录 */
   cwd?: string;
-  /** プラグインルートディレクトリ */
+  /** 插件根目录 */
   plugin_root?: string;
 }
 
-/** フックが返すアクション */
+/** 钩子返回的动作 */
 export type HookDecision = "approve" | "deny" | "ask";
 
-/** フックの出力（Claude Code Hooks プロトコル） */
+/** 钩子的输出（Claude Code Hooks 协议） */
 export interface HookResult {
-  /** 実行を許可するか拒否するか */
+  /** 是否允许或拒绝执行 */
   decision: HookDecision;
-  /** ユーザーへの説明メッセージ */
+  /** 给用户的说明消息 */
   reason?: string;
-  /** Claude への追加コンテキスト（systemMessage） */
+  /** 给 Claude 的附加上下文（systemMessage） */
   systemMessage?: string;
 }
 
 // ============================================================
-// ガードレール型
+// 护栏类型
 // ============================================================
 
-/** ガードルールの評価コンテキスト */
+/** 护栏规则的评估上下文 */
 export interface RuleContext {
   input: HookInput;
   projectRoot: string;
@@ -50,21 +50,21 @@ export interface RuleContext {
   breezingRole: string | null;
 }
 
-/** 単一ガードルールの定義 */
+/** 单个护栏规则的定义 */
 export interface GuardRule {
-  /** ルール識別子（ログ・デバッグ用） */
+  /** 规则标识符（用于日志和调试） */
   id: string;
-  /** このルールが適用されるツール名のパターン（正規表現） */
+  /** 此规则适用的工具名称模式（正则表达式） */
   toolPattern: RegExp;
-  /** ルールを評価する関数。一致しなければ null を返す */
+  /** 评估规则的函数。如果不匹配则返回 null */
   evaluate: (ctx: RuleContext) => HookResult | null;
 }
 
 // ============================================================
-// シグナル型（エージェント間通信）
+// 信号类型（代理间通信）
 // ============================================================
 
-/** エージェント間で交換するシグナルの種類 */
+/** 代理间交换的信号种类 */
 export type SignalType =
   | "task_completed"
   | "task_failed"
@@ -74,55 +74,55 @@ export type SignalType =
   | "stop_failure"
   | "request_review";
 
-/** エージェント間シグナル */
+/** 代理间信号 */
 export interface Signal {
   type: SignalType;
-  /** 送信元セッション ID */
+  /** 发送方会话 ID */
   from_session_id: string;
-  /** 宛先セッション ID（省略時はブロードキャスト） */
+  /** 接收方会话 ID（省略时为广播） */
   to_session_id?: string;
-  /** シグナルのペイロード */
+  /** 信号的载荷 */
   payload: Record<string, unknown>;
-  /** 送信時刻（ISO 8601） */
+  /** 发送时刻（ISO 8601） */
   timestamp: string;
 }
 
 // ============================================================
-// タスク失敗型
+// 任务失败类型
 // ============================================================
 
-/** タスク失敗の重大度 */
+/** 任务失败的严重程度 */
 export type FailureSeverity = "warning" | "error" | "critical";
 
-/** タスク失敗イベント */
+/** 任务失败事件 */
 export interface TaskFailure {
-  /** 失敗したタスクの識別子 */
+  /** 失败任务的标识符 */
   task_id: string;
-  /** 失敗の重大度 */
+  /** 失败的严重程度 */
   severity: FailureSeverity;
-  /** 失敗の説明 */
+  /** 失败的说明 */
   message: string;
-  /** スタックトレースまたは詳細情報 */
+  /** 堆栈跟踪或详细信息 */
   detail?: string;
-  /** 失敗時刻（ISO 8601） */
+  /** 失败时刻（ISO 8601） */
   timestamp: string;
-  /** 試行回数 */
+  /** 尝试次数 */
   attempt: number;
 }
 
 // ============================================================
-// セッション状態型
+// 会话状态类型
 // ============================================================
 
-/** セッションの実行モード */
+/** 会话的执行模式 */
 export type SessionMode = "normal" | "work" | "codex" | "breezing";
 
-/** セッション状態 */
+/** 会话状态 */
 export interface SessionState {
   session_id: string;
   mode: SessionMode;
   project_root: string;
   started_at: string;
-  /** work/breezing モードでのコンテキスト情報 */
+  /** work/breezing 模式下的上下文信息 */
   context?: Record<string, unknown>;
 }

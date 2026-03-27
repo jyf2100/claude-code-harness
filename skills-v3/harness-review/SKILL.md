@@ -2,7 +2,6 @@
 name: harness-review
 description: "Harness v3 统一审查技能。代码・计划・范围多角度审查。以下启动: 审查、代码审查、计划审查、范围分析、安全、质量检查、harness-review。不用于实现・新功能・错误修复・设置・发布。"
 description-en: "Unified review skill for Harness v3. Multi-angle code, plan, and scope review. Use when user mentions: review, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, harness-review. Do NOT load for: implementation, new features, bug fixes, setup, or release."
-description-ja: "Harness v3 统一审查技能。代码・计划・范围多角度审查。以下短语启动: 审查、代码审查、计划审查、范围分析、安全、质量检查、harness-review。不用于实现・新功能・错误修复・设置・发布。"
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[code|plan|scope]"
 context: fork

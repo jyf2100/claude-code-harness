@@ -1,7 +1,6 @@
 ---
 name: breezing
 description: "团队执行模式 — harness-work 的团队协调别名。通过 breezing, 团队执行, 全部做完 触发。"
-description-ja: "团队执行模式 — harness-work 的团队协调别名。以下短语触发: breezing, 团队执行, 全部做完。"
 description-en: "Team execution mode — backward-compatible alias for harness-work with team orchestration."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "Task", "WebSearch"]
 argument-hint: "[all|N-M|--codex|--parallel N|--no-commit|--no-discuss|--auto-mode]"

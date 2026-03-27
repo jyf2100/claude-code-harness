@@ -2,7 +2,6 @@
 name: harness-release
 description: "Harness v3 统一发布技能。CHANGELOG・版本升级・标签・GitHub Release 自动化。以下启动: 发布、版本升级、创建标签、publish、/harness-release。不用于实现・代码审查・规划・设置。"
 description-en: "Unified release skill for Harness v3. CHANGELOG, version bump, tag, GitHub Release automation. Use when user mentions: release, version bump, create tag, publish, /harness-release. Do NOT load for: implementation, code review, planning, or setup."
-description-ja: "Harness v3 统一发布技能。CHANGELOG・版本升级・标签・GitHub Release 自动化。以下短语启动: 发布、版本升级、创建标签、publish、/harness-release。不用于实现・代码审查・规划・设置。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 argument-hint: "[patch|minor|major|--dry-run|--announce]"
 context: fork

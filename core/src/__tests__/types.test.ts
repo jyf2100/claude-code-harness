@@ -1,6 +1,6 @@
 /**
  * core/src/__tests__/types.test.ts
- * 型定義の基本的な整合性チェック
+ * 类型定义的基本一致性检查
  */
 
 import { describe, it, expect } from "vitest";
@@ -14,7 +14,7 @@ import type {
 } from "../types.js";
 
 describe("HookInput", () => {
-  it("最小限のフィールドで構築できる", () => {
+  it("可以用最小字段构建", () => {
     const input: HookInput = {
       tool_name: "Bash",
       tool_input: { command: "ls" },
@@ -23,7 +23,7 @@ describe("HookInput", () => {
     expect(input.tool_input).toEqual({ command: "ls" });
   });
 
-  it("オプションフィールドを含めて構築できる", () => {
+  it("可以包含可选字段构建", () => {
     const input: HookInput = {
       tool_name: "Write",
       tool_input: { file_path: "/tmp/test.ts", content: "" },
@@ -38,12 +38,12 @@ describe("HookInput", () => {
 });
 
 describe("HookResult", () => {
-  it("approve 決定を表現できる", () => {
+  it("可以表示 approve 决定", () => {
     const result: HookResult = { decision: "approve" };
     expect(result.decision).toBe("approve");
   });
 
-  it("deny 決定と理由を表現できる", () => {
+  it("可以表示 deny 决定和理由", () => {
     const result: HookResult = {
       decision: "deny",
       reason: "Protected path",
@@ -54,7 +54,7 @@ describe("HookResult", () => {
     expect(result.systemMessage).toBe("Cannot write to .git/");
   });
 
-  it("ask 決定を表現できる", () => {
+  it("可以表示 ask 决定", () => {
     const result: HookResult = {
       decision: "ask",
       reason: "Confirm git push?",
@@ -64,7 +64,7 @@ describe("HookResult", () => {
 });
 
 describe("GuardRule", () => {
-  it("ルール構造が正しく構築できる", () => {
+  it("可以正确构建规则结构", () => {
     const rule: GuardRule = {
       id: "block-git-dir",
       toolPattern: /^(Write|Edit)$/,
@@ -97,7 +97,7 @@ describe("GuardRule", () => {
     expect(result?.decision).toBe("deny");
   });
 
-  it("マッチしない場合は null を返す", () => {
+  it("不匹配时返回 null", () => {
     const rule: GuardRule = {
       id: "test-rule",
       toolPattern: /^Bash$/,
@@ -114,7 +114,7 @@ describe("GuardRule", () => {
 });
 
 describe("Signal", () => {
-  it("シグナルを構築できる", () => {
+  it("可以构建信号", () => {
     const signal: Signal = {
       type: "task_completed",
       from_session_id: "sess-abc",
@@ -128,7 +128,7 @@ describe("Signal", () => {
 });
 
 describe("TaskFailure", () => {
-  it("タスク失敗イベントを構築できる", () => {
+  it("可以构建任务失败事件", () => {
     const failure: TaskFailure = {
       task_id: "task-1",
       severity: "error",
@@ -142,7 +142,7 @@ describe("TaskFailure", () => {
 });
 
 describe("SessionState", () => {
-  it("セッション状態を構築できる", () => {
+  it("可以构建会话状态", () => {
     const state: SessionState = {
       session_id: "sess-xyz",
       mode: "work",

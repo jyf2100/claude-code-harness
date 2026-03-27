@@ -1,9 +1,9 @@
 /**
  * core/src/index.ts
- * Harness v3 コアエンジン エントリポイント
+ * Harness v3 核心引擎入口点
  *
- * stdin から JSON を読み込み、フックタイプに応じてルーティングし、
- * stdout に JSON レスポンスを返す基本パイプライン。
+ * 从 stdin 读取 JSON，根据钩子类型进行路由，
+ * 向 stdout 返回 JSON 响应的基本管道。
  *
  * 使用方法:
  *   echo '{"tool_name":"Bash","tool_input":{...}}' | node dist/index.js pre-tool
@@ -12,11 +12,11 @@
 
 import { type HookInput, type HookResult } from "./types.js";
 
-/** サポートするフックタイプ */
+/** 支持的钩子类型 */
 type HookType = "pre-tool" | "post-tool" | "permission";
 
 /**
- * stdin を全読みして文字列を返す
+ * 读取 stdin 全部内容并返回字符串
  */
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -27,7 +27,7 @@ async function readStdin(): Promise<string> {
 }
 
 /**
- * stdin JSON をパースして HookInput を取得する
+ * 解析 stdin JSON 并获取 HookInput
  */
 function parseInput(raw: string): HookInput {
   const parsed: unknown = JSON.parse(raw);
@@ -65,8 +65,8 @@ function parseInput(raw: string): HookInput {
 }
 
 /**
- * フックタイプに応じてハンドラへルーティングする
- * 各 Phase で実装が追加される拡張ポイント
+ * 根据钩子类型路由到处理器
+ * 各 Phase 中实现会被添加的扩展点
  */
 async function route(
   hookType: HookType,
@@ -74,12 +74,12 @@ async function route(
 ): Promise<HookResult> {
   switch (hookType) {
     case "pre-tool": {
-      // Phase 17.1 で core/guardrails/pre-tool.ts に実装予定
+      // Phase 17.1 计划在 core/guardrails/pre-tool.ts 中实现
       const { evaluatePreTool } = await import("./guardrails/pre-tool.js");
       return evaluatePreTool(input);
     }
     case "post-tool": {
-      // Phase 17.1 で core/guardrails/post-tool.ts に実装予定
+      // Phase 17.1 计划在 core/guardrails/post-tool.ts 中实现
       const { evaluatePostTool } = await import("./guardrails/post-tool.js");
       return evaluatePostTool(input);
     }
@@ -88,14 +88,14 @@ async function route(
         "./guardrails/permission.js"
       );
       const permResult = evaluatePermission(input);
-      // PermissionRequest は hookSpecificOutput 形式で出力する必要があるため
-      // formatPermissionOutput で変換し、main() の JSON.stringify をバイパスするために
-      // systemMessage に最終 JSON を格納して返す
+      // PermissionRequest 需要以 hookSpecificOutput 形式输出
+      // 因此通过 formatPermissionOutput 进行转换，为了绕过 main() 的 JSON.stringify
+      // 将最终 JSON 存入 systemMessage 中返回
       const permJson = formatPermissionOutput(permResult);
       return { decision: permResult.decision, systemMessage: permJson };
     }
     default: {
-      // 未知のフックタイプは安全側（approve）で返す
+      // 未知的钩子类型以安全侧（approve）返回
       return {
         decision: "approve",
         reason: `Unknown hook type: ${String(hookType)}`,
@@ -105,7 +105,7 @@ async function route(
 }
 
 /**
- * エラーを HookResult 形式に変換する
+ * 将错误转换为 HookResult 格式
  */
 function errorToResult(err: unknown): HookResult {
   const message = err instanceof Error ? err.message : String(err);
@@ -116,7 +116,7 @@ function errorToResult(err: unknown): HookResult {
 }
 
 /**
- * メイン関数: stdin → parse → route → stdout
+ * 主函数: stdin → parse → route → stdout
  */
 async function main(): Promise<void> {
   const hookType = (process.argv[2] ?? "pre-tool") as HookType;
@@ -127,7 +127,7 @@ async function main(): Promise<void> {
     const raw = await readStdin();
 
     if (!raw.trim()) {
-      // 空入力は安全に approve
+      // 空输入安全地 approve
       result = { decision: "approve", reason: "Empty input" };
     } else {
       const input = parseInput(raw);
@@ -137,7 +137,7 @@ async function main(): Promise<void> {
     result = errorToResult(err);
   }
 
-  // permission フック時は systemMessage に最終 JSON が格納されている
+  // permission 钩子时最终 JSON 存储在 systemMessage 中
   if (hookType === "permission" && result.systemMessage !== undefined) {
     process.stdout.write(result.systemMessage + "\n");
   } else {

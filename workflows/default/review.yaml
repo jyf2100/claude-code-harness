@@ -1,11 +1,11 @@
-# /harness-review ワークフロー定義（旧名: review）
-# 作成したコードの品質をチェック
+# /harness-review 工作流定义（旧名: review）
+# 检查已创建代码的质量
 
 phase: review
-description: "コードの品質をチェックし、改善点を提案するフェーズ"
+description: "检查代码质量，提出改进建议的阶段"
 
 steps:
-  # Step 1: 変更ファイルの特定
+  # Step 1: 确定变更文件
   - id: identify-changes
     skill: core-read-repo-context
     input:
@@ -18,7 +18,7 @@ steps:
         - change_summary
     mode: required
 
-  # Step 2: セキュリティチェック
+  # Step 2: 安全检查
   - id: security-check
     skill: review-security
     input:
@@ -32,7 +32,7 @@ steps:
     mode: required
     parallel: true
 
-  # Step 3: パフォーマンスチェック
+  # Step 3: 性能检查
   - id: performance-check
     skill: review-performance
     input:
@@ -46,7 +46,7 @@ steps:
     mode: required
     parallel: true
 
-  # Step 4: コード品質チェック
+  # Step 4: 代码质量检查
   - id: quality-check
     skill: review-quality
     input:
@@ -61,7 +61,7 @@ steps:
     mode: required
     parallel: true
 
-  # Step 5: アクセシビリティチェック（Web の場合）
+  # Step 5: 无障碍检查（Web 项目时）
   - id: accessibility-check
     skill: review-accessibility
     condition: "tech_stack.includes('react') || tech_stack.includes('vue')"
@@ -74,7 +74,7 @@ steps:
     mode: optional
     parallel: true
 
-  # Step 6: レビュー結果の集約
+  # Step 6: 汇总审查结果
   - id: aggregate-results
     skill: review-aggregate
     input:
@@ -89,7 +89,7 @@ steps:
         - improvement_suggestions
     mode: required
 
-  # Step 7: 改善の適用（ユーザー承認後）
+  # Step 7: 应用改进（用户批准后）
   - id: apply-improvements
     skill: review-apply-fixes
     condition: "user_approved"
@@ -100,26 +100,26 @@ steps:
       update_files: true
     mode: optional
 
-# 成功時の出力
+# 成功时的输出
 on_success:
   message: |
-    📊 コードレビュー結果
+    📊 代码审查结果
 
-    **総合評価**: {{overall_grade}}
+    **综合评价**: {{overall_grade}}
 
-    | 観点 | 評価 |
+    | 维度 | 评分 |
     |------|------|
-    | セキュリティ | {{security_score}} |
-    | パフォーマンス | {{performance_score}} |
-    | コード品質 | {{quality_score}} |
+    | 安全性 | {{security_score}} |
+    | 性能 | {{performance_score}} |
+    | 代码质量 | {{quality_score}} |
 
     {{improvement_suggestions}}
 
-    自動で修正しますか？
+    是否自动修复？
 
-# エラー時の出力
+# 错误时的输出
 on_error:
   message: |
-    ⚠️ レビュー中にエラーが発生しました。
+    ⚠️ 审查过程中发生错误。
 
-    手動で確認してください。
+    请手动检查。

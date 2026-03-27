@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["src/**/__tests__/**/*.test.ts"],
-    // better-sqlite3 はネイティブ C++ アドオンのため forks プールで実行する
+    // better-sqlite3 是原生 C++ 插件，在 forks 池中运行
     pool: "forks",
     coverage: {
       provider: "v8",

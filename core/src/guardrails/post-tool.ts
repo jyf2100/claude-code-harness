@@ -1,27 +1,27 @@
 /**
  * core/src/guardrails/post-tool.ts
- * PostToolUse フック統合評価関数
+ * PostToolUse 钩子集成评估函数
  *
- * 以下の PostToolUse スクリプト群を Promise.allSettled で並列実行し、
- * 結果を集約して HookResult として返す:
+ * 以下 PostToolUse 脚本群使用 Promise.allSettled 并行执行，
+ * 聚合结果并返回 HookResult：
  *
- * 1. tampering-detector: テスト改ざん検出（警告のみ）
- * 2. security-review: セキュリティパターン検出（警告のみ）
+ * 1. tampering-detector: 测试篡改检测（仅警告）
+ * 2. security-review: 安全模式检测（仅警告）
  *
- * その他（log-toolname, commit-cleanup 等）は副作用のみで HookResult に影響しないため
- * hooks.json の別エントリとして独立して実行する設計を維持する。
+ * 其他（log-toolname、commit-cleanup 等）仅产生副作用，不影响 HookResult，
+ * 因此在 hooks.json 中作为独立条目单独执行的设计保持不变。
  */
 
 import type { HookInput, HookResult } from "../types.js";
 import { detectTestTampering } from "./tampering.js";
 
 // ============================================================
-// セキュリティパターン検出（posttooluse-security-review.sh 移植）
+// 安全模式检测（posttooluse-security-review.sh 移植）
 // ============================================================
 
 /**
- * 書き込まれたコード内のセキュリティリスクパターンを検出する。
- * 検出した場合は警告を systemMessage として追加（ブロックしない）。
+ * 检测写入代码中的安全风险模式。
+ * 检测到时将警告作为 systemMessage 添加（不阻止）。
  */
 function detectSecurityRisks(input: HookInput): string[] {
   const toolInput = input.tool_input;
@@ -39,23 +39,23 @@ function detectSecurityRisks(input: HookInput): string[] {
   const securityPatterns: Array<{ pattern: RegExp; message: string }> = [
     {
       pattern: /process\.env\.[A-Z_]+.*(?:password|secret|key|token)/i,
-      message: "機密情報を環境変数から直接文字列に埋め込んでいる可能性があります",
+      message: "可能将敏感信息从环境变量直接嵌入字符串中",
     },
     {
       pattern: /eval\s*\(\s*(?:request|req|input|param|query)/i,
-      message: "ユーザー入力を eval() に渡すコードを検出しました（RCE リスク）",
+      message: "检测到将用户输入传递给 eval() 的代码（RCE 风险）",
     },
     {
       pattern: /exec\s*\(\s*`[^`]*\$\{/,
-      message: "テンプレートリテラルを exec() に渡すコードを検出しました（コマンドインジェクションリスク）",
+      message: "检测到将模板字面量传递给 exec() 的代码（命令注入风险）",
     },
     {
       pattern: /innerHTML\s*=\s*(?:.*\+.*|`[^`]*\$\{)/,
-      message: "ユーザー入力を innerHTML に設定しているコードを検出しました（XSS リスク）",
+      message: "检测到将用户输入设置为 innerHTML 的代码（XSS 风险）",
     },
     {
       pattern: /(?:password|passwd|secret|api_key|apikey)\s*=\s*["'][^"']{8,}["']/i,
-      message: "ハードコードされた機密情報（パスワード/APIキー）を検出しました",
+      message: "检测到硬编码的敏感信息（密码/API密钥）",
     },
   ];
 
@@ -69,22 +69,22 @@ function detectSecurityRisks(input: HookInput): string[] {
 }
 
 // ============================================================
-// PostToolUse 統合エントリポイント
+// PostToolUse 集成入口点
 // ============================================================
 
 /**
- * PostToolUse フックのエントリポイント。
- * 複数の検出器を並列実行し、警告を統合して返す。
+ * PostToolUse 钩子的入口点。
+ * 并行执行多个检测器，整合警告并返回。
  */
 export async function evaluatePostTool(input: HookInput): Promise<HookResult> {
-  // Write / Edit / MultiEdit のみ詳細チェック
+  // 仅对 Write / Edit / MultiEdit 进行详细检查
   const isWriteOp = ["Write", "Edit", "MultiEdit"].includes(input.tool_name);
 
   if (!isWriteOp) {
     return { decision: "approve" };
   }
 
-  // 並列実行（Promise.allSettled で一方の失敗が全体に影響しないように）
+  // 并行执行（使用 Promise.allSettled 防止单个失败影响整体）
   const [tamperingResult, securityWarnings] = await Promise.allSettled([
     Promise.resolve(detectTestTampering(input)),
     Promise.resolve(detectSecurityRisks(input)),
@@ -92,7 +92,7 @@ export async function evaluatePostTool(input: HookInput): Promise<HookResult> {
 
   const systemMessages: string[] = [];
 
-  // 改ざん検出の警告を収集
+  // 收集篡改检测的警告
   if (
     tamperingResult.status === "fulfilled" &&
     tamperingResult.value.systemMessage
@@ -100,7 +100,7 @@ export async function evaluatePostTool(input: HookInput): Promise<HookResult> {
     systemMessages.push(tamperingResult.value.systemMessage);
   }
 
-  // セキュリティ警告を収集
+  // 收集安全警告
   if (
     securityWarnings.status === "fulfilled" &&
     securityWarnings.value.length > 0
@@ -109,7 +109,7 @@ export async function evaluatePostTool(input: HookInput): Promise<HookResult> {
       .map((w) => `- ${w}`)
       .join("\n");
     systemMessages.push(
-      `[Harness v3] セキュリティリスク検出:\n${secLines}`
+      `[Harness v3] 检测到安全风险:\n${secLines}`
     );
   }
 

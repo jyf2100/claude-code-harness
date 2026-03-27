@@ -1,23 +1,23 @@
 /**
  * core/src/state/schema.ts
- * Harness v3 SQLite テーブル定義
+ * Harness v3 SQLite 表定义
  *
- * better-sqlite3 を使用して、セッション状態・エージェント間シグナル・
- * タスク失敗イベントを単一の SQLite ファイルで管理する。
+ * 使用 better-sqlite3，将会话状态、代理间信号、
+ * 任务失败事件在单个 SQLite 文件中管理。
  */
 
 // ============================================================
-// テーブル作成 DDL
+// 表创建 DDL
 // ============================================================
 
 /**
- * sessions テーブル
- * - session_id: Claude Code が発行するセッション識別子
+ * sessions 表
+ * - session_id: Claude Code 发行的会话标识符
  * - mode: normal | work | codex | breezing
- * - project_root: セッションが紐付くプロジェクトルート
- * - started_at: セッション開始時刻（Unix タイムスタンプ秒）
- * - ended_at: セッション終了時刻（NULL = アクティブ）
- * - context_json: 任意の追加情報（JSON テキスト）
+ * - project_root: 会话关联的项目根目录
+ * - started_at: 会话开始时间（Unix 时间戳秒）
+ * - ended_at: 会话结束时间（NULL = 活跃）
+ * - context_json: 任意附加信息（JSON 文本）
  */
 export const CREATE_SESSIONS = `
   CREATE TABLE IF NOT EXISTS sessions (
@@ -31,14 +31,14 @@ export const CREATE_SESSIONS = `
 ` as const;
 
 /**
- * signals テーブル
- * - id: 自動採番 PK
- * - type: シグナル種別（SignalType）
- * - from_session_id: 送信元セッション
- * - to_session_id: 宛先セッション（NULL = ブロードキャスト）
- * - payload_json: ペイロード（JSON テキスト）
- * - sent_at: 送信時刻（Unix タイムスタンプ秒）
- * - consumed: 受信済みフラグ
+ * signals 表
+ * - id: 自增主键
+ * - type: 信号类型（SignalType）
+ * - from_session_id: 发送方会话
+ * - to_session_id: 接收方会话（NULL = 广播）
+ * - payload_json: 载荷（JSON 文本）
+ * - sent_at: 发送时间（Unix 时间戳秒）
+ * - consumed: 已接收标志
  */
 export const CREATE_SIGNALS = `
   CREATE TABLE IF NOT EXISTS signals (
@@ -53,15 +53,15 @@ export const CREATE_SIGNALS = `
 ` as const;
 
 /**
- * task_failures テーブル
- * - id: 自動採番 PK
- * - task_id: 失敗したタスクの識別子
- * - session_id: タスクを実行していたセッション（外部参照）
+ * task_failures 表
+ * - id: 自增主键
+ * - task_id: 失败任务的标识符
+ * - session_id: 执行任务的会话（外键引用）
  * - severity: warning | error | critical
- * - message: 失敗の説明
- * - detail: スタックトレース等の詳細情報（NULL 可）
- * - failed_at: 失敗時刻（Unix タイムスタンプ秒）
- * - attempt: 試行回数（1 始まり）
+ * - message: 失败说明
+ * - detail: 堆栈跟踪等详细信息（可为 NULL）
+ * - failed_at: 失败时间（Unix 时间戳秒）
+ * - attempt: 尝试次数（从 1 开始）
  */
 export const CREATE_TASK_FAILURES = `
   CREATE TABLE IF NOT EXISTS task_failures (
@@ -77,13 +77,13 @@ export const CREATE_TASK_FAILURES = `
 ` as const;
 
 /**
- * work_states テーブル
- * - work-active.json の後継。work/codex/breezing モードの状態を管理
- * - session_id: 紐付くセッション ID
- * - codex_mode: codex モードフラグ
- * - bypass_rm_rf: rm -rf ガードバイパスフラグ
- * - bypass_git_push: git push ガードバイパスフラグ
- * - expires_at: 有効期限（24 時間後の Unix タイムスタンプ秒）
+ * work_states 表
+ * - work-active.json 的后继。管理 work/codex/breezing 模式的状态
+ * - session_id: 关联的会话 ID
+ * - codex_mode: codex 模式标志
+ * - bypass_rm_rf: rm -rf 守护绕过标志
+ * - bypass_git_push: git push 守护绕过标志
+ * - expires_at: 有效期（24 小时后的 Unix 时间戳秒）
  */
 export const CREATE_WORK_STATES = `
   CREATE TABLE IF NOT EXISTS work_states (
@@ -97,7 +97,7 @@ export const CREATE_WORK_STATES = `
 ` as const;
 
 // ============================================================
-// インデックス
+// 索引
 // ============================================================
 
 export const CREATE_INDEXES = [
@@ -112,7 +112,7 @@ export const CREATE_INDEXES = [
 ] as const;
 
 // ============================================================
-// スキーマバージョン管理
+// 模式版本管理
 // ============================================================
 
 export const SCHEMA_VERSION = 1;
@@ -125,10 +125,10 @@ export const CREATE_SCHEMA_META = `
 ` as const;
 
 // ============================================================
-// エクスポート: 初期化時に実行する DDL リスト
+// 导出: 初始化时执行的 DDL 列表
 // ============================================================
 
-/** DB 初期化時に順番に実行する DDL の配列 */
+/** 数据库初始化时按顺序执行的 DDL 数组 */
 export const ALL_DDL: readonly string[] = [
   CREATE_SCHEMA_META,
   CREATE_SESSIONS,

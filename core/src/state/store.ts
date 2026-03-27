@@ -1,10 +1,10 @@
 /**
  * core/src/state/store.ts
- * Harness v3 SQLite ストア
+ * Harness v3 SQLite 存储
  *
- * better-sqlite3 を使って sessions / signals / task_failures / work_states
- * テーブルを操作するラッパークラス。
- * 同期 API（better-sqlite3 の特性）を活用し、単純で堅牢な実装とする。
+ * 使用 better-sqlite3 操作 sessions / signals / task_failures / work_states
+ * 表的封装类。
+ * 利用同步 API（better-sqlite3 的特性），实现简单且健壮的设计。
  */
 
 import { createRequire } from "node:module";
@@ -12,18 +12,18 @@ import { ALL_DDL, SCHEMA_VERSION, CREATE_SCHEMA_META } from "./schema.js";
 import type { Signal, SessionState, TaskFailure } from "../types.js";
 import type DatabaseConstructor from "better-sqlite3";
 
-// ESM から CommonJS ネイティブアドオンを読み込む標準パターン
+// 从 ESM 加载 CommonJS 原生模块的标准模式
 const require = createRequire(import.meta.url);
 const Database = require("better-sqlite3") as typeof DatabaseConstructor;
 
 // ============================================================
-// 型定義
+// 类型定义
 // ============================================================
 
-/** better-sqlite3 の Database インスタンス型 */
+/** better-sqlite3 的 Database 实例类型 */
 type BetterSqliteDB = InstanceType<typeof Database>;
 
-/** work_states レコードの行型 */
+/** work_states 记录的行类型 */
 interface WorkStateRow {
   session_id: string;
   codex_mode: number;
@@ -32,7 +32,7 @@ interface WorkStateRow {
   expires_at: number;
 }
 
-/** sessions レコードの行型 */
+/** sessions 记录的行类型 */
 interface SessionRow {
   session_id: string;
   mode: string;
@@ -43,7 +43,7 @@ interface SessionRow {
 }
 
 // ============================================================
-// HarnessStore クラス
+// HarnessStore 类
 // ============================================================
 
 export class HarnessStore {
@@ -51,14 +51,14 @@ export class HarnessStore {
 
   constructor(dbPath: string) {
     this.db = new Database(dbPath);
-    // WAL モードで並列読み取りを改善
+    // WAL 模式改善并行读取
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
     this.initSchema();
   }
 
   // ============================================================
-  // スキーマ初期化
+  // 模式初始化
   // ============================================================
 
   private initSchema(): void {
@@ -69,7 +69,7 @@ export class HarnessStore {
       .get();
 
     if (versionRow === undefined) {
-      // 初回: 全 DDL を実行してバージョンを記録
+      // 首次: 执行全部 DDL 并记录版本
       for (const ddl of ALL_DDL) {
         this.db.exec(ddl);
       }
@@ -77,14 +77,14 @@ export class HarnessStore {
         .prepare("INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', ?)")
         .run(String(SCHEMA_VERSION));
     }
-    // マイグレーションは将来の migration.ts で担当
+    // 迁移由将来的 migration.ts 负责
   }
 
   // ============================================================
-  // セッション管理
+  // 会话管理
   // ============================================================
 
-  /** セッションを登録または更新する */
+  /** 注册或更新会话 */
   upsertSession(session: SessionState): void {
     const startedAt = Math.floor(new Date(session.started_at).getTime() / 1000);
     const contextJson = JSON.stringify(session.context ?? {});
@@ -107,7 +107,7 @@ export class HarnessStore {
       );
   }
 
-  /** セッションを終了済みにする */
+  /** 将会话标记为已结束 */
   endSession(sessionId: string): void {
     const endedAt = Math.floor(Date.now() / 1000);
     this.db
@@ -117,7 +117,7 @@ export class HarnessStore {
       .run(endedAt, sessionId);
   }
 
-  /** セッション情報を取得する */
+  /** 获取会话信息 */
   getSession(sessionId: string): SessionState | null {
     const row = this.db
       .prepare<[string], SessionRow>(
@@ -137,10 +137,10 @@ export class HarnessStore {
   }
 
   // ============================================================
-  // シグナル管理
+  // 信号管理
   // ============================================================
 
-  /** シグナルを送信する */
+  /** 发送信号 */
   sendSignal(signal: Omit<Signal, "timestamp">): number {
     const sentAt = Math.floor(Date.now() / 1000);
     const payloadJson = JSON.stringify(signal.payload);
@@ -161,7 +161,7 @@ export class HarnessStore {
     return result.lastInsertRowid as number;
   }
 
-  /** 未消費のシグナルを受信する（宛先 = sessionId またはブロードキャスト） */
+  /** 接收未消费的信号（接收方 = sessionId 或广播） */
   receiveSignals(sessionId: string): Signal[] {
     const rows = this.db
       .prepare<
@@ -185,7 +185,7 @@ export class HarnessStore {
 
     if (rows.length === 0) return [];
 
-    // 消費済みにマーク
+    // 标记为已消费
     const ids = rows.map((r) => r.id);
     const placeholders = ids.map(() => "?").join(",");
     this.db
@@ -207,10 +207,10 @@ export class HarnessStore {
   }
 
   // ============================================================
-  // タスク失敗管理
+  // 任务失败管理
   // ============================================================
 
-  /** タスク失敗を記録する */
+  /** 记录任务失败 */
   recordFailure(
     failure: Omit<TaskFailure, "timestamp">,
     sessionId: string
@@ -235,7 +235,7 @@ export class HarnessStore {
     return result.lastInsertRowid as number;
   }
 
-  /** タスクの失敗履歴を取得する */
+  /** 获取任务的失败历史 */
   getFailures(taskId: string): TaskFailure[] {
     const rows = this.db
       .prepare<
@@ -272,7 +272,7 @@ export class HarnessStore {
   // work_states 管理
   // ============================================================
 
-  /** work/codex モードを登録する（TTL 24 時間） */
+  /** 注册 work/codex 模式（TTL 24 小时） */
   setWorkState(
     sessionId: string,
     options: {
@@ -302,7 +302,7 @@ export class HarnessStore {
       );
   }
 
-  /** 有効な work_state を取得する（期限切れは null） */
+  /** 获取有效的 work_state（过期则返回 null） */
   getWorkState(sessionId: string): {
     codexMode: boolean;
     bypassRmRf: boolean;
@@ -324,7 +324,7 @@ export class HarnessStore {
     };
   }
 
-  /** 期限切れの work_states を削除する */
+  /** 删除过期的 work_states */
   cleanExpiredWorkStates(): number {
     const now = Math.floor(Date.now() / 1000);
     const result = this.db
@@ -334,10 +334,10 @@ export class HarnessStore {
   }
 
   // ============================================================
-  // schema_meta キー/バリュー管理
+  // schema_meta 键值管理
   // ============================================================
 
-  /** schema_meta テーブルから値を取得する（存在しない場合は null） */
+  /** 从 schema_meta 表获取值（不存在时返回 null） */
   getMeta(key: string): string | null {
     const row = this.db
       .prepare<[string], { value: string }>("SELECT value FROM schema_meta WHERE key = ?")
@@ -345,7 +345,7 @@ export class HarnessStore {
     return row?.value ?? null;
   }
 
-  /** schema_meta テーブルに値を保存する（upsert） */
+  /** 向 schema_meta 表保存值（upsert） */
   setMeta(key: string, value: string): void {
     this.db
       .prepare<[string, string]>(
@@ -356,7 +356,7 @@ export class HarnessStore {
   }
 
   // ============================================================
-  // クローズ
+  // 关闭
   // ============================================================
 
   close(): void {

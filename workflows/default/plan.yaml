@@ -1,11 +1,11 @@
-# /plan ワークフロー定義
-# 機能要望を構造化されたタスクリストに変換
+# /plan 工作流定义
+# 将功能需求转换为结构化任务列表
 
 phase: plan
-description: "Plans.md を更新し、タスクを分解するフェーズ"
+description: "更新 Plans.md，分解任务的阶段"
 
 steps:
-  # Step 1: リポジトリコンテキストの読み取り
+  # Step 1: 读取仓库上下文
   - id: read-context
     skill: core-read-repo-context
     input:
@@ -18,7 +18,7 @@ steps:
         - open_files
     mode: required
 
-  # Step 2: 要望のヒアリング（入力がない場合）
+  # Step 2: 需求沟通（无输入时）
   - id: gather-requirements
     skill: init-requirements
     condition: "!user_prompt"
@@ -30,7 +30,7 @@ steps:
         - feature_request
     mode: optional
 
-  # Step 3: 機能の計画
+  # Step 3: 功能计划
   - id: plan-feature
     skill: plan-feature
     input:
@@ -50,7 +50,7 @@ steps:
         - phase_name
     mode: required
 
-  # Step 4: 計画のレビュー（オプション）
+  # Step 4: 计划审查（可选）
   - id: review-plan
     skill: plan-review
     input:
@@ -60,21 +60,21 @@ steps:
         - previous_step_output
     mode: optional
 
-# 成功時の出力
+# 成功时的输出
 on_success:
   message: |
-    ✅ 計画が完成しました！
+    ✅ 计划完成！
 
-    📄 Plans.md に {{task_count}} 個のタスクを追加しました。
+    📄 已向 Plans.md 添加 {{task_count}} 个任务。
 
-    次にやること：
-    - 「{{phase_name}}を始めて」→ 実装を開始
-    - 「計画を見せて」→ 詳細を確認
-    - 「修正して」→ 計画を調整
+    接下来可以：
+    - 「开始{{phase_name}}」→ 开始实现
+    - 「显示计划」→ 查看详情
+    - 「修改」→ 调整计划
 
-# エラー時の出力
+# 错误时的输出
 on_error:
   message: |
-    ⚠️ 計画作成中にエラーが発生しました。
+    ⚠️ 计划创建过程中发生错误。
 
-    やりたいことをもう一度教えてください。
+    请再次说明您的需求。

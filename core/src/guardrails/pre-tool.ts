@@ -1,9 +1,9 @@
 /**
  * core/src/guardrails/pre-tool.ts
- * PreToolUse フック評価関数
+ * PreToolUse 钩子评估函数
  *
- * HookInput を受け取り、rules.ts の宣言的ガードルールテーブルを評価して
- * approve / deny / ask の HookResult を返す。
+ * 接收 HookInput，评估 rules.ts 中的声明式护栏规则表，
+ * 返回 approve / deny / ask 的 HookResult。
  */
 
 import { existsSync } from "node:fs";
@@ -12,14 +12,14 @@ import { type HookInput, type HookResult, type RuleContext } from "../types.js";
 import { evaluateRules } from "./rules.js";
 import { HarnessStore } from "../state/store.js";
 
-/** 環境変数が truthy 値（"1", "true", "yes"）かどうか判定 */
+/** 判断环境变量是否为真值（"1", "true", "yes"） */
 function isTruthy(value: string | undefined): boolean {
   return value === "1" || value === "true" || value === "yes";
 }
 
 /**
- * プロジェクトルートから SQLite DB パスを解決する。
- * .harness/state.db が存在しない場合は null を返す。
+ * 从项目根目录解析 SQLite DB 路径。
+ * .harness/state.db 不存在时返回 null。
  */
 function resolveDbPath(projectRoot: string): string | null {
   const dbPath = resolve(projectRoot, ".harness", "state.db");
@@ -27,27 +27,27 @@ function resolveDbPath(projectRoot: string): string | null {
 }
 
 /**
- * 実行環境から RuleContext を組み立てる。
- * 優先順位: SQLite work_states > 環境変数
+ * 从执行环境组装 RuleContext。
+ * 优先级: SQLite work_states > 环境变量
  */
 function buildContext(input: HookInput): RuleContext {
-  // cwd がプロジェクトルート。plugin_root はプラグイン自身のパスなので除外
+  // cwd 为项目根目录。plugin_root 是插件自身的路径，因此排除
   const projectRoot =
     input.cwd ??
     process.env["HARNESS_PROJECT_ROOT"] ??
     process.env["PROJECT_ROOT"] ??
     process.cwd();
 
-  // 環境変数ベースの初期値
+  // 基于环境变量的初始值
   let workMode =
     isTruthy(process.env["HARNESS_WORK_MODE"]) ||
     isTruthy(process.env["ULTRAWORK_MODE"]);
   let codexMode = isTruthy(process.env["HARNESS_CODEX_MODE"]);
 
-  // breezing ロール: 環境変数から取得
+  // breezing 角色: 从环境变量获取
   const breezingRole = process.env["HARNESS_BREEZING_ROLE"] ?? null;
 
-  // SQLite work_states から補完（session_id が利用可能な場合）
+  // 从 SQLite work_states 补充（session_id 可用时）
   const sessionId = input.session_id;
   if (sessionId) {
     const dbPath = resolveDbPath(projectRoot);
@@ -57,7 +57,7 @@ function buildContext(input: HookInput): RuleContext {
         try {
           const state = store.getWorkState(sessionId);
           if (state !== null) {
-            // DB の値で環境変数を上書き（より信頼性が高い）
+            // 使用 DB 的值覆盖环境变量（可靠性更高）
             workMode = workMode || state.bypassRmRf || state.bypassGitPush;
             codexMode = codexMode || state.codexMode;
           }
@@ -65,7 +65,7 @@ function buildContext(input: HookInput): RuleContext {
           store.close();
         }
       } catch {
-        // DB アクセス失敗は無視（環境変数フォールバックを使用）
+        // DB 访问失败时忽略（使用环境变量回退）
       }
     }
   }
@@ -80,8 +80,8 @@ function buildContext(input: HookInput): RuleContext {
 }
 
 /**
- * PreToolUse フックのエントリポイント。
- * HookInput を受け取り、ガードルールを評価して HookResult を返す。
+ * PreToolUse 钩子的入口点。
+ * 接收 HookInput，评估护栏规则并返回 HookResult。
  */
 export function evaluatePreTool(input: HookInput): HookResult {
   const ctx = buildContext(input);

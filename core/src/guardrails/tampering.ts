@@ -1,16 +1,16 @@
 /**
  * core/src/guardrails/tampering.ts
- * テスト改ざん検出エンジン
+ * 测试篡改检测引擎
  *
- * posttooluse-tampering-detector.sh の全パターンを TypeScript に移植。
- * Write / Edit / MultiEdit ツールでテストファイルや CI 設定が変更された後、
- * 改ざんパターンを検出して警告を返す（ブロックはしない）。
+ * 将 posttooluse-tampering-detector.sh 的全部模式移植到 TypeScript。
+ * 在 Write / Edit / MultiEdit 工具修改测试文件或 CI 配置后，
+ * 检测篡改模式并返回警告（不阻止）。
  */
 
 import type { HookInput, HookResult } from "../types.js";
 
 // ============================================================
-// ファイル種別判定
+// 文件类型判定
 // ============================================================
 
 const TEST_FILE_PATTERNS = [
@@ -48,98 +48,98 @@ function isConfigFile(filePath: string): boolean {
 }
 
 // ============================================================
-// 改ざんパターン定義
+// 篡改模式定义
 // ============================================================
 
 interface TamperingPattern {
   id: string;
   description: string;
-  /** マッチさせるテキスト範囲のパターン */
+  /** 要匹配的文本范围的模式 */
   pattern: RegExp;
-  /** テストファイルのみ適用（false = 設定ファイルにも適用） */
+  /** 仅应用于测试文件（false = 也应用于配置文件） */
   testFileOnly: boolean;
 }
 
 const TAMPERING_PATTERNS: readonly TamperingPattern[] = [
-  // --- テストスキップ ---
+  // --- 测试跳过 ---
   {
     id: "T01:it-skip",
-    description: "it.skip / describe.skip によるテストスキップ",
+    description: "通过 it.skip / describe.skip 跳过测试",
     pattern: /(?:it|test|describe|context)\.skip\s*\(/,
     testFileOnly: true,
   },
   {
     id: "T02:xit-xdescribe",
-    description: "xit / xdescribe によるテスト無効化",
+    description: "通过 xit / xdescribe 禁用测试",
     pattern: /\b(?:xit|xtest|xdescribe)\s*\(/,
     testFileOnly: true,
   },
   {
     id: "T03:pytest-skip",
-    description: "pytest.mark.skip によるテストスキップ",
+    description: "通过 pytest.mark.skip 跳过测试",
     pattern: /@pytest\.mark\.(?:skip|xfail)\b/,
     testFileOnly: true,
   },
   {
     id: "T04:go-skip",
-    description: "t.Skip() によるテストスキップ",
+    description: "通过 t.Skip() 跳过测试",
     pattern: /\bt\.Skip(?:f|Now)?\s*\(/,
     testFileOnly: true,
   },
 
-  // --- アサーション削除・改ざん ---
+  // --- 断言删除/篡改 ---
   {
     id: "T05:expect-removed",
-    description: "expect / assert が削除された可能性（コメントアウト）",
+    description: "expect / assert 可能被删除（被注释掉）",
     pattern: /\/\/\s*expect\s*\(/,
     testFileOnly: true,
   },
   {
     id: "T06:assert-commented",
-    description: "assert 呼び出しがコメントアウトされた",
+    description: "assert 调用被注释掉",
     pattern: /\/\/\s*assert(?:Equal|NotEqual|True|False|Nil|Error)?\s*\(/,
     testFileOnly: true,
   },
   {
     id: "T07:todo-assert",
-    description: "TODO コメントによってアサーションが置き換えられた",
+    description: "断言被 TODO 注释替换",
     pattern: /\/\/\s*TODO.*assert|\/\/\s*TODO.*expect/i,
     testFileOnly: true,
   },
 
-  // --- ESLint 無効化（テスト・CI 設定） ---
+  // --- ESLint 禁用（测试/CI 配置） ---
   {
     id: "T08:eslint-disable",
-    description: "eslint-disable による lint ルール無効化",
-    // // eslint-disable と /* eslint-disable */ 両形式に対応
+    description: "通过 eslint-disable 禁用 lint 规则",
+    // 对应 // eslint-disable 和 /* eslint-disable */ 两种形式
     pattern: /(?:\/\/\s*eslint-disable(?:-next-line|-line)?(?:\s+[^\n]+)?$|\/\*\s*eslint-disable\b[^*]*\*\/)/m,
     testFileOnly: false,
   },
 
-  // --- CI ワークフロー改ざん ---
+  // --- CI 工作流篡改 ---
   {
     id: "T09:ci-continue-on-error",
-    description: "continue-on-error: true による CI 失敗無視",
+    description: "通过 continue-on-error: true 忽略 CI 失败",
     pattern: /continue-on-error\s*:\s*true/,
     testFileOnly: false,
   },
   {
     id: "T10:ci-if-always",
-    description: "if: always() による CI ステップ強制実行",
+    description: "通过 if: always() 强制执行 CI 步骤",
     pattern: /if\s*:\s*always\s*\(\s*\)/,
     testFileOnly: false,
   },
 
-  // --- ハードコード期待値 ---
+  // --- 硬编码期望值 ---
   {
     id: "T11:hardcoded-answer",
-    description: "テスト期待値のハードコード（辞書返し）",
+    description: "测试期望值的硬编码（返回字典）",
     pattern: /answers?_for_tests?\s*=\s*\{/,
     testFileOnly: true,
   },
   {
     id: "T12:return-hardcoded",
-    description: "テストケース値を直接 return するパターン",
+    description: "直接 return 测试用例值的模式",
     pattern:
       /return\s+(?:"[^"]*"|'[^']*'|\d+)\s*;\s*\/\/.*(?:test|spec|expect)/i,
     testFileOnly: true,
@@ -147,7 +147,7 @@ const TAMPERING_PATTERNS: readonly TamperingPattern[] = [
 ];
 
 // ============================================================
-// 検出関数
+// 检测函数
 // ============================================================
 
 interface TamperingWarning {
@@ -157,7 +157,7 @@ interface TamperingWarning {
 }
 
 /**
- * テキスト（new_string または content）に対して改ざんパターンを検索する。
+ * 对文本（new_string 或 content）搜索篡改模式。
  */
 function detectTampering(
   text: string,
@@ -182,7 +182,7 @@ function detectTampering(
 }
 
 /**
- * HookInput からファイルパスと変更テキストを抽出する。
+ * 从 HookInput 提取文件路径和变更文本。
  */
 function extractTargets(
   input: HookInput
@@ -191,8 +191,8 @@ function extractTargets(
   const filePath = toolInput["file_path"];
   if (typeof filePath !== "string" || filePath.length === 0) return null;
 
-  // Write: content フィールド
-  // Edit: new_string フィールド
+  // Write: content 字段
+  // Edit: new_string 字段
   const changedText =
     typeof toolInput["content"] === "string"
       ? toolInput["content"]
@@ -206,16 +206,16 @@ function extractTargets(
 }
 
 // ============================================================
-// エクスポート: PostToolUse エントリポイント
+// 导出: PostToolUse 入口点
 // ============================================================
 
 /**
- * PostToolUse フックでテスト改ざんを検出し、警告を返す。
- * 改ざんを検出した場合でも decision は "approve"（ブロックしない）。
- * 警告は systemMessage として Claude に渡される。
+ * PostToolUse 钩子中检测测试篡改并返回警告。
+ * 即使检测到篡改，decision 仍为 "approve"（不阻止）。
+ * 警告作为 systemMessage 传递给 Claude。
  */
 export function detectTestTampering(input: HookInput): HookResult {
-  // Write / Edit / MultiEdit のみ対象
+  // 仅针对 Write / Edit / MultiEdit
   if (!["Write", "Edit", "MultiEdit"].includes(input.tool_name)) {
     return { decision: "approve" };
   }
@@ -233,18 +233,18 @@ export function detectTestTampering(input: HookInput): HookResult {
 
   if (warnings.length === 0) return { decision: "approve" };
 
-  const fileType = isTest ? "テストファイル" : "CI/設定ファイル";
+  const fileType = isTest ? "测试文件" : "CI/配置文件";
   const warningLines = warnings
-    .map((w) => `- [${w.patternId}] ${w.description}\n  検出箇所: ${w.matchedText}`)
+    .map((w) => `- [${w.patternId}] ${w.description}\n  检测位置: ${w.matchedText}`)
     .join("\n");
 
   const systemMessage =
-    `[Harness v3] テスト改ざん検出警告\n\n` +
-    `${fileType} \`${filePath}\` に疑わしいパターンが検出されました:\n\n` +
+    `[Harness v3] 测试篡改检测警告\n\n` +
+    `在 ${fileType} \`${filePath}\` 中检测到可疑模式:\n\n` +
     warningLines +
-    `\n\n【確認してください】\n` +
-    `この変更がテストを意図的に無効化したり、実装品質を下げるものでないかを確認してください。\n` +
-    `改ざんと判断した場合は変更を元に戻してください。`;
+    `\n\n【请确认】\n` +
+    `请确认此更改并非故意禁用测试或降低实现质量。\n` +
+    `如果判定为篡改，请撤销更改。`;
 
   return {
     decision: "approve",

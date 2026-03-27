@@ -2,7 +2,6 @@
 name: harness-plan
 description: "Harness v3 统一规划技能。负责任务规划・Plans.md管理・进度同步。以下短语启动: 创建计划、添加任务、Plans.md更新、标记完成、进度确认、harness-plan、harness-sync。不用于实现・审查・发布。"
 description-en: "Unified planning skill for Harness v3. Handles task planning, Plans.md management, and progress sync. Use when user mentions: create a plan, add tasks, update Plans.md, mark complete, check progress, sync status, where am I, harness-plan, harness-sync. Do NOT load for: implementation, code review, or release tasks."
-description-ja: "Harness v3 统一规划技能。负责任务规划・Plans.md管理・进度同步。以下短语启动: 创建计划、添加任务、Plans.md更新、标记完成、进度确认、harness-plan、harness-sync。不用于实现・审查・发布。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "Task"]
 argument-hint: "[create|add|update|sync|sync --no-retro|--ci]"
 ---

@@ -1,7 +1,6 @@
 ---
 name: generate-slide
 description: "用 Nano Banana Pro 自动生成项目介绍幻灯片。触发短语：幻灯片、项目介绍、一页概要、视觉介绍。不用于：视频生成、演示文稿制作。"
-description-ja: "使用 Nano Banana Pro 自动生成项目介绍幻灯片。幻灯片、单页介绍、视觉介绍时启动。不用于视频生成或演示文稿制作。"
 description-en: "Generate project intro slides with Nano Banana Pro. Use when user mentions slide, project slide, 1-page summary, or visual introduction."
 description-zh: "用 Nano Banana Pro 自动生成项目介绍幻灯片。触发短语：幻灯片、项目介绍、一页概要、视觉介绍。不用于：视频生成、演示文稿制作。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "AskUserQuestion"]

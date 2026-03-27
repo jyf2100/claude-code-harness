@@ -1,37 +1,37 @@
 /**
- * lifecycle.ts — セッションライフサイクル管理
+ * lifecycle.ts — 会话生命周期管理
  *
- * 旧セッション系スキル（session / session-init / session-control /
- * session-state / session-memory）のロジックを吸収。
- * セッション開始・終了・状態遷移を一元管理する。
+ * 吸收旧会话系技能（session / session-init / session-control /
+ * session-state / session-memory）的逻辑。
+ * 统一管理会话开始、结束和状态转换。
  */
 
 import type { SessionState, SessionMode, Signal } from "../types.js";
 
 // ============================================================
-// セッション実行状態（内部 enum 相当）
+// 会话执行状态（内部 enum 相当）
 // ============================================================
 
-/** セッションの実行フェーズ */
+/** 会话的执行阶段 */
 export type SessionPhase = "active" | "paused" | "completed" | "failed";
 
-/** セッションコンテキスト */
+/** 会话上下文 */
 export interface SessionContext {
   sessionId: string;
   startedAt: Date;
   phase: SessionPhase;
   state: SessionState;
-  /** 直近の agent-trace エントリ */
+  /** 最近的 agent-trace 条目 */
   recentFiles: string[];
 }
 
 // ============================================================
-// セッション開始（session-init 相当）
+// 会话开始（相当于 session-init）
 // ============================================================
 
 /**
- * セッション開始処理。
- * 環境チェック・タスク状況把握・引き継ぎ確認を行う。
+ * 会话开始处理。
+ * 执行环境检查、任务状况把握和交接确认。
  */
 export function initSession(opts: {
   sessionId: string;
@@ -55,10 +55,10 @@ export function initSession(opts: {
 }
 
 // ============================================================
-// セッション状態遷移（session-state / session-control 相当）
+// 会话状态转换（相当于 session-state / session-control）
 // ============================================================
 
-/** 許可された状態遷移マップ */
+/** 允许的状态转换映射 */
 const VALID_TRANSITIONS: Record<SessionPhase, SessionPhase[]> = {
   active: ["paused", "completed", "failed"],
   paused: ["active", "completed", "failed"],
@@ -67,8 +67,8 @@ const VALID_TRANSITIONS: Record<SessionPhase, SessionPhase[]> = {
 };
 
 /**
- * セッションフェーズを遷移させる。
- * 不正な遷移の場合は Error をスロー。
+ * 转换会话阶段。
+ * 非法转换时抛出 Error。
  */
 export function transitionSession(
   ctx: SessionContext,
@@ -84,20 +84,20 @@ export function transitionSession(
 }
 
 // ============================================================
-// セッション終了処理（session-memory 相当）
+// 会话结束处理（相当于 session-memory）
 // ============================================================
 
-/** セッション終了時のサマリー */
+/** 会话结束时的摘要 */
 export interface SessionSummary {
   sessionId: string;
-  duration: number; // ミリ秒
+  duration: number; // 毫秒
   finalPhase: SessionPhase;
   signals: Signal[];
 }
 
 /**
- * セッション終了処理。
- * 完了・失敗いずれの場合も呼び出す。
+ * 会话结束处理。
+ * 完成或失败时都要调用。
  */
 export function finalizeSession(
   ctx: SessionContext,
@@ -113,12 +113,12 @@ export function finalizeSession(
 }
 
 // ============================================================
-// セッションフォーク（session-control の --fork 相当）
+// 会话分支（相当于 session-control 的 --fork）
 // ============================================================
 
 /**
- * 現在のセッションコンテキストをフォークする。
- * 新しいセッション ID を割り当てた独立したコピーを返す。
+ * 分支当前会话上下文。
+ * 返回分配了新会话 ID 的独立副本。
  */
 export function forkSession(
   parent: SessionContext,
@@ -140,10 +140,10 @@ export function forkSession(
 }
 
 // ============================================================
-// セッション再開（session-control の --resume 相当）
+// 会话恢复（相当于 session-control 的 --resume）
 // ============================================================
 
-/** セッション再開用の最小情報 */
+/** 会话恢复用的最小信息 */
 export interface ResumeInfo {
   sessionId: string;
   projectRoot: string;
@@ -152,8 +152,8 @@ export interface ResumeInfo {
 }
 
 /**
- * 過去セッションを再開する。
- * lastPhase が completed / failed の場合は新規セッションとして扱う。
+ * 恢复过去的会话。
+ * 如果 lastPhase 是 completed / failed，则作为新会话处理。
  */
 export function resumeSession(info: ResumeInfo): SessionContext {
   const isResumable =

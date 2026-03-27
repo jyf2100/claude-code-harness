@@ -1,8 +1,8 @@
 /**
  * core/src/state/__tests__/migration.test.ts
- * migration.ts の単体テスト
+ * migration.ts 的单元测试
  *
- * 実際のファイルシステム操作を含むため、tmp ディレクトリを使用する。
+ * 包含实际的文件系统操作，因此使用 tmp 目录。
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -13,10 +13,10 @@ import { migrate } from "../migration.js";
 import { HarnessStore } from "../store.js";
 
 // ============================================================
-// テストユーティリティ
+// 测试工具
 // ============================================================
 
-/** 一時ディレクトリを作成して返す */
+/** 创建并返回临时目录 */
 function createTmpProject(): string {
   const dir = join(tmpdir(), `harness-migration-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
@@ -25,7 +25,7 @@ function createTmpProject(): string {
   return dir;
 }
 
-/** テスト後に一時ディレクトリを削除する */
+/** 测试后删除临时目录 */
 function cleanupTmpProject(dir: string): void {
   if (existsSync(dir)) {
     rmSync(dir, { recursive: true, force: true });
@@ -33,7 +33,7 @@ function cleanupTmpProject(dir: string): void {
 }
 
 // ============================================================
-// テスト
+// 测试
 // ============================================================
 
 describe("migrate()", () => {
@@ -50,16 +50,16 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // 移行済みチェック
+  // 已迁移检查
   // ------------------------------------------------------------------
 
-  describe("移行済みスキップ", () => {
-    it("移行済みの場合は skipped: true を返す", () => {
-      // 1回目の移行
+  describe("已迁移跳过", () => {
+    it("已迁移时返回 skipped: true", () => {
+      // 第一次迁移
       const first = migrate(projectRoot, dbPath);
       expect(first.skipped).toBe(false);
 
-      // 2回目は スキップ
+      // 第二次跳过
       const second = migrate(projectRoot, dbPath);
       expect(second.skipped).toBe(true);
       expect(second.sessions).toBe(0);
@@ -68,11 +68,11 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // 状態ファイルなしの移行（空移行）
+  // 无状态文件的迁移（空迁移）
   // ------------------------------------------------------------------
 
-  describe("空移行", () => {
-    it("移行対象ファイルがない場合は 0件で完了する", () => {
+  describe("空迁移", () => {
+    it("没有迁移目标文件时以 0 条完成", () => {
       const result = migrate(projectRoot, dbPath);
       expect(result.skipped).toBe(false);
       expect(result.sessions).toBe(0);
@@ -83,11 +83,11 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // session.json の移行
+  // session.json 的迁移
   // ------------------------------------------------------------------
 
-  describe("session.json 移行", () => {
-    it("セッションを移行できる", () => {
+  describe("session.json 迁移", () => {
+    it("可以迁移会话", () => {
       const sessionFile = resolve(projectRoot, ".claude", "state", "session.json");
       writeFileSync(sessionFile, JSON.stringify({
         session_id: "sess-migrate-01",
@@ -100,7 +100,7 @@ describe("migrate()", () => {
       expect(result.sessions).toBe(1);
       expect(result.errors).toHaveLength(0);
 
-      // SQLite に保存されているか確認
+      // 确认是否已保存到 SQLite
       const store = new HarnessStore(dbPath);
       try {
         const session = store.getSession("sess-migrate-01");
@@ -112,7 +112,7 @@ describe("migrate()", () => {
       }
     });
 
-    it("Unix タイムスタンプ形式の started_at も移行できる", () => {
+    it("也可以迁移 Unix 时间戳格式的 started_at", () => {
       const sessionFile = resolve(projectRoot, ".claude", "state", "session.json");
       writeFileSync(sessionFile, JSON.stringify({
         session_id: "sess-unix-ts",
@@ -134,7 +134,7 @@ describe("migrate()", () => {
       }
     });
 
-    it("session_id が未設定でも移行できる（デフォルト ID を使用）", () => {
+    it("session_id 未设置时也能迁移（使用默认 ID）", () => {
       const sessionFile = resolve(projectRoot, ".claude", "state", "session.json");
       writeFileSync(sessionFile, JSON.stringify({
         mode: "breezing",
@@ -147,16 +147,16 @@ describe("migrate()", () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it("無効な JSON の session.json は sessions: 0 で続行する", () => {
+    it("无效 JSON 的 session.json 以 sessions: 0 继续", () => {
       const sessionFile = resolve(projectRoot, ".claude", "state", "session.json");
       writeFileSync(sessionFile, "{ invalid json }");
 
       const result = migrate(projectRoot, dbPath);
       expect(result.sessions).toBe(0);
-      // エラーはないが session も 0（JSON パース失敗で null 扱い）
+      // 没有错误但 session 也是 0（JSON 解析失败视为 null）
     });
 
-    it("移行後に session.json が .v2.bak にリネームされる", () => {
+    it("迁移后 session.json 被重命名为 .v2.bak", () => {
       const sessionFile = resolve(projectRoot, ".claude", "state", "session.json");
       writeFileSync(sessionFile, JSON.stringify({
         session_id: "sess-backup-test",
@@ -173,11 +173,11 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // session.events.jsonl の移行
+  // session.events.jsonl 的迁移
   // ------------------------------------------------------------------
 
-  describe("session.events.jsonl 移行", () => {
-    it("シグナルイベントを移行できる", () => {
+  describe("session.events.jsonl 迁移", () => {
+    it("可以迁移信号事件", () => {
       const eventsFile = resolve(projectRoot, ".claude", "state", "session.events.jsonl");
       const events = [
         { type: "task_completed", from_session_id: "sess-01", payload: { task: "impl" } },
@@ -191,7 +191,7 @@ describe("migrate()", () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it("空の JSONL ファイルは 0件で完了する", () => {
+    it("空 JSONL 文件以 0 条完成", () => {
       const eventsFile = resolve(projectRoot, ".claude", "state", "session.events.jsonl");
       writeFileSync(eventsFile, "");
 
@@ -199,7 +199,7 @@ describe("migrate()", () => {
       expect(result.signals).toBe(0);
     });
 
-    it("不明なイベントタイプはフォールバックシグナルに変換される", () => {
+    it("未知事件类型转换为回退信号", () => {
       const eventsFile = resolve(projectRoot, ".claude", "state", "session.events.jsonl");
       writeFileSync(eventsFile, JSON.stringify({
         type: "unknown_custom_event",
@@ -214,11 +214,11 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // work-active.json の移行
+  // work-active.json 的迁移
   // ------------------------------------------------------------------
 
-  describe("work-active.json 移行", () => {
-    it("work_state を移行できる", () => {
+  describe("work-active.json 迁移", () => {
+    it("可以迁移 work_state", () => {
       const workActiveFile = resolve(projectRoot, ".claude", "work-active.json");
       writeFileSync(workActiveFile, JSON.stringify({
         session_id: "sess-work-01",
@@ -245,11 +245,11 @@ describe("migrate()", () => {
   });
 
   // ------------------------------------------------------------------
-  // 複合移行（全ファイルが揃っている場合）
+  // 复合迁移（所有文件都齐全时）
   // ------------------------------------------------------------------
 
-  describe("複合移行", () => {
-    it("session + events + work-active をすべて移行できる", () => {
+  describe("复合迁移", () => {
+    it("可以迁移 session + events + work-active 的全部", () => {
       // session.json
       writeFileSync(
         resolve(projectRoot, ".claude", "state", "session.json"),

@@ -59,6 +59,60 @@
 
 ---
 
+## Phase 32: 日文内容清理（i18n-zh 完成后）
+
+创建日期: 2026-03-27
+目标: 彻底删除项目中剩余的日文专用文件和字段
+
+### 日文残留清单
+
+| 类别 | 文件/位置 | 数量 | 操作 |
+|------|----------|------|------|
+| 日文专用文件 | README_ja.md, LICENSE.ja.md | 2 | 删除 |
+| description-ja 字段 | skills-v3/, skills/ | 8 | 删除字段 |
+| codex skills 日文 | codex/.codex/skills/*/SKILL.md | ~20 | 翻译或同步 |
+| TypeScript 注释 | core/src/*.ts | 17 | 翻译 |
+| CHANGELOG 历史记录 | CHANGELOG.md | 470处 | 保留（历史记录） |
+
+### Phase 32.0: 删除日文专用文件 [P0]
+
+| Task | 内容 | DoD | Status |
+|------|------|-----|--------|
+| 32.0.1 | 删除 README_ja.md | 文件已删除 | cc:完了 |
+| 32.0.2 | 删除 LICENSE.ja.md | 文件已删除 | cc:完了 |
+| 32.0.3 | 更新 CLAUDE.md 中的日文引用 | 无日文文件引用 | cc:完了 |
+
+### Phase 32.1: 删除 description-ja 字段 [P0]
+
+| Task | 内容 | DoD | Status |
+|------|------|-----|--------|
+| 32.1.1 | 删除 skills-v3/ 中的 description-ja | 7 个文件已清理 | cc:完了 |
+| 32.1.2 | 删除 skills/ 中的 description-ja | 1 个文件已清理 | cc:完了 |
+
+### Phase 32.2: 同步/翻译 codex skills [P1]
+
+| Task | 内容 | DoD | Status |
+|------|------|-----|--------|
+| 32.2.1 | 将 codex/.codex/skills/ 设为符号链接 | 指向主 skills/ | cc:完了 |
+| 32.2.2 | 或翻译所有 codex skills 日文 | 无日文残留 | cc:完了 |
+
+### Phase 32.3: 翻译 TypeScript 注释 [P2]
+
+| Task | 内容 | DoD | Status |
+|------|------|-----|--------|
+| 32.3.1 | 翻译 core/src/guardrails/ 注释 | 无日文注释 | cc:完了 |
+| 32.3.2 | 翻译 core/src/ 其他文件注释 | 无日文注释 | cc:完了 |
+
+### Phase 32.4: 验证与清理 [P0]
+
+| Task | 内容 | DoD | Status |
+|------|------|-----|--------|
+| 32.4.1 | 更新 i18n-zh-progress.json | 状态为"日文清理完成" | cc:完了 |
+| 32.4.2 | 全局日文残留扫描 | 0 处日文（除 CHANGELOG） | cc:完了 |
+| 32.4.3 | 提交并更新 CHANGELOG | commit 完成 | cc:WIP |
+
+---
+
 ## Phase 29: CCAGI 来源要素整合（29.1〜29.4 待完成）
 
 ### Phase 29.1: Plans.md ⇄ GitHub Issue 桥接（opt-in） [P1]

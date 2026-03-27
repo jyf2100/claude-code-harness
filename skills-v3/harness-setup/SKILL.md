@@ -2,7 +2,6 @@
 name: harness-setup
 description: "Harness v3 统一设置技能。负责项目初始化・工具配置・2代理配置・内存设置・公开 skill mirror 同步。以下启动: 设置、初始化、新项目、CI设置、codex CLI设置、harness-mem、代理设置、symlink、mirror、harness-setup。不用于实现・审查・发布・规划。"
 description-en: "Unified setup skill for Harness v3. Project init, tool setup, 2-agent config, memory setup, and public skill mirror sync. Use when user mentions: setup, initialization, new project, CI setup, codex CLI setup, harness-mem, agent setup, symlinks, mirrors, harness-setup. Do NOT load for: implementation, code review, release, or planning."
-description-ja: "Harness v3 统一设置技能。负责项目初始化・工具设置・2代理配置・内存设置・公开 skill mirror 同步。以下短语启动: 设置、初始化、新项目、CI设置、codex CLI设置、harness-mem、代理设置、symlink、mirror、harness-setup。不用于实现・审查・发布・规划。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 argument-hint: "[init|ci|codex|harness-mem|mirrors|agents|localize]"
 ---

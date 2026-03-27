@@ -2,7 +2,6 @@
 name: harness-sync
 description: "Plans.md 与实现的进度同步。执行差异检测・标记更新・回顾。以下启动: harness-sync、sync-status、进度确认、今在哪里、完成到哪里。也支持 --snapshot 保存进度快照。不用于规划・实现・审查・发布。"
 description-en: "Progress sync between Plans.md and actual implementation. Detects drift, updates markers, runs retrospective. Use when user mentions: harness-sync, sync-status, sync progress, where am I, check progress, what's done. Supports --snapshot for progress snapshots. Do NOT load for: planning, implementation, review, or release."
-description-ja: "Plans.md 与实现的进度同步。执行差异检测・标记更新・回顾。以下短语启动: harness-sync、sync-status、进度确认、今在哪里、完成到哪里。也支持 --snapshot 保存进度快照。不用于规划・实现・审查・发布。"
 allowed-tools: ["Read", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "[--snapshot|--no-retro]"
 ---

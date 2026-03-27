@@ -1,18 +1,18 @@
 /**
  * core/src/guardrails/rules.ts
- * Harness v3 宣言的ガードルールテーブル
+ * Harness v3 声明式护栏规则表
  *
- * pretooluse-guard.sh の全ルールを TypeScript 型安全な宣言的テーブルとして移植。
- * 各 GuardRule は条件 (toolPattern + evaluate) とアクション (HookResult) のペア。
+ * 将 pretooluse-guard.sh 的全部规则移植为 TypeScript 类型安全的声明式表。
+ * 每个 GuardRule 是条件 (toolPattern + evaluate) 和动作 (HookResult) 的配对。
  */
 
 import type { GuardRule, HookResult, RuleContext } from "../types.js";
 
 // ============================================================
-// ヘルパー関数
+// 辅助函数
 // ============================================================
 
-/** ファイルパスが保護されたパスに該当するか判定 */
+/** 判断文件路径是否匹配受保护路径 */
 function isProtectedPath(filePath: string): boolean {
   const protected_patterns = [
     /^\.git\//,
@@ -34,44 +34,44 @@ function isProtectedPath(filePath: string): boolean {
   return protected_patterns.some((p) => p.test(filePath));
 }
 
-/** ファイルパスがプロジェクトルート配下にあるか判定 */
+/** 判断文件路径是否在项目根目录下 */
 function isUnderProjectRoot(filePath: string, projectRoot: string): boolean {
   const root = projectRoot.endsWith("/") ? projectRoot : `${projectRoot}/`;
   return filePath.startsWith(root) || filePath === projectRoot;
 }
 
-/** Bash コマンド文字列から危険な rm -rf パターンを検出 */
+/** 从 Bash 命令字符串检测危险的 rm -rf 模式 */
 function hasDangerousRmRf(command: string): boolean {
-  // -rf または -fr フラグを含む rm コマンドを検出
-  // 注意: rm -f（-r なし）は対象外
+  // 检测包含 -rf 或 -fr 标志的 rm 命令
+  // 注意: rm -f（不含 -r）不在检测范围内
   if (/\brm\s+(?:[^\s]*\s+)*-(?=[^-]*r)[rf]+\b/.test(command)) return true;
   if (/\brm\s+--recursive\b/.test(command)) return true;
   return false;
 }
 
-/** git push --force パターンを検出 */
+/** 检测 git push --force 模式 */
 function hasForcePush(command: string): boolean {
   return /\bgit\s+push\b.*--force(?:-with-lease)?\b/.test(command) ||
     /\bgit\s+push\b.*-f\b/.test(command);
 }
 
-/** sudo の使用を検出 */
+/** 检测 sudo 的使用 */
 function hasSudo(command: string): boolean {
   return /(?:^|\s)sudo\s/.test(command);
 }
 
-/** Bash token の前後クォートを除去する */
+/** 除去 Bash token 前后的引号 */
 function normalizeGitToken(token: string): string {
   return token.replace(/^['"]|['"]$/g, "");
 }
 
-/** `--no-verify` / `--no-gpg-sign` の使用を検出 */
+/** 检测 `--no-verify` / `--no-gpg-sign` 的使用 */
 function hasDangerousGitBypassFlag(command: string): boolean {
   return /(?:^|\s)--no-verify(?:\s|$)/.test(command) ||
     /(?:^|\s)--no-gpg-sign(?:\s|$)/.test(command);
 }
 
-/** protected branch への `git reset --hard` を検出 */
+/** 检测对 protected branch 的 `git reset --hard` */
 function hasProtectedBranchResetHard(command: string): boolean {
   const tokens = command.trim().split(/\s+/).map(normalizeGitToken);
   const resetIndex = tokens.indexOf("reset");
@@ -84,7 +84,7 @@ function hasProtectedBranchResetHard(command: string): boolean {
   return tokens.slice(resetIndex + 1).some((token) => !token.startsWith("-") && isProtectedBranchRef(token));
 }
 
-/** protected branch への direct push を検出 */
+/** 检测对 protected branch 的 direct push */
 function hasDirectPushToProtectedBranch(command: string): boolean {
   if (!/\bgit\s+push\b/.test(command)) return false;
 
@@ -110,7 +110,7 @@ function hasDirectPushToProtectedBranch(command: string): boolean {
   return false;
 }
 
-/** 重要ファイルへの書き込みを警告対象として検出 */
+/** 检测对重要文件的写入作为警告对象 */
 function isProtectedReviewPath(filePath: string): boolean {
   const protected_patterns = [
     /(?:^|\/)package\.json$/,
@@ -125,12 +125,12 @@ function isProtectedReviewPath(filePath: string): boolean {
 }
 
 // ============================================================
-// ガードルールテーブル
+// 护栏规则表
 // ============================================================
 
 export const GUARD_RULES: readonly GuardRule[] = [
   // ------------------------------------------------------------------
-  // R01: sudo ブロック（Bash）
+  // R01: sudo 阻止（Bash）
   // ------------------------------------------------------------------
   {
     id: "R01:no-sudo",
@@ -141,13 +141,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!hasSudo(command)) return null;
       return {
         decision: "deny",
-        reason: "sudo の使用は禁止されています。必要な場合はユーザーに手動実行を依頼してください。",
+        reason: "禁止使用 sudo。如有需要，请请求用户手动执行。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R02: 保護パスへの書き込みブロック（Write / Edit / Bash）
+  // R02: 阻止写入受保护路径（Write / Edit / Bash）
   // ------------------------------------------------------------------
   {
     id: "R02:no-write-protected-paths",
@@ -158,13 +158,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!isProtectedPath(filePath)) return null;
       return {
         decision: "deny",
-        reason: `保護されたパスへの書き込みは禁止されています: ${filePath}`,
+        reason: `禁止写入受保护的路径: ${filePath}`,
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R03: Bash での保護パスへの書き込みブロック（echo redirect / tee 等）
+  // R03: 阻止通过 Bash 写入受保护路径（echo redirect / tee 等）
   // ------------------------------------------------------------------
   {
     id: "R03:no-bash-write-protected-paths",
@@ -172,8 +172,8 @@ export const GUARD_RULES: readonly GuardRule[] = [
     evaluate(ctx: RuleContext): HookResult | null {
       const command = ctx.input.tool_input["command"];
       if (typeof command !== "string") return null;
-      // echo > .env, tee .git/config 等を検出
-      // '>>' / '>' の後にスペースを挟んで保護パスが続くパターンも検出
+      // 检测 echo > .env、tee .git/config 等
+      // 也检测 '>>' / '>' 后跟空格再接受保护路径的模式
       const writePatterns = [
         /(?:>>?|tee)\s+\S*\.env\b/,
         /(?:>>?|tee)\s+\S*\.env\./,
@@ -186,13 +186,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!writePatterns.some((p) => p.test(command))) return null;
       return {
         decision: "deny",
-        reason: "保護されたファイルへのシェル書き込みは禁止されています。",
+        reason: "禁止通过 shell 写入受保护的文件。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R04: プロジェクト外への書き込み確認（work モード時はスキップ）
+  // R04: 确认写入项目外部（work 模式时跳过）
   // ------------------------------------------------------------------
   {
     id: "R04:confirm-write-outside-project",
@@ -200,20 +200,20 @@ export const GUARD_RULES: readonly GuardRule[] = [
     evaluate(ctx: RuleContext): HookResult | null {
       const filePath = ctx.input.tool_input["file_path"];
       if (typeof filePath !== "string") return null;
-      // 相対パスはプロジェクト内とみなす
+      // 相对路径视为项目内
       if (!filePath.startsWith("/")) return null;
       if (isUnderProjectRoot(filePath, ctx.projectRoot)) return null;
-      // work モード時は確認をスキップ
+      // work 模式时跳过确认
       if (ctx.workMode) return null;
       return {
         decision: "ask",
-        reason: `プロジェクトルート外への書き込みです: ${filePath}\n許可しますか？`,
+        reason: `写入项目根目录外部: ${filePath}\n是否允许？`,
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R05: rm -rf 確認（work モードでバイパス可）
+  // R05: rm -rf 确认（work 模式可绕过）
   // ------------------------------------------------------------------
   {
     id: "R05:confirm-rm-rf",
@@ -222,17 +222,17 @@ export const GUARD_RULES: readonly GuardRule[] = [
       const command = ctx.input.tool_input["command"];
       if (typeof command !== "string") return null;
       if (!hasDangerousRmRf(command)) return null;
-      // work モードでバイパスが許可されている場合はスキップ
+      // work 模式且允许绕过时跳过
       if (ctx.workMode) return null;
       return {
         decision: "ask",
-        reason: `危険な削除コマンドを検出しました:\n${command}\n実行しますか？`,
+        reason: `检测到危险的删除命令:\n${command}\n是否执行？`,
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R06: git push --force ブロック（work モード時も例外なし）
+  // R06: 阻止 git push --force（work 模式也无例外）
   // ------------------------------------------------------------------
   {
     id: "R06:no-force-push",
@@ -243,44 +243,44 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!hasForcePush(command)) return null;
       return {
         decision: "deny",
-        reason: "git push --force は禁止されています。履歴を破壊する操作は許可されません。",
+        reason: "禁止 git push --force。不允许破坏历史的操作。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R07: Codex モード時の Write/Edit ブロック
-  // Claude は PM 役 — 実装は Codex Worker に委譲
+  // R07: Codex 模式时阻止 Write/Edit
+  // Claude 担任 PM 角色 — 实现委托给 Codex Worker
   // ------------------------------------------------------------------
   {
     id: "R07:codex-mode-no-write",
     toolPattern: /^(?:Write|Edit|MultiEdit)$/,
     evaluate(ctx: RuleContext): HookResult | null {
-      // Write / Edit / MultiEdit のみ対象（Bash は除外）
+      // 仅针对 Write / Edit / MultiEdit（排除 Bash）
       if (!["Write", "Edit", "MultiEdit"].includes(ctx.input.tool_name)) {
         return null;
       }
       if (!ctx.codexMode) return null;
       return {
         decision: "deny",
-        reason: "Codex モード中は Claude が直接ファイルを書き込めません。実装は Codex Worker (codex exec) に委譲してください。",
+        reason: "Codex 模式中 Claude 不能直接写入文件。请将实现委托给 Codex Worker (codex exec)。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R08: Breezing ロールガード — reviewer は Write/Edit 不可
+  // R08: Breezing 角色护栏 — reviewer 不能执行 Write/Edit
   // ------------------------------------------------------------------
   {
     id: "R08:breezing-reviewer-no-write",
     toolPattern: /^(?:Write|Edit|MultiEdit|Bash)$/,
     evaluate(ctx: RuleContext): HookResult | null {
       if (ctx.breezingRole !== "reviewer") return null;
-      // Bash は読み取り専用コマンドのみ許可（ブロックはスクリプト側で判断）
+      // Bash 仅允许只读命令（由脚本端判断阻止）
       if (ctx.input.tool_name === "Bash") {
         const command = ctx.input.tool_input["command"];
         if (typeof command !== "string") return null;
-        // git commit / git push / rm / mv 等を禁止
+        // 禁止 git commit / git push / rm / mv 等
         const prohibited = [
           /\bgit\s+(?:commit|push|reset|checkout|merge|rebase)\b/,
           /\brm\s+/,
@@ -291,13 +291,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       }
       return {
         decision: "deny",
-        reason: `Breezing reviewer ロールはファイル書き込みおよびデータ変更コマンドを実行できません。`,
+        reason: `Breezing reviewer 角色不能执行文件写入和数据变更命令。`,
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R09: 機密情報を含むファイルへのアクセス制限（Read のみ警告）
+  // R09: 限制访问包含敏感信息的文件（仅对 Read 发出警告）
   // ------------------------------------------------------------------
   {
     id: "R09:warn-secret-file-read",
@@ -309,13 +309,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!secretPatterns.some((p) => p.test(filePath))) return null;
       return {
         decision: "approve",
-        systemMessage: `警告: 機密情報が含まれる可能性のあるファイルを読み取っています: ${filePath}`,
+        systemMessage: `警告: 正在读取可能包含敏感信息的文件: ${filePath}`,
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R10: Bash での `--no-verify` / `--no-gpg-sign` ブロック
+  // R10: 阻止 Bash 中的 `--no-verify` / `--no-gpg-sign`
   // ------------------------------------------------------------------
   {
     id: "R10:no-git-bypass-flags",
@@ -326,13 +326,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!hasDangerousGitBypassFlag(command)) return null;
       return {
         decision: "deny",
-        reason: "--no-verify / --no-gpg-sign の使用は禁止されています。フックや署名検証を迂回しないでください。",
+        reason: "禁止使用 --no-verify / --no-gpg-sign。请不要绕过钩子和签名验证。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R11: protected branch への `git reset --hard` ブロック
+  // R11: 阻止对 protected branch 的 `git reset --hard`
   // ------------------------------------------------------------------
   {
     id: "R11:no-reset-hard-protected-branch",
@@ -343,13 +343,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!hasProtectedBranchResetHard(command)) return null;
       return {
         decision: "deny",
-        reason: "protected branch への git reset --hard は禁止されています。履歴を壊さない方法を使ってください。",
+        reason: "禁止对 protected branch 执行 git reset --hard。请使用不会破坏历史的方式。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R12: protected branch への direct push 警告
+  // R12: 警告对 protected branch 的 direct push
   // ------------------------------------------------------------------
   {
     id: "R12:warn-direct-push-protected-branch",
@@ -360,13 +360,13 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!hasDirectPushToProtectedBranch(command)) return null;
       return {
         decision: "approve",
-        systemMessage: "警告: main/master への直接 push を検出しました。feature branch 経由の運用を推奨します。",
+        systemMessage: "警告: 检测到直接 push 到 main/master。建议通过 feature branch 进行操作。",
       };
     },
   },
 
   // ------------------------------------------------------------------
-  // R13: 重要ファイルの変更警告（Write / Edit / MultiEdit）
+  // R13: 重要文件变更警告（Write / Edit / MultiEdit）
   // ------------------------------------------------------------------
   {
     id: "R13:warn-protected-review-paths",
@@ -377,15 +377,15 @@ export const GUARD_RULES: readonly GuardRule[] = [
       if (!isProtectedReviewPath(filePath)) return null;
       return {
         decision: "approve",
-        systemMessage: `警告: 重要ファイルへの変更を検出しました: ${filePath}`,
+        systemMessage: `警告: 检测到对重要文件的变更: ${filePath}`,
       };
     },
   },
 ];
 
 /**
- * 全ルールを順番に評価し、最初にマッチしたルールの HookResult を返す。
- * どのルールもマッチしない場合は approve を返す。
+ * 按顺序评估所有规则，返回第一个匹配规则的 HookResult。
+ * 如果没有规则匹配，返回 approve。
  */
 export function evaluateRules(ctx: RuleContext): HookResult {
   const toolName = ctx.input.tool_name;

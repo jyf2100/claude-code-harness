@@ -2,7 +2,6 @@
 name: harness-work
 description: "Harness v3 统一执行技能。负责 Plans.md 任务从单件到全并行团队执行。以下启动: 实现它、执行它、harness-work、全部做完、breezing、团队执行、parallel。不用于规划・审查・发布・设置。"
 description-en: "Unified execution skill for Harness v3. Implements Plans.md tasks from single task to full parallel team runs. Use when user mentions: implement, execute, harness-work, do everything, build features, run tasks, breezing, team run, parallel. Do NOT load for: planning, code review, release, or setup."
-description-ja: "Harness v3 统一执行技能。Plans.md 任务从1件到全并行团队执行。以下短语启动: 实现、执行、harness-work、全部搞定、breezing、团队执行、parallel。不用于规划・审查・发布・设置。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id] [--breezing] [--auto-mode]"
 ---

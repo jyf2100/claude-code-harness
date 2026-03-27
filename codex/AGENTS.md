@@ -240,7 +240,7 @@ skills/
 
 ## 测试篡改预防（质量保证）
 
-> 详情: [D9: 测试篡改预防的3层防御策略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)
+> 详情: [D9: 测试篡改预防的3层防御策略](.claude/memory/decisions.md#d9-测试篡改预防的3层防御策略)
 
 这是为了防止 Coding Agent 在测试失败时"偷懒"（测试篡改、lint 放宽、形骸化实现）倾向的机制。
 
