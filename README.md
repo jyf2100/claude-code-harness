@@ -383,6 +383,35 @@ Generate product videos with JSON Schema-driven pipeline:
 </details>
 
 <details>
+<summary><strong>Self-Evolution Engine</strong></summary>
+
+Skills automatically improve through usage tracking and health scoring:
+
+```bash
+# View skill health status
+./scripts/evolver.sh health
+
+# Review and approve evolution proposals
+./scripts/evolver.sh proposals
+./scripts/evolver.sh approve 1
+./scripts/evolver.sh apply 1
+```
+
+**How it works**: Every skill invocation is tracked in SQLite. When a skill's health score drops below 0.7 (FIX), usage exceeds 50 (DERIVED), or success rate tops 95% (CAPTURED), the engine generates evolution proposals for human review.
+
+| Mode | Trigger | Action |
+|------|---------|--------|
+| **FIX** | health < 0.7 | Propose repair with failure pattern analysis |
+| **DERIVED** | usage > 50 | Propose split into specialized sub-skills |
+| **CAPTURED** | success > 95% | Extract patterns into new standalone skills |
+
+**Safety**: R14-R18 guardrails enforce directory restrictions, content safety scanning, rate limiting, auto-backup with rollback, and anti-prompt-injection detection.
+
+> Zero external dependencies — uses existing SQLite + hooks infrastructure.
+
+</details>
+
+<details>
 <summary><strong>Agent Trace</strong></summary>
 
 Automatically tracks AI-generated code edits:

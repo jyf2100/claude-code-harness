@@ -264,6 +264,35 @@ codex
 
 </details>
 
+<details>
+<summary><strong>自进化引擎</strong></summary>
+
+技能通过使用追踪和健康评分自动改进：
+
+```bash
+# 查看技能健康状态
+./scripts/evolver.sh health
+
+# 审查和批准进化提案
+./scripts/evolver.sh proposals
+./scripts/evolver.sh approve 1
+./scripts/evolver.sh apply 1
+```
+
+**工作原理**：每次技能调用都会在 SQLite 中记录。当技能健康分数低于 0.7（FIX）、使用次数超过 50（DERIVED）或成功率超过 95%（CAPTURED）时，引擎自动生成进化提案供人工审查。
+
+| 模式 | 触发条件 | 动作 |
+|------|---------|------|
+| **FIX** | 健康分数 < 0.7 | 分析失败模式并提议修复 |
+| **DERIVED** | 使用次数 > 50 | 提议拆分为专业化子技能 |
+| **CAPTURED** | 成功率 > 95% | 提取成功模式为独立技能 |
+
+**安全保障**：R14-R18 规则执行目录限制、内容安全扫描、速率限制、自动备份与回滚、反提示注入检测。
+
+> 零外部依赖 — 复用现有 SQLite + hooks 基础设施。
+
+</details>
+
 ---
 
 ## 故障排除
