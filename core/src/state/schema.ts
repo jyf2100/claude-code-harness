@@ -97,6 +97,78 @@ export const CREATE_WORK_STATES = `
 ` as const;
 
 // ============================================================
+// 进化引擎表（v2 schema）
+// ============================================================
+
+/**
+ * skill_usage_metrics 表
+ * - 记录技能调用的使用指标
+ * - 用于计算技能健康分数和触发进化提案
+ */
+export const CREATE_SKILL_USAGE_METRICS = `
+  CREATE TABLE IF NOT EXISTS skill_usage_metrics (
+    id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    session_id      TEXT    NOT NULL,
+    skill_name      TEXT    NOT NULL,
+    skill_version   TEXT    DEFAULT 'unknown',
+    invocation_type TEXT    NOT NULL CHECK(invocation_type IN ('skill','command','agent','derived')),
+    tool_name       TEXT,
+    success         INTEGER NOT NULL DEFAULT 1 CHECK(success IN (0,1)),
+    error_message   TEXT,
+    duration_ms     INTEGER,
+    tokens_used     INTEGER,
+    recorded_at     INTEGER NOT NULL,
+    context_json    TEXT    DEFAULT '{}'
+  )
+` as const;
+
+/**
+ * skill_evolution 表
+ * - 每个技能的进化状态跟踪
+ * - 健康分数 = success_rate * 0.6 + usage_score * 0.4
+ */
+export const CREATE_SKILL_EVOLUTION = `
+  CREATE TABLE IF NOT EXISTS skill_evolution (
+    id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    skill_name        TEXT    NOT NULL UNIQUE,
+    version           TEXT    NOT NULL DEFAULT '1.0.0',
+    status            TEXT    NOT NULL DEFAULT 'active'
+                              CHECK(status IN ('active', 'deprecated', 'derived', 'captured')),
+    parent_skill      TEXT,
+    evolution_type    TEXT    CHECK(evolution_type IN ('fix', 'derived', 'captured')),
+    health_score      REAL    NOT NULL DEFAULT 1.0,
+    usage_count       INTEGER NOT NULL DEFAULT 0,
+    success_rate      REAL    NOT NULL DEFAULT 1.0,
+    last_used_at      INTEGER,
+    last_evolved_at   INTEGER,
+    evolution_pending TEXT    CHECK(evolution_pending IN ('none', 'fix', 'review', 'deprecate')),
+    evolution_reason  TEXT,
+    metadata_json     TEXT    DEFAULT '{}'
+  )
+` as const;
+
+/**
+ * skill_evolution_proposals 表
+ * - 进化提案的工作流管理
+ * - pending → approved/rejected → applied
+ */
+export const CREATE_SKILL_EVOLUTION_PROPOSALS = `
+  CREATE TABLE IF NOT EXISTS skill_evolution_proposals (
+    id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    skill_name      TEXT    NOT NULL,
+    proposal_type   TEXT    NOT NULL
+                            CHECK(proposal_type IN ('fix', 'derived', 'captured', 'deprecate')),
+    proposal_json   TEXT    NOT NULL,
+    created_at      INTEGER NOT NULL,
+    status          TEXT    NOT NULL DEFAULT 'pending'
+                            CHECK(status IN ('pending', 'approved', 'rejected', 'applied')),
+    reviewed_at     INTEGER,
+    reviewed_by     TEXT,
+    applied_at      INTEGER
+  )
+` as const;
+
+// ============================================================
 // 索引
 // ============================================================
 
@@ -109,13 +181,23 @@ export const CREATE_INDEXES = [
      ON task_failures(task_id, failed_at)`,
   `CREATE INDEX IF NOT EXISTS idx_work_states_expires
      ON work_states(expires_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_usage_skill_time
+     ON skill_usage_metrics(skill_name, recorded_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_usage_session
+     ON skill_usage_metrics(session_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_evolution_health
+     ON skill_evolution(health_score)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_evolution_pending
+     ON skill_evolution(evolution_pending)`,
+  `CREATE INDEX IF NOT EXISTS idx_evolution_proposals_status
+     ON skill_evolution_proposals(status, created_at)`,
 ] as const;
 
 // ============================================================
 // 模式版本管理
 // ============================================================
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_SCHEMA_META = `
   CREATE TABLE IF NOT EXISTS schema_meta (
@@ -135,5 +217,25 @@ export const ALL_DDL: readonly string[] = [
   CREATE_SIGNALS,
   CREATE_TASK_FAILURES,
   CREATE_WORK_STATES,
+  CREATE_SKILL_USAGE_METRICS,
+  CREATE_SKILL_EVOLUTION,
+  CREATE_SKILL_EVOLUTION_PROPOSALS,
   ...CREATE_INDEXES,
+];
+
+/** v1 → v2 迁移 DDL（仅添加进化引擎表） */
+export const MIGRATION_V2_DDL: readonly string[] = [
+  CREATE_SKILL_USAGE_METRICS,
+  CREATE_SKILL_EVOLUTION,
+  CREATE_SKILL_EVOLUTION_PROPOSALS,
+  `CREATE INDEX IF NOT EXISTS idx_skill_usage_skill_time
+     ON skill_usage_metrics(skill_name, recorded_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_usage_session
+     ON skill_usage_metrics(session_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_evolution_health
+     ON skill_evolution(health_score)`,
+  `CREATE INDEX IF NOT EXISTS idx_skill_evolution_pending
+     ON skill_evolution(evolution_pending)`,
+  `CREATE INDEX IF NOT EXISTS idx_evolution_proposals_status
+     ON skill_evolution_proposals(status, created_at)`,
 ];
